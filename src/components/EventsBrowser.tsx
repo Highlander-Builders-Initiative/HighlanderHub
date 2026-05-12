@@ -49,61 +49,61 @@ export function EventsBrowser({ events }: { events: CampusEvent[] }) {
   const dayKeys = Array.from(grouped.keys());
 
   return (
-    <section className="mx-auto max-w-7xl px-6 py-10">
+    <section id="events" className="mx-auto max-w-7xl px-6 pb-16">
       {/* Filter bar */}
-      <div className="border-y-2 border-ink py-4 mb-10 flex flex-col gap-4">
-        <div className="flex items-center gap-4 flex-wrap">
-          <span className="font-mono text-[11px] uppercase tracking-widest text-ink/60">
-            Filter:
-          </span>
-          <div className="flex flex-wrap gap-2">
+      <div className="sticky top-16 z-20 -mx-6 px-6 py-4 bg-canvas/85 backdrop-blur border-b border-line mb-8">
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-2 flex-wrap">
             {CATEGORIES.map((c) => (
               <button
                 key={c.value}
                 onClick={() => setCategory(c.value)}
-                className={`font-mono text-[11px] uppercase tracking-widest px-3 py-1.5 border transition-colors ${
+                className={`text-sm px-3 py-1.5 rounded-full border transition-colors ${
                   category === c.value
-                    ? "bg-ink text-bone border-ink"
-                    : "border-ink/30 hover:border-ink"
+                    ? "bg-ink text-white border-ink"
+                    : "bg-canvas text-ink border-line hover:border-ink/30"
                 }`}
               >
                 {c.label}
               </button>
             ))}
           </div>
-        </div>
 
-        <div className="flex items-center gap-4 flex-wrap">
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search events, hosts, tags..."
-            className="flex-1 min-w-[200px] bg-transparent border-b border-ink py-2 px-1 font-body text-lg placeholder:text-ink/40 focus:outline-none focus:border-clay"
-          />
-          <label className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest cursor-pointer">
-            <input
-              type="checkbox"
-              checked={freeFoodOnly}
-              onChange={(e) => setFreeFoodOnly(e.target.checked)}
-              className="accent-clay"
-            />
-            Free food only
-          </label>
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="relative flex-1 min-w-[220px]">
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted text-sm">
+                ⌕
+              </span>
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search events, hosts, tags…"
+                className="w-full rounded-full border border-line bg-canvas pl-9 pr-4 py-2.5 text-sm placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-highlander/30 focus:border-highlander"
+              />
+            </div>
+            <label className="inline-flex items-center gap-2 text-sm text-ink cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={freeFoodOnly}
+                onChange={(e) => setFreeFoodOnly(e.target.checked)}
+                className="accent-highlander h-4 w-4"
+              />
+              Free food only
+            </label>
+          </div>
         </div>
       </div>
 
       {/* Results count */}
-      <div className="mb-6 font-mono text-xs uppercase tracking-widest text-ink/60">
-        {filtered.length} event{filtered.length === 1 ? "" : "s"} found
+      <div className="mb-6 text-sm text-muted">
+        {filtered.length} event{filtered.length === 1 ? "" : "s"}
       </div>
 
-      {/* Grouped by day */}
       {dayKeys.length === 0 && (
-        <div className="py-16 text-center">
-          <p className="font-display italic text-3xl text-ink/40">
-            Nothing matches that. Try a broader filter.
-          </p>
+        <div className="rounded-2xl border border-dashed border-line py-20 text-center">
+          <p className="font-display text-xl text-ink mb-1">No matches</p>
+          <p className="text-sm text-muted">Try a broader filter or clear your search.</p>
         </div>
       )}
 
@@ -111,15 +111,15 @@ export function EventsBrowser({ events }: { events: CampusEvent[] }) {
         const dayEvents = grouped.get(day)!;
         return (
           <div key={day} className="mb-12">
-            <div className="flex items-baseline gap-4 mb-5 pb-2 border-b border-ink">
-              <h2 className="font-display text-3xl font-medium">
+            <div className="flex items-baseline gap-3 mb-5">
+              <h2 className="font-display text-2xl font-semibold tracking-tight text-ink">
                 {formatDay(day + "T12:00:00")}
               </h2>
-              <span className="font-mono text-xs uppercase tracking-widest text-ink/60">
+              <span className="text-xs text-muted">
                 {dayEvents.length} event{dayEvents.length === 1 ? "" : "s"}
               </span>
             </div>
-            <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {dayEvents.map((ev) => (
                 <EventCard key={ev.id} event={ev} />
               ))}

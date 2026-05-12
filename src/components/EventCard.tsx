@@ -3,65 +3,68 @@ import { formatTimeRange, relativeDay } from "@/lib/dates";
 import { CategoryBadge } from "./CategoryBadge";
 
 const SOURCE_LABELS: Record<CampusEvent["source"], string> = {
-  instagram: "via Instagram",
-  highlander_link: "via Highlander Link",
-  campus_website: "via UCR Events",
-  club_website: "via Club Site",
-  manual: "Added manually",
+  instagram: "Instagram",
+  highlander_link: "Highlander Link",
+  campus_website: "UCR Events",
+  club_website: "Club site",
+  manual: "Manual",
 };
 
 export function EventCard({ event }: { event: CampusEvent }) {
   return (
-    <article className="lift bg-bone border border-ink p-5 flex flex-col gap-3 h-full">
+    <article className="card-hover group relative flex h-full flex-col gap-3 rounded-2xl border border-line bg-canvas p-5 shadow-card">
       <div className="flex items-start justify-between gap-3">
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1.5">
           <CategoryBadge category={event.category} />
           {event.isFree && (
-            <span className="font-mono text-[10px] uppercase tracking-widest px-2 py-1 border border-ink">
+            <span className="inline-flex items-center rounded-full bg-leaf/10 text-leaf px-2.5 py-0.5 text-[11px] font-medium">
               Free
             </span>
           )}
           {event.rsvpRequired && (
-            <span className="font-mono text-[10px] uppercase tracking-widest px-2 py-1 border border-ink">
+            <span className="inline-flex items-center rounded-full bg-surface text-muted px-2.5 py-0.5 text-[11px] font-medium border border-line">
               RSVP
             </span>
           )}
         </div>
-        <div className="text-right font-mono text-[10px] uppercase tracking-widest text-ink/60 shrink-0">
+        <span className="shrink-0 text-[11px] text-muted">
           {SOURCE_LABELS[event.source]}
-        </div>
+        </span>
       </div>
 
-      <div className="flex items-baseline gap-3 font-mono text-xs uppercase tracking-widest text-ink/70">
-        <span className="font-bold text-ink">{relativeDay(event.startsAt)}</span>
-        <span>·</span>
-        <span>{formatTimeRange(event.startsAt, event.endsAt)}</span>
+      <div className="flex items-baseline gap-2 text-sm">
+        <span className="font-semibold text-ink">
+          {relativeDay(event.startsAt)}
+        </span>
+        <span className="text-line">·</span>
+        <span className="text-muted">
+          {formatTimeRange(event.startsAt, event.endsAt)}
+        </span>
       </div>
 
-      <h3 className="font-display text-2xl leading-tight font-medium">
+      <h3 className="font-display text-xl font-semibold leading-snug tracking-tight text-ink">
         {event.title}
       </h3>
 
-      <p className="font-body text-base leading-snug text-ink/80">
+      <p className="text-sm leading-relaxed text-muted line-clamp-3">
         {event.description}
       </p>
 
-      <div className="mt-auto pt-3 border-t border-ink/20 flex items-end justify-between gap-3 flex-wrap">
+      <div className="mt-auto pt-3 border-t border-line flex items-end justify-between gap-3 flex-wrap text-sm">
         <div className="flex flex-col">
-          <span className="font-mono text-[10px] uppercase tracking-widest text-ink/60">
+          <span className="text-[11px] uppercase tracking-wide text-muted">
             Where
           </span>
-          <span className="font-body italic">{event.location}</span>
+          <span className="text-ink">{event.location}</span>
         </div>
         <div className="flex flex-col text-right">
-          <span className="font-mono text-[10px] uppercase tracking-widest text-ink/60">
-            Hosted by
+          <span className="text-[11px] uppercase tracking-wide text-muted">
+            Host
           </span>
-          <span className="font-body italic">
+          <span className="text-ink">
             {event.host}
             {event.hostHandle && (
-              <span className="font-mono not-italic text-sm text-ink/60">
-                {" "}
+              <span className="block font-mono text-xs text-muted">
                 {event.hostHandle}
               </span>
             )}
@@ -72,10 +75,7 @@ export function EventCard({ event }: { event: CampusEvent }) {
       {event.tags.length > 0 && (
         <div className="flex flex-wrap gap-1">
           {event.tags.map((t) => (
-            <span
-              key={t}
-              className="font-mono text-[10px] uppercase tracking-wider text-ink/50"
-            >
+            <span key={t} className="text-[11px] text-muted">
               #{t.replace(/\s+/g, "")}
             </span>
           ))}
@@ -87,9 +87,10 @@ export function EventCard({ event }: { event: CampusEvent }) {
           href={event.rsvpUrl ?? event.sourceUrl}
           target="_blank"
           rel="noreferrer"
-          className="font-mono text-xs uppercase tracking-widest link-underline w-fit"
+          className="inline-flex w-fit items-center gap-1 text-sm font-medium text-highlander hover:underline"
         >
-          {event.rsvpUrl ? "RSVP →" : "View source →"}
+          {event.rsvpUrl ? "RSVP" : "View source"}
+          <span aria-hidden>→</span>
         </a>
       )}
     </article>

@@ -2,35 +2,28 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,700;9..144,900&family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
 
 :root {
-  --font-display: "Fraunces", serif;
-  --font-body: "Instrument Serif", serif;
-  --font-mono: "DM Mono", monospace;
+  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
 }
 
 html,
 body {
-  background: #f4ede0;
-  color: #1a1614;
+  background: #ffffff;
+  color: #0f1115;
   font-family: var(--font-body);
-  font-size: 18px;
-  line-height: 1.5;
-}
-
-/* Subtle paper grain */
-body {
-  background-image:
-    radial-gradient(rgba(26, 22, 20, 0.04) 1px, transparent 1px),
-    radial-gradient(rgba(26, 22, 20, 0.03) 1px, transparent 1px);
-  background-size: 24px 24px, 48px 48px;
-  background-position: 0 0, 12px 12px;
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .font-display {
   font-family: var(--font-display);
-  font-optical-sizing: auto;
+  letter-spacing: -0.015em;
 }
 .font-body {
   font-family: var(--font-body);
@@ -39,37 +32,26 @@ body {
   font-family: var(--font-mono);
 }
 
-/* Rough underline for links */
-.link-underline {
-  background-image: linear-gradient(to right, currentColor 50%, transparent 50%);
-  background-size: 6px 1px;
-  background-repeat: repeat-x;
-  background-position: 0 100%;
-  padding-bottom: 2px;
-}
-
-/* Newspaper-style column rules */
-.col-rule {
-  border-left: 1px solid rgba(26, 22, 20, 0.15);
-}
-
-/* Tag pill */
-.tag {
+/* Pill chip */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  padding: 2px 8px;
-  border: 1px solid currentColor;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  padding: 4px 10px;
   border-radius: 999px;
-  display: inline-block;
+  background: #f4f4f5;
+  color: #0f1115;
 }
 
-/* Hover lift */
-.lift {
-  transition: transform 200ms ease, box-shadow 200ms ease;
+/* Soft card hover */
+.card-hover {
+  transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
 }
-.lift:hover {
-  transform: translate(-2px, -2px);
-  box-shadow: 4px 4px 0 #1a1614;
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(15, 17, 21, 0.06), 0 12px 28px rgba(15, 17, 21, 0.08);
+  border-color: #d4d4d8;
 }

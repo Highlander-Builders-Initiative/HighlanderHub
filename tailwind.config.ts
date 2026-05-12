@@ -8,34 +8,27 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Sun-bleached Riverside palette
-        bone: "#f4ede0",
-        sand: "#e8dcc4",
-        ink: "#1a1614",
-        clay: "#c4502a",
-        rust: "#8b3a1a",
-        olive: "#5a5a2c",
-        sky: "#6b8caa",
-        citrus: "#d99e2b",
+        // Clean modern palette with UCR-inspired accents
+        canvas: "#ffffff",
+        surface: "#fafafa",
+        line: "#e7e7e9",
+        ink: "#0f1115",
+        muted: "#6b7280",
+        // Accents
+        highlander: "#1e3a8a", // UCR-ish deep blue
+        gold: "#f5b400",       // UCR gold
+        coral: "#ef5d4f",
+        leaf: "#2f9e6f",
+        sky: "#3b82f6",
       },
       fontFamily: {
-        display: ["var(--font-display)", "serif"],
-        body: ["var(--font-body)", "serif"],
-        mono: ["var(--font-mono)", "monospace"],
+        display: ["var(--font-display)", "ui-sans-serif", "system-ui", "sans-serif"],
+        body: ["var(--font-body)", "ui-sans-serif", "system-ui", "sans-serif"],
+        mono: ["var(--font-mono)", "ui-monospace", "monospace"],
       },
-      animation: {
-        "marquee": "marquee 40s linear infinite",
-        "ticker": "ticker 60s linear infinite",
-      },
-      keyframes: {
-        marquee: {
-          "0%": { transform: "translateX(0%)" },
-          "100%": { transform: "translateX(-50%)" },
-        },
-        ticker: {
-          "0%": { transform: "translateX(100%)" },
-          "100%": { transform: "translateX(-100%)" },
-        },
+      boxShadow: {
+        card: "0 1px 2px rgba(15, 17, 21, 0.04), 0 4px 12px rgba(15, 17, 21, 0.04)",
+        cardHover: "0 4px 8px rgba(15, 17, 21, 0.06), 0 12px 28px rgba(15, 17, 21, 0.08)",
       },
     },
   },
