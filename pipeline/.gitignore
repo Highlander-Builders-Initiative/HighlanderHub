@@ -1,0 +1,9 @@
+data/raw/
+output/
+.instaloader-session*
+session-*
+*.session
+.venv/
+__pycache__/
+*.pyc
+.env

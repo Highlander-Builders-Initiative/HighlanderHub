@@ -1,29 +1,26 @@
 import type { CampusEvent } from "@/types/event";
 import { PLACEHOLDER_EVENTS } from "@/data/placeholder-events";
+import { getInstagramEvents } from "@/lib/scrapers/instagram";
 
 /**
- * Fetches events from the data source.
- *
- * RIGHT NOW: returns placeholder data from src/data/placeholder-events.ts
- *
- * LATER: replace this with calls to:
- *   - /api/events  (Next.js route that reads from a DB or cache populated by scrapers)
- *   - Direct DB query (if using Postgres/Supabase/etc. and this runs server-side)
- *
- * The contract: it returns CampusEvent[] sorted by startsAt ascending.
- * As long as scraper output conforms to the CampusEvent type, the UI
- * doesn't need to change.
+ * Fetches events from all wired-up sources, merges, dedupes by id, sorts.
+ * Each source is independent — a failure in one shouldn't kill the page.
+ * Add new sources by following the instagram.ts pattern.
  */
 export async function getEvents(): Promise<CampusEvent[]> {
-  // TODO: swap for real fetch once scraper + API are up
-  // const res = await fetch("/api/events", { cache: "no-store" });
-  // const data = await res.json();
-  // return data.events;
+  const results = await Promise.allSettled([getInstagramEvents()]);
+  const fromSources = results.flatMap((r) =>
+    r.status === "fulfilled" ? r.value : []
+  );
 
-  const sorted = [...PLACEHOLDER_EVENTS].sort(
+  const merged = new Map<string, CampusEvent>();
+  for (const ev of [...PLACEHOLDER_EVENTS, ...fromSources]) {
+    merged.set(ev.id, ev);
+  }
+
+  return [...merged.values()].sort(
     (a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime()
   );
-  return sorted;
 }
 
 /**
