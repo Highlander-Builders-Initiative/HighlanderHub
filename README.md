@@ -2,6 +2,8 @@
 
 A campus & club events bulletin for UC Riverside and the city of Riverside.
 
+Built with <3 by the builders at HBI.
+
 > ⚠️ **Bare-bones scaffold.** Currently displays placeholder events. The
 > scraping layer (Instagram, Highlander Link, UCR events calendar, club
 > sites) is **not wired up yet** — that's the next step.
