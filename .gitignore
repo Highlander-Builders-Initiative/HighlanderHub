@@ -1,1 +1,9 @@
-node_modules
+node_modules/
+
+# Next.js generated output
+.next/
+out/
+
+# Local/editor/system artifacts
+.DS_Store
+*.tsbuildinfo

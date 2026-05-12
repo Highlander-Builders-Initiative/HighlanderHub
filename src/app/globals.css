@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
+
+:root {
+  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+html,
+body {
+  background: #ffffff;
+  color: #0f1115;
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.015em;
+}
+.font-body {
+  font-family: var(--font-body);
+}
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+/* Pill chip */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #f4f4f5;
+  color: #0f1115;
+}
+
+/* Soft card hover */
+.card-hover {
+  transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(15, 17, 21, 0.06), 0 12px 28px rgba(15, 17, 21, 0.08);
+  border-color: #d4d4d8;
+}
