@@ -21,9 +21,13 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 .font-display {
   font-family: var(--font-display);
-  letter-spacing: -0.015em;
+  letter-spacing: 0;
 }
 .font-body {
   font-family: var(--font-body);
@@ -46,12 +50,38 @@ body {
   color: #0f1115;
 }
 
+.interactive-focus {
+  touch-action: manipulation;
+}
+.interactive-focus:focus-visible,
+.interactive-focus:focus-within {
+  outline: 3px solid rgba(30, 58, 138, 0.35);
+  outline-offset: 3px;
+}
+
 /* Soft card hover */
 .card-hover {
   transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
 }
-.card-hover:hover {
+.card-hover:hover,
+.card-hover:focus-within {
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(15, 17, 21, 0.06), 0 12px 28px rgba(15, 17, 21, 0.08);
   border-color: #d4d4d8;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .card-hover:hover,
+  .card-hover:focus-within {
+    transform: none;
+  }
 }

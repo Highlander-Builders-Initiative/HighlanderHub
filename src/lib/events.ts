@@ -22,17 +22,3 @@ export async function getEvents(): Promise<CampusEvent[]> {
     (a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime()
   );
 }
-
-/**
- * Returns events grouped by day (YYYY-MM-DD).
- */
-export function groupByDay(events: CampusEvent[]): Map<string, CampusEvent[]> {
-  const map = new Map<string, CampusEvent[]>();
-  for (const ev of events) {
-    const key = ev.startsAt.slice(0, 10);
-    const bucket = map.get(key);
-    if (bucket) bucket.push(ev);
-    else map.set(key, [ev]);
-  }
-  return map;
-}

@@ -10,7 +10,7 @@ export function Footer() {
             >
               H
             </span>
-            <span className="font-display text-lg font-semibold tracking-tight">
+            <span className="font-display text-lg font-semibold">
               Highlander Hub
             </span>
           </div>
