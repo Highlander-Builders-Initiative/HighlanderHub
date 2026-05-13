@@ -47,7 +47,7 @@ export default async function HomePage() {
 
             <h1 className="mt-6 font-display text-[44px] font-semibold leading-[0.95] tracking-[-0.035em] text-ink sm:text-[60px] md:text-[72px]">
               Every UCR event,
-              <span className="block text-muted">in one place.</span>
+              <span className="block text-muted">in one place</span>
             </h1>
 
             <p className="mt-7 max-w-xl text-base leading-relaxed text-ink/75 md:text-lg">

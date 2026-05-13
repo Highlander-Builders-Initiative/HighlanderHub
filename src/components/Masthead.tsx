@@ -14,9 +14,6 @@ export function Masthead() {
           <span className="font-display text-[22px] font-semibold tracking-[-0.04em] leading-none text-ink">
             highlander<span className="text-muted">/</span>hub
           </span>
-          <span className="hidden font-mono text-[10px] uppercase tracking-[0.18em] text-muted sm:inline">
-            UCR · 92521
-          </span>
         </Link>
 
         <nav
