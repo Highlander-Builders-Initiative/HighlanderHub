@@ -1,5 +1,6 @@
 import type { CampusEvent } from "@/types/event";
 import { supabase } from "@/lib/supabase";
+import { startOfPacificToday } from "@/lib/dates";
 
 // DB columns are snake_case (Postgres convention); the app uses camelCase
 // CampusEvent. This adapter is the single conversion point.
@@ -45,11 +46,16 @@ function toCampusEvent(r: EventRow): CampusEvent {
   };
 }
 
-/** Reads events from Supabase, sorted by start time ascending. */
+/**
+ * Reads upcoming events from Supabase, sorted by start time ascending.
+ * "Upcoming" = starting on or after today (UTC midnight). Past events are
+ * filtered out so the list's top row is always the current/next day.
+ */
 export async function getEvents(): Promise<CampusEvent[]> {
   const { data, error } = await supabase
     .from("events")
     .select("*")
+    .gte("starts_at", startOfPacificToday().toISOString())
     .order("starts_at", { ascending: true });
 
   if (error) {

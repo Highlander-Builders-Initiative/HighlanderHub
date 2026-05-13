@@ -1,3 +1,37 @@
+// UCR is Pacific. ISO timestamps in the DB are UTC, but the UI must group
+// and filter by Pacific calendar days — otherwise late-evening events leak
+// into the next day's bucket.
+const CAMPUS_TZ = "America/Los_Angeles";
+
+const dayKeyFmt = new Intl.DateTimeFormat("en-CA", {
+  timeZone: CAMPUS_TZ,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
+/** YYYY-MM-DD in campus (Pacific) local time, derived from an ISO instant. */
+export function pacificDayKey(iso: string): string {
+  return dayKeyFmt.format(new Date(iso));
+}
+
+/** The instant that was midnight in Pacific time on the current Pacific date. */
+export function startOfPacificToday(): Date {
+  const now = new Date();
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: CAMPUS_TZ,
+    hour12: false,
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).formatToParts(now);
+  const get = (t: string) =>
+    Number(parts.find((p) => p.type === t)?.value ?? 0);
+  const elapsed =
+    (get("hour") * 60 * 60 + get("minute") * 60 + get("second")) * 1000;
+  return new Date(now.getTime() - elapsed);
+}
+
 export function formatDay(iso: string): string {
   const d = new Date(iso);
   return d.toLocaleDateString("en-US", {

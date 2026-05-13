@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import type { CampusEvent } from "@/types/event";
 import { CATEGORY_STYLES } from "./CategoryBadge";
 import { EventCard } from "./EventCard";
-import { formatDay } from "@/lib/dates";
+import { formatDay, pacificDayKey } from "@/lib/dates";
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -42,7 +42,7 @@ export function CalendarView({ events }: { events: CampusEvent[] }) {
   const byDay = useMemo(() => {
     const map = new Map<string, CampusEvent[]>();
     for (const ev of events) {
-      const key = ev.startsAt.slice(0, 10);
+      const key = pacificDayKey(ev.startsAt);
       const bucket = map.get(key);
       if (bucket) bucket.push(ev);
       else map.set(key, [ev]);
