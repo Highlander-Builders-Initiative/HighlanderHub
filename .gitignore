@@ -4,6 +4,11 @@ node_modules/
 .next/
 out/
 
+# Environment / secrets
+.env
+.env.local
+.env*.local
+
 # Local/editor/system artifacts
 .DS_Store
 *.tsbuildinfo

@@ -9,8 +9,6 @@ from typing import Any
 ROOT = Path(__file__).resolve().parent
 DATA_DIR = ROOT / "data"
 RAW_DIR = DATA_DIR / "raw"
-OUTPUT_DIR = ROOT / "output"
-OUTPUT_FILE = OUTPUT_DIR / "stories.json"
 ACCOUNTS_FILE = ROOT / "accounts.json"
 
 # Instaloader needs to be logged in to fetch stories. Two supported modes:
@@ -28,4 +26,3 @@ def load_accounts() -> list[dict[str, Any]]:
 
 def ensure_dirs() -> None:
     RAW_DIR.mkdir(parents=True, exist_ok=True)
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)

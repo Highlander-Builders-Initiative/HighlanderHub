@@ -1,28 +1,60 @@
 import type { CampusEvent } from "@/types/event";
-import { PLACEHOLDER_EVENTS } from "@/data/placeholder-events";
-import { getInstagramEvents } from "@/lib/scrapers/instagram";
-import { getUcrEvents } from "@/lib/scrapers/ucr-events";
+import { supabase } from "@/lib/supabase";
 
-/**
- * Fetches events from all wired-up sources, merges, dedupes by id, sorts.
- * Each source is independent: a failure in one shouldn't kill the page.
- * Add new sources by following the instagram.ts pattern.
- */
+// DB columns are snake_case (Postgres convention); the app uses camelCase
+// CampusEvent. This adapter is the single conversion point.
+interface EventRow {
+  id: string;
+  title: string;
+  description: string;
+  starts_at: string;
+  ends_at: string | null;
+  location: string;
+  host: string;
+  host_handle: string | null;
+  category: CampusEvent["category"];
+  tags: string[];
+  source: CampusEvent["source"];
+  source_url: string | null;
+  image_url: string | null;
+  is_free: boolean;
+  rsvp_required: boolean;
+  rsvp_url: string | null;
+  scraped_at: string;
+}
+
+function toCampusEvent(r: EventRow): CampusEvent {
+  return {
+    id: r.id,
+    title: r.title,
+    description: r.description,
+    startsAt: r.starts_at,
+    endsAt: r.ends_at ?? undefined,
+    location: r.location,
+    host: r.host,
+    hostHandle: r.host_handle ?? undefined,
+    category: r.category,
+    tags: r.tags,
+    source: r.source,
+    sourceUrl: r.source_url ?? undefined,
+    imageUrl: r.image_url ?? undefined,
+    isFree: r.is_free,
+    rsvpRequired: r.rsvp_required,
+    rsvpUrl: r.rsvp_url ?? undefined,
+    scrapedAt: r.scraped_at,
+  };
+}
+
+/** Reads events from Supabase, sorted by start time ascending. */
 export async function getEvents(): Promise<CampusEvent[]> {
-  const results = await Promise.allSettled([
-    getInstagramEvents(),
-    getUcrEvents(),
-  ]);
-  const fromSources = results.flatMap((r) =>
-    r.status === "fulfilled" ? r.value : []
-  );
+  const { data, error } = await supabase
+    .from("events")
+    .select("*")
+    .order("starts_at", { ascending: true });
 
-  const merged = new Map<string, CampusEvent>();
-  for (const ev of [...PLACEHOLDER_EVENTS, ...fromSources]) {
-    merged.set(ev.id, ev);
+  if (error) {
+    console.error("getEvents failed:", error.message);
+    return [];
   }
-
-  return [...merged.values()].sort(
-    (a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime()
-  );
+  return (data as EventRow[]).map(toCampusEvent);
 }

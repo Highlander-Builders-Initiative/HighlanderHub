@@ -1,11 +1,11 @@
-"""Roll raw/ucr_events/*.json into output/events.json in CampusEvent shape.
+"""Roll raw/ucr_events/*.json into Supabase `events` table.
 
-This is the structured-event counterpart to normalize.py (which handles IG
-stories). Future structured sources (highlanderlink.ucr.edu, etc.) should
-plug in here too — add another collector, map to CampusEvent, append.
+Maps Localist event payloads to the `events` schema (snake_case columns,
+matching CampusEvent fields). Idempotent: upserts by `id`, so re-running
+overwrites stale rows.
 
-The output schema mirrors the TypeScript CampusEvent interface in
-src/types/event.ts. Keep them in sync.
+Future structured sources (highlanderlink.ucr.edu, etc.) should plug in here
+too — add another collector, map to the same row shape, append.
 """
 from __future__ import annotations
 
@@ -16,11 +16,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
-from config import OUTPUT_DIR, RAW_DIR, ensure_dirs
+from config import RAW_DIR, ensure_dirs
+from db import upsert_batched
 
 log = logging.getLogger("pipeline.normalize_events")
 
-EVENTS_OUTPUT_FILE = OUTPUT_DIR / "events.json"
 UCR_EVENTS_RAW = RAW_DIR / "ucr_events"
 
 # Heuristic keyword sets for category inference. Localist's own event_types are
@@ -52,10 +52,6 @@ def _strip_html(s: str | None) -> str:
 
 
 def _filter_names(raw: dict[str, Any], key: str) -> list[str]:
-    """Localist filters live under `filters.event_types`, `filters.event_topic`, etc.
-
-    Each value is a list of {id, name} or similar. We just want the names.
-    """
     filters = raw.get("filters") or {}
     bucket = filters.get(key) or []
     out: list[str] = []
@@ -70,13 +66,11 @@ def _filter_names(raw: dict[str, Any], key: str) -> list[str]:
 
 
 def _infer_category(raw: dict[str, Any], blob: str) -> str:
+    if _FREE_FOOD_PATTERNS.search(blob):
+        return "free_food"
     type_names = " ".join(_filter_names(raw, "event_types")).lower()
     topic_names = " ".join(_filter_names(raw, "event_topic")).lower()
     haystack = " ".join([type_names, topic_names, blob.lower()])
-
-    if _FREE_FOOD_PATTERNS.search(blob):
-        return "free_food"
-
     for category, keywords in _CATEGORY_KEYWORDS:
         if any(kw in haystack for kw in keywords):
             return category
@@ -89,7 +83,6 @@ def _build_location(raw: dict[str, Any]) -> str:
         val = raw.get(key)
         if val and isinstance(val, str) and val.strip():
             parts.append(val.strip())
-    # Deduplicate consecutive identical parts (e.g. when address == location_name)
     deduped: list[str] = []
     for p in parts:
         if not deduped or deduped[-1].lower() != p.lower():
@@ -98,15 +91,12 @@ def _build_location(raw: dict[str, Any]) -> str:
 
 
 def _build_host(raw: dict[str, Any]) -> str:
-    # Localist doesn't have a clean "organizer" field on the basic event payload.
-    # The closest signal is event_types (often department-shaped) or custom_fields.
     custom = raw.get("custom_fields") or {}
     if isinstance(custom, dict):
         for key in ("department", "host", "organizer", "sponsor"):
             val = custom.get(key)
             if val and isinstance(val, str) and val.strip():
                 return val.strip()
-
     types = _filter_names(raw, "event_types")
     if types:
         return types[0]
@@ -114,8 +104,6 @@ def _build_host(raw: dict[str, Any]) -> str:
 
 
 def _start_end(raw: dict[str, Any]) -> tuple[str, str | None]:
-    # Prefer the first instance's start/end if present (more accurate for recurring),
-    # else fall back to top-level first_date / last_date.
     instances = raw.get("event_instances") or []
     if instances and isinstance(instances, list):
         first = instances[0]
@@ -125,13 +113,12 @@ def _start_end(raw: dict[str, Any]) -> tuple[str, str | None]:
             end = inner.get("end") or raw.get("last_date")
             if start:
                 return start, (end if end and end != start else None)
-
     start = raw.get("first_date") or raw.get("start") or ""
     end = raw.get("last_date") or raw.get("end")
     return start, (end if end and end != start else None)
 
 
-def _to_campus_event(raw: dict[str, Any], generated_at: str) -> dict[str, Any] | None:
+def _to_event_row(raw: dict[str, Any], scraped_at: str) -> dict[str, Any] | None:
     lid = raw.get("id")
     if lid is None:
         return None
@@ -170,19 +157,19 @@ def _to_campus_event(raw: dict[str, Any], generated_at: str) -> dict[str, Any] |
         "id": f"ucr_events_{lid}",
         "title": title[:200],
         "description": description,
-        "startsAt": starts_at,
-        "endsAt": ends_at,
+        "starts_at": starts_at,
+        "ends_at": ends_at,
         "location": _build_location(raw),
         "host": _build_host(raw),
         "category": category,
         "tags": tags,
         "source": "campus_website",
-        "sourceUrl": raw.get("localist_url") or raw.get("url"),
-        "imageUrl": raw.get("photo_url"),
-        "isFree": bool(raw.get("free", True)),
-        "rsvpRequired": bool(ticket_url),
-        "rsvpUrl": ticket_url or None,
-        "scrapedAt": generated_at,
+        "source_url": raw.get("localist_url") or raw.get("url"),
+        "image_url": raw.get("photo_url"),
+        "is_free": bool(raw.get("free", True)),
+        "rsvp_required": bool(ticket_url),
+        "rsvp_url": ticket_url or None,
+        "scraped_at": scraped_at,
     }
 
 
@@ -202,26 +189,20 @@ def main() -> None:
         level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
     )
     ensure_dirs()
-    generated_at = datetime.now(timezone.utc).isoformat()
+    scraped_at = datetime.now(timezone.utc).isoformat()
 
-    events: list[dict[str, Any]] = []
+    rows: list[dict[str, Any]] = []
     for raw in _collect_raw(UCR_EVENTS_RAW):
-        ev = _to_campus_event(raw, generated_at)
-        if ev is not None:
-            events.append(ev)
+        row = _to_event_row(raw, scraped_at)
+        if row is not None:
+            rows.append(row)
 
-    # Dedupe by id (last-write-wins) and sort chronologically.
-    by_id: dict[str, dict[str, Any]] = {ev["id"]: ev for ev in events}
-    sorted_events = sorted(by_id.values(), key=lambda e: e["startsAt"])
+    # Dedupe by id (last-write-wins).
+    by_id: dict[str, dict[str, Any]] = {r["id"]: r for r in rows}
+    deduped = list(by_id.values())
 
-    payload = {
-        "generatedAt": generated_at,
-        "count": len(sorted_events),
-        "events": sorted_events,
-    }
-    with EVENTS_OUTPUT_FILE.open("w", encoding="utf-8") as f:
-        json.dump(payload, f, indent=2, ensure_ascii=False)
-    log.info("Wrote %d events to %s", len(sorted_events), EVENTS_OUTPUT_FILE)
+    written = upsert_batched("events", deduped)
+    log.info("Wrote %d events to Supabase", written)
 
 
 if __name__ == "__main__":
