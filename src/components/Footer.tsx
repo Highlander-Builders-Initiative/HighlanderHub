@@ -27,8 +27,7 @@ export function Footer() {
             highlander<span className="text-muted">/</span>hub
           </p>
           <p className="mt-3 max-w-md text-sm text-muted">
-            A simple place to see what&rsquo;s happening at UC Riverside and
-            around the city, without scrolling ten group chats.
+            A simple place to see what&rsquo;s happening at UC Riverside, without scrolling ten pages. 
           </p>
         </div>
         <div className="md:text-right">

@@ -170,7 +170,7 @@ export function FinalCTA() {
       <div className="mx-auto flex max-w-7xl flex-col items-start gap-6 px-4 py-20 sm:px-6 md:flex-row md:items-end md:justify-between md:py-24">
         <div className="max-w-xl">
           <h2 className="font-display text-4xl font-semibold leading-[1.05] tracking-[-0.03em] text-ink md:text-6xl">
-            Stop missing things.
+            Stop missing Events.
           </h2>
           <p className="mt-4 text-base text-ink/75">
             Open the index. Filter by what you care about. Show up.
