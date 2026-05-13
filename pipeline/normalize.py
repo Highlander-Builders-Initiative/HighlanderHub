@@ -20,12 +20,16 @@ def _load_account_meta() -> dict[str, dict[str, Any]]:
     return {a["handle"]: a for a in load_accounts()}
 
 
-def collect() -> list[dict[str, Any]]:
+def collect(known_handles: set[str]) -> list[dict[str, Any]]:
     items: list[dict[str, Any]] = []
     if not RAW_DIR.exists():
         return items
     for handle_dir in sorted(RAW_DIR.iterdir()):
         if not handle_dir.is_dir():
+            continue
+        # Skip raw dirs that belong to non-IG sources (ucr_events, etc.) —
+        # those are handled by normalize_events.py.
+        if handle_dir.name not in known_handles:
             continue
         for path in handle_dir.glob("*.json"):
             try:
@@ -55,8 +59,9 @@ def main() -> None:
         level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
     )
     ensure_dirs()
-    items = dedupe(collect())
-    enrich(items, _load_account_meta())
+    meta = _load_account_meta()
+    items = dedupe(collect(set(meta.keys())))
+    enrich(items, meta)
     items.sort(key=lambda it: it["posted_at"], reverse=True)
 
     output = {

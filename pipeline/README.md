@@ -1,25 +1,34 @@
-# Instagram stories pipeline
+# UCR data pipeline
 
-Pulls stories from a configured list of UCR-adjacent Instagram accounts using
-[instaloader](https://github.com/instaloader/instaloader), persists them to a
-durable raw archive, and emits a single `output/stories.json` for the Next.js
-app to read.
+Two sources right now, hand-off to the Next.js app via JSON files in `output/`:
 
-Stories expire from Instagram after 24 hours, so the raw archive in
-`data/raw/` is the only durable record — keep it.
+| Source | Scraper | Raw | Output | App adapter |
+| --- | --- | --- | --- | --- |
+| Instagram stories | `scrape.py` ([instaloader](https://github.com/instaloader/instaloader)) | `data/raw/<handle>/` | `output/stories.json` | `src/lib/scrapers/instagram.ts` |
+| events.ucr.edu (Localist) | `ucr_events.py` (JSON API) | `data/raw/ucr_events/` | `output/events.json` | `src/lib/scrapers/ucr-events.ts` |
+
+`run.py` scrapes everything then normalizes. Failures in one source don't kill
+the others — the raw archive on disk is the source of truth, and normalize
+runs over whatever's there.
+
+Stories expire from Instagram after 24 hours, so the IG raw archive is the
+only durable record — keep it. Localist events are mutable (descriptions get
+edited), so the UCR scraper always overwrites; the latest fetch wins.
 
 ## Layout
 
 ```
 pipeline/
-├── accounts.json          # handles to monitor (edit me)
+├── accounts.json          # IG handles to monitor (edit me)
 ├── config.py              # paths + env-driven auth config
-├── scrape.py              # ingest:    IG → data/raw/<handle>/<story_id>.json
-├── normalize.py           # transform: data/raw/** → output/stories.json
-├── run.py                 # scrape + normalize in one shot
+├── scrape.py              # IG ingest:        data/raw/<handle>/<story_id>.json
+├── ucr_events.py          # Localist ingest:  data/raw/ucr_events/<event_id>.json
+├── normalize.py           # IG → output/stories.json
+├── normalize_events.py    # UCR → output/events.json (CampusEvent shape)
+├── run.py                 # scrape both + normalize both
 ├── requirements.txt
-├── data/raw/              # gitignored; per-story JSON, idempotent
-└── output/stories.json    # gitignored; consumed by src/lib/scrapers/instagram.ts
+├── data/raw/              # gitignored; per-item JSON
+└── output/                # gitignored; consumed by the Next.js app
 ```
 
 ## Setup
@@ -58,25 +67,61 @@ get throttled. `scrape.py` already sleeps 2–5s between accounts.
 ## Run it
 
 ```bash
-python run.py                # scrape + normalize
-python scrape.py             # ingest only
-python normalize.py          # rebuild output/stories.json from raw/
+python run.py                # scrape all sources + normalize all
+python scrape.py             # IG ingest only
+python ucr_events.py         # UCR events ingest only (no auth needed)
+python normalize.py          # rebuild output/stories.json from data/raw/
+python normalize_events.py   # rebuild output/events.json from data/raw/ucr_events/
 ```
 
-Re-running is cheap: existing raw files are skipped. Normalize is a pure
-function of `data/raw/`.
+Re-running is cheap: IG raw files are skipped if present; UCR events are
+overwritten (they're mutable). Normalize is a pure function of `data/raw/`.
 
 ## Schedule
 
-Stories live 24h, so 4–6× a day is a reasonable cadence. Sample crontab:
+Stories live 24h, so 4–6× a day is a reasonable cadence. UCR events change
+much more slowly — once a day is plenty, but since `run.py` does both, the
+IG cadence drives the schedule.
 
 ```
 0 */4 * * * cd /path/to/HighlanderHub/pipeline && .venv/bin/python run.py >> pipeline.log 2>&1
 ```
 
-## Output schema
+## Output schemas
 
-`output/stories.json`:
+### `output/events.json`
+
+Already in `CampusEvent` shape (see `src/types/event.ts`). The app reads it via
+`src/lib/scrapers/ucr-events.ts` and renders directly.
+
+```jsonc
+{
+  "generatedAt": "2026-05-12T03:23:13+00:00",
+  "count": 82,
+  "events": [
+    {
+      "id": "ucr_events_51880655667769",
+      "title": "Book Talk: Stewards of the Land",
+      "description": "...",
+      "startsAt": "2026-05-14T15:00:00-07:00",
+      "endsAt": "2026-05-14T16:30:00-07:00",
+      "location": "Tomás Rivera Library, Room 401",
+      "host": "Lectures & Presentations",
+      "category": "academic",
+      "tags": ["Lectures & Presentations", "Faculty", "Students"],
+      "source": "campus_website",
+      "sourceUrl": "https://events.ucr.edu/event/...",
+      "imageUrl": "https://localist-images.azureedge.net/...",
+      "isFree": true,
+      "rsvpRequired": false,
+      "rsvpUrl": null,
+      "scrapedAt": "2026-05-12T03:23:13+00:00"
+    }
+  ]
+}
+```
+
+### `output/stories.json`
 
 ```jsonc
 {

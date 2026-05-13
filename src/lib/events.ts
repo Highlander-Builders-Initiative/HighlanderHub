@@ -1,6 +1,7 @@
 import type { CampusEvent } from "@/types/event";
 import { PLACEHOLDER_EVENTS } from "@/data/placeholder-events";
 import { getInstagramEvents } from "@/lib/scrapers/instagram";
+import { getUcrEvents } from "@/lib/scrapers/ucr-events";
 
 /**
  * Fetches events from all wired-up sources, merges, dedupes by id, sorts.
@@ -8,7 +9,10 @@ import { getInstagramEvents } from "@/lib/scrapers/instagram";
  * Add new sources by following the instagram.ts pattern.
  */
 export async function getEvents(): Promise<CampusEvent[]> {
-  const results = await Promise.allSettled([getInstagramEvents()]);
+  const results = await Promise.allSettled([
+    getInstagramEvents(),
+    getUcrEvents(),
+  ]);
   const fromSources = results.flatMap((r) =>
     r.status === "fulfilled" ? r.value : []
   );
