@@ -10,7 +10,7 @@ import { getEvents } from "@/lib/events";
  *
  * LATER: this route should read from whatever data store the scrapers
  * populate (Postgres, Supabase, a JSON file in /tmp, etc.). The scrapers
- * themselves should be separate processes — either cron jobs that write
+ * themselves should be separate processes: either cron jobs that write
  * to the store, or invoked from a separate /api/scrape route.
  *
  * Suggested scraper architecture:

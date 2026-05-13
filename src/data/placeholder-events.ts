@@ -20,7 +20,7 @@ const daysFromNow = (n: number, hour = 18): string => {
 export const PLACEHOLDER_EVENTS: CampusEvent[] = [
   {
     id: "evt_001",
-    title: "ACM General Meeting — Intro to System Design",
+    title: "ACM General Meeting: Intro to System Design",
     description:
       "Kickoff GM for the quarter. Pizza, intros, and a short talk on system design fundamentals. New members welcome.",
     startsAt: daysFromNow(1, 19),
@@ -141,7 +141,7 @@ export const PLACEHOLDER_EVENTS: CampusEvent[] = [
   },
   {
     id: "evt_008",
-    title: "Highlanders vs. UCI — Men's Basketball",
+    title: "Highlanders vs. UCI, Men's Basketball",
     description:
       "Big West conference matchup. Student tickets free with R'Card.",
     startsAt: daysFromNow(7, 19),
@@ -174,7 +174,7 @@ export const PLACEHOLDER_EVENTS: CampusEvent[] = [
   },
   {
     id: "evt_010",
-    title: "Riverside Art Walk — First Thursday",
+    title: "Riverside Art Walk: First Thursday",
     description:
       "Downtown Riverside galleries open late. Free shuttle from UCR. Food trucks on Main St.",
     startsAt: daysFromNow(8, 18),

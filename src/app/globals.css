@@ -2,12 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap");
 
 :root {
-  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
   --font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 }
 
 html,
@@ -27,27 +27,40 @@ html {
 
 .font-display {
   font-family: var(--font-display);
-  letter-spacing: 0;
+  font-optical-sizing: auto;
+  letter-spacing: -0.02em;
 }
 .font-body {
   font-family: var(--font-body);
 }
 .font-mono {
   font-family: var(--font-mono);
+  letter-spacing: 0;
 }
 
-/* Pill chip */
-.chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+/* Tiny caps label */
+.eyebrow {
   font-family: var(--font-mono);
   font-size: 11px;
-  letter-spacing: 0.02em;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: #f4f4f5;
-  color: #0f1115;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+/* Hairline rule */
+.hairline {
+  height: 1px;
+  width: 100%;
+  background: #0f1115;
+  opacity: 0.08;
+}
+
+/* Index number, decorative */
+.index-num {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: #6b7280;
 }
 
 .interactive-focus {
@@ -55,19 +68,39 @@ html {
 }
 .interactive-focus:focus-visible,
 .interactive-focus:focus-within {
-  outline: 3px solid rgba(30, 58, 138, 0.35);
-  outline-offset: 3px;
+  outline: 2px solid #0f1115;
+  outline-offset: 2px;
 }
 
-/* Soft card hover */
+/* Card with a subtle lift, hairline border, no rounded-blob aesthetic */
 .card-hover {
-  transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
+  transition: transform 180ms ease, border-color 180ms ease;
 }
 .card-hover:hover,
 .card-hover:focus-within {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(15, 17, 21, 0.06), 0 12px 28px rgba(15, 17, 21, 0.08);
-  border-color: #d4d4d8;
+  transform: translateY(-1px);
+  border-color: #0f1115;
+}
+
+/* Underlined tab */
+.tab {
+  position: relative;
+  padding: 10px 2px;
+  color: #6b7280;
+  font-weight: 500;
+  font-size: 14px;
+}
+.tab[aria-selected="true"] {
+  color: #0f1115;
+}
+.tab[aria-selected="true"]::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: #0f1115;
 }
 
 @media (prefers-reduced-motion: reduce) {

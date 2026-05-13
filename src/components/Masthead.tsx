@@ -1,61 +1,54 @@
+import Link from "next/link";
+
 const NAV_LINKS = [
-  { href: "#events", label: "Events" },
-  { href: "#sources", label: "Sources" },
-  { href: "#about", label: "About" },
+  { href: "/#features", label: "Features", internal: true },
+  { href: "/events", label: "Events", internal: true },
+  { href: "/#about", label: "About", internal: true },
 ];
 
 export function Masthead() {
   return (
-    <header className="sticky top-0 z-30 bg-canvas/85 backdrop-blur border-b border-line">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
-        <a href="/" className="interactive-focus flex min-h-11 items-center gap-2.5 rounded-lg">
-          <span
-            aria-hidden
-            className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-highlander text-white font-display font-bold"
-          >
-            H
+    <header className="sticky top-0 z-30 border-b border-ink/10 bg-canvas/95 backdrop-blur">
+      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-6 px-4 sm:px-6">
+        <Link href="/" className="interactive-focus flex items-baseline gap-2.5">
+          <span className="font-display text-[22px] font-semibold tracking-[-0.04em] leading-none text-ink">
+            highlander<span className="text-muted">/</span>hub
           </span>
-          <span className="font-display text-lg font-semibold">
-            Highlander Hub
+          <span className="hidden font-mono text-[10px] uppercase tracking-[0.18em] text-muted sm:inline">
+            UCR · 92521
           </span>
-        </a>
+        </Link>
 
-        <nav className="hidden md:flex items-center gap-7 text-sm text-muted">
+        <nav
+          aria-label="Sections"
+          className="hidden items-center gap-7 text-sm md:flex"
+        >
           {NAV_LINKS.map((link) => (
-            <a
+            <Link
               key={link.href}
               href={link.href}
-              className="interactive-focus inline-flex min-h-11 items-center rounded-lg transition-colors hover:text-ink"
+              className="interactive-focus text-muted transition-colors hover:text-ink"
             >
               {link.label}
-            </a>
+            </Link>
           ))}
         </nav>
 
-        <a
-          href="#events"
-          className="interactive-focus inline-flex min-h-11 items-center gap-1.5 rounded-full bg-ink px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-highlander"
+        <nav
+          aria-label="Mobile navigation"
+          className="flex items-center gap-4 text-sm md:hidden"
         >
-          Browse events
-          <span aria-hidden>→</span>
-        </a>
-      </div>
-      <nav
-        aria-label="Mobile section navigation"
-        className="md:hidden border-t border-line"
-      >
-        <div className="mx-auto flex max-w-7xl items-center gap-2 overflow-x-auto px-4 py-2 sm:px-6">
           {NAV_LINKS.map((link) => (
-            <a
+            <Link
               key={link.href}
               href={link.href}
-              className="interactive-focus inline-flex min-h-11 shrink-0 items-center rounded-full border border-line px-4 text-sm font-medium text-ink transition-colors hover:border-highlander hover:text-highlander"
+              className="interactive-focus text-muted hover:text-ink"
             >
               {link.label}
-            </a>
+            </Link>
           ))}
-        </div>
-      </nav>
+        </nav>
+      </div>
     </header>
   );
 }

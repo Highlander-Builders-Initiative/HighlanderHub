@@ -73,7 +73,7 @@ function looksLikeEvent(s: RawStory): boolean {
 
 function toEvent(s: RawStory, generatedAt: string): CampusEvent {
   const host = s.account_label ?? `@${s.handle}`;
-  const title = s.caption?.split("\n")[0]?.trim() || `${host} — story`;
+  const title = s.caption?.split("\n")[0]?.trim() || `${host} story`;
   return {
     id: `ig_story_${s.id}`,
     title: title.slice(0, 140),

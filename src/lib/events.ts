@@ -4,7 +4,7 @@ import { getInstagramEvents } from "@/lib/scrapers/instagram";
 
 /**
  * Fetches events from all wired-up sources, merges, dedupes by id, sorts.
- * Each source is independent — a failure in one shouldn't kill the page.
+ * Each source is independent: a failure in one shouldn't kill the page.
  * Add new sources by following the instagram.ts pattern.
  */
 export async function getEvents(): Promise<CampusEvent[]> {
