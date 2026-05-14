@@ -175,6 +175,32 @@ class ExtractStoriesTests(unittest.TestCase):
         self.assertEqual("2026-05-16T02:00:00+00:00", row["starts_at"])
         self.assertEqual("2026-05-16T04:00:00+00:00", row["ends_at"])
 
+    def test_event_row_drops_invalid_optional_ends_at(self) -> None:
+        raw = {
+            "id": "3894795737410658770",
+            "handle": "cyber_ucr",
+        }
+        cached = {
+            "status": "ok",
+            "result": {
+                "is_event": True,
+                "title": "Security Night Workshop",
+                "starts_at": "2026-05-15T19:00:00-07:00",
+                "ends_at": "May 15 9pm",
+            },
+        }
+
+        row = self.extract_stories._to_event_row(
+            raw,
+            cached,
+            {"label": "UCR Cybersecurity Club", "category": "club"},
+            "2026-05-14T12:00:00+00:00",
+        )
+
+        self.assertIsNotNone(row)
+        assert row is not None
+        self.assertIsNone(row["ends_at"])
+
     def test_bool_or_default_parses_common_llm_boolean_forms(self) -> None:
         parse = self.extract_stories._bool_or_default
 

@@ -172,8 +172,9 @@ def _build_gemini_prompt(
         "Extract a UC Riverside campus event from this Instagram story flyer. "
         "Return JSON only. If the flyer is not advertising a specific event, "
         "set is_event to false and keep title and starts_at null. Infer the "
-        "year from posted_at when a date omits the year. Prefer exact text "
-        "from OCR over guessing.\n\n"
+        "year from posted_at when a date omits the year. Return starts_at and "
+        "ends_at as ISO-8601 timestamps with timezone offsets. Prefer exact "
+        "text from OCR over guessing.\n\n"
         f"{json.dumps(context, indent=2, sort_keys=True)}"
     )
 
@@ -329,6 +330,26 @@ def _bool_or_default(value: Any, default: bool) -> bool:
     return default
 
 
+def _normalize_timestamptz(value: Any) -> str | None:
+    if not isinstance(value, str):
+        return None
+
+    text = value.strip()
+    if not text:
+        return None
+    if text.endswith("Z"):
+        text = f"{text[:-1]}+00:00"
+
+    try:
+        parsed = datetime.fromisoformat(text)
+    except ValueError:
+        return None
+
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        return None
+    return parsed.astimezone(timezone.utc).isoformat()
+
+
 def _to_event_row(
     raw: dict[str, Any],
     cached: dict[str, Any],
@@ -342,9 +363,10 @@ def _to_event_row(
         return None
 
     title = str(llm.get("title") or "").strip()
-    starts_at = str(llm.get("starts_at") or "").strip()
+    starts_at = _normalize_timestamptz(llm.get("starts_at"))
     if not title or not starts_at:
         return None
+    ends_at = _normalize_timestamptz(llm.get("ends_at"))
 
     handle = str(raw.get("handle") or "")
     story_id = str(raw.get("id") or "")
@@ -355,7 +377,7 @@ def _to_event_row(
         "title": title[:200],
         "description": str(llm.get("description") or ""),
         "starts_at": starts_at,
-        "ends_at": llm.get("ends_at") or None,
+        "ends_at": ends_at,
         "location": str(llm.get("location") or "").strip() or "UC Riverside",
         "host": account_meta.get("label") or handle,
         "host_handle": handle,
