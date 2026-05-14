@@ -314,7 +314,19 @@ def _bool_or_default(value: Any, default: bool) -> bool:
         return value
     if value is None:
         return default
-    return bool(value)
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"true", "1", "yes", "y"}:
+            return True
+        if normalized in {"false", "0", "no", "n"}:
+            return False
+        return default
+    if isinstance(value, int):
+        if value == 1:
+            return True
+        if value == 0:
+            return False
+    return default
 
 
 def _to_event_row(

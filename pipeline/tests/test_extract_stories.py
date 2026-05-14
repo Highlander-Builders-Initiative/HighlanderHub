@@ -125,6 +125,67 @@ class ExtractStoriesTests(unittest.TestCase):
         self.assertEqual(raw["story_cta_url"], row["rsvp_url"])
         self.assertTrue(row["rsvp_required"])
 
+    def test_event_row_rejects_non_iso_starts_at(self) -> None:
+        raw = {
+            "id": "3894795737410658768",
+            "handle": "cyber_ucr",
+        }
+        cached = {
+            "status": "ok",
+            "result": {
+                "is_event": True,
+                "title": "Security Night Workshop",
+                "starts_at": "May 15 7pm",
+            },
+        }
+
+        row = self.extract_stories._to_event_row(
+            raw,
+            cached,
+            {"label": "UCR Cybersecurity Club", "category": "club"},
+            "2026-05-14T12:00:00+00:00",
+        )
+
+        self.assertIsNone(row)
+
+    def test_event_row_normalizes_valid_llm_timestamps_to_utc(self) -> None:
+        raw = {
+            "id": "3894795737410658769",
+            "handle": "cyber_ucr",
+        }
+        cached = {
+            "status": "ok",
+            "result": {
+                "is_event": True,
+                "title": "Security Night Workshop",
+                "starts_at": "2026-05-15T19:00:00-07:00",
+                "ends_at": "2026-05-15T21:00:00-07:00",
+            },
+        }
+
+        row = self.extract_stories._to_event_row(
+            raw,
+            cached,
+            {"label": "UCR Cybersecurity Club", "category": "club"},
+            "2026-05-14T12:00:00+00:00",
+        )
+
+        self.assertIsNotNone(row)
+        assert row is not None
+        self.assertEqual("2026-05-16T02:00:00+00:00", row["starts_at"])
+        self.assertEqual("2026-05-16T04:00:00+00:00", row["ends_at"])
+
+    def test_bool_or_default_parses_common_llm_boolean_forms(self) -> None:
+        parse = self.extract_stories._bool_or_default
+
+        self.assertFalse(parse("false", True))
+        self.assertTrue(parse("TRUE", False))
+        self.assertFalse(parse("0", True))
+        self.assertTrue(parse(1, False))
+        self.assertFalse(parse(0, True))
+        self.assertTrue(parse("not a boolean", True))
+        self.assertFalse(parse("not a boolean", False))
+
 
 if __name__ == "__main__":
     unittest.main()
