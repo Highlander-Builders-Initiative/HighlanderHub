@@ -1,6 +1,8 @@
 {
   "accounts": [
     { "handle": "ucrvsa", "label": "UCR VSA", "category": "club" },
-    { "handle": "cyber_ucr", "label": "UCR Cybersecurity Club", "category": "club" }
+    { "handle": "cyber_ucr", "label": "Cyber @ UCR", "category": "club" },
+    { "handle": "acm_ucr", "label": "ACM @ UCR", "category": "club" },
+    { "handle": "hbi.ucr", "label": "HBI @ UCR", "category": "club" }
   ]
 }

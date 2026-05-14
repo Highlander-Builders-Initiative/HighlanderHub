@@ -1,4 +1,5 @@
 data/raw/
+data/extracted/
 output/
 .instaloader-session*
 session-*
