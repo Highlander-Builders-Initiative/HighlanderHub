@@ -10,6 +10,7 @@ from __future__ import annotations
 import logging
 import sys
 
+import extract_stories
 import normalize
 import normalize_events
 import scrape
@@ -36,7 +37,8 @@ def main() -> None:
     ok = True
     ok &= _safe("instagram.scrape", scrape.main)
     ok &= _safe("ucr_events.scrape", ucr_events.main)
-    # Normalize always runs — uses whatever's on disk.
+    # Extraction and normalization always run using whatever is on disk.
+    _safe("instagram.extract", extract_stories.main)
     _safe("instagram.normalize", normalize.main)
     _safe("ucr_events.normalize", normalize_events.main)
     if not ok:
