@@ -64,3 +64,18 @@ export async function getEvents(): Promise<CampusEvent[]> {
   }
   return (data as EventRow[]).map(toCampusEvent);
 }
+
+export async function getEventById(id: string): Promise<CampusEvent | null> {
+  const { data, error } = await supabase
+    .from("events")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) {
+    console.error("getEventById failed:", error.message);
+    return null;
+  }
+  if (!data) return null;
+  return toCampusEvent(data as EventRow);
+}

@@ -15,21 +15,27 @@ test("event filters expose accessible state and recovery actions", () => {
   assert.doesNotMatch(source, /⌕/);
 });
 
-test("event cards support visual scanning and useful actions", () => {
+test("event cards link to a detail page and stay accessible", () => {
   const source = read("src/components/EventCard.tsx");
 
-  assert.match(source, /event\.imageUrl/);
-  assert.match(source, /Add to calendar/);
-  assert.match(source, /Share/);
+  assert.match(source, /href=\{`\/events\/\$\{event\.id\}`\}/);
   assert.match(source, /aria-label=/);
+});
+
+test("event detail page exposes RSVP / calendar / share actions", () => {
+  const source = read("src/app/events/[id]/page.tsx");
+
+  assert.match(source, /Add to calendar|aria-label="Add to calendar"/);
+  assert.match(source, /Share|aria-label="Share"/);
+  assert.match(source, /RSVP|View source/);
 });
 
 test("masthead keeps navigation reachable on mobile", () => {
   const source = read("src/components/Masthead.tsx");
 
   assert.match(source, /md:hidden/);
-  assert.match(source, /"#sources"/);
-  assert.match(source, /"#about"/);
+  assert.match(source, /\/events/);
+  assert.match(source, /"\/#about"/);
 });
 
 test("motion and focus behavior have accessible fallbacks", () => {

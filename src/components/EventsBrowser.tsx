@@ -71,13 +71,16 @@ export function EventsBrowser({ events }: { events: CampusEvent[] }) {
   return (
     <section id="events" className="mx-auto max-w-7xl px-4 pb-20 sm:px-6">
       {/* Filter bar */}
-      <div className="sticky top-14 z-20 -mx-4 mb-10 border-b border-ink/10 bg-canvas/95 px-4 backdrop-blur sm:-mx-6 sm:px-6">
-        {/* Row 1: view tabs */}
-        <div className="flex items-end justify-end gap-4 pt-4">
+      <div
+        className="sticky z-20 -mx-4 mb-8 border-b border-ink/10 bg-canvas/95 px-4 backdrop-blur transition-[top] duration-200 ease-out sm:-mx-6 sm:px-6"
+        style={{ top: "var(--masthead-h, 56px)" }}
+      >
+        {/* Row 1: view toggle + search */}
+        <div className="flex items-center gap-3 pt-3 sm:pt-4">
           <div
             role="tablist"
             aria-label="Choose view"
-            className="flex items-end gap-5"
+            className="flex shrink-0 items-end gap-4"
           >
             <button
               type="button"
@@ -98,36 +101,7 @@ export function EventsBrowser({ events }: { events: CampusEvent[] }) {
               Calendar
             </button>
           </div>
-        </div>
-
-        {/* Row 2: category chips */}
-        <div
-          className="flex flex-wrap items-center gap-2 py-4"
-          aria-label="Filter events by category"
-        >
-          {CATEGORIES.map((c) => {
-            const active = category === c.value;
-            return (
-              <button
-                type="button"
-                key={c.value}
-                onClick={() => setCategory(c.value)}
-                aria-pressed={active}
-                className={`interactive-focus inline-flex min-h-9 items-center border px-3 py-1.5 text-sm transition-colors ${
-                  active
-                    ? "border-ink bg-ink text-white"
-                    : "border-ink/15 bg-canvas text-ink hover:border-ink"
-                }`}
-              >
-                {c.label}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Row 3: search + toggles */}
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-ink/10 py-4">
-          <div className="relative flex-1 min-w-[220px]">
+          <div className="relative ml-auto min-w-0 flex-1 sm:flex-none sm:w-64">
             <label htmlFor="event-search" className="sr-only">
               Search events
             </label>
@@ -149,28 +123,54 @@ export function EventsBrowser({ events }: { events: CampusEvent[] }) {
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search events, hosts, tags"
+              placeholder="Search"
               aria-describedby="event-filter-summary"
-              className="interactive-focus w-full border-b border-ink/15 bg-transparent py-2 pl-7 text-sm placeholder:text-muted focus:border-ink"
+              className="interactive-focus w-full border-b border-ink/15 bg-transparent py-1.5 pl-7 text-sm placeholder:text-muted focus:border-ink"
             />
           </div>
-          <label className="interactive-focus inline-flex cursor-pointer select-none items-center gap-2 text-sm text-ink">
+        </div>
+
+        {/* Row 2: category chips */}
+        <div
+          className="flex flex-wrap items-center gap-1.5 py-3"
+          aria-label="Filter events by category"
+        >
+          {CATEGORIES.map((c) => {
+            const active = category === c.value;
+            return (
+              <button
+                type="button"
+                key={c.value}
+                onClick={() => setCategory(c.value)}
+                aria-pressed={active}
+                className={`interactive-focus inline-flex min-h-8 items-center border px-2.5 py-1 text-[13px] transition-colors ${
+                  active
+                    ? "border-ink bg-ink text-white"
+                    : "border-ink/15 bg-canvas text-ink hover:border-ink"
+                }`}
+              >
+                {c.label}
+              </button>
+            );
+          })}
+          <label className="interactive-focus ml-1 inline-flex cursor-pointer select-none items-center gap-1.5 text-[13px] text-ink">
             <input
               type="checkbox"
               checked={freeFoodOnly}
               onChange={(e) => setFreeFoodOnly(e.target.checked)}
-              className="h-4 w-4 accent-ink"
+              className="h-3.5 w-3.5 accent-ink"
             />
-            Free food only
+            Free food
           </label>
-          <button
-            type="button"
-            onClick={clearFilters}
-            disabled={!hasActiveFilters}
-            className="interactive-focus text-sm font-medium text-ink underline-offset-4 hover:underline disabled:cursor-not-allowed disabled:text-muted disabled:no-underline"
-          >
-            Clear filters
-          </button>
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="interactive-focus ml-auto text-[13px] font-medium text-ink underline-offset-4 hover:underline"
+            >
+              Clear
+            </button>
+          )}
         </div>
       </div>
 
@@ -217,7 +217,7 @@ export function EventsBrowser({ events }: { events: CampusEvent[] }) {
                     {dayEvents.length === 1 ? "event" : "events"}
                   </span>
                 </div>
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-3 md:grid-cols-2 md:gap-4 lg:grid-cols-3">
                   {dayEvents.map((ev) => (
                     <EventCard key={ev.id} event={ev} />
                   ))}

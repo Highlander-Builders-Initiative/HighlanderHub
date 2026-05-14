@@ -45,7 +45,7 @@ export default async function HomePage() {
               <span className="text-muted">Indexed daily</span>
             </div>
 
-            <h1 className="mt-6 font-display text-[44px] font-semibold leading-[0.95] tracking-[-0.035em] text-ink sm:text-[60px] md:text-[72px]">
+            <h1 className="mt-6 font-display text-[36px] font-semibold leading-[1] tracking-[-0.035em] text-ink break-words sm:text-[60px] md:text-[72px]">
               Every UCR event,
               <span className="block text-muted">One App.</span>
             </h1>
