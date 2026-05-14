@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Masthead } from "@/components/Masthead";
-import { Footer } from "@/components/Footer";
-import { CategoryBadge } from "@/components/CategoryBadge";
+import { Masthead } from "@/components/layout/Masthead";
+import { Footer } from "@/components/layout/Footer";
+import { CategoryBadge } from "@/components/ui/CategoryBadge";
 import { getEventById } from "@/lib/events";
 import { formatDay, formatTimeRange, relativeDay } from "@/lib/dates";
 import { calendarHref, shareHref } from "@/lib/event-actions";

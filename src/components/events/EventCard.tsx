@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { CampusEvent } from "@/types/event";
 import { formatTime, relativeDay } from "@/lib/dates";
-import { CategoryBadge } from "./CategoryBadge";
+import { CategoryBadge } from "../ui/CategoryBadge";
 
 const RAIL_COLORS: Record<CampusEvent["category"], string> = {
   club: "bg-highlander",

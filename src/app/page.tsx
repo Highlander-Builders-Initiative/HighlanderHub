@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { Masthead } from "@/components/Masthead";
-import { Footer } from "@/components/Footer";
-import { HeroMockup } from "@/components/HeroMockup";
-import { Features, FinalCTA } from "@/components/LandingSections";
+import { Masthead } from "@/components/layout/Masthead";
+import { Footer } from "@/components/layout/Footer";
+import { HeroMockup } from "@/components/home/HeroMockup";
+import { Features, FinalCTA } from "@/components/home/LandingSections";
 import { getEvents } from "@/lib/events";
 
 export default async function HomePage() {

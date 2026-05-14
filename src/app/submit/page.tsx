@@ -1,4 +1,4 @@
-import SubmitForm from "@/components/SubmitForm";
+import SubmitForm from "@/components/forms/SubmitForm";
 
 export const metadata = {
   title: "Submit an event — Highlander Daily",

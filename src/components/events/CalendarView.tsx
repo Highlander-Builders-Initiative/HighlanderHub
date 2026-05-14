@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { CampusEvent } from "@/types/event";
-import { CATEGORY_STYLES } from "./CategoryBadge";
+import { CATEGORY_STYLES } from "../ui/CategoryBadge";
 import { EventCard } from "./EventCard";
 import { formatDay, pacificDayKey } from "@/lib/dates";
 

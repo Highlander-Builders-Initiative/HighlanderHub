@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import { Masthead } from "@/components/Masthead";
-import { EventsBrowser } from "@/components/EventsBrowser";
-import { Footer } from "@/components/Footer";
+import { Masthead } from "@/components/layout/Masthead";
+import { EventsBrowser } from "@/components/events/EventsBrowser";
+import { Footer } from "@/components/layout/Footer";
 import { getEvents } from "@/lib/events";
 
 export const metadata: Metadata = {
