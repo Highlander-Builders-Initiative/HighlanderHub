@@ -1,0 +1,71 @@
+name: Scrape sources
+
+# Runs pipeline/run.py every 6h: Instagram stories + UCR Localist events,
+# extraction (Google Vision OCR + Gemini), and Supabase upserts.
+# Can also be triggered manually from the Actions tab.
+#
+# Required repo secrets (Settings -> Secrets and variables -> Actions):
+#   SUPABASE_URL           - https://qyxlojftdtjasxhzyqil.supabase.co
+#   SUPABASE_SERVICE_KEY   - service_role JWT (bypasses RLS)
+#   IG_USERNAME            - dedicated scraper account handle
+#   IG_SESSION_FILE_B64    - base64 of an instaloader session file
+#                            (`instaloader -l <user>` then
+#                             `base64 -i ~/.config/instaloader/session-<user>`)
+#   GOOGLE_VISION_API_KEY  - OCR
+#   GEMINI_API_KEY         - story->event extraction
+#
+# When the IG session expires, the Instagram step fails with
+# LoginRequiredException but UCR scraping still completes (run.py isolates
+# per-source failures). Refresh the session locally and update
+# IG_SESSION_FILE_B64.
+
+on:
+  schedule:
+    # Every 6h UTC. GitHub cron is best-effort; expect 5-15 min delays.
+    - cron: "0 */6 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pipeline/requirements.txt
+
+      # Persists data/raw (durable IG archive — stories expire from IG in 24h)
+      # and data/extracted (per-story Gemini cache) between runs.
+      - name: Restore pipeline data cache
+        uses: actions/cache@v4
+        with:
+          path: pipeline/data
+          key: pipeline-data-${{ github.run_id }}
+          restore-keys: |
+            pipeline-data-
+
+      - name: Install pipeline dependencies
+        working-directory: pipeline
+        run: pip install -r requirements.txt
+
+      - name: Decode IG session file
+        env:
+          IG_SESSION_FILE_B64: ${{ secrets.IG_SESSION_FILE_B64 }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/ig"
+          printf '%s' "$IG_SESSION_FILE_B64" | base64 -d > "$RUNNER_TEMP/ig/session"
+          echo "IG_SESSION_FILE=$RUNNER_TEMP/ig/session" >> "$GITHUB_ENV"
+
+      - name: Run pipeline
+        working-directory: pipeline
+        env:
+          IG_USERNAME: ${{ secrets.IG_USERNAME }}
+          GOOGLE_VISION_API_KEY: ${{ secrets.GOOGLE_VISION_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: python run.py
