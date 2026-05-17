@@ -369,11 +369,15 @@ def _to_event_row(
     ends_at = _normalize_timestamptz(llm.get("ends_at"))
 
     handle = str(raw.get("handle") or "")
-    story_id = str(raw.get("id") or "")
     rsvp_url = llm.get("rsvp_url") or raw.get("story_cta_url")
 
+    # Derive the event ID from (handle, starts_at) so multiple stories about
+    # the same event (announcement flyer + "happening now" reminder) collapse
+    # into one row via upsert instead of becoming separate events.
+    start_slug = datetime.fromisoformat(starts_at).strftime("%Y%m%dT%H%MZ")
+
     return {
-        "id": f"ig_{handle}_{story_id}",
+        "id": f"ig_{handle}_{start_slug}",
         "title": title[:200],
         "description": str(llm.get("description") or ""),
         "starts_at": starts_at,
@@ -441,7 +445,16 @@ def main() -> None:
 
     scraped_at = _utc_now()
     rows = _collect_event_rows(meta_by_handle, scraped_at)
-    by_id = {row["id"]: row for row in rows}
+    # Same event often appears in several stories; keep the most informative
+    # row per id (the original flyer usually has a longer description than
+    # the follow-up reminder).
+    by_id: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        existing = by_id.get(row["id"])
+        if existing is None or len(row.get("description") or "") > len(
+            existing.get("description") or ""
+        ):
+            by_id[row["id"]] = row
     written = _upsert_events(list(by_id.values()))
     log.info("Wrote %d events to Supabase", written)
 
