@@ -143,7 +143,7 @@ export function EventsBrowser({ events }: { events: CampusEvent[] }) {
                 key={c.value}
                 onClick={() => setCategory(c.value)}
                 aria-pressed={active}
-                className={`interactive-focus inline-flex min-h-8 items-center border px-2.5 py-1 text-[13px] transition-colors ${
+                className={`interactive-focus inline-flex min-h-8 items-center rounded-full border px-3 py-1 text-[13px] transition-colors ${
                   active
                     ? "border-ink bg-ink text-white"
                     : "border-ink/15 bg-canvas text-ink hover:border-ink"
@@ -189,7 +189,7 @@ export function EventsBrowser({ events }: { events: CampusEvent[] }) {
       ) : (
         <>
           {dayKeys.length === 0 && (
-            <div className="border border-dashed border-ink/15 px-6 py-20 text-center">
+            <div className="rounded-xl border border-dashed border-ink/15 px-6 py-20 text-center">
               <p className="font-display text-xl text-ink mb-1">No matches.</p>
               <p className="text-sm text-muted">
                 Try a broader filter or clear your search.
@@ -197,7 +197,7 @@ export function EventsBrowser({ events }: { events: CampusEvent[] }) {
               <button
                 type="button"
                 onClick={clearFilters}
-                className="interactive-focus mt-5 inline-flex min-h-11 items-center bg-ink px-5 py-2 text-sm font-medium text-white transition-opacity hover:opacity-85"
+                className="interactive-focus mt-5 inline-flex min-h-11 items-center rounded-lg bg-ink px-5 py-2 text-sm font-medium text-white transition-opacity hover:opacity-85"
               >
                 Clear filters
               </button>

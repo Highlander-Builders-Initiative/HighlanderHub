@@ -21,7 +21,7 @@ export function FlyerMosaic({ events }: { events: CampusEvent[] }) {
 
   if (ordered.length === 0) {
     return (
-      <div className="flex aspect-square items-center justify-center border border-dashed border-ink/15 bg-canvas p-8 text-sm text-muted">
+      <div className="flex aspect-square items-center justify-center rounded-xl border border-dashed border-ink/15 bg-canvas p-8 text-sm text-muted">
         Nothing scheduled in the next few days. Check back soon.
       </div>
     );

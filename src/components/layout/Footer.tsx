@@ -47,7 +47,7 @@ export function Footer() {
                 aria-label={label}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="interactive-focus flex h-11 w-11 items-center justify-center transition-opacity hover:opacity-70"
+                className="interactive-focus flex h-11 w-11 items-center justify-center rounded-full text-ink transition-colors hover:bg-ink/5"
               >
                 <Icon aria-hidden="true" className="h-6 w-6" />
               </a>

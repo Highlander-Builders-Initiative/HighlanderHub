@@ -31,16 +31,6 @@ export default async function EventsPage() {
       <section className="border-b border-ink/10">
         <div className="mx-auto flex max-w-7xl flex-col gap-5 px-4 pt-6 pb-5 sm:px-6 md:flex-row md:items-end md:justify-between md:pt-14 md:pb-8">
           <div>
-            <div className="mb-2 inline-flex items-center gap-2 border border-ink/15 bg-canvas px-2.5 py-1 text-[11px] text-ink md:mb-3 md:px-3 md:py-1.5 md:text-xs">
-              <span className="relative inline-flex h-2 w-2" aria-hidden="true">
-                <span className="absolute inline-flex h-full w-full rounded-full bg-leaf opacity-60 animate-ping" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-leaf" />
-              </span>
-              <span>
-                <span className="font-medium">{upcomingThisWeek}</span>
-                <span className="text-muted"> events this week</span>
-              </span>
-            </div>
             <h1 className="font-display text-3xl font-semibold leading-[1.05] tracking-[-0.03em] text-ink md:text-5xl">
               Events
             </h1>

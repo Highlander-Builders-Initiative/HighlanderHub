@@ -24,7 +24,7 @@ const FEATURE_VISUALS = {
         ].map((c) => (
           <span
             key={c.l}
-            className={`inline-flex items-center border px-2.5 py-1 text-xs ${
+            className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs ${
               c.on
                 ? "border-ink bg-ink text-white"
                 : "border-ink/15 bg-canvas text-ink"
@@ -42,7 +42,7 @@ const FEATURE_VISUALS = {
 
   food: (
     <div className="flex h-full items-center p-5">
-      <div className="flex flex-1 flex-col gap-1 border border-ink/15 bg-canvas p-3">
+      <div className="flex flex-1 flex-col gap-1 rounded-lg border border-ink/15 bg-canvas p-3">
         <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted">
           12:30 PM today
         </span>
@@ -50,10 +50,10 @@ const FEATURE_VISUALS = {
           Free Bagels at the HUB
         </span>
         <div className="mt-1 flex gap-1.5">
-          <span className="bg-gold/20 px-1.5 py-0.5 text-[10px] font-medium text-[#8a6300]">
+          <span className="rounded-full bg-gold/20 px-2 py-0.5 text-[10px] font-medium text-[#8a6300]">
             Free food
           </span>
-          <span className="bg-leaf/10 px-1.5 py-0.5 text-[10px] font-medium text-[#1f6f4e]">
+          <span className="rounded-full bg-leaf/10 px-2 py-0.5 text-[10px] font-medium text-[#1f6f4e]">
             Free
           </span>
         </div>
@@ -139,7 +139,7 @@ export function Features() {
 
       <div className="grid gap-6 md:grid-cols-3">
         {FEATURES.map((f, i) => (
-          <Reveal key={f.number} delay={i * 120} as="article" className="flex flex-col border border-ink/15 bg-canvas">
+          <Reveal key={f.number} delay={i * 120} as="article" className="flex flex-col overflow-hidden rounded-xl border border-ink/15 bg-canvas">
             <div className="h-44 border-b border-ink/10 bg-canvas">
               {f.visual}
             </div>
@@ -174,7 +174,7 @@ export function FinalCTA() {
         <Reveal delay={120} className="flex flex-wrap items-center gap-3">
           <Link
             href="/events"
-            className="interactive-focus inline-flex min-h-12 items-center bg-ink px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-85"
+            className="interactive-focus inline-flex min-h-12 items-center rounded-lg bg-ink px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-85"
           >
             Browse events
           </Link>

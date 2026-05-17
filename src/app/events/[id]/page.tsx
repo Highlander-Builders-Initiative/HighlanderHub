@@ -55,7 +55,7 @@ export default async function EventDetailPage({
           <span aria-hidden>←</span> All events
         </Link>
 
-        <article className="mt-6 flex">
+        <article className="mt-6 flex overflow-hidden rounded-xl">
           <span
             aria-hidden
             className={`w-1 shrink-0 ${CATEGORY_RAIL[event.category]}`}
@@ -65,12 +65,12 @@ export default async function EventDetailPage({
               <div className="flex flex-wrap items-center gap-2">
                 <CategoryBadge category={event.category} />
                 {event.isFree && (
-                  <span className="inline-flex items-center bg-leaf/10 px-2 py-0.5 text-[11px] font-medium text-[#1f6f4e]">
+                  <span className="inline-flex items-center rounded-full bg-leaf/10 px-2.5 py-0.5 text-[11px] font-medium text-[#1f6f4e]">
                     Free
                   </span>
                 )}
                 {event.rsvpRequired && (
-                  <span className="inline-flex items-center border border-ink/15 bg-canvas px-2 py-0.5 text-[11px] font-medium text-muted">
+                  <span className="inline-flex items-center rounded-full border border-ink/15 bg-canvas px-2.5 py-0.5 text-[11px] font-medium text-muted">
                     RSVP req.
                   </span>
                 )}
@@ -139,7 +139,7 @@ export default async function EventDetailPage({
                     href={primaryUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="interactive-focus inline-flex min-h-12 items-center gap-2 bg-ink px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-85"
+                    className="interactive-focus inline-flex min-h-12 items-center gap-2 rounded-lg bg-ink px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-85"
                   >
                     {event.rsvpUrl ? "RSVP" : "View source"}
                     <span aria-hidden>↗</span>
@@ -173,7 +173,7 @@ export default async function EventDetailPage({
               href={primaryUrl}
               target="_blank"
               rel="noreferrer"
-              className="interactive-focus flex-1 inline-flex min-h-12 items-center justify-center gap-2 bg-ink px-4 py-3 text-sm font-medium text-white"
+              className="interactive-focus flex-1 inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-ink px-4 py-3 text-sm font-medium text-white"
             >
               {event.rsvpUrl ? "RSVP" : "View source"}
               <span aria-hidden>↗</span>
@@ -184,7 +184,7 @@ export default async function EventDetailPage({
             target="_blank"
             rel="noreferrer"
             aria-label="Add to calendar"
-            className="interactive-focus inline-flex min-h-12 min-w-12 items-center justify-center border border-ink/15 text-ink"
+            className="interactive-focus inline-flex min-h-12 min-w-12 items-center justify-center rounded-lg border border-ink/15 text-ink"
           >
             <svg
               aria-hidden
@@ -203,7 +203,7 @@ export default async function EventDetailPage({
           <a
             href={shareHref(event)}
             aria-label="Share"
-            className="interactive-focus inline-flex min-h-12 min-w-12 items-center justify-center border border-ink/15 text-ink"
+            className="interactive-focus inline-flex min-h-12 min-w-12 items-center justify-center rounded-lg border border-ink/15 text-ink"
           >
             <svg
               aria-hidden

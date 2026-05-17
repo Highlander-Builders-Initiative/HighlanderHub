@@ -9,7 +9,7 @@ export function EventCard({ event }: { event: CampusEvent }) {
     <Link
       href={`/events/${event.id}`}
       aria-label={`${event.title} — ${relativeDay(event.startsAt)} at ${formatTime(event.startsAt)}`}
-      className="card-hover group relative flex h-full w-full min-w-0"
+      className="card-hover group relative flex h-full w-full min-w-0 overflow-hidden rounded-xl"
     >
       <span
         aria-hidden
@@ -33,7 +33,7 @@ export function EventCard({ event }: { event: CampusEvent }) {
             </span>
             <CategoryBadge category={event.category} />
             {event.isFree && (
-              <span className="inline-flex items-center bg-leaf/10 px-1.5 py-0.5 text-[11px] font-medium text-[#1f6f4e]">
+              <span className="inline-flex items-center rounded-full bg-leaf/10 px-2 py-0.5 text-[11px] font-medium text-[#1f6f4e]">
                 Free
               </span>
             )}

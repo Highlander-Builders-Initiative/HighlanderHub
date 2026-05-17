@@ -70,7 +70,7 @@ export function CalendarView({ events }: { events: CampusEvent[] }) {
   return (
     <div className="grid gap-10 lg:grid-cols-[1fr_360px]">
       {/* Calendar */}
-      <div className="border border-ink/15 bg-canvas">
+      <div className="overflow-hidden rounded-xl border border-ink/15 bg-canvas">
         <div className="flex items-baseline justify-between gap-3 border-b border-ink/10 px-5 py-4">
           <h3 className="font-display text-xl font-semibold tracking-[-0.02em] text-ink">
             {monthLabel}
@@ -82,7 +82,7 @@ export function CalendarView({ events }: { events: CampusEvent[] }) {
                 setCursor(new Date(today));
                 setSelectedKey(toKey(today));
               }}
-              className="interactive-focus border border-ink/15 px-3 py-1 text-sm transition-colors hover:border-ink"
+              className="interactive-focus rounded-md border border-ink/15 px-3 py-1 text-sm transition-colors hover:border-ink"
             >
               Today
             </button>
@@ -94,7 +94,7 @@ export function CalendarView({ events }: { events: CampusEvent[] }) {
                 )
               }
               aria-label="Previous month"
-              className="interactive-focus inline-flex h-8 w-8 items-center justify-center border border-ink/15 transition-colors hover:border-ink"
+              className="interactive-focus inline-flex h-8 w-8 items-center justify-center rounded-md border border-ink/15 transition-colors hover:border-ink"
             >
               ‹
             </button>
@@ -106,7 +106,7 @@ export function CalendarView({ events }: { events: CampusEvent[] }) {
                 )
               }
               aria-label="Next month"
-              className="interactive-focus inline-flex h-8 w-8 items-center justify-center border border-ink/15 transition-colors hover:border-ink"
+              className="interactive-focus inline-flex h-8 w-8 items-center justify-center rounded-md border border-ink/15 transition-colors hover:border-ink"
             >
               ›
             </button>
@@ -225,7 +225,7 @@ export function CalendarView({ events }: { events: CampusEvent[] }) {
           </span>
         </div>
         {selectedEvents.length === 0 ? (
-          <div className="border border-dashed border-ink/15 py-12 text-center">
+          <div className="rounded-xl border border-dashed border-ink/15 py-12 text-center">
             <p className="text-sm text-muted">Nothing scheduled.</p>
           </div>
         ) : (

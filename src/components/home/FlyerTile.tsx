@@ -42,7 +42,7 @@ export function FlyerTile({
       href={`/events/${event.id}`}
       aria-label={`${event.title} — ${relativeDay(event.startsAt)}`}
       style={{ animationDelay: `${enterDelayMs}ms` }}
-      className={`card-hover group relative block overflow-hidden border border-ink/15 bg-canvas aspect-[4/5] md:aspect-auto animate-scale-in ${className}`}
+      className={`card-hover group relative block overflow-hidden rounded-xl border border-ink/15 bg-canvas aspect-[4/5] md:aspect-auto animate-scale-in ${className}`}
     >
       {showImage ? (
         <Image
