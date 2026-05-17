@@ -1,102 +1,40 @@
-# The Highlander Daily
+# HighlanderHub
 
 A campus & club events bulletin for UC Riverside and the city of Riverside.
 
 Built with <3 by the builders at HBI.
 
-> ⚠️ **Bare-bones scaffold.** Currently displays placeholder events. The
-> scraping layer (Instagram, Highlander Link, UCR events calendar, club
-> sites) is **not wired up yet** — that's the next step.
+## What it is
 
-## Stack
+One place to find out what's happening on campus this week — club meetings,
+free food, workshops, banquets, concerts, the works. We pull from the sources
+clubs already use, so you don't have to follow forty Instagram accounts to know
+when the next general meeting is.
 
-- **Next.js 14** (App Router, server components by default)
-- **TypeScript**
-- **Tailwind CSS** with custom palette
-- **Fraunces / Instrument Serif / DM Mono** for that editorial newspaper feel
+## Where the events come from
 
-## Getting started
+- **Club Instagram stories** — flyers posted by registered student
+  organizations.
+- **events.ucr.edu** — UCR's official campus events calendar.
 
-```bash
-npm install
-npm run dev
-```
+New sources (highlanderlink.ucr.edu, individual club sites) are on the
+roadmap.
 
-Then open [http://localhost:3000](http://localhost:3000).
+Updates run automatically every six hours, so anything posted in the last
+day usually shows up by the next refresh.
 
-## Project structure
+## Get your club listed
 
-```
-src/
-├── app/
-│   ├── api/events/route.ts    # GET /api/events — stub, returns placeholders
-│   ├── globals.css            # Tailwind + custom CSS (fonts, grain, etc.)
-│   ├── layout.tsx
-│   └── page.tsx               # Home / events bulletin
-├── components/
-│   ├── CategoryBadge.tsx
-│   ├── EventCard.tsx
-│   ├── EventsBrowser.tsx      # Client component — filtering + grouping by day
-│   ├── Footer.tsx
-│   ├── Marquee.tsx
-│   └── Masthead.tsx
-├── data/
-│   └── placeholder-events.ts  # 👈 Sample events shaped like real ones
-├── lib/
-│   ├── dates.ts
-│   └── events.ts              # getEvents() — swap this when scrapers are ready
-└── types/
-    └── event.ts               # CampusEvent interface — the source of truth
-```
+Want your org's events on the bulletin? Open an issue on this repo with the
+club's Instagram handle (and the public events page if you have one), or
+reach out to HBI directly.
 
-## Wiring up real data later
+## Spot something off?
 
-The whole app reads from one function: `getEvents()` in `src/lib/events.ts`.
-Right now it returns the placeholder array. When scrapers are ready, replace
-its body with a `fetch("/api/events")` or a direct DB query.
-
-The UI doesn't need to change — as long as scraper output conforms to the
-`CampusEvent` type in `src/types/event.ts`, it'll render correctly.
-
-### Suggested scraper layout
-
-```
-src/lib/scrapers/
-├── instagram.ts      # Pulls posts from club Instagram accounts
-├── highlander.ts     # Scrapes highlanderlink.ucr.edu
-├── ucr-events.ts     # Scrapes events.ucr.edu
-└── club-sites.ts     # Hits individual club websites
-```
-
-Each returns `Promise<CampusEvent[]>`. A coordinator (cron job, or a
-separate `/api/scrape` route) calls them all and writes to a data store
-(Postgres / Supabase / a JSON file / Redis — your call).
-
-### CampusEvent shape
-
-See `src/types/event.ts`. Every event needs at minimum:
-`id`, `title`, `description`, `startsAt`, `location`, `host`, `category`,
-`source`, `scrapedAt`. Optional fields cover RSVP, images, social handles, etc.
-
-## Design notes
-
-The aesthetic is **sun-bleached newspaper bulletin** — warm bone background,
-ink-black serif headlines (Fraunces), italic Instrument Serif for editorial
-runs, DM Mono for metadata. Subtle paper grain via radial-gradient dots.
-Hover-lift cards with hard shadow on hover.
-
-Tweak everything in `tailwind.config.ts` (palette) and `src/app/globals.css`
-(typography + texture).
-
-## Scripts
-
-| Script | What it does |
-| --- | --- |
-| `npm run dev` | Start the dev server on :3000 |
-| `npm run build` | Production build |
-| `npm run start` | Run the production build |
-| `npm run lint` | ESLint |
+If an event has the wrong date, a broken RSVP link, or shouldn't be there at
+all, open an issue and we'll fix it. We extract event details from flyer
+images with a mix of OCR and an LLM, so the occasional misread happens.
 
 ## License
 
-MIT or whatever you want — it's your project.
+MIT.
