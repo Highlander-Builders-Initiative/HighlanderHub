@@ -1,8 +1,9 @@
+import Image from "next/image";
 import Link from "next/link";
 import { Masthead } from "@/components/layout/Masthead";
 import { Footer } from "@/components/layout/Footer";
 import { Features, FinalCTA } from "@/components/home/LandingSections";
-import { EventCard } from "@/components/events/EventCard";
+import { FlyerMosaic } from "@/components/home/FlyerMosaic";
 import { getEvents } from "@/lib/events";
 
 export default async function HomePage() {
@@ -14,8 +15,6 @@ export default async function HomePage() {
     const t = new Date(e.startsAt).getTime();
     return t >= now && t <= inSevenDays;
   }).length;
-
-  const nextFew = events.slice(0, 4);
 
   return (
     <main className="min-h-screen bg-canvas">
@@ -51,33 +50,37 @@ export default async function HomePage() {
                 Browse events
               </Link>
             </div>
+
+            <div className="mt-12 border-t border-ink/10 pt-6">
+              <a
+                href="https://www.instagram.com/hbi.ucr"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="interactive-focus group inline-flex items-center gap-3"
+              >
+                <Image
+                  src="/logo_icon.png"
+                  alt=""
+                  width={40}
+                  height={40}
+                  aria-hidden
+                  className="h-10 w-10 shrink-0 transition-transform group-hover:-rotate-3"
+                />
+
+                <span className="flex flex-col">
+                  <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted">
+                    Brought to you by
+                  </span>
+                  <span className="font-display text-[15px] font-semibold tracking-[-0.01em] text-ink transition-colors group-hover:text-highlander">
+                    Highlander Builders Initiative
+                  </span>
+                </span>
+              </a>
+            </div>
           </div>
 
           <div className="col-span-12 md:col-span-6">
-            <div className="flex items-baseline justify-between border-b border-ink/10 pb-3">
-              <h2 className="font-display text-base font-semibold tracking-[-0.02em] text-ink">
-                Next up
-              </h2>
-              <Link
-                href="/events"
-                className="interactive-focus text-xs text-muted underline underline-offset-4 decoration-ink/20 transition-colors hover:text-ink hover:decoration-ink"
-              >
-                See all
-              </Link>
-            </div>
-            {nextFew.length === 0 ? (
-              <p className="mt-4 border border-dashed border-ink/15 bg-canvas px-4 py-6 text-sm text-muted">
-                Nothing scheduled in the next few days. Check back soon.
-              </p>
-            ) : (
-              <ul className="flex flex-col gap-3 pt-4">
-                {nextFew.map((event) => (
-                  <li key={event.id} className="min-w-0">
-                    <EventCard event={event} />
-                  </li>
-                ))}
-              </ul>
-            )}
+            <FlyerMosaic events={events} />
           </div>
         </div>
       </section>

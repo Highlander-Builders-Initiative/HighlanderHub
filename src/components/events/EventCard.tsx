@@ -1,18 +1,8 @@
 import Link from "next/link";
 import type { CampusEvent } from "@/types/event";
 import { formatTime, relativeDay } from "@/lib/dates";
+import { CATEGORY_RAIL } from "@/lib/category-colors";
 import { CategoryBadge } from "../ui/CategoryBadge";
-
-const RAIL_COLORS: Record<CampusEvent["category"], string> = {
-  club: "bg-highlander",
-  academic: "bg-leaf",
-  social: "bg-coral",
-  career: "bg-ink",
-  sports: "bg-sky",
-  arts: "bg-coral",
-  community: "bg-leaf",
-  free_food: "bg-gold",
-};
 
 export function EventCard({ event }: { event: CampusEvent }) {
   return (
@@ -23,7 +13,7 @@ export function EventCard({ event }: { event: CampusEvent }) {
     >
       <span
         aria-hidden
-        className={`w-1 shrink-0 ${RAIL_COLORS[event.category]}`}
+        className={`w-1 shrink-0 ${CATEGORY_RAIL[event.category]}`}
       />
       <div className="flex min-w-0 flex-1 items-stretch border border-l-0 border-ink/15 bg-canvas">
         <div className="flex min-w-0 flex-1 flex-col justify-center gap-1 px-4 py-3 sm:px-5 sm:py-4">

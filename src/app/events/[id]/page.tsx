@@ -7,6 +7,7 @@ import { CategoryBadge } from "@/components/ui/CategoryBadge";
 import { getEventById } from "@/lib/events";
 import { formatDay, formatTimeRange, relativeDay } from "@/lib/dates";
 import { calendarHref, shareHref } from "@/lib/event-actions";
+import { CATEGORY_RAIL } from "@/lib/category-colors";
 import type { CampusEvent } from "@/types/event";
 
 const SOURCE_LABELS: Record<CampusEvent["source"], string> = {
@@ -15,17 +16,6 @@ const SOURCE_LABELS: Record<CampusEvent["source"], string> = {
   campus_website: "UCR Events",
   club_website: "Club site",
   manual: "Manual",
-};
-
-const RAIL_COLORS: Record<CampusEvent["category"], string> = {
-  club: "bg-highlander",
-  academic: "bg-leaf",
-  social: "bg-coral",
-  career: "bg-ink",
-  sports: "bg-sky",
-  arts: "bg-coral",
-  community: "bg-leaf",
-  free_food: "bg-gold",
 };
 
 export async function generateMetadata({
@@ -68,7 +58,7 @@ export default async function EventDetailPage({
         <article className="mt-6 flex">
           <span
             aria-hidden
-            className={`w-1 shrink-0 ${RAIL_COLORS[event.category]}`}
+            className={`w-1 shrink-0 ${CATEGORY_RAIL[event.category]}`}
           />
           <div className="flex-1 border border-l-0 border-ink/15 bg-canvas">
             <div className="border-b border-ink/10 px-5 py-4 sm:px-7">
