@@ -103,16 +103,59 @@ def _build_host(raw: dict[str, Any]) -> str:
     return "UC Riverside"
 
 
+def _parse_iso(value: Any) -> datetime | None:
+    if not isinstance(value, str) or not value.strip():
+        return None
+    text = value.strip()
+    if text.endswith("Z"):
+        text = text[:-1] + "+00:00"
+    try:
+        dt = datetime.fromisoformat(text)
+    except ValueError:
+        return None
+    if dt.tzinfo is None:
+        return None
+    return dt.astimezone(timezone.utc)
+
+
+def _pick_instance(instances: Any) -> dict[str, Any] | None:
+    """Next instance that hasn't ended yet, else the latest past one.
+
+    Localist returns every upcoming occurrence of a recurring event in
+    event_instances. Picking [0] always returned the earliest, even after
+    it had finished — so a Friday-only series scraped Friday evening would
+    keep reporting that morning's date until the next scrape.
+    """
+    if not isinstance(instances, list):
+        return None
+    parsed: list[tuple[datetime, dict[str, Any]]] = []
+    for entry in instances:
+        if not isinstance(entry, dict):
+            continue
+        inner = entry.get("event_instance") or entry
+        if not isinstance(inner, dict):
+            continue
+        ts = _parse_iso(inner.get("end") or inner.get("start"))
+        if ts is None:
+            continue
+        parsed.append((ts, inner))
+    if not parsed:
+        return None
+    parsed.sort(key=lambda x: x[0])
+    now = datetime.now(timezone.utc)
+    for ts, inner in parsed:
+        if ts >= now:
+            return inner
+    return parsed[-1][1]
+
+
 def _start_end(raw: dict[str, Any]) -> tuple[str, str | None]:
-    instances = raw.get("event_instances") or []
-    if instances and isinstance(instances, list):
-        first = instances[0]
-        if isinstance(first, dict):
-            inner = first.get("event_instance") or first
-            start = inner.get("start") or raw.get("first_date")
-            end = inner.get("end") or raw.get("last_date")
-            if start:
-                return start, (end if end and end != start else None)
+    chosen = _pick_instance(raw.get("event_instances"))
+    if chosen is not None:
+        start = chosen.get("start") or raw.get("first_date")
+        end = chosen.get("end") or raw.get("last_date")
+        if start:
+            return start, (end if end and end != start else None)
     start = raw.get("first_date") or raw.get("start") or ""
     end = raw.get("last_date") or raw.get("end")
     return start, (end if end and end != start else None)
