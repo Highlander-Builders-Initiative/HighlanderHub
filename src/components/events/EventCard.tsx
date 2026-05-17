@@ -1,10 +1,80 @@
+"use client";
+
+import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 import type { CampusEvent } from "@/types/event";
 import { formatTime, relativeDay } from "@/lib/dates";
 import { CATEGORY_RAIL } from "@/lib/category-colors";
 import { CategoryBadge } from "../ui/CategoryBadge";
 
-export function EventCard({ event }: { event: CampusEvent }) {
+export function EventCard({
+  event,
+  compact = false,
+}: {
+  event: CampusEvent;
+  compact?: boolean;
+}) {
+  const [imageBroken, setImageBroken] = useState(false);
+  const showImage = !compact && !!event.imageUrl && !imageBroken;
+
+  if (showImage) {
+    return (
+      <ImageCard event={event} onImageError={() => setImageBroken(true)} />
+    );
+  }
+  return <TextCard event={event} />;
+}
+
+function ImageCard({
+  event,
+  onImageError,
+}: {
+  event: CampusEvent;
+  onImageError: () => void;
+}) {
+  return (
+    <Link
+      href={`/events/${event.id}`}
+      aria-label={`${event.title} — ${relativeDay(event.startsAt)} at ${formatTime(event.startsAt)}`}
+      className="card-hover group relative block w-full overflow-hidden rounded-xl border border-ink/15 bg-canvas aspect-[4/5]"
+    >
+      <Image
+        src={event.imageUrl!}
+        alt=""
+        fill
+        unoptimized
+        sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+        className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+        onError={onImageError}
+      />
+
+      <div
+        aria-hidden
+        className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-ink/90 via-ink/50 to-transparent"
+      />
+
+      <div className="absolute inset-x-0 bottom-0 p-3 md:p-4">
+        <p className="font-mono uppercase tracking-[0.16em] text-[10px] text-white/80 md:text-[11px]">
+          {relativeDay(event.startsAt)} · {formatTime(event.startsAt)}
+        </p>
+        <p className="mt-1 font-display text-base font-semibold leading-tight tracking-[-0.02em] text-white line-clamp-2 md:text-lg">
+          {event.title}
+        </p>
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          <CategoryBadge category={event.category} variant="overlay" />
+          {event.isFree && (
+            <span className="inline-flex items-center rounded-full bg-white/15 px-2.5 py-0.5 text-[11px] font-medium text-white backdrop-blur-sm">
+              Free
+            </span>
+          )}
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+function TextCard({ event }: { event: CampusEvent }) {
   return (
     <Link
       href={`/events/${event.id}`}

@@ -217,7 +217,7 @@ export function EventsBrowser({ events }: { events: CampusEvent[] }) {
                     {dayEvents.length === 1 ? "event" : "events"}
                   </span>
                 </div>
-                <div className="grid gap-3 md:grid-cols-2 md:gap-4 lg:grid-cols-3">
+                <div className="grid items-start gap-3 md:grid-cols-2 md:gap-4 lg:grid-cols-3">
                   {dayEvents.map((ev) => (
                     <EventCard key={ev.id} event={ev} />
                   ))}

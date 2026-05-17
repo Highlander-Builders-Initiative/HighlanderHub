@@ -231,7 +231,7 @@ export function CalendarView({ events }: { events: CampusEvent[] }) {
         ) : (
           <div className="grid gap-4">
             {selectedEvents.map((ev) => (
-              <EventCard key={ev.id} event={ev} />
+              <EventCard key={ev.id} event={ev} compact />
             ))}
           </div>
         )}

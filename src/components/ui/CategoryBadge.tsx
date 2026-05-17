@@ -14,11 +14,21 @@ const CATEGORY_STYLES: Record<
   free_food: { label: "Free Food", cls: "bg-gold/15 text-[#8a6300]" },
 };
 
-export function CategoryBadge({ category }: { category: EventCategory }) {
+export function CategoryBadge({
+  category,
+  variant = "default",
+}: {
+  category: EventCategory;
+  variant?: "default" | "overlay";
+}) {
   const style = CATEGORY_STYLES[category];
+  const cls =
+    variant === "overlay"
+      ? "bg-white/15 text-white backdrop-blur-sm"
+      : style.cls;
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium tracking-[0.01em] ${style.cls}`}
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium tracking-[0.01em] ${cls}`}
     >
       {style.label}
     </span>
