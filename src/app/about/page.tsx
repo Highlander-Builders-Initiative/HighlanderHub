@@ -16,8 +16,8 @@ export const metadata: Metadata = {
 const PRINCIPLES = [
   {
     kicker: "01",
-    title: "Always free",
-    body: "No paywalls, no accounts, no upsells. It's a student bulletin.",
+    title: "Always free to browse",
+    body: "No paywalls. Core browsing stays open to everyone, no account required.",
   },
   {
     kicker: "02",
@@ -51,20 +51,16 @@ const SOURCES = [
 
 const FAQS = [
   {
-    q: "Is this affiliated with UC Riverside?",
-    a: "No. Highlander Hub is an independent student project. We pull from public sources and host submissions ourselves. UCR is not involved in operating or moderating the bulletin.",
-  },
-  {
     q: "How fresh is the data?",
     a: "Updates run automatically every six hours, so anything posted in the last day usually shows up by the next refresh. Manual submissions get reviewed within a day.",
   },
   {
-    q: "Can my org's calendar be added as a regular source?",
-    a: "Yes. DM @hbi.ucr on Instagram with your org's handle (and a public events page if you have one) and we'll add you to the rotation.",
+    q: "How do I report a wrong event?",
+    a: "DM @hbi.ucr on Instagram with the link. We extract event details from flyer images with OCR + an LLM, so the occasional misread happens — we'll fix it.",
   },
   {
-    q: "Is it free?",
-    a: "Yes, and always will be. There are no plans to add ads, accounts, or paid tiers.",
+    q: "Can my org's calendar be added as a regular source?",
+    a: "Yes. DM @hbi.ucr on Instagram with your org's handle (and a public events page if you have one) and we'll add you to the rotation.",
   },
 ];
 
@@ -73,23 +69,35 @@ export default function AboutPage() {
     <main className="min-h-screen bg-canvas">
       <Masthead />
 
-      {/* Hero */}
+      {/* Lead-in — replaces the old hero. Reads as editorial, not a second landing page. */}
       <section className="border-b border-ink/10">
-        <div className="mx-auto max-w-7xl px-4 pt-12 pb-16 sm:px-6 md:pt-20 md:pb-24">
-          <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted">
-            About
-          </p>
-          <h1 className="mt-3 max-w-3xl font-display text-[36px] font-semibold leading-[1.05] tracking-[-0.03em] text-ink sm:text-[52px] md:text-[64px]">
-            A bulletin for the campus,
-            <span className="block text-muted">built by the campus.</span>
-          </h1>
-          <p className="mt-6 max-w-2xl text-base leading-relaxed text-ink/75 md:text-lg">
-            Highlander Hub is one place to find out what&rsquo;s actually
-            happening at UC Riverside this week. Club meetings, free food drops,
-            workshops, banquets, concerts — pulled from the sources clubs
-            already use, so you don&rsquo;t have to follow forty Instagram
-            accounts to know when the next general meeting is.
-          </p>
+        <div className="mx-auto grid max-w-7xl gap-10 px-4 pt-12 pb-20 sm:px-6 md:grid-cols-12 md:pt-20 md:pb-24">
+          <Reveal className="md:col-span-5">
+            <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted">
+              About
+            </p>
+            <h1 className="mt-3 font-display text-[34px] font-semibold leading-[1.1] tracking-[-0.03em] text-ink md:text-[44px]">
+              Why Highlander Hub exists.
+            </h1>
+          </Reveal>
+          <Reveal
+            delay={120}
+            className="space-y-4 text-base leading-relaxed text-ink/75 md:col-span-7 md:text-lg"
+          >
+            <p>
+              Half the events at UCR live in Instagram stories that disappear
+              in 24 hours. The other half live on events.ucr.edu, a few club
+              websites, the occasional flyer taped to a wall. To know
+              what&rsquo;s actually happening on a given Thursday, you&rsquo;d
+              have to follow dozens of accounts and check three different
+              calendars.
+            </p>
+            <p>
+              Highlander Hub does that work in one place. We pull from the
+              sources clubs already use, normalize the details, and put it all
+              on a single page you can scan in thirty seconds.
+            </p>
+          </Reveal>
         </div>
       </section>
 
@@ -114,34 +122,6 @@ export default function AboutPage() {
               </Reveal>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* Why it exists */}
-      <section className="border-b border-ink/10">
-        <div className="mx-auto grid max-w-7xl gap-10 px-4 py-20 sm:px-6 md:grid-cols-12 md:py-28">
-          <Reveal className="md:col-span-4">
-            <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted">
-              Why it exists
-            </p>
-            <h2 className="mt-3 font-display text-3xl font-semibold leading-[1.1] tracking-[-0.03em] text-ink md:text-4xl">
-              Campus events are scattered across ten different feeds.
-            </h2>
-          </Reveal>
-          <Reveal delay={120} className="space-y-4 text-base leading-relaxed text-ink/75 md:col-span-7 md:col-start-6 md:text-lg">
-            <p>
-              Half the events at UCR live in Instagram stories that disappear
-              in 24 hours. The other half live on events.ucr.edu, a few club
-              websites, the occasional flyer taped to a wall. To know what&rsquo;s
-              actually happening on a given Thursday, you&rsquo;d have to follow
-              dozens of accounts and check three different calendars.
-            </p>
-            <p>
-              Highlander Hub does that work in one place. We pull from the
-              sources clubs already use, normalize the details, and put it all
-              on a single page you can scan in thirty seconds.
-            </p>
-          </Reveal>
         </div>
       </section>
 
@@ -195,7 +175,7 @@ export default function AboutPage() {
               Who built it
             </p>
             <h2 className="mt-3 font-display text-3xl font-semibold leading-[1.1] tracking-[-0.03em] text-ink md:text-4xl">
-              A side project from HBI.
+              Built by Highlander Builders Initiative.
             </h2>
           </Reveal>
 
@@ -217,12 +197,13 @@ export default function AboutPage() {
                 Highlander Builders Initiative
               </p>
               <p className="mt-2 font-display text-xl font-semibold tracking-[-0.02em] text-ink md:text-2xl">
-                A student org at UCR for people who like to build things.
+                A product-building org for UCR students who want to ship real
+                tools.
               </p>
               <p className="mt-3 text-sm text-ink/70 md:text-base">
-                Highlander Hub is one of a few projects we ship in our spare
-                time. Want to come build with us? Say hi on any of the channels
-                below.
+                Highlander Hub is one of several products we&rsquo;ve shipped.
+                If you want to build with us, the channels below are the way
+                in.
               </p>
               <div className="mt-5 flex flex-wrap items-center gap-2">
                 <HbiLink
@@ -266,17 +247,18 @@ export default function AboutPage() {
               Get involved
             </p>
             <h2 className="mt-3 font-display text-3xl font-semibold leading-[1.1] tracking-[-0.03em] text-ink md:text-4xl">
-              Two easy ways in.
+              Three ways in.
             </h2>
           </Reveal>
 
-          <div className="mt-10 grid gap-4 md:grid-cols-2">
+          <div className="mt-10 grid gap-4 md:grid-cols-3">
+            {/* 1. For a single event */}
             <Reveal
               as="article"
               className="flex flex-col gap-3 rounded-xl border border-ink/15 bg-canvas p-6"
             >
               <span className="font-mono text-[11px] tracking-[0.14em] text-muted">
-                For org leads
+                For a single event
               </span>
               <h3 className="font-display text-xl font-semibold tracking-[-0.02em] text-ink">
                 Submit an event.
@@ -285,52 +267,70 @@ export default function AboutPage() {
                 Running something this quarter? Drop the details and we&rsquo;ll
                 review within a day.
               </p>
-              <div className="mt-2">
+              <div className="mt-auto pt-3">
                 <SubmitEventCta surface="about_page" />
               </div>
             </Reveal>
 
+            {/* 2. For an org's whole calendar */}
             <Reveal
               delay={100}
               as="article"
               className="flex flex-col gap-3 rounded-xl border border-ink/15 bg-canvas p-6"
             >
               <span className="font-mono text-[11px] tracking-[0.14em] text-muted">
-                For everyone else
+                For your whole calendar
               </span>
               <h3 className="font-display text-xl font-semibold tracking-[-0.02em] text-ink">
-                Follow HBI.
+                Get your org listed.
               </h3>
               <p className="text-sm text-ink/70">
-                Behind the scenes on Highlander Hub and the other things we
-                ship. New builders welcome.
+                Want every meeting and event from your org pulled in
+                automatically? DM us with your handle and we&rsquo;ll add you to
+                the rotation.
               </p>
-              <div className="mt-2">
+              <div className="mt-auto pt-3">
                 <HbiLink
                   href="https://www.instagram.com/hbi.ucr"
                   location="about_page"
                   channel="instagram"
                   className="interactive-focus inline-flex min-h-12 items-center gap-2 rounded-lg border border-ink bg-canvas px-5 py-3 text-sm font-medium text-ink transition-colors hover:bg-ink hover:text-white"
                 >
-                  Follow @hbi.ucr
+                  DM @hbi.ucr
+                  <span aria-hidden>↗</span>
+                </HbiLink>
+              </div>
+            </Reveal>
+
+            {/* 3. For builders */}
+            <Reveal
+              delay={200}
+              as="article"
+              className="flex flex-col gap-3 rounded-xl border border-ink/15 bg-canvas p-6"
+            >
+              <span className="font-mono text-[11px] tracking-[0.14em] text-muted">
+                For builders
+              </span>
+              <h3 className="font-display text-xl font-semibold tracking-[-0.02em] text-ink">
+                Build with HBI.
+              </h3>
+              <p className="text-sm text-ink/70">
+                We ship real products for UCR students — Highlander Hub is one
+                of them. Hop in the Discord to see what we&rsquo;re working on.
+              </p>
+              <div className="mt-auto pt-3">
+                <HbiLink
+                  href="https://discord.com/invite/QYCQwTTvfS"
+                  location="about_page"
+                  channel="discord"
+                  className="interactive-focus inline-flex min-h-12 items-center gap-2 rounded-lg border border-ink bg-canvas px-5 py-3 text-sm font-medium text-ink transition-colors hover:bg-ink hover:text-white"
+                >
+                  Join the Discord
                   <span aria-hidden>↗</span>
                 </HbiLink>
               </div>
             </Reveal>
           </div>
-
-          <p className="mt-6 text-sm text-muted">
-            Want your org&rsquo;s calendar added as a regular source? DM{" "}
-            <HbiLink
-              href="https://www.instagram.com/hbi.ucr"
-              location="about_page"
-              channel="instagram"
-              className="interactive-focus font-medium text-ink underline-offset-4 hover:underline"
-            >
-              @hbi.ucr
-            </HbiLink>{" "}
-            on Instagram.
-          </p>
         </div>
       </section>
 
