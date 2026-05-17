@@ -9,6 +9,7 @@ from __future__ import annotations
 import base64
 import json
 import logging
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
@@ -330,6 +331,22 @@ def _bool_or_default(value: Any, default: bool) -> bool:
     return default
 
 
+_URL_SCHEME_RE = re.compile(r"^[a-z][a-z0-9+\-.]*:", re.IGNORECASE)
+
+
+def _normalize_url(value: Any) -> str | None:
+    if not isinstance(value, str):
+        return None
+    text = value.strip()
+    if not text:
+        return None
+    if _URL_SCHEME_RE.match(text):
+        return text
+    if text.startswith("//"):
+        return f"https:{text}"
+    return f"https://{text}"
+
+
 def _normalize_timestamptz(value: Any) -> str | None:
     if not isinstance(value, str):
         return None
@@ -369,7 +386,7 @@ def _to_event_row(
     ends_at = _normalize_timestamptz(llm.get("ends_at"))
 
     handle = str(raw.get("handle") or "")
-    rsvp_url = llm.get("rsvp_url") or raw.get("story_cta_url")
+    rsvp_url = _normalize_url(llm.get("rsvp_url") or raw.get("story_cta_url"))
 
     # Derive the event ID from (handle, starts_at) so multiple stories about
     # the same event (announcement flyer + "happening now" reminder) collapse
