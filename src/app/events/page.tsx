@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Masthead } from "@/components/layout/Masthead";
 import { EventsBrowser } from "@/components/events/EventsBrowser";
+import { SubmitEventCta } from "@/components/events/SubmitEventCta";
 import { Footer } from "@/components/layout/Footer";
 import { getEvents } from "@/lib/events";
 
@@ -39,26 +40,29 @@ export default async function EventsPage() {
               calendar view to see your whole month.
             </p>
           </div>
-          <dl className="hidden grid-cols-3 gap-x-6 gap-y-1 md:grid md:text-right">
-            <div>
-              <dt className="text-xs text-muted">Indexed</dt>
-              <dd className="font-display text-2xl font-semibold leading-none text-ink">
-                {events.length}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs text-muted">This week</dt>
-              <dd className="font-display text-2xl font-semibold leading-none text-ink">
-                {upcomingThisWeek}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs text-muted">Free food</dt>
-              <dd className="font-display text-2xl font-semibold leading-none text-ink">
-                {freeFoodCount}
-              </dd>
-            </div>
-          </dl>
+          <div className="flex flex-col items-stretch gap-4 sm:items-start md:items-end md:gap-5">
+            <SubmitEventCta surface="events_header" />
+            <dl className="hidden grid-cols-3 gap-x-6 gap-y-1 md:grid md:text-right">
+              <div>
+                <dt className="text-xs text-muted">Indexed</dt>
+                <dd className="font-display text-2xl font-semibold leading-none text-ink">
+                  {events.length}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted">This week</dt>
+                <dd className="font-display text-2xl font-semibold leading-none text-ink">
+                  {upcomingThisWeek}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted">Free food</dt>
+                <dd className="font-display text-2xl font-semibold leading-none text-ink">
+                  {freeFoodCount}
+                </dd>
+              </div>
+            </dl>
+          </div>
         </div>
       </section>
 

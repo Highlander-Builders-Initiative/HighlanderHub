@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import type { CampusEvent, EventCategory } from "@/types/event";
 import { EventCard } from "./EventCard";
 import { CalendarView } from "./CalendarView";
+import { SubmitEventCta } from "./SubmitEventCta";
 import { formatDay } from "@/lib/dates";
 import { groupByDay } from "@/lib/event-grouping";
 import { track } from "@/lib/analytics";
@@ -214,6 +215,10 @@ export function EventsBrowser({ events }: { events: CampusEvent[] }) {
               >
                 Clear filters
               </button>
+              <p className="mt-6 text-sm text-muted">
+                Running something not listed?{" "}
+                <SubmitEventCta variant="link" surface="empty_state" />
+              </p>
             </div>
           )}
 
