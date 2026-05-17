@@ -6,7 +6,8 @@ import { Footer } from "@/components/layout/Footer";
 import { CategoryBadge } from "@/components/ui/CategoryBadge";
 import { getEventById } from "@/lib/events";
 import { formatDay, formatTimeRange, relativeDay } from "@/lib/dates";
-import { calendarHref, shareHref } from "@/lib/event-actions";
+import { calendarHref } from "@/lib/event-actions";
+import { ShareButton } from "@/components/events/ShareButton";
 import { CATEGORY_RAIL } from "@/lib/category-colors";
 import type { CampusEvent } from "@/types/event";
 
@@ -153,12 +154,7 @@ export default async function EventDetailPage({
                 >
                   Add to calendar
                 </a>
-                <a
-                  href={shareHref(event)}
-                  className="interactive-focus text-sm font-medium text-ink underline-offset-4 hover:underline"
-                >
-                  Share
-                </a>
+                <ShareButton event={event} variant="text" />
               </div>
             </div>
           </div>
@@ -200,26 +196,7 @@ export default async function EventDetailPage({
               <path d="M16 2v4M8 2v4M3 10h18" />
             </svg>
           </a>
-          <a
-            href={shareHref(event)}
-            aria-label="Share"
-            className="interactive-focus inline-flex min-h-12 min-w-12 items-center justify-center rounded-lg border border-ink/15 text-ink"
-          >
-            <svg
-              aria-hidden
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-4 w-4"
-            >
-              <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
-              <path d="M16 6l-4-4-4 4" />
-              <path d="M12 2v13" />
-            </svg>
-          </a>
+          <ShareButton event={event} variant="icon" />
         </div>
       </div>
 
