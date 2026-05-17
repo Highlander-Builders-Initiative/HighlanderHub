@@ -40,7 +40,7 @@ const FEATURE_VISUALS = {
   ),
 
   food: (
-    <div className="flex h-full items-end gap-3 p-5">
+    <div className="flex h-full items-center p-5">
       <div className="flex flex-1 flex-col gap-1 border border-ink/15 bg-canvas p-3">
         <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted">
           12:30 PM today
@@ -56,9 +56,6 @@ const FEATURE_VISUALS = {
             Free
           </span>
         </div>
-      </div>
-      <div className="font-display text-6xl font-semibold leading-none tracking-[-0.04em] text-gold">
-        🥯
       </div>
     </div>
   ),
@@ -170,23 +167,22 @@ export function FinalCTA() {
       <div className="mx-auto flex max-w-7xl flex-col items-start gap-6 px-4 py-20 sm:px-6 md:flex-row md:items-end md:justify-between md:py-24">
         <div className="max-w-xl">
           <h2 className="font-display text-4xl font-semibold leading-[1.05] tracking-[-0.03em] text-ink md:text-6xl">
-            Stop missing Events.
+            Stop missing events.
           </h2>
           <p className="mt-4 text-base text-ink/75">
-            Open the index. Filter by what you care about. Show up.
+            See what's on this week. Filter by club, category, or free food.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <Link
             href="/events"
-            className="interactive-focus inline-flex min-h-11 items-center gap-2 bg-ink px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-85"
+            className="interactive-focus inline-flex min-h-12 items-center bg-ink px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-85"
           >
             Browse events
-            <span aria-hidden>→</span>
           </Link>
           <a
             href="#about"
-            className="interactive-focus inline-flex min-h-11 items-center px-3 py-3 text-sm font-medium text-ink underline underline-offset-4 decoration-ink/30 hover:decoration-ink"
+            className="interactive-focus inline-flex min-h-12 items-center px-3 py-3 text-sm font-medium text-ink underline underline-offset-4 decoration-ink/30 hover:decoration-ink"
           >
             About the project
           </a>

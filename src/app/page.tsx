@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { Masthead } from "@/components/layout/Masthead";
 import { Footer } from "@/components/layout/Footer";
-import { HeroMockup } from "@/components/home/HeroMockup";
 import { Features, FinalCTA } from "@/components/home/LandingSections";
+import { EventCard } from "@/components/events/EventCard";
 import { getEvents } from "@/lib/events";
 
 export default async function HomePage() {
@@ -15,80 +15,69 @@ export default async function HomePage() {
     return t >= now && t <= inSevenDays;
   }).length;
 
+  const nextFew = events.slice(0, 4);
+
   return (
     <main className="min-h-screen bg-canvas">
       <Masthead />
 
       {/* Hero */}
       <section className="relative overflow-hidden border-b border-ink/10">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[480px]"
-          style={{
-            backgroundImage:
-              "radial-gradient(60% 60% at 20% 0%, rgba(30,58,138,0.08), transparent 70%), radial-gradient(40% 50% at 90% 10%, rgba(245,180,0,0.10), transparent 70%)",
-          }}
-        />
-
         <div className="mx-auto grid max-w-7xl grid-cols-12 gap-x-8 gap-y-12 px-4 pt-14 pb-20 sm:px-6 md:pt-24 md:pb-28">
           <div className="col-span-12 md:col-span-6 md:pt-6">
             <div className="inline-flex items-center gap-2 border border-ink/15 bg-canvas px-3 py-1.5 text-xs text-ink">
-              <span className="relative inline-flex h-2 w-2" aria-hidden="true">
-                <span className="absolute inline-flex h-full w-full rounded-full bg-leaf opacity-60 animate-ping" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-leaf" />
-              </span>
+              <span className="h-2 w-2 rounded-full bg-leaf" aria-hidden />
               <span>
                 <span className="font-medium">{upcomingThisWeek}</span>
                 <span className="text-muted"> events this week</span>
               </span>
-              <span className="text-ink/20">·</span>
-              <span className="text-muted">Indexed daily</span>
             </div>
 
             <h1 className="mt-6 font-display text-[36px] font-semibold leading-[1] tracking-[-0.035em] text-ink break-words sm:text-[60px] md:text-[72px]">
               Every UCR event,
-              <span className="block text-muted">One App.</span>
+              <span className="block text-muted">one app.</span>
             </h1>
 
             <p className="mt-7 max-w-xl text-base leading-relaxed text-ink/75 md:text-lg">
-              Meetings, mixers, mic nights, career fairs, and the occasional
-              free taco run. All the campus stuff worth knowing about, filtered
-              by what you actually care about.
+              Club meetings, mixers, career fairs, free food drops — everything
+              happening on campus, in one place you can actually scan.
             </p>
 
-            <div className="mt-8 flex flex-wrap items-center gap-3">
+            <div className="mt-8">
               <Link
                 href="/events"
-                className="interactive-focus inline-flex min-h-12 items-center gap-2 bg-ink px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-85"
+                className="interactive-focus inline-flex min-h-12 items-center bg-ink px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-85"
               >
                 Browse events
-                <span aria-hidden>→</span>
               </Link>
-              <a
-                href="#features"
-                className="interactive-focus inline-flex min-h-12 items-center px-3 py-3 text-sm font-medium text-ink underline underline-offset-4 decoration-ink/30 hover:decoration-ink"
-              >
-                See how it works
-              </a>
-            </div>
-
-            <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted">
-              <span className="flex items-center gap-2">
-                <span className="text-ink">{events.length}</span> events indexed
-              </span>
-              <span className="hidden h-4 w-px bg-ink/15 sm:block" />
-              <span className="flex items-center gap-2">
-                <span className="text-ink">Updated daily</span>
-              </span>
-              <span className="hidden h-4 w-px bg-ink/15 sm:block" />
-              <span className="flex items-center gap-2">
-                <span className="text-ink">Free</span> for students
-              </span>
             </div>
           </div>
 
           <div className="col-span-12 md:col-span-6">
-            <HeroMockup />
+            <div className="flex items-baseline justify-between border-b border-ink/10 pb-3">
+              <h2 className="font-display text-base font-semibold tracking-[-0.02em] text-ink">
+                Next up
+              </h2>
+              <Link
+                href="/events"
+                className="interactive-focus text-xs text-muted underline underline-offset-4 decoration-ink/20 transition-colors hover:text-ink hover:decoration-ink"
+              >
+                See all
+              </Link>
+            </div>
+            {nextFew.length === 0 ? (
+              <p className="mt-4 border border-dashed border-ink/15 bg-canvas px-4 py-6 text-sm text-muted">
+                Nothing scheduled in the next few days. Check back soon.
+              </p>
+            ) : (
+              <ul className="flex flex-col gap-3 pt-4">
+                {nextFew.map((event) => (
+                  <li key={event.id} className="min-w-0">
+                    <EventCard event={event} />
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
       </section>

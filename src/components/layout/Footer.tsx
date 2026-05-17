@@ -27,15 +27,11 @@ export function Footer() {
             highlander<span className="text-muted">/</span>hub
           </p>
           <p className="mt-3 max-w-md text-sm text-muted">
-            A simple place to see what&rsquo;s happening at UC Riverside, without scrolling ten pages. 
+            A simple place to see what&rsquo;s happening at UC Riverside, without scrolling ten pages.
           </p>
         </div>
         <div className="md:text-right">
-          <h3 className="mb-3 text-sm font-semibold text-ink">Status</h3>
           <p className="text-sm text-muted">
-            Placeholder data. No live scrape yet.
-          </p>
-          <p className="mt-2 text-sm text-muted">
             Built by Highlander Builders Initiative
           </p>
         </div>
