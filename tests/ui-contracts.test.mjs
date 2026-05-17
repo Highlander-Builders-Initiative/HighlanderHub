@@ -5,7 +5,7 @@ import { test } from "node:test";
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
 test("event filters expose accessible state and recovery actions", () => {
-  const source = read("src/components/EventsBrowser.tsx");
+  const source = read("src/components/events/EventsBrowser.tsx");
 
   assert.match(source, /aria-pressed=/);
   assert.match(source, /aria-live=/);
@@ -16,7 +16,7 @@ test("event filters expose accessible state and recovery actions", () => {
 });
 
 test("event cards link to a detail page and stay accessible", () => {
-  const source = read("src/components/EventCard.tsx");
+  const source = read("src/components/events/EventCard.tsx");
 
   assert.match(source, /href=\{`\/events\/\$\{event\.id\}`\}/);
   assert.match(source, /aria-label=/);
@@ -31,11 +31,11 @@ test("event detail page exposes RSVP / calendar / share actions", () => {
 });
 
 test("masthead keeps navigation reachable on mobile", () => {
-  const source = read("src/components/Masthead.tsx");
+  const source = read("src/components/layout/Masthead.tsx");
 
   assert.match(source, /md:hidden/);
   assert.match(source, /\/events/);
-  assert.match(source, /"\/#about"/);
+  assert.match(source, /"\/about"/);
 });
 
 test("motion and focus behavior have accessible fallbacks", () => {
@@ -47,7 +47,7 @@ test("motion and focus behavior have accessible fallbacks", () => {
 });
 
 test("badge colors avoid low-contrast accent text", () => {
-  const source = read("src/components/CategoryBadge.tsx");
+  const source = read("src/components/ui/CategoryBadge.tsx");
 
   assert.doesNotMatch(source, /text-leaf/);
   assert.doesNotMatch(source, /text-coral/);

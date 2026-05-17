@@ -69,20 +69,20 @@ export default function AboutPage() {
     <main className="min-h-screen bg-canvas">
       <Masthead />
 
-      {/* Lead-in — replaces the old hero. Reads as editorial, not a second landing page. */}
+      {/* About opener */}
       <section className="border-b border-ink/10">
-        <div className="mx-auto grid max-w-7xl gap-10 px-4 pt-12 pb-20 sm:px-6 md:grid-cols-12 md:pt-20 md:pb-24">
+        <div className="mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 md:grid-cols-12 md:items-start md:py-24">
           <Reveal className="md:col-span-5">
             <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted">
               About
             </p>
-            <h1 className="mt-3 font-display text-[34px] font-semibold leading-[1.1] tracking-[-0.03em] text-ink md:text-[44px]">
-              Why Highlander Hub exists.
+            <h1 className="mt-4 max-w-xl font-display text-[36px] font-semibold leading-[1.03] tracking-[-0.035em] text-ink sm:text-[46px] md:text-[56px]">
+              Campus events are scattered across ten different feeds.
             </h1>
           </Reveal>
           <Reveal
             delay={120}
-            className="space-y-4 text-base leading-relaxed text-ink/75 md:col-span-7 md:text-lg"
+            className="space-y-4 text-base leading-relaxed text-ink/75 md:col-span-6 md:col-start-7 md:pt-11 md:text-lg"
           >
             <p>
               Half the events at UCR live in Instagram stories that disappear
