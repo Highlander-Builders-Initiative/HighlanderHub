@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import type { CampusEvent, EventCategory } from "@/types/event";
 import { EventCard } from "./EventCard";
 import { CalendarView } from "./CalendarView";
 import { formatDay } from "@/lib/dates";
 import { groupByDay } from "@/lib/event-grouping";
+import { track } from "@/lib/analytics";
 
 type ViewMode = "list" | "calendar";
 
@@ -59,9 +60,34 @@ export function EventsBrowser({ events }: { events: CampusEvent[] }) {
     ? `${filtered.length} matching ${filtered.length === 1 ? "event" : "events"}`
     : `${filtered.length} ${filtered.length === 1 ? "event" : "events"} indexed`;
 
+  const lastTrackedQuery = useRef("");
+  useEffect(() => {
+    if (trimmedQuery === lastTrackedQuery.current) return;
+    const t = setTimeout(() => {
+      if (trimmedQuery.length === 0) {
+        lastTrackedQuery.current = "";
+        return;
+      }
+      track("events_search", { query_length: trimmedQuery.length });
+      lastTrackedQuery.current = trimmedQuery;
+    }, 600);
+    return () => clearTimeout(t);
+  }, [trimmedQuery]);
+
   const clearFilters = () => {
     setCategory("all");
     setQuery("");
+    track("events_clear_filters", {});
+  };
+
+  const handleCategory = (next: EventCategory | "all") => {
+    setCategory(next);
+    track("events_filter", { category: next });
+  };
+
+  const handleView = (next: ViewMode) => {
+    setView(next);
+    track("events_view_toggle", { view: next });
   };
 
   return (
@@ -82,7 +108,7 @@ export function EventsBrowser({ events }: { events: CampusEvent[] }) {
               type="button"
               role="tab"
               aria-selected={view === "list"}
-              onClick={() => setView("list")}
+              onClick={() => handleView("list")}
               className="interactive-focus tab"
             >
               List
@@ -91,7 +117,7 @@ export function EventsBrowser({ events }: { events: CampusEvent[] }) {
               type="button"
               role="tab"
               aria-selected={view === "calendar"}
-              onClick={() => setView("calendar")}
+              onClick={() => handleView("calendar")}
               className="interactive-focus tab"
             >
               Calendar
@@ -137,7 +163,7 @@ export function EventsBrowser({ events }: { events: CampusEvent[] }) {
               <button
                 type="button"
                 key={c.value}
-                onClick={() => setCategory(c.value)}
+                onClick={() => handleCategory(c.value)}
                 aria-pressed={active}
                 className={`interactive-focus inline-flex min-h-8 items-center rounded-full border px-3 py-1 text-[13px] transition-colors ${
                   active

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
+import { track } from "@/lib/analytics";
 import type { EventCategory } from "@/types/event";
 
 const CATEGORIES: { value: EventCategory; label: string }[] = [
@@ -23,6 +24,13 @@ type Status =
 
 export default function SubmitForm() {
   const [status, setStatus] = useState<Status>({ kind: "idle" });
+  const startedRef = useRef(false);
+
+  function onFirstInteract() {
+    if (startedRef.current) return;
+    startedRef.current = true;
+    track("submission_start", {});
+  }
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -58,9 +66,11 @@ export default function SubmitForm() {
     const { error } = await supabase.from("submissions").insert(row);
 
     if (error) {
+      track("submission_error", { message: error.message });
       setStatus({ kind: "error", message: error.message });
       return;
     }
+    track("submission_complete", {});
     setStatus({ kind: "success" });
   }
 
@@ -77,7 +87,12 @@ export default function SubmitForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-6">
+    <form
+      onSubmit={onSubmit}
+      onFocusCapture={onFirstInteract}
+      onChange={onFirstInteract}
+      className="space-y-6"
+    >
       <Field label="Event title" name="title" required maxLength={200} />
       <Field
         label="Description"

@@ -4,6 +4,7 @@ import { Masthead } from "@/components/layout/Masthead";
 import { Footer } from "@/components/layout/Footer";
 import { Features, FinalCTA } from "@/components/home/LandingSections";
 import { FlyerMosaic } from "@/components/home/FlyerMosaic";
+import { HbiLink } from "@/components/analytics/HbiLink";
 import { getEvents } from "@/lib/events";
 
 export default async function HomePage() {
@@ -61,10 +62,10 @@ export default async function HomePage() {
               className="mt-12 border-t border-ink/10 pt-6 animate-fade-up"
               style={{ animationDelay: "360ms" }}
             >
-              <a
+              <HbiLink
                 href="https://www.instagram.com/hbi.ucr"
-                target="_blank"
-                rel="noopener noreferrer"
+                location="hero"
+                channel="instagram"
                 className="interactive-focus group inline-flex items-center gap-3"
               >
                 <Image
@@ -84,7 +85,7 @@ export default async function HomePage() {
                     Highlander Builders Initiative
                   </span>
                 </span>
-              </a>
+              </HbiLink>
             </div>
           </div>
 

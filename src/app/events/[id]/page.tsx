@@ -8,6 +8,7 @@ import { getEventById } from "@/lib/events";
 import { formatDay, formatTimeRange, relativeDay } from "@/lib/dates";
 import { calendarHref } from "@/lib/event-actions";
 import { ShareButton } from "@/components/events/ShareButton";
+import { TrackedAnchor } from "@/components/events/TrackedAnchor";
 import { CATEGORY_RAIL } from "@/lib/category-colors";
 import type { CampusEvent } from "@/types/event";
 
@@ -136,24 +137,27 @@ export default async function EventDetailPage({
               {/* Desktop CTAs */}
               <div className="mt-8 hidden flex-wrap items-center gap-x-5 gap-y-3 border-t border-ink/10 pt-6 md:flex">
                 {primaryUrl && (
-                  <a
+                  <TrackedAnchor
+                    event="primary"
+                    ctaKind={event.rsvpUrl ? "rsvp" : "view_source"}
+                    eventId={event.id}
+                    surface="desktop"
                     href={primaryUrl}
-                    target="_blank"
-                    rel="noreferrer"
                     className="interactive-focus inline-flex min-h-12 items-center gap-2 rounded-lg bg-ink px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-85"
                   >
                     {event.rsvpUrl ? "RSVP" : "View source"}
                     <span aria-hidden>↗</span>
-                  </a>
+                  </TrackedAnchor>
                 )}
-                <a
+                <TrackedAnchor
+                  event="calendar"
+                  eventId={event.id}
+                  surface="desktop"
                   href={calendarHref(event)}
-                  target="_blank"
-                  rel="noreferrer"
                   className="interactive-focus text-sm font-medium text-ink underline-offset-4 hover:underline"
                 >
                   Add to calendar
-                </a>
+                </TrackedAnchor>
                 <ShareButton event={event} variant="text" />
               </div>
             </div>
@@ -165,21 +169,24 @@ export default async function EventDetailPage({
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-ink/10 bg-canvas/95 px-4 py-3 backdrop-blur md:hidden">
         <div className="mx-auto flex max-w-3xl items-center gap-3">
           {primaryUrl ? (
-            <a
+            <TrackedAnchor
+              event="primary"
+              ctaKind={event.rsvpUrl ? "rsvp" : "view_source"}
+              eventId={event.id}
+              surface="mobile"
               href={primaryUrl}
-              target="_blank"
-              rel="noreferrer"
               className="interactive-focus flex-1 inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-ink px-4 py-3 text-sm font-medium text-white"
             >
               {event.rsvpUrl ? "RSVP" : "View source"}
               <span aria-hidden>↗</span>
-            </a>
+            </TrackedAnchor>
           ) : null}
-          <a
+          <TrackedAnchor
+            event="calendar"
+            eventId={event.id}
+            surface="mobile"
             href={calendarHref(event)}
-            target="_blank"
-            rel="noreferrer"
-            aria-label="Add to calendar"
+            ariaLabel="Add to calendar"
             className="interactive-focus inline-flex min-h-12 min-w-12 items-center justify-center rounded-lg border border-ink/15 text-ink"
           >
             <svg
@@ -195,7 +202,7 @@ export default async function EventDetailPage({
               <rect x="3" y="4" width="18" height="18" rx="0" />
               <path d="M16 2v4M8 2v4M3 10h18" />
             </svg>
-          </a>
+          </TrackedAnchor>
           <ShareButton event={event} variant="icon" />
         </div>
       </div>

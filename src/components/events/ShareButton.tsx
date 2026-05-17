@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { CampusEvent } from "@/types/event";
 import { formatDay, formatTimeRange } from "@/lib/dates";
 import { shareHref } from "@/lib/event-actions";
+import { track } from "@/lib/analytics";
 
 type Variant = "text" | "icon";
 
@@ -36,6 +37,7 @@ export function ShareButton({
     if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
       try {
         await navigator.share(payload);
+        track("event_share", { id: event.id, method: "native", surface: variant });
         return;
       } catch (err) {
         // User canceled the share sheet — nothing to do.
@@ -49,12 +51,14 @@ export function ShareButton({
         await navigator.clipboard.writeText(payload.url);
         setState("copied");
         setTimeout(() => setState("idle"), 2000);
+        track("event_share", { id: event.id, method: "clipboard", surface: variant });
         return;
       } catch {
         // Fall through to mailto.
       }
     }
 
+    track("event_share", { id: event.id, method: "mailto", surface: variant });
     window.location.href = shareHref(event);
   }
 

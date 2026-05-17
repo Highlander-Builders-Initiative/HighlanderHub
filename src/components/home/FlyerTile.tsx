@@ -6,6 +6,7 @@ import { useState } from "react";
 import type { CampusEvent } from "@/types/event";
 import { relativeDay } from "@/lib/dates";
 import { CATEGORY_RAIL } from "@/lib/category-colors";
+import { track } from "@/lib/analytics";
 
 export type FlyerTileSize = "large" | "medium" | "small" | "wide";
 
@@ -40,6 +41,13 @@ export function FlyerTile({
   return (
     <Link
       href={`/events/${event.id}`}
+      onClick={() =>
+        track("event_open", {
+          id: event.id,
+          category: event.category,
+          surface: "mosaic_tile",
+        })
+      }
       aria-label={`${event.title} — ${relativeDay(event.startsAt)}`}
       style={{ animationDelay: `${enterDelayMs}ms` }}
       className={`card-hover group relative block overflow-hidden rounded-xl border border-ink/15 bg-canvas aspect-[4/5] md:aspect-auto animate-scale-in ${className}`}
