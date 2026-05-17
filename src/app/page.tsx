@@ -9,13 +9,6 @@ import { getEvents } from "@/lib/events";
 export default async function HomePage() {
   const events = await getEvents();
 
-  const now = Date.now();
-  const inSevenDays = now + 7 * 24 * 60 * 60 * 1000;
-  const upcomingThisWeek = events.filter((e) => {
-    const t = new Date(e.startsAt).getTime();
-    return t >= now && t <= inSevenDays;
-  }).length;
-
   return (
     <main className="min-h-screen bg-canvas">
       <Masthead />
@@ -24,20 +17,9 @@ export default async function HomePage() {
       <section className="relative overflow-hidden border-b border-ink/10">
         <div className="mx-auto grid max-w-7xl grid-cols-12 gap-x-8 gap-y-12 px-4 pt-14 pb-20 sm:px-6 md:pt-24 md:pb-28">
           <div className="col-span-12 md:col-span-6 md:pt-6">
-            <div
-              className="inline-flex items-center gap-2 border border-ink/15 bg-canvas px-3 py-1.5 text-xs text-ink animate-fade-up"
-              style={{ animationDelay: "0ms" }}
-            >
-              <span className="h-2 w-2 rounded-full bg-leaf" aria-hidden />
-              <span>
-                <span className="font-medium">{upcomingThisWeek}</span>
-                <span className="text-muted"> events this week</span>
-              </span>
-            </div>
-
             <h1
-              className="mt-6 font-display text-[36px] font-semibold leading-[1] tracking-[-0.035em] text-ink break-words sm:text-[60px] md:text-[72px] animate-fade-up"
-              style={{ animationDelay: "80ms" }}
+              className="font-display text-[36px] font-semibold leading-[1] tracking-[-0.035em] text-ink break-words sm:text-[60px] md:text-[72px] animate-fade-up"
+              style={{ animationDelay: "0ms" }}
             >
               Every UCR event,
               <span className="block text-muted">one app.</span>
