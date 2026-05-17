@@ -15,6 +15,7 @@ const CATEGORIES: { value: EventCategory | "all"; label: string }[] = [
   { value: "all", label: "All" },
   { value: "club", label: "Clubs" },
   { value: "academic", label: "Academic" },
+  { value: "social", label: "Social" },
   { value: "career", label: "Career" },
   { value: "sports", label: "Sports" },
   { value: "arts", label: "Arts" },
