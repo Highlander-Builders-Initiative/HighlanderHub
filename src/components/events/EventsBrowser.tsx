@@ -24,19 +24,16 @@ export function EventsBrowser({ events }: { events: CampusEvent[] }) {
   const [view, setView] = useState<ViewMode>("list");
   const [category, setCategory] = useState<EventCategory | "all">("all");
   const [query, setQuery] = useState("");
-  const [freeFoodOnly, setFreeFoodOnly] = useState(false);
   const trimmedQuery = query.trim();
-  const hasActiveFilters =
-    category !== "all" || trimmedQuery.length > 0 || freeFoodOnly;
+  const hasActiveFilters = category !== "all" || trimmedQuery.length > 0;
 
   const filtered = useMemo(() => {
     return events.filter((ev) => {
-      if (category !== "all" && ev.category !== category) return false;
-      if (
-        freeFoodOnly &&
-        !ev.tags.includes("free food") &&
-        ev.category !== "free_food"
-      ) {
+      if (category === "free_food") {
+        if (ev.category !== "free_food" && !ev.tags.includes("free food")) {
+          return false;
+        }
+      } else if (category !== "all" && ev.category !== category) {
         return false;
       }
       if (trimmedQuery) {
@@ -54,7 +51,7 @@ export function EventsBrowser({ events }: { events: CampusEvent[] }) {
       }
       return true;
     });
-  }, [events, category, trimmedQuery, freeFoodOnly]);
+  }, [events, category, trimmedQuery]);
 
   const grouped = useMemo(() => groupByDay(filtered), [filtered]);
   const dayKeys = Array.from(grouped.keys());
@@ -65,7 +62,6 @@ export function EventsBrowser({ events }: { events: CampusEvent[] }) {
   const clearFilters = () => {
     setCategory("all");
     setQuery("");
-    setFreeFoodOnly(false);
   };
 
   return (
@@ -153,15 +149,6 @@ export function EventsBrowser({ events }: { events: CampusEvent[] }) {
               </button>
             );
           })}
-          <label className="interactive-focus ml-1 inline-flex cursor-pointer select-none items-center gap-1.5 text-[13px] text-ink">
-            <input
-              type="checkbox"
-              checked={freeFoodOnly}
-              onChange={(e) => setFreeFoodOnly(e.target.checked)}
-              className="h-3.5 w-3.5 accent-ink"
-            />
-            Free food
-          </label>
           {hasActiveFilters && (
             <button
               type="button"
