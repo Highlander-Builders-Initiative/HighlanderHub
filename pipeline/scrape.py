@@ -129,7 +129,7 @@ def main() -> None:
             log.warning("%s: connection error: %s", handle, e)
         except Exception as e:  # noqa: BLE001 — keep run alive across per-account failures
             totals["errors"] += 1
-            log.warning("%s: %s", handle, e)
+            log.warning("%s: %s: %s", handle, type(e).__name__, e, exc_info=True)
         # Polite jitter between accounts. IG aggressively rate-limits scraping.
         time.sleep(random.uniform(2.0, 5.0))
 
