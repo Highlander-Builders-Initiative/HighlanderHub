@@ -161,29 +161,43 @@ export function Features() {
 
 export function FinalCTA() {
   return (
-    <section className="border-b border-ink/10">
-      <div className="mx-auto flex max-w-7xl flex-col items-start gap-6 px-4 py-20 sm:px-6 md:flex-row md:items-end md:justify-between md:py-24">
+    <section className="relative border-b border-ink/10 bg-highlander/[0.04]">
+      <span
+        aria-hidden
+        className="absolute inset-y-0 left-0 w-[3px] bg-highlander"
+      />
+      <div className="mx-auto flex max-w-7xl flex-col items-start gap-8 px-4 py-20 sm:px-6 md:flex-row md:items-end md:justify-between md:py-24">
         <Reveal className="max-w-xl">
-          <h2 className="font-display text-4xl font-semibold leading-[1.05] tracking-[-0.03em] text-ink md:text-6xl">
+          <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted">
+            Ready when you are
+          </p>
+          <h2 className="mt-3 font-display text-4xl font-semibold leading-[1.05] tracking-[-0.03em] text-ink md:text-6xl">
             Stop missing events.
           </h2>
-          <p className="mt-4 text-base text-ink/75">
-            See what's on this week. Filter by club, category, or free food.
+          <p className="mt-4 max-w-md text-base text-ink/75">
+            See what&rsquo;s on this week. Filter by club, category, or free
+            food.
           </p>
         </Reveal>
-        <Reveal delay={120} className="flex flex-wrap items-center gap-3">
+        <Reveal delay={120} className="flex flex-wrap items-center gap-x-5 gap-y-3">
           <Link
             href="/events"
             className="interactive-focus inline-flex min-h-12 items-center rounded-lg bg-ink px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-85"
           >
             Browse events
           </Link>
-          <a
-            href="#about"
-            className="interactive-focus inline-flex min-h-12 items-center px-3 py-3 text-sm font-medium text-ink underline underline-offset-4 decoration-ink/30 hover:decoration-ink"
+          <Link
+            href="/submit"
+            className="interactive-focus inline-flex min-h-12 items-center text-sm font-medium text-ink underline underline-offset-4 decoration-ink/30 hover:decoration-ink"
+          >
+            Submit an event
+          </Link>
+          <Link
+            href="/about"
+            className="interactive-focus inline-flex min-h-12 items-center text-sm font-medium text-ink underline underline-offset-4 decoration-ink/30 hover:decoration-ink"
           >
             About the project
-          </a>
+          </Link>
         </Reveal>
       </div>
     </section>

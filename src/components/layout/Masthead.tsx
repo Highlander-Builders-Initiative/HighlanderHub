@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 const NAV_LINKS = [
   { href: "/#features", label: "Features", internal: true },
   { href: "/events", label: "Events", internal: true },
-  { href: "/#about", label: "About", internal: true },
+  { href: "/about", label: "About", internal: true },
 ];
 
 const HIDE_THRESHOLD = 80;

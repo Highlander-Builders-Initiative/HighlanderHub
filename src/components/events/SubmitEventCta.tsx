@@ -4,7 +4,7 @@ import Link from "next/link";
 import { track } from "@/lib/analytics";
 
 type Variant = "button" | "link";
-type Surface = "events_header" | "empty_state";
+type Surface = "events_header" | "empty_state" | "about_page";
 
 export function SubmitEventCta({
   variant = "button",

@@ -12,7 +12,7 @@ export function HbiLink({
   children,
 }: {
   href: string;
-  location: "hero" | "footer_social";
+  location: "hero" | "footer_social" | "about_page";
   channel: string;
   className?: string;
   ariaLabel?: string;

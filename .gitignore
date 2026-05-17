@@ -12,3 +12,5 @@ out/
 # Local/editor/system artifacts
 .DS_Store
 *.tsbuildinfo
+.claude/
+.cursor/

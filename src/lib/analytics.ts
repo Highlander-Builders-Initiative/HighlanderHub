@@ -11,8 +11,8 @@ type EventMap = {
   events_filter: { category: string };
   events_view_toggle: { view: "list" | "calendar" };
   events_clear_filters: Record<string, never>;
-  hbi_cta_click: { location: "hero" | "footer_social"; channel: string };
-  submit_cta_click: { surface: "events_header" | "empty_state" };
+  hbi_cta_click: { location: "hero" | "footer_social" | "about_page"; channel: string };
+  submit_cta_click: { surface: "events_header" | "empty_state" | "about_page" };
   submission_start: Record<string, never>;
   submission_complete: Record<string, never>;
   submission_error: { message: string };
