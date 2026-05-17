@@ -27,10 +27,12 @@ export function FlyerTile({
   event,
   size,
   className = "",
+  enterDelayMs = 0,
 }: {
   event: CampusEvent;
   size: FlyerTileSize;
   className?: string;
+  enterDelayMs?: number;
 }) {
   const [imageBroken, setImageBroken] = useState(false);
   const showImage = !!event.imageUrl && !imageBroken;
@@ -39,7 +41,8 @@ export function FlyerTile({
     <Link
       href={`/events/${event.id}`}
       aria-label={`${event.title} — ${relativeDay(event.startsAt)}`}
-      className={`card-hover group relative block overflow-hidden border border-ink/15 bg-canvas aspect-[4/5] md:aspect-auto ${className}`}
+      style={{ animationDelay: `${enterDelayMs}ms` }}
+      className={`card-hover group relative block overflow-hidden border border-ink/15 bg-canvas aspect-[4/5] md:aspect-auto animate-scale-in ${className}`}
     >
       {showImage ? (
         <Image

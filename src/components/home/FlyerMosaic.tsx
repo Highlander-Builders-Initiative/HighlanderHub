@@ -35,6 +35,7 @@ export function FlyerMosaic({ events }: { events: CampusEvent[] }) {
           event={event}
           size={TILE_LAYOUTS[i].size}
           className={TILE_LAYOUTS[i].className}
+          enterDelayMs={120 + i * 70}
         />
       ))}
     </div>

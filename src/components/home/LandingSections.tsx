@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { Reveal } from "@/components/ui/Reveal";
 
 type Feature = {
   number: string;
@@ -126,7 +127,7 @@ const FEATURES: Feature[] = [
 export function Features() {
   return (
     <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 md:py-28">
-      <div className="mb-12 max-w-2xl">
+      <Reveal className="mb-12 max-w-2xl">
         <h2 className="font-display text-3xl font-semibold leading-tight tracking-[-0.03em] text-ink md:text-5xl">
           One feed for the whole campus.
         </h2>
@@ -134,14 +135,11 @@ export function Features() {
           Built for the way UCR actually finds out about events. Bring every
           source into one place and make it easy to scan.
         </p>
-      </div>
+      </Reveal>
 
       <div className="grid gap-6 md:grid-cols-3">
-        {FEATURES.map((f) => (
-          <article
-            key={f.number}
-            className="flex flex-col border border-ink/15 bg-canvas"
-          >
+        {FEATURES.map((f, i) => (
+          <Reveal key={f.number} delay={i * 120} as="article" className="flex flex-col border border-ink/15 bg-canvas">
             <div className="h-44 border-b border-ink/10 bg-canvas">
               {f.visual}
             </div>
@@ -154,7 +152,7 @@ export function Features() {
               </h3>
               <p className="text-sm text-ink/70">{f.body}</p>
             </div>
-          </article>
+          </Reveal>
         ))}
       </div>
     </section>
@@ -165,15 +163,15 @@ export function FinalCTA() {
   return (
     <section className="border-b border-ink/10">
       <div className="mx-auto flex max-w-7xl flex-col items-start gap-6 px-4 py-20 sm:px-6 md:flex-row md:items-end md:justify-between md:py-24">
-        <div className="max-w-xl">
+        <Reveal className="max-w-xl">
           <h2 className="font-display text-4xl font-semibold leading-[1.05] tracking-[-0.03em] text-ink md:text-6xl">
             Stop missing events.
           </h2>
           <p className="mt-4 text-base text-ink/75">
             See what's on this week. Filter by club, category, or free food.
           </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
+        </Reveal>
+        <Reveal delay={120} className="flex flex-wrap items-center gap-3">
           <Link
             href="/events"
             className="interactive-focus inline-flex min-h-12 items-center bg-ink px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-85"
@@ -186,7 +184,7 @@ export function FinalCTA() {
           >
             About the project
           </a>
-        </div>
+        </Reveal>
       </div>
     </section>
   );
