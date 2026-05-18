@@ -12,6 +12,8 @@ import { TrackedAnchor } from "@/components/events/TrackedAnchor";
 import { CATEGORY_RAIL } from "@/lib/category-colors";
 import type { CampusEvent } from "@/types/event";
 
+export const dynamic = "force-dynamic";
+
 const SOURCE_LABELS: Record<CampusEvent["source"], string> = {
   instagram: "Instagram",
   highlander_link: "Highlander Link",

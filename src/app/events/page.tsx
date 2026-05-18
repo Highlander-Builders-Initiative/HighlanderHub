@@ -5,6 +5,8 @@ import { SubmitEventCta } from "@/components/events/SubmitEventCta";
 import { Footer } from "@/components/layout/Footer";
 import { getEvents } from "@/lib/events";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Events · Highlander Hub",
   description:

@@ -7,6 +7,8 @@ import { FlyerMosaic } from "@/components/home/FlyerMosaic";
 import { HbiLink } from "@/components/analytics/HbiLink";
 import { getEvents } from "@/lib/events";
 
+export const dynamic = "force-dynamic";
+
 export default async function HomePage() {
   const events = await getEvents();
 

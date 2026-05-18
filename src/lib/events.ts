@@ -2,6 +2,8 @@ import type { CampusEvent } from "@/types/event";
 import { supabase } from "@/lib/supabase";
 import { startOfPacificToday } from "@/lib/dates";
 
+const DB_RETRY_ATTEMPTS = 2;
+
 // DB columns are snake_case (Postgres convention); the app uses camelCase
 // CampusEvent. This adapter is the single conversion point.
 interface EventRow {
@@ -46,36 +48,79 @@ function toCampusEvent(r: EventRow): CampusEvent {
   };
 }
 
+function describeSupabaseError(error: unknown): string {
+  if (error && typeof error === "object" && "message" in error) {
+    const message = error.message;
+    if (typeof message === "string" && message.trim()) return message;
+  }
+  return "Unknown Supabase error";
+}
+
+function reportDbFailure(
+  operation: string,
+  error: unknown,
+  context?: Record<string, string>
+): never {
+  const message = describeSupabaseError(error);
+  console.error(`[events-db] ${operation} failed`, {
+    message,
+    ...context,
+  });
+  throw new Error(`Unable to load ${operation}. Please try again.`, {
+    cause: error,
+  });
+}
+
+async function withDbRetry<T>(
+  operation: string,
+  query: () => PromiseLike<{ data: T; error: unknown }>,
+  context?: Record<string, string>
+): Promise<T> {
+  let lastError: unknown = null;
+
+  for (let attempt = 1; attempt <= DB_RETRY_ATTEMPTS; attempt += 1) {
+    const { data, error } = await query();
+    if (!error) return data;
+
+    lastError = error;
+    console.warn(`[events-db] ${operation} attempt ${attempt} failed`, {
+      message: describeSupabaseError(error),
+      ...context,
+    });
+  }
+
+  reportDbFailure(operation, lastError, context);
+}
+
 /**
  * Reads upcoming events from Supabase, sorted by start time ascending.
  * "Upcoming" = starting on or after today (UTC midnight). Past events are
  * filtered out so the list's top row is always the current/next day.
  */
 export async function getEvents(): Promise<CampusEvent[]> {
-  const { data, error } = await supabase
-    .from("events")
-    .select("*")
-    .gte("starts_at", startOfPacificToday().toISOString())
-    .order("starts_at", { ascending: true });
+  const data = await withDbRetry("events", () =>
+    supabase
+      .from("events")
+      .select("*")
+      .gte("starts_at", startOfPacificToday().toISOString())
+      .order("starts_at", { ascending: true })
+  );
 
-  if (error) {
-    console.error("getEvents failed:", error.message);
-    return [];
-  }
   return (data as EventRow[]).map(toCampusEvent);
 }
 
 export async function getEventById(id: string): Promise<CampusEvent | null> {
-  const { data, error } = await supabase
-    .from("events")
-    .select("*")
-    .eq("id", id)
-    .maybeSingle();
+  const data = await withDbRetry(
+    "event",
+    () =>
+      supabase
+        .from("events")
+        .select("*")
+        .eq("id", id)
+        .maybeSingle(),
+    { id }
+  );
 
-  if (error) {
-    console.error("getEventById failed:", error.message);
-    return null;
-  }
   if (!data) return null;
   return toCampusEvent(data as EventRow);
 }

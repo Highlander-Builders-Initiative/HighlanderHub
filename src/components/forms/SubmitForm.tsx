@@ -22,8 +22,37 @@ type Status =
   | { kind: "success" }
   | { kind: "error"; message: string };
 
+type FieldName =
+  | "title"
+  | "starts_at"
+  | "location"
+  | "host"
+  | "submitter_name"
+  | "submitter_email";
+
+const REQUIRED_FIELDS: FieldName[] = [
+  "title",
+  "starts_at",
+  "location",
+  "host",
+  "submitter_name",
+  "submitter_email",
+];
+
+type FieldErrors = Partial<Record<FieldName, string>>;
+
+function validateRequiredFields(form: FormData): FieldErrors {
+  return REQUIRED_FIELDS.reduce<FieldErrors>((errors, field) => {
+    if (!String(form.get(field) ?? "").trim()) {
+      errors[field] = "This field is required.";
+    }
+    return errors;
+  }, {});
+}
+
 export default function SubmitForm() {
   const [status, setStatus] = useState<Status>({ kind: "idle" });
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const startedRef = useRef(false);
 
   function onFirstInteract() {
@@ -34,9 +63,19 @@ export default function SubmitForm() {
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setStatus({ kind: "submitting" });
 
     const form = new FormData(e.currentTarget);
+    const nextFieldErrors = validateRequiredFields(form);
+
+    if (Object.keys(nextFieldErrors).length > 0) {
+      setFieldErrors(nextFieldErrors);
+      setStatus({ kind: "idle" });
+      return;
+    }
+
+    setFieldErrors({});
+    setStatus({ kind: "submitting" });
+
     const tagsRaw = (form.get("tags") as string) || "";
 
     const row = {
@@ -93,7 +132,13 @@ export default function SubmitForm() {
       onChange={onFirstInteract}
       className="space-y-6"
     >
-      <Field label="Event title" name="title" required maxLength={200} />
+      <Field
+        label="Event title"
+        name="title"
+        required
+        maxLength={200}
+        error={fieldErrors.title}
+      />
       <Field
         label="Description"
         name="description"
@@ -102,7 +147,13 @@ export default function SubmitForm() {
       />
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-        <Field label="Starts" name="starts_at" type="datetime-local" required />
+        <Field
+          label="Starts"
+          name="starts_at"
+          type="datetime-local"
+          required
+          error={fieldErrors.starts_at}
+        />
         <Field label="Ends (optional)" name="ends_at" type="datetime-local" />
       </div>
 
@@ -111,12 +162,14 @@ export default function SubmitForm() {
         name="location"
         required
         placeholder="HUB 302, or 'Bell Tower lawn'"
+        error={fieldErrors.location}
       />
       <Field
         label="Host / organization"
         name="host"
         required
         placeholder="ACM at UCR"
+        error={fieldErrors.host}
       />
 
       <SelectField label="Category" name="category" options={CATEGORIES} />
@@ -152,12 +205,18 @@ export default function SubmitForm() {
       <hr className="border-stone-300" />
 
       <h2 className="font-serif text-xl">Your info</h2>
-      <Field label="Your name" name="submitter_name" required />
+      <Field
+        label="Your name"
+        name="submitter_name"
+        required
+        error={fieldErrors.submitter_name}
+      />
       <Field
         label="Your email"
         name="submitter_email"
         type="email"
         required
+        error={fieldErrors.submitter_email}
       />
       <Field
         label="Org affiliation (optional)"
@@ -189,6 +248,7 @@ function Field({
   required = false,
   maxLength,
   placeholder,
+  error,
 }: {
   label: string;
   name: string;
@@ -196,14 +256,28 @@ function Field({
   required?: boolean;
   maxLength?: number;
   placeholder?: string;
+  error?: string;
 }) {
+  const hintId = `${name}-hint`;
+  const errorId = `${name}-error`;
+  const describedBy = [required ? hintId : null, error ? errorId : null]
+    .filter(Boolean)
+    .join(" ");
   const baseClass =
     "mt-1 w-full rounded-md border border-stone-300 bg-stone-50 px-3 py-2 text-stone-900 placeholder:text-stone-400 focus:border-stone-900 focus:outline-none";
+  const inputClass = error
+    ? `${baseClass} border-red-500 focus:border-red-700`
+    : baseClass;
+
   return (
     <label className="block">
-      <span className="text-sm font-medium text-stone-700">
-        {label}
-        {required && <span className="text-red-600"> *</span>}
+      <span className="flex items-center justify-between gap-3 text-sm font-medium text-stone-700">
+        <span>{label}</span>
+        {required && (
+          <span id={hintId} className="text-xs font-normal text-stone-500">
+            Required
+          </span>
+        )}
       </span>
       {type === "textarea" ? (
         <textarea
@@ -212,7 +286,9 @@ function Field({
           maxLength={maxLength}
           placeholder={placeholder}
           rows={3}
-          className={baseClass}
+          aria-invalid={Boolean(error)}
+          aria-describedby={describedBy || undefined}
+          className={inputClass}
         />
       ) : (
         <input
@@ -221,8 +297,15 @@ function Field({
           required={required}
           maxLength={maxLength}
           placeholder={placeholder}
-          className={baseClass}
+          aria-invalid={Boolean(error)}
+          aria-describedby={describedBy || undefined}
+          className={inputClass}
         />
+      )}
+      {error && (
+        <p id={errorId} className="mt-1 text-sm text-red-700">
+          {error}
+        </p>
       )}
     </label>
   );

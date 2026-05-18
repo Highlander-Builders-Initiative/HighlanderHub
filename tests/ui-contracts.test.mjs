@@ -53,3 +53,13 @@ test("badge colors avoid low-contrast accent text", () => {
   assert.doesNotMatch(source, /text-coral/);
   assert.doesNotMatch(source, /text-sky/);
 });
+
+test("submit form exposes client-side validation feedback accessibly", () => {
+  const source = read("src/components/forms/SubmitForm.tsx");
+
+  assert.match(source, /validateRequiredFields/);
+  assert.match(source, /aria-invalid=\{Boolean\(error\)\}/);
+  assert.match(source, /aria-describedby=\{describedBy \|\| undefined\}/);
+  assert.match(source, /This field is required\./);
+  assert.match(source, /Required/);
+});
