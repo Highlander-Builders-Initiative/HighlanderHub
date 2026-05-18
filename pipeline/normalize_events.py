@@ -1,14 +1,18 @@
-"""Roll raw/ucr_events/*.json into Supabase `events` table.
+"""Roll raw event JSON from structured campus sources into Supabase `events`.
 
-Maps Localist event payloads to the `events` schema (snake_case columns,
-matching CampusEvent fields). Idempotent: upserts by `id`, so re-running
-overwrites stale rows.
+Currently handles two sources, both mapped to the same `events` row shape
+(snake_case columns matching CampusEvent fields):
 
-Future structured sources (highlanderlink.ucr.edu, etc.) should plug in here
-too — add another collector, map to the same row shape, append.
+  - Localist (events.ucr.edu)         -> data/raw/ucr_events/*.json
+  - CampusLabs Engage (HighlanderLink) -> data/raw/highlander_link/*.json
+
+Idempotent: upserts by `id`, so re-running overwrites stale rows. Add new
+structured sources by writing a `_to_event_row_<source>` mapper plus a
+collector pass in `main()`.
 """
 from __future__ import annotations
 
+import html
 import json
 import logging
 import re
@@ -22,6 +26,19 @@ from db import upsert_batched
 log = logging.getLogger("pipeline.normalize_events")
 
 UCR_EVENTS_RAW = RAW_DIR / "ucr_events"
+HIGHLANDER_LINK_RAW = RAW_DIR / "highlander_link"
+
+# Engage 'theme' is a single coarse bucket per event; map it onto our category
+# vocabulary. categoryNames are more specific but free-text, so they're fed
+# through the keyword fallback below.
+_HLINK_THEME_TO_CATEGORY = {
+    "Athletics": "sports",
+    "Cultural": "arts",
+    "Social": "social",
+    "Spirituality": "community",
+    "Fundraising": "community",
+    "ThoughtfulLearning": "academic",
+}
 
 # Heuristic keyword sets for category inference. Localist's own event_types are
 # the primary signal; these are fallbacks when types are missing/generic.
@@ -48,7 +65,7 @@ _WHITESPACE = re.compile(r"\s+")
 def _strip_html(s: str | None) -> str:
     if not s:
         return ""
-    return _WHITESPACE.sub(" ", _HTML_TAG.sub(" ", s)).strip()
+    return _WHITESPACE.sub(" ", html.unescape(_HTML_TAG.sub(" ", s))).strip()
 
 
 def _filter_names(raw: dict[str, Any], key: str) -> list[str]:
@@ -216,6 +233,75 @@ def _to_event_row(raw: dict[str, Any], scraped_at: str) -> dict[str, Any] | None
     }
 
 
+_HLINK_IMAGE_BASE = "https://se-images.campuslabs.com/clink/images/"
+_HLINK_EVENT_URL = "https://highlanderlink.ucr.edu/event/{id}"
+
+
+def _to_event_row_hlink(raw: dict[str, Any], scraped_at: str) -> dict[str, Any] | None:
+    eid = raw.get("id")
+    if eid is None:
+        return None
+
+    title = (raw.get("name") or "").strip()
+    if not title:
+        return None
+
+    description = _strip_html(raw.get("description"))
+
+    starts_at = raw.get("startsOn")
+    ends_at = raw.get("endsOn")
+    if not starts_at:
+        return None
+    if ends_at == starts_at:
+        ends_at = None
+
+    benefits = raw.get("benefitNames") or []
+    if isinstance(benefits, list) and any(
+        isinstance(b, str) and b.lower() == "free food" for b in benefits
+    ):
+        category = "free_food"
+    else:
+        theme = raw.get("theme")
+        category = _HLINK_THEME_TO_CATEGORY.get(theme) if isinstance(theme, str) else None
+        if not category:
+            # Fall back to keyword inference over categoryNames + title + body.
+            cat_blob = " ".join(raw.get("categoryNames") or [])
+            category = _infer_category({}, f"{cat_blob}\n{title}\n{description}")
+
+    tags = sorted(
+        {
+            *(t for t in (raw.get("categoryNames") or []) if isinstance(t, str)),
+            *(t for t in benefits if isinstance(t, str)),
+            *([raw["theme"]] if isinstance(raw.get("theme"), str) else []),
+        }
+    )
+
+    image_path = raw.get("imagePath")
+    image_url = f"{_HLINK_IMAGE_BASE}{image_path}" if image_path else None
+
+    host = (raw.get("organizationName") or "").strip() or "UC Riverside"
+    location = (raw.get("location") or "").strip() or "UC Riverside"
+
+    return {
+        "id": f"highlander_link_{eid}",
+        "title": title[:200],
+        "description": description,
+        "starts_at": starts_at,
+        "ends_at": ends_at,
+        "location": location,
+        "host": host,
+        "category": category,
+        "tags": tags,
+        "source": "campus_website",
+        "source_url": _HLINK_EVENT_URL.format(id=eid),
+        "image_url": image_url,
+        "is_free": True,
+        "rsvp_required": False,
+        "rsvp_url": None,
+        "scraped_at": scraped_at,
+    }
+
+
 def _collect_raw(source_dir: Path) -> Iterable[dict[str, Any]]:
     if not source_dir.exists():
         return
@@ -237,6 +323,10 @@ def main() -> None:
     rows: list[dict[str, Any]] = []
     for raw in _collect_raw(UCR_EVENTS_RAW):
         row = _to_event_row(raw, scraped_at)
+        if row is not None:
+            rows.append(row)
+    for raw in _collect_raw(HIGHLANDER_LINK_RAW):
+        row = _to_event_row_hlink(raw, scraped_at)
         if row is not None:
             rows.append(row)
 

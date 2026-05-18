@@ -1,19 +1,21 @@
 # UCR data pipeline
 
-Two sources right now, hand-off to the Next.js app via Supabase tables:
+Three sources right now, hand-off to the Next.js app via Supabase tables:
 
 | Source | Scraper | Raw | Table | App reader |
 | --- | --- | --- | --- | --- |
 | Instagram stories | `scrape.py` ([instaloader](https://github.com/instaloader/instaloader)) + `extract_stories.py` | `data/raw/<handle>/` | `stories`, `events` | `src/lib/events.ts` |
 | events.ucr.edu (Localist) | `ucr_events.py` (JSON API) | `data/raw/ucr_events/` | `events` | `src/lib/events.ts` |
+| highlanderlink.ucr.edu (CampusLabs Engage) | `highlander_link.py` (JSON API) | `data/raw/highlander_link/` | `events` | `src/lib/events.ts` |
 
 `run.py` scrapes everything, extracts IG event rows, then normalizes. Failures
 in one source don't kill the others — the raw archive on disk is the source of
 truth, and extraction/normalization run over whatever's there.
 
 Stories expire from Instagram after 24 hours, so the IG raw archive is the
-only durable record — keep it. Localist events are mutable (descriptions get
-edited), so the UCR scraper always overwrites; the latest fetch wins.
+only durable record — keep it. Localist and HighlanderLink events are mutable
+(descriptions get edited), so those scrapers always overwrite; the latest
+fetch wins.
 
 ## Layout
 
@@ -24,9 +26,10 @@ pipeline/
 ├── scrape.py              # IG ingest:        data/raw/<handle>/<story_id>.json
 ├── extract_stories.py     # IG OCR + LLM:     data/extracted/<story_id>.json
 ├── ucr_events.py          # Localist ingest:  data/raw/ucr_events/<event_id>.json
+├── highlander_link.py     # Engage ingest:    data/raw/highlander_link/<event_id>.json
 ├── normalize.py           # IG raw stories -> Supabase stories
-├── normalize_events.py    # UCR events -> Supabase events
-├── run.py                 # scrape both + extract + normalize both
+├── normalize_events.py    # Localist + HighlanderLink events -> Supabase events
+├── run.py                 # scrape all + extract + normalize all
 ├── requirements.txt
 ├── data/raw/              # gitignored; per-item JSON
 ├── data/extracted/        # gitignored; per-story extraction cache
@@ -82,13 +85,14 @@ python run.py                # scrape all sources + extract + normalize all
 python scrape.py             # IG ingest only
 python extract_stories.py    # OCR + Gemini extraction from existing IG raw files
 python ucr_events.py         # UCR events ingest only (no auth needed)
+python highlander_link.py    # HighlanderLink ingest only (no auth needed)
 python normalize.py          # rebuild Supabase stories from data/raw/
-python normalize_events.py   # rebuild Supabase events from data/raw/ucr_events/
+python normalize_events.py   # rebuild events from ucr_events/ + highlander_link/
 ```
 
 Re-running is cheap: IG raw files are skipped if present, extracted story
-results are cached in `data/extracted/`, and UCR events are overwritten
-because they are mutable.
+results are cached in `data/extracted/`, and Localist + HighlanderLink events
+are overwritten because they are mutable.
 
 ## Schedule
 
