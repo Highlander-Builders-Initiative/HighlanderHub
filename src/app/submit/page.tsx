@@ -1,7 +1,10 @@
+import type { Metadata } from "next";
 import SubmitForm from "@/components/forms/SubmitForm";
 
-export const metadata = {
-  title: "Submit an event — Highlander Daily",
+export const metadata: Metadata = {
+  title: "Submit an event — Highlander Hub",
+  description:
+    "Submit a UC Riverside club, campus, or Riverside community event for review on Highlander Hub.",
 };
 
 export default function SubmitPage() {

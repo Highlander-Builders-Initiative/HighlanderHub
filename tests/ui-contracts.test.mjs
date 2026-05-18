@@ -79,6 +79,7 @@ test("submit form exposes client-side validation feedback accessibly", () => {
 test("site exposes crawler and social preview metadata", () => {
   const layout = read("src/app/layout.tsx");
   const eventDetail = read("src/app/events/[id]/page.tsx");
+  const submitPage = read("src/app/submit/page.tsx");
   const seo = read("src/lib/seo.ts");
   const sitemap = read("src/app/sitemap.ts");
   const robots = read("src/app/robots.ts");
@@ -95,6 +96,9 @@ test("site exposes crawler and social preview metadata", () => {
   assert.match(eventDetail, /twitter:/);
   assert.match(eventDetail, /event\.imageUrl/);
   assert.match(eventDetail, /\/events\/\$\{event\.id\}/);
+
+  assert.match(submitPage, /title: "Submit an event — Highlander Hub"/);
+  assert.match(submitPage, /description:/);
 
   assert.match(sitemap, /MetadataRoute\.Sitemap/);
   assert.match(sitemap, /\/events/);
