@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import type { CampusEvent, EventCategory } from "@/types/event";
 import { EventCard } from "./EventCard";
 import { CalendarView } from "./CalendarView";
@@ -48,6 +48,7 @@ export function EventsBrowser({
   const [nextOffset, setNextOffset] = useState(initialNextOffset);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [loadError, setLoadError] = useState("");
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const trimmedQuery = query.trim();
   const hasActiveFilters = category !== "all" || trimmedQuery.length > 0;
 
@@ -119,7 +120,9 @@ export function EventsBrowser({
     track("events_view_toggle", { view: next });
   };
 
-  const loadMore = async () => {
+  const loadMore = useCallback(async () => {
+    if (isLoadingMore || !hasMore) return;
+
     setIsLoadingMore(true);
     setLoadError("");
 
@@ -140,7 +143,26 @@ export function EventsBrowser({
     } finally {
       setIsLoadingMore(false);
     }
-  };
+  }, [hasMore, isLoadingMore, nextOffset]);
+
+  useEffect(() => {
+    if (!hasMore || loadError) return;
+
+    const target = loadMoreRef.current;
+    if (!target) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          void loadMore();
+        }
+      },
+      { rootMargin: "640px 0px" }
+    );
+
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [hasMore, loadError, loadMore]);
 
   return (
     <section id="events" className="mx-auto max-w-7xl px-4 pb-20 sm:px-6">
@@ -295,22 +317,29 @@ export function EventsBrowser({
             );
           })}
 
-          {(hasMore || loadError) && (
-            <div className="mt-2 flex flex-col items-center gap-3">
+          {(hasMore || loadError || isLoadingMore) && (
+            <div
+              ref={loadMoreRef}
+              className="mt-2 flex min-h-14 flex-col items-center gap-3"
+            >
               {loadError && (
                 <p className="text-sm text-coral" role="status">
                   {loadError}
                 </p>
               )}
-              {hasMore && (
+              {loadError && hasMore ? (
                 <button
                   type="button"
                   onClick={loadMore}
                   disabled={isLoadingMore}
                   className="interactive-focus inline-flex min-h-11 items-center rounded-lg border border-ink/15 bg-canvas px-5 py-2 text-sm font-medium text-ink transition-colors hover:border-ink disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  {isLoadingMore ? "Loading..." : "Load more"}
+                  Retry
                 </button>
+              ) : (
+                <p className="text-sm text-muted" role="status">
+                  {isLoadingMore ? "Loading..." : "Scroll for more events"}
+                </p>
               )}
             </div>
           )}

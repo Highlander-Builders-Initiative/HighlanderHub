@@ -3,7 +3,7 @@ import { Masthead } from "@/components/layout/Masthead";
 import { EventsBrowser } from "@/components/events/EventsBrowser";
 import { SubmitEventCta } from "@/components/events/SubmitEventCta";
 import { Footer } from "@/components/layout/Footer";
-import { getEventsPage } from "@/lib/events";
+import { getEventsPage, getEventsSummary } from "@/lib/events";
 
 export const dynamic = "force-dynamic";
 
@@ -14,18 +14,11 @@ export const metadata: Metadata = {
 };
 
 export default async function EventsPage() {
-  const initialPage = await getEventsPage();
+  const [initialPage, summary] = await Promise.all([
+    getEventsPage(),
+    getEventsSummary(),
+  ]);
   const events = initialPage.events;
-
-  const now = Date.now();
-  const inSevenDays = now + 7 * 24 * 60 * 60 * 1000;
-  const upcomingThisWeek = events.filter((e) => {
-    const t = new Date(e.startsAt).getTime();
-    return t >= now && t <= inSevenDays;
-  }).length;
-  const freeFoodCount = events.filter(
-    (e) => e.category === "free_food" || e.tags.includes("free food")
-  ).length;
 
   return (
     <main className="min-h-screen bg-canvas">
@@ -49,19 +42,19 @@ export default async function EventsPage() {
               <div>
                 <dt className="text-xs text-muted">Loaded</dt>
                 <dd className="font-display text-2xl font-semibold leading-none text-ink">
-                  {events.length}
+                  {summary.total}
                 </dd>
               </div>
               <div>
                 <dt className="text-xs text-muted">This week</dt>
                 <dd className="font-display text-2xl font-semibold leading-none text-ink">
-                  {upcomingThisWeek}
+                  {summary.upcomingThisWeek}
                 </dd>
               </div>
               <div>
                 <dt className="text-xs text-muted">Free food</dt>
                 <dd className="font-display text-2xl font-semibold leading-none text-ink">
-                  {freeFoodCount}
+                  {summary.freeFood}
                 </dd>
               </div>
             </dl>

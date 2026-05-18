@@ -23,8 +23,23 @@ test("event browser paginates the list instead of rendering every event at once"
   assert.match(data, /EVENTS_PAGE_SIZE/);
   assert.match(data, /\.range\(/);
   assert.match(api, /searchParams/);
-  assert.match(browser, /Load more/);
+  assert.match(browser, /IntersectionObserver/);
+  assert.match(browser, /loadMoreRef/);
+  assert.doesNotMatch(browser, /Load more/);
   assert.match(browser, /hasMore/);
+});
+
+test("events page header uses full upcoming event totals", () => {
+  const page = read("src/app/events/page.tsx");
+  const data = read("src/lib/events.ts");
+
+  assert.match(data, /getEventsSummary/);
+  assert.match(data, /head: true/);
+  assert.match(data, /count:/);
+  assert.match(page, /summary\.total/);
+  assert.match(page, /summary\.upcomingThisWeek/);
+  assert.match(page, /summary\.freeFood/);
+  assert.doesNotMatch(page, /events\.length/);
 });
 
 test("app routes expose loading UI while server data resolves", () => {

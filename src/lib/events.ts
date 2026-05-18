@@ -41,6 +41,12 @@ export type EventsPageResult = {
   nextOffset: number;
 };
 
+export type EventsSummary = {
+  total: number;
+  upcomingThisWeek: number;
+  freeFood: number;
+};
+
 // DB columns are snake_case (Postgres convention); the app uses camelCase
 // CampusEvent. This adapter is the single conversion point.
 interface EventRow {
@@ -127,6 +133,71 @@ async function withDbRetry<T>(
   }
 
   reportDbFailure(operation, lastError, context);
+}
+
+async function getCount(
+  operation: string,
+  query: () => PromiseLike<{ count: number | null; error: unknown }>,
+  context?: Record<string, string>
+): Promise<number> {
+  let lastError: unknown = null;
+
+  for (let attempt = 1; attempt <= DB_RETRY_ATTEMPTS; attempt += 1) {
+    const { count, error } = await query();
+    if (!error) return count ?? 0;
+
+    lastError = error;
+    console.warn(`[events-db] ${operation} attempt ${attempt} failed`, {
+      message: describeSupabaseError(error),
+      ...context,
+    });
+  }
+
+  reportDbFailure(operation, lastError, context);
+}
+
+export async function getEventsSummary(): Promise<EventsSummary> {
+  if (useE2eFixtures()) {
+    return {
+      total: 1,
+      upcomingThisWeek: 1,
+      freeFood: 0,
+    };
+  }
+
+  const today = startOfPacificToday();
+  const todayIso = today.toISOString();
+  const inSevenDays = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const inSevenDaysIso = inSevenDays.toISOString();
+
+  const [total, upcomingThisWeek, freeFood] = await Promise.all([
+    getCount("event count", () =>
+      supabase
+        .from("events")
+        .select("id", { count: "exact", head: true })
+        .gte("starts_at", todayIso)
+    ),
+    getCount("this-week event count", () =>
+      supabase
+        .from("events")
+        .select("id", { count: "exact", head: true })
+        .gte("starts_at", todayIso)
+        .lte("starts_at", inSevenDaysIso)
+    ),
+    getCount("free-food event count", () =>
+      supabase
+        .from("events")
+        .select("id", { count: "exact", head: true })
+        .gte("starts_at", todayIso)
+        .or('category.eq.free_food,tags.cs.{"free food"}')
+    ),
+  ]);
+
+  return {
+    total,
+    upcomingThisWeek,
+    freeFood,
+  };
 }
 
 /**
