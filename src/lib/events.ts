@@ -5,6 +5,31 @@ import { startOfPacificToday } from "@/lib/dates";
 const DB_RETRY_ATTEMPTS = 2;
 export const EVENTS_PAGE_SIZE = 24;
 
+const E2E_FIXTURE_EVENT: CampusEvent = {
+  id: "e2e-highlander-hub-showcase",
+  title: "E2E Test: Highlander Hub Showcase",
+  description:
+    "A deterministic event used by Playwright to verify the browse and detail flow.",
+  startsAt: "2026-05-20T18:30:00.000-07:00",
+  endsAt: "2026-05-20T20:00:00.000-07:00",
+  location: "HUB 302",
+  host: "Highlander Hub QA",
+  hostHandle: "@highlanderhub",
+  category: "social",
+  tags: ["e2e", "qa"],
+  source: "manual",
+  sourceUrl: "https://example.com/e2e-event",
+  imageUrl: undefined,
+  isFree: true,
+  rsvpRequired: false,
+  rsvpUrl: undefined,
+  scrapedAt: "2026-05-18T12:00:00.000Z",
+};
+
+function useE2eFixtures(): boolean {
+  return process.env.HIGHLANDERHUB_E2E_FIXTURES === "1";
+}
+
 type EventsPageOptions = {
   limit?: number;
   offset?: number;
@@ -113,6 +138,15 @@ export async function getEventsPage({
   limit = EVENTS_PAGE_SIZE,
   offset = 0,
 }: EventsPageOptions = {}): Promise<EventsPageResult> {
+  if (useE2eFixtures()) {
+    const events = offset === 0 && limit > 0 ? [E2E_FIXTURE_EVENT] : [];
+    return {
+      events,
+      hasMore: false,
+      nextOffset: events.length,
+    };
+  }
+
   const pageSize = Math.max(1, Math.min(limit, 60));
   const from = Math.max(0, offset);
   const to = from + pageSize;
@@ -144,6 +178,10 @@ export async function getEvents(
 }
 
 export async function getEventById(id: string): Promise<CampusEvent | null> {
+  if (useE2eFixtures()) {
+    return id === E2E_FIXTURE_EVENT.id ? E2E_FIXTURE_EVENT : null;
+  }
+
   const data = await withDbRetry(
     "event",
     () =>
