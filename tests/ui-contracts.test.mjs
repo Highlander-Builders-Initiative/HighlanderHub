@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { test } from "node:test";
 
-const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
+const sourceFile = (path) => new URL(`../${path}`, import.meta.url);
+const read = (path) => readFileSync(sourceFile(path), "utf8");
 
 test("event filters expose accessible state and recovery actions", () => {
   const source = read("src/components/events/EventsBrowser.tsx");
@@ -58,6 +59,30 @@ test("app routes expose loading UI while server data resolves", () => {
   for (const route of routeLoaders) {
     const source = read(route);
     assert.match(source, /RouteLoadingPage/);
+  }
+});
+
+test("app routes expose 500-level error boundaries", () => {
+  const sharedError = read("src/components/ui/RouteErrorPage.tsx");
+  const routeErrors = [
+    "src/app/error.tsx",
+    "src/app/events/error.tsx",
+    "src/app/events/[id]/error.tsx",
+    "src/app/about/error.tsx",
+    "src/app/submit/error.tsx",
+  ];
+
+  assert.match(sharedError, /"use client"/);
+  assert.match(sharedError, /aria-live="polite"/);
+  assert.match(sharedError, /console\.error/);
+  assert.match(sharedError, /reset/);
+  assert.match(sharedError, /Try again/);
+
+  for (const route of routeErrors) {
+    assert.equal(existsSync(sourceFile(route)), true, `${route} is missing`);
+    const source = read(route);
+    assert.match(source, /"use client"/);
+    assert.match(source, /RouteErrorPage/);
   }
 });
 
