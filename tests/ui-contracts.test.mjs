@@ -27,6 +27,25 @@ test("event browser paginates the list instead of rendering every event at once"
   assert.match(browser, /hasMore/);
 });
 
+test("app routes expose loading UI while server data resolves", () => {
+  const sharedLoading = read("src/components/ui/RouteLoadingPage.tsx");
+  const routeLoaders = [
+    "src/app/loading.tsx",
+    "src/app/events/loading.tsx",
+    "src/app/events/[id]/loading.tsx",
+    "src/app/about/loading.tsx",
+    "src/app/submit/loading.tsx",
+  ];
+
+  assert.match(sharedLoading, /aria-busy="true"/);
+  assert.match(sharedLoading, /RouteLoadingPage/);
+
+  for (const route of routeLoaders) {
+    const source = read(route);
+    assert.match(source, /RouteLoadingPage/);
+  }
+});
+
 test("event cards link to a detail page and stay accessible", () => {
   const source = read("src/components/events/EventCard.tsx");
 
