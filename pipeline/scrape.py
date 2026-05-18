@@ -134,6 +134,11 @@ def main() -> None:
         time.sleep(random.uniform(2.0, 5.0))
 
     log.info("Done: %s", totals)
+    if totals["errors"]:
+        raise RuntimeError(
+            f"Instagram scrape failed for {totals['errors']} account(s); "
+            "check the logs for expired sessions, auth challenges, or rate limits."
+        )
 
 
 if __name__ == "__main__":

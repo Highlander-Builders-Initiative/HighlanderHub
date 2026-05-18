@@ -14,9 +14,9 @@ name: Scrape sources
 #   GOOGLE_VISION_API_KEY  - OCR
 #   GEMINI_API_KEY         - story->event extraction
 #
-# When the IG session expires, the Instagram step fails with
-# LoginRequiredException but UCR scraping still completes (run.py isolates
-# per-source failures). Refresh the session locally and update
+# When the IG session expires or Instagram starts rejecting account fetches,
+# the Instagram step now exits nonzero after the source finishes and GitHub
+# Actions will alert. Refresh the session locally and update
 # IG_SESSION_FILE_B64.
 
 on:
