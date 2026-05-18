@@ -10,6 +10,7 @@ import { calendarHref } from "@/lib/event-actions";
 import { ShareButton } from "@/components/events/ShareButton";
 import { TrackedAnchor } from "@/components/events/TrackedAnchor";
 import { CATEGORY_RAIL } from "@/lib/category-colors";
+import { SITE_NAME, SITE_PREVIEW_IMAGE, absoluteUrl } from "@/lib/seo";
 import type { CampusEvent } from "@/types/event";
 
 export const dynamic = "force-dynamic";
@@ -30,9 +31,36 @@ export async function generateMetadata({
   const { id } = await params;
   const event = await getEventById(id);
   if (!event) return { title: "Event not found · Highlander Hub" };
+  const title = event.title;
+  const description = event.description.slice(0, 160);
+  const url = `/events/${event.id}`;
+  const image = event.imageUrl ?? SITE_PREVIEW_IMAGE;
+
   return {
-    title: `${event.title} · Highlander Hub`,
-    description: event.description.slice(0, 160),
+    title,
+    description,
+    alternates: {
+      canonical: url,
+    },
+    openGraph: {
+      type: "article",
+      siteName: SITE_NAME,
+      title,
+      description,
+      url,
+      images: [
+        {
+          url: image,
+          alt: `${event.title} event preview`,
+        },
+      ],
+    },
+    twitter: {
+      card: event.imageUrl ? "summary_large_image" : "summary",
+      title,
+      description,
+      images: [absoluteUrl(image)],
+    },
   };
 }
 

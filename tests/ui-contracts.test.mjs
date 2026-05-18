@@ -63,3 +63,36 @@ test("submit form exposes client-side validation feedback accessibly", () => {
   assert.match(source, /This field is required\./);
   assert.match(source, /Required/);
 });
+
+test("site exposes crawler and social preview metadata", () => {
+  const layout = read("src/app/layout.tsx");
+  const eventDetail = read("src/app/events/[id]/page.tsx");
+  const seo = read("src/lib/seo.ts");
+  const sitemap = read("src/app/sitemap.ts");
+  const robots = read("src/app/robots.ts");
+  const manifest = read("public/manifest.json");
+
+  assert.match(layout, /metadataBase:/);
+  assert.match(layout, /openGraph:/);
+  assert.match(layout, /twitter:/);
+  assert.match(layout, /manifest:/);
+  assert.match(layout, /SITE_PREVIEW_IMAGE/);
+  assert.match(seo, /\/logo_icon\.png/);
+
+  assert.match(eventDetail, /openGraph:/);
+  assert.match(eventDetail, /twitter:/);
+  assert.match(eventDetail, /event\.imageUrl/);
+  assert.match(eventDetail, /\/events\/\$\{event\.id\}/);
+
+  assert.match(sitemap, /MetadataRoute\.Sitemap/);
+  assert.match(sitemap, /\/events/);
+  assert.match(sitemap, /\/about/);
+  assert.match(sitemap, /\/submit/);
+
+  assert.match(robots, /MetadataRoute\.Robots/);
+  assert.match(robots, /sitemap:/);
+
+  assert.match(manifest, /Highlander Hub/);
+  assert.match(manifest, /\/logo_icon\.png/);
+  assert.match(manifest, /"start_url": "\/"/);
+});

@@ -1,0 +1,17 @@
+{
+  "name": "Highlander Hub",
+  "short_name": "Highlander Hub",
+  "description": "Campus and club events at UC Riverside and around the city, in one clean feed.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f8f4e8",
+  "theme_color": "#0f2d1f",
+  "icons": [
+    {
+      "src": "/logo_icon.png",
+      "sizes": "1250x1250",
+      "type": "image/png"
+    }
+  ]
+}
