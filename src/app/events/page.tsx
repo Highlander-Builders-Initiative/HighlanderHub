@@ -3,7 +3,7 @@ import { Masthead } from "@/components/layout/Masthead";
 import { EventsBrowser } from "@/components/events/EventsBrowser";
 import { SubmitEventCta } from "@/components/events/SubmitEventCta";
 import { Footer } from "@/components/layout/Footer";
-import { getEvents } from "@/lib/events";
+import { getEventsPage } from "@/lib/events";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +14,8 @@ export const metadata: Metadata = {
 };
 
 export default async function EventsPage() {
-  const events = await getEvents();
+  const initialPage = await getEventsPage();
+  const events = initialPage.events;
 
   const now = Date.now();
   const inSevenDays = now + 7 * 24 * 60 * 60 * 1000;
@@ -46,7 +47,7 @@ export default async function EventsPage() {
             <SubmitEventCta surface="events_header" />
             <dl className="hidden grid-cols-3 gap-x-6 gap-y-1 md:grid md:text-right">
               <div>
-                <dt className="text-xs text-muted">Indexed</dt>
+                <dt className="text-xs text-muted">Loaded</dt>
                 <dd className="font-display text-2xl font-semibold leading-none text-ink">
                   {events.length}
                 </dd>
@@ -68,7 +69,11 @@ export default async function EventsPage() {
         </div>
       </section>
 
-      <EventsBrowser events={events} />
+      <EventsBrowser
+        events={events}
+        initialHasMore={initialPage.hasMore}
+        initialNextOffset={initialPage.nextOffset}
+      />
 
       <Footer />
     </main>

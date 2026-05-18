@@ -23,15 +23,42 @@ const CATEGORIES: { value: EventCategory | "all"; label: string }[] = [
   { value: "free_food", label: "Free Food" },
 ];
 
-export function EventsBrowser({ events }: { events: CampusEvent[] }) {
+type EventsBrowserProps = {
+  events: CampusEvent[];
+  initialHasMore?: boolean;
+  initialNextOffset?: number;
+};
+
+type EventsApiPage = {
+  events: CampusEvent[];
+  hasMore: boolean;
+  nextOffset: number;
+};
+
+export function EventsBrowser({
+  events,
+  initialHasMore = false,
+  initialNextOffset = events.length,
+}: EventsBrowserProps) {
   const [view, setView] = useState<ViewMode>("list");
   const [category, setCategory] = useState<EventCategory | "all">("all");
   const [query, setQuery] = useState("");
+  const [loadedEvents, setLoadedEvents] = useState(events);
+  const [hasMore, setHasMore] = useState(initialHasMore);
+  const [nextOffset, setNextOffset] = useState(initialNextOffset);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [loadError, setLoadError] = useState("");
   const trimmedQuery = query.trim();
   const hasActiveFilters = category !== "all" || trimmedQuery.length > 0;
 
+  useEffect(() => {
+    setLoadedEvents(events);
+    setHasMore(initialHasMore);
+    setNextOffset(initialNextOffset);
+  }, [events, initialHasMore, initialNextOffset]);
+
   const filtered = useMemo(() => {
-    return events.filter((ev) => {
+    return loadedEvents.filter((ev) => {
       if (category === "free_food") {
         if (ev.category !== "free_food" && !ev.tags.includes("free food")) {
           return false;
@@ -54,13 +81,13 @@ export function EventsBrowser({ events }: { events: CampusEvent[] }) {
       }
       return true;
     });
-  }, [events, category, trimmedQuery]);
+  }, [loadedEvents, category, trimmedQuery]);
 
   const grouped = useMemo(() => groupByDay(filtered), [filtered]);
   const dayKeys = Array.from(grouped.keys());
   const resultsLabel = hasActiveFilters
     ? `${filtered.length} matching ${filtered.length === 1 ? "event" : "events"}`
-    : `${filtered.length} ${filtered.length === 1 ? "event" : "events"} indexed`;
+    : `${filtered.length} ${filtered.length === 1 ? "event" : "events"} loaded`;
 
   const lastTrackedQuery = useRef("");
   useEffect(() => {
@@ -90,6 +117,29 @@ export function EventsBrowser({ events }: { events: CampusEvent[] }) {
   const handleView = (next: ViewMode) => {
     setView(next);
     track("events_view_toggle", { view: next });
+  };
+
+  const loadMore = async () => {
+    setIsLoadingMore(true);
+    setLoadError("");
+
+    try {
+      const response = await fetch(`/api/events?offset=${nextOffset}`);
+      if (!response.ok) throw new Error("Unable to load more events.");
+      const page = (await response.json()) as EventsApiPage;
+
+      setLoadedEvents((current) => {
+        const seen = new Set(current.map((event) => event.id));
+        const nextEvents = page.events.filter((event) => !seen.has(event.id));
+        return [...current, ...nextEvents];
+      });
+      setHasMore(page.hasMore);
+      setNextOffset(page.nextOffset);
+    } catch {
+      setLoadError("Could not load more events. Try again.");
+    } finally {
+      setIsLoadingMore(false);
+    }
   };
 
   return (
@@ -244,6 +294,26 @@ export function EventsBrowser({ events }: { events: CampusEvent[] }) {
               </div>
             );
           })}
+
+          {(hasMore || loadError) && (
+            <div className="mt-2 flex flex-col items-center gap-3">
+              {loadError && (
+                <p className="text-sm text-coral" role="status">
+                  {loadError}
+                </p>
+              )}
+              {hasMore && (
+                <button
+                  type="button"
+                  onClick={loadMore}
+                  disabled={isLoadingMore}
+                  className="interactive-focus inline-flex min-h-11 items-center rounded-lg border border-ink/15 bg-canvas px-5 py-2 text-sm font-medium text-ink transition-colors hover:border-ink disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isLoadingMore ? "Loading..." : "Load more"}
+                </button>
+              )}
+            </div>
+          )}
         </>
       )}
     </section>

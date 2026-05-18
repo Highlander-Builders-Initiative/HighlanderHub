@@ -15,6 +15,18 @@ test("event filters expose accessible state and recovery actions", () => {
   assert.doesNotMatch(source, /⌕/);
 });
 
+test("event browser paginates the list instead of rendering every event at once", () => {
+  const browser = read("src/components/events/EventsBrowser.tsx");
+  const data = read("src/lib/events.ts");
+  const api = read("src/app/api/events/route.ts");
+
+  assert.match(data, /EVENTS_PAGE_SIZE/);
+  assert.match(data, /\.range\(/);
+  assert.match(api, /searchParams/);
+  assert.match(browser, /Load more/);
+  assert.match(browser, /hasMore/);
+});
+
 test("event cards link to a detail page and stay accessible", () => {
   const source = read("src/components/events/EventCard.tsx");
 

@@ -3,6 +3,18 @@ import { supabase } from "@/lib/supabase";
 import { startOfPacificToday } from "@/lib/dates";
 
 const DB_RETRY_ATTEMPTS = 2;
+export const EVENTS_PAGE_SIZE = 24;
+
+type EventsPageOptions = {
+  limit?: number;
+  offset?: number;
+};
+
+export type EventsPageResult = {
+  events: CampusEvent[];
+  hasMore: boolean;
+  nextOffset: number;
+};
 
 // DB columns are snake_case (Postgres convention); the app uses camelCase
 // CampusEvent. This adapter is the single conversion point.
@@ -97,16 +109,38 @@ async function withDbRetry<T>(
  * "Upcoming" = starting on or after today (UTC midnight). Past events are
  * filtered out so the list's top row is always the current/next day.
  */
-export async function getEvents(): Promise<CampusEvent[]> {
+export async function getEventsPage({
+  limit = EVENTS_PAGE_SIZE,
+  offset = 0,
+}: EventsPageOptions = {}): Promise<EventsPageResult> {
+  const pageSize = Math.max(1, Math.min(limit, 60));
+  const from = Math.max(0, offset);
+  const to = from + pageSize;
+
   const data = await withDbRetry("events", () =>
     supabase
       .from("events")
       .select("*")
       .gte("starts_at", startOfPacificToday().toISOString())
       .order("starts_at", { ascending: true })
+      .range(from, to)
   );
 
-  return (data as EventRow[]).map(toCampusEvent);
+  const rows = data as EventRow[];
+  const events = rows.slice(0, pageSize).map(toCampusEvent);
+
+  return {
+    events,
+    hasMore: rows.length > pageSize,
+    nextOffset: from + events.length,
+  };
+}
+
+export async function getEvents(
+  options?: EventsPageOptions
+): Promise<CampusEvent[]> {
+  const page = await getEventsPage(options);
+  return page.events;
 }
 
 export async function getEventById(id: string): Promise<CampusEvent | null> {
