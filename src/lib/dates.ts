@@ -1,7 +1,8 @@
-// UCR is Pacific. ISO timestamps in the DB are UTC, but the UI must group
-// and filter by Pacific calendar days — otherwise late-evening events leak
-// into the next day's bucket.
+// UCR is Pacific. ISO timestamps in the DB are UTC, but the UI must group,
+// filter, and display campus-facing dates in Pacific time — otherwise
+// late-evening events drift into the next day's bucket depending on runtime TZ.
 const CAMPUS_TZ = "America/Los_Angeles";
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 const dayKeyFmt = new Intl.DateTimeFormat("en-CA", {
   timeZone: CAMPUS_TZ,
@@ -9,10 +10,35 @@ const dayKeyFmt = new Intl.DateTimeFormat("en-CA", {
   month: "2-digit",
   day: "2-digit",
 });
+const fullDayFmt = new Intl.DateTimeFormat("en-US", {
+  timeZone: CAMPUS_TZ,
+  weekday: "long",
+  month: "long",
+  day: "numeric",
+});
+const shortDayFmt = new Intl.DateTimeFormat("en-US", {
+  timeZone: CAMPUS_TZ,
+  weekday: "short",
+  month: "short",
+  day: "numeric",
+});
+const weekdayFmt = new Intl.DateTimeFormat("en-US", {
+  timeZone: CAMPUS_TZ,
+  weekday: "long",
+});
+const timeFmt = new Intl.DateTimeFormat("en-US", {
+  timeZone: CAMPUS_TZ,
+  hour: "numeric",
+  minute: "2-digit",
+});
 
 /** YYYY-MM-DD in campus (Pacific) local time, derived from an ISO instant. */
 export function pacificDayKey(iso: string): string {
   return dayKeyFmt.format(new Date(iso));
+}
+
+function pacificMidnightMs(iso: string): number {
+  return Date.parse(`${pacificDayKey(iso)}T00:00:00Z`);
 }
 
 /** The instant that was midnight in Pacific time on the current Pacific date. */
@@ -33,32 +59,15 @@ export function startOfPacificToday(): Date {
 }
 
 export function formatDay(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-  });
+  return fullDayFmt.format(new Date(iso));
 }
 
 export function formatDayShort(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleDateString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  });
+  return shortDayFmt.format(new Date(iso));
 }
 
 export function formatTime(iso: string): string {
-  const d = new Date(iso);
-  return d
-    .toLocaleTimeString("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
-    })
-    .toLowerCase()
-    .replace(" ", "");
+  return timeFmt.format(new Date(iso)).toLowerCase().replace(/\s+/g, "");
 }
 
 export function formatTimeRange(startIso: string, endIso?: string): string {
@@ -68,18 +77,13 @@ export function formatTimeRange(startIso: string, endIso?: string): string {
 }
 
 export function relativeDay(iso: string): string {
-  const d = new Date(iso);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const target = new Date(d);
-  target.setHours(0, 0, 0, 0);
-  const diffDays = Math.round(
-    (target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
-  );
+  const today = pacificMidnightMs(new Date().toISOString());
+  const target = pacificMidnightMs(iso);
+  const diffDays = Math.round((target - today) / MS_PER_DAY);
   if (diffDays === 0) return "Today";
   if (diffDays === 1) return "Tomorrow";
   if (diffDays > 1 && diffDays < 7) {
-    return d.toLocaleDateString("en-US", { weekday: "long" });
+    return weekdayFmt.format(new Date(iso));
   }
   return formatDayShort(iso);
 }
