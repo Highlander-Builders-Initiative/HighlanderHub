@@ -66,6 +66,17 @@ test("event cards link to a detail page and stay accessible", () => {
 
   assert.match(source, /href=\{`\/events\/\$\{event\.id\}`\}/);
   assert.match(source, /aria-label=/);
+  assert.match(source, /alt=\{flyerAlt\(event\)\}/);
+  assert.match(source, /interactive-focus card-hover/);
+  assert.doesNotMatch(source, /alt=""/);
+});
+
+test("home flyer mosaic tiles expose flyer alt text and keyboard focus", () => {
+  const source = read("src/components/home/FlyerTile.tsx");
+
+  assert.match(source, /alt=\{flyerAlt\(event\)\}/);
+  assert.match(source, /interactive-focus card-hover/);
+  assert.doesNotMatch(source, /alt=""/);
 });
 
 test("event detail page exposes RSVP / calendar / share actions", () => {
@@ -89,6 +100,8 @@ test("motion and focus behavior have accessible fallbacks", () => {
 
   assert.match(source, /prefers-reduced-motion: reduce/);
   assert.match(source, /\.interactive-focus/);
+  assert.match(source, /outline: 3px solid #0f1115/);
+  assert.match(source, /\.card-hover:focus-visible/);
   assert.match(source, /touch-action: manipulation/);
 });
 
@@ -108,6 +121,9 @@ test("submit form exposes client-side validation feedback accessibly", () => {
   assert.match(source, /aria-describedby=\{describedBy \|\| undefined\}/);
   assert.match(source, /This field is required\./);
   assert.match(source, /Required/);
+  assert.match(source, /bg-stone-950/);
+  assert.match(source, /text-white/);
+  assert.doesNotMatch(source, /placeholder:text-stone-400/);
 });
 
 test("site exposes crawler and social preview metadata", () => {

@@ -227,7 +227,7 @@ export default function SubmitForm() {
       <button
         type="submit"
         disabled={status.kind === "submitting"}
-        className="w-full rounded-lg bg-stone-900 px-6 py-3 font-medium text-stone-50 hover:bg-stone-800 disabled:opacity-50"
+        className="interactive-focus w-full rounded-lg bg-stone-950 px-6 py-3 font-medium text-white transition-colors hover:bg-stone-800 disabled:cursor-not-allowed disabled:bg-stone-500 disabled:text-white disabled:opacity-100"
       >
         {status.kind === "submitting" ? "Submitting…" : "Submit for review"}
       </button>
@@ -264,9 +264,9 @@ function Field({
     .filter(Boolean)
     .join(" ");
   const baseClass =
-    "mt-1 w-full rounded-md border border-stone-300 bg-stone-50 px-3 py-2 text-stone-900 placeholder:text-stone-400 focus:border-stone-900 focus:outline-none";
+    "interactive-focus mt-1 w-full rounded-md border border-stone-400 bg-stone-50 px-3 py-2 text-stone-950 placeholder:text-stone-600 focus:border-stone-950";
   const inputClass = error
-    ? `${baseClass} border-red-500 focus:border-red-700`
+    ? `${baseClass} border-red-700 focus:border-red-800`
     : baseClass;
 
   return (
@@ -326,7 +326,7 @@ function SelectField({
       <select
         name={name}
         defaultValue="club"
-        className="mt-1 w-full rounded-md border border-stone-300 bg-stone-50 px-3 py-2 text-stone-900 focus:border-stone-900 focus:outline-none"
+        className="interactive-focus mt-1 w-full rounded-md border border-stone-400 bg-stone-50 px-3 py-2 text-stone-950 focus:border-stone-950"
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>
@@ -353,7 +353,7 @@ function Checkbox({
         type="checkbox"
         name={name}
         defaultChecked={defaultChecked}
-        className="h-4 w-4 rounded border-stone-300"
+        className="interactive-focus h-4 w-4 rounded border-stone-400 text-stone-950"
       />
       {label}
     </label>

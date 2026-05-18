@@ -34,6 +34,10 @@ export function EventCard({
   return <TextCard event={event} onOpen={onOpen} />;
 }
 
+function flyerAlt(event: CampusEvent) {
+  return `Flyer for ${event.title}`;
+}
+
 function ImageCard({
   event,
   onImageError,
@@ -48,11 +52,11 @@ function ImageCard({
       href={`/events/${event.id}`}
       onClick={onOpen}
       aria-label={`${event.title} — ${relativeDay(event.startsAt)} at ${formatTime(event.startsAt)}`}
-      className="card-hover group relative block w-full overflow-hidden rounded-xl border border-ink/15 bg-canvas aspect-[4/5]"
+      className="interactive-focus card-hover group relative block w-full overflow-hidden rounded-xl border border-ink/15 bg-canvas aspect-[4/5]"
     >
       <Image
         src={event.imageUrl!}
-        alt=""
+        alt={flyerAlt(event)}
         fill
         sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
         className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
@@ -96,7 +100,7 @@ function TextCard({
       href={`/events/${event.id}`}
       onClick={onOpen}
       aria-label={`${event.title} — ${relativeDay(event.startsAt)} at ${formatTime(event.startsAt)}`}
-      className="card-hover group relative flex h-full w-full min-w-0 overflow-hidden rounded-xl"
+      className="interactive-focus card-hover group relative flex h-full w-full min-w-0 overflow-hidden rounded-xl"
     >
       <span
         aria-hidden

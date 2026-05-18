@@ -24,6 +24,10 @@ const META_CLASSES: Record<FlyerTileSize, string> = {
   wide: "text-[10px]",
 };
 
+function flyerAlt(event: CampusEvent) {
+  return `Flyer for ${event.title}`;
+}
+
 export function FlyerTile({
   event,
   size,
@@ -50,12 +54,12 @@ export function FlyerTile({
       }
       aria-label={`${event.title} — ${relativeDay(event.startsAt)}`}
       style={{ animationDelay: `${enterDelayMs}ms` }}
-      className={`card-hover group relative block overflow-hidden rounded-xl border border-ink/15 bg-canvas aspect-[4/5] md:aspect-auto animate-scale-in ${className}`}
+      className={`interactive-focus card-hover group relative block overflow-hidden rounded-xl border border-ink/15 bg-canvas aspect-[4/5] md:aspect-auto animate-scale-in ${className}`}
     >
       {showImage ? (
         <Image
           src={event.imageUrl!}
-          alt=""
+          alt={flyerAlt(event)}
           fill
           sizes="(max-width: 768px) 100vw, 50vw"
           className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"

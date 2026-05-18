@@ -78,8 +78,9 @@ body {
 }
 .interactive-focus:focus-visible,
 .interactive-focus:focus-within {
-  outline: 2px solid #0f1115;
-  outline-offset: 2px;
+  outline: 3px solid #0f1115;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 5px #ffffff;
 }
 
 /* Card with a subtle lift, hairline border, no rounded-blob aesthetic */
@@ -87,6 +88,7 @@ body {
   transition: transform 180ms ease, border-color 180ms ease;
 }
 .card-hover:hover,
+.card-hover:focus-visible,
 .card-hover:focus-within {
   transform: translateY(-1px);
   border-color: #0f1115;
