@@ -21,6 +21,15 @@ test("missing detail rows still use the not-found path", () => {
   assert.match(source, /if \(!data\) return null;/);
 });
 
+test("missing event details render the app-level not-found page", () => {
+  const notFound = read("src/app/not-found.tsx");
+
+  assert.match(notFound, /function NotFound/);
+  assert.match(notFound, /<Masthead \/>/);
+  assert.match(notFound, /<Footer \/>/);
+  assert.match(notFound, /href="\/events"/);
+});
+
 test("Supabase-backed event routes are request-time rendered", () => {
   assert.match(read("src/app/page.tsx"), /export const dynamic = "force-dynamic"/);
   assert.match(read("src/app/events/page.tsx"), /export const dynamic = "force-dynamic"/);
