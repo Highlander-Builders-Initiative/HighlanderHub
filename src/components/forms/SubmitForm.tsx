@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { track } from "@/lib/analytics";
 import type { EventCategory } from "@/types/event";
@@ -54,6 +54,10 @@ export default function SubmitForm() {
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const startedRef = useRef(false);
+
+  useEffect(() => {
+    track("submit_page_view", {});
+  }, []);
 
   function onFirstInteract() {
     if (startedRef.current) return;

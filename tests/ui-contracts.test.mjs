@@ -126,6 +126,16 @@ test("submit form exposes client-side validation feedback accessibly", () => {
   assert.doesNotMatch(source, /placeholder:text-stone-400/);
 });
 
+test("submit form tracks page-view to completion funnel events", () => {
+  const form = read("src/components/forms/SubmitForm.tsx");
+  const analytics = read("src/lib/analytics.ts");
+
+  assert.match(analytics, /submit_page_view: Record<string, never>/);
+  assert.match(form, /useEffect/);
+  assert.match(form, /track\("submit_page_view", \{\}\)/);
+  assert.match(form, /track\("submission_complete", \{\}\)/);
+});
+
 test("site exposes crawler and social preview metadata", () => {
   const layout = read("src/app/layout.tsx");
   const eventDetail = read("src/app/events/[id]/page.tsx");

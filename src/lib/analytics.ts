@@ -13,6 +13,7 @@ type EventMap = {
   events_clear_filters: Record<string, never>;
   hbi_cta_click: { location: "hero" | "footer_social" | "about_page"; channel: string };
   submit_cta_click: { surface: "events_header" | "empty_state" | "about_page" };
+  submit_page_view: Record<string, never>;
   submission_start: Record<string, never>;
   submission_complete: Record<string, never>;
   submission_error: { message: string };
