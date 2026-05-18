@@ -112,7 +112,7 @@ class ExtractStoriesTests(unittest.TestCase):
 
         self.assertIsNotNone(row)
         assert row is not None
-        self.assertEqual("ig_cyber_ucr_3894795737410658767", row["id"])
+        self.assertEqual("ig_cyber_ucr_20260516T0200Z", row["id"])
         self.assertEqual("Security Night Workshop", row["title"])
         self.assertEqual("UCR Cybersecurity Club", row["host"])
         self.assertEqual("cyber_ucr", row["host_handle"])
