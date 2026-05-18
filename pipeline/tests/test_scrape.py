@@ -23,11 +23,16 @@ class ScrapeMainTests(unittest.TestCase):
         class _LoginRequiredException(Exception):
             pass
 
+        class _ProfileNotExistsException(Exception):
+            pass
+
         fake_exceptions = types.ModuleType("instaloader.exceptions")
         fake_exceptions.ConnectionException = _ConnectionException
         fake_exceptions.LoginRequiredException = _LoginRequiredException
+        fake_exceptions.ProfileNotExistsException = _ProfileNotExistsException
         fake_instaloader.ConnectionException = _ConnectionException
         fake_instaloader.LoginRequiredException = _LoginRequiredException
+        fake_instaloader.ProfileNotExistsException = _ProfileNotExistsException
         fake_instaloader.Instaloader = Mock()
         fake_instaloader.Profile = Mock()
         fake_instaloader.exceptions = fake_exceptions
@@ -61,6 +66,44 @@ class ScrapeMainTests(unittest.TestCase):
                                 with self.assertRaisesRegex(
                                     RuntimeError,
                                     "Instagram scrape failed for 2 account",
+                                ):
+                                    self.scrape.main()
+
+    def test_session_file_login_is_verified_after_load(self) -> None:
+        loader = Mock()
+        loader.test_login.return_value = None
+
+        with patch.object(self.scrape, "SESSION_FILE", "/tmp/ig-session"):
+            with patch.object(self.scrape, "IG_USERNAME", "scraper"):
+                with self.assertRaisesRegex(
+                    self.scrape.LoginRequiredException,
+                    "session file did not verify",
+                ):
+                    self.scrape._login(loader)
+
+        loader.load_session_from_file.assert_called_once_with(
+            "scraper", "/tmp/ig-session"
+        )
+        loader.test_login.assert_called_once_with()
+
+    def test_all_profiles_missing_after_session_load_reports_session_failure(self) -> None:
+        accounts = [{"handle": "ucrvsa"}, {"handle": "cyber_ucr"}]
+
+        with patch.object(self.scrape, "ensure_dirs"):
+            with patch.object(self.scrape, "load_accounts", return_value=accounts):
+                with patch.object(self.scrape.instaloader, "Instaloader", return_value=Mock()):
+                    with patch.object(self.scrape, "_login"):
+                        with patch.object(
+                            self.scrape,
+                            "scrape_account",
+                            side_effect=self.scrape.ProfileNotExistsException(
+                                "Profile does not exist"
+                            ),
+                        ):
+                            with patch.object(self.scrape.time, "sleep"):
+                                with self.assertRaisesRegex(
+                                    RuntimeError,
+                                    "Instagram session appears invalid",
                                 ):
                                     self.scrape.main()
 

@@ -15,7 +15,11 @@ from pathlib import Path
 from typing import Any
 
 import instaloader
-from instaloader.exceptions import ConnectionException, LoginRequiredException
+from instaloader.exceptions import (
+    ConnectionException,
+    LoginRequiredException,
+    ProfileNotExistsException,
+)
 
 from config import (
     IG_PASSWORD,
@@ -34,6 +38,11 @@ def _login(L: instaloader.Instaloader) -> None:
         # Session file produced by `instaloader -l <user>`; safer for unattended runs.
         L.load_session_from_file(IG_USERNAME or "", SESSION_FILE)
         log.info("Loaded session from %s", SESSION_FILE)
+        if not L.test_login():
+            raise LoginRequiredException(
+                "Instagram session file did not verify; refresh IG_SESSION_FILE "
+                "with `instaloader -l <user>`."
+            )
         return
     if not IG_USERNAME or not IG_PASSWORD:
         raise SystemExit(
@@ -112,7 +121,7 @@ def main() -> None:
     )
     _login(L)
 
-    totals = {"accounts": 0, "seen": 0, "new": 0, "errors": 0}
+    totals = {"accounts": 0, "seen": 0, "new": 0, "errors": 0, "missing_profiles": 0}
     for acct in accounts:
         handle = acct["handle"]
         totals["accounts"] += 1
@@ -127,6 +136,17 @@ def main() -> None:
         except ConnectionException as e:
             totals["errors"] += 1
             log.warning("%s: connection error: %s", handle, e)
+        except ProfileNotExistsException as e:
+            totals["errors"] += 1
+            totals["missing_profiles"] += 1
+            log.warning(
+                "%s: profile lookup failed: %s. If this affects every account, "
+                "Instagram is likely hiding profiles behind an expired, challenged, "
+                "or rate-limited session.",
+                handle,
+                e,
+                exc_info=True,
+            )
         except Exception as e:  # noqa: BLE001 — keep run alive across per-account failures
             totals["errors"] += 1
             log.warning("%s: %s: %s", handle, type(e).__name__, e, exc_info=True)
@@ -135,6 +155,17 @@ def main() -> None:
 
     log.info("Done: %s", totals)
     if totals["errors"]:
+        if (
+            totals["missing_profiles"] == totals["accounts"]
+            and totals["seen"] == 0
+            and totals["accounts"] > 0
+        ):
+            raise RuntimeError(
+                "Instagram session appears invalid, challenged, or rate-limited: "
+                f"all {totals['accounts']} configured profiles returned "
+                "ProfileNotExistsException. Refresh IG_SESSION_FILE and verify the "
+                "scraper account can view these profiles before re-running."
+            )
         raise RuntimeError(
             f"Instagram scrape failed for {totals['errors']} account(s); "
             "check the logs for expired sessions, auth challenges, or rate limits."
