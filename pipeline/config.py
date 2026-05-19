@@ -30,6 +30,11 @@ SESSION_FILE = os.environ.get("IG_SESSION_FILE")  # absolute path, optional
 GOOGLE_VISION_API_KEY = os.environ.get("GOOGLE_VISION_API_KEY")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
+# Highlander Link is fully gated behind UCR SSO. The discovery script reuses a
+# session cookie pasted out of a logged-in browser (DevTools → Application →
+# Cookies). Cookies typically last 2–4 weeks before re-login is needed.
+HIGHLANDER_LINK_COOKIE = os.environ.get("HIGHLANDER_LINK_COOKIE")
+
 
 def load_accounts() -> list[dict[str, Any]]:
     with ACCOUNTS_FILE.open() as f:
