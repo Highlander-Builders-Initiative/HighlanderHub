@@ -1,8 +1,8 @@
 name: Scrape sources
 
-# Runs pipeline/run.py every 6h: Instagram stories + UCR Localist events,
-# extraction (Google Vision OCR + Gemini), and Supabase upserts.
-# Can also be triggered manually from the Actions tab.
+# Runs pipeline/run.py (Instagram + UCR + Highlander Link + extract/normalize).
+# Scheduled runs are disabled for now — use workflow_dispatch to run manually.
+# Re-enable the cron under `on.schedule` when the IG session is healthy again.
 #
 # Required repo secrets (Settings -> Secrets and variables -> Actions):
 #   SUPABASE_URL           - https://qyxlojftdtjasxhzyqil.supabase.co
@@ -20,9 +20,9 @@ name: Scrape sources
 # IG_SESSION_FILE_B64.
 
 on:
-  schedule:
-    # Every 6h UTC. GitHub cron is best-effort; expect 5-15 min delays.
-    - cron: "0 */6 * * *"
+  # schedule:
+  #   # Every 6h UTC. GitHub cron is best-effort; expect 5-15 min delays.
+  #   - cron: "0 */6 * * *"
   workflow_dispatch: {}
 
 env:
