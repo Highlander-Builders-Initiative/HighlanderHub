@@ -8,12 +8,7 @@
   --font-display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
   --font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
-  --masthead-h: 48px;
-}
-@media (min-width: 640px) {
-  :root {
-    --masthead-h: 56px;
-  }
+  --masthead-h: 56px;
 }
 
 html,

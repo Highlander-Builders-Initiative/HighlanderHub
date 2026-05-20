@@ -103,10 +103,23 @@ test("event detail page exposes RSVP / calendar / share actions", () => {
 
 test("masthead keeps navigation reachable on mobile", () => {
   const source = read("src/components/layout/Masthead.tsx");
+  const eventsPage = read("src/app/events/page.tsx");
+  const eventsBrowser = read("src/components/events/EventsBrowser.tsx");
+  const homePage = read("src/app/page.tsx");
 
   assert.match(source, /md:hidden/);
   assert.match(source, /\/events/);
   assert.match(source, /"\/about"/);
+  assert.match(source, /hideOnScroll/);
+  assert.match(source, /position = "sticky"/);
+  assert.match(source, /position === "sticky"/);
+  assert.match(source, /variant = "glass"/);
+  assert.match(eventsPage, /<Masthead position="static" variant="solid" \/>/);
+  assert.doesNotMatch(eventsPage, /hideOnScroll/);
+  assert.match(eventsBrowser, /style=\{\{ top: 0 \}\}/);
+  assert.match(eventsBrowser, /bg-white\/55/);
+  assert.match(eventsBrowser, /backdrop-blur-xl/);
+  assert.match(homePage, /<Masthead \/>/);
 });
 
 test("motion and focus behavior have accessible fallbacks", () => {

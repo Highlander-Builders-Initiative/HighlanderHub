@@ -22,7 +22,7 @@ export default async function EventsPage() {
 
   return (
     <main className="min-h-screen bg-canvas">
-      <Masthead />
+      <Masthead position="static" variant="solid" />
 
       {/* Page header */}
       <section className="border-b border-ink/10">

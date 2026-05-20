@@ -168,11 +168,11 @@ export function EventsBrowser({
     <section id="events" className="mx-auto max-w-7xl px-4 pb-20 sm:px-6">
       {/* Filter bar */}
       <div
-        className="sticky z-20 -mx-4 mb-8 border-b border-ink/10 bg-canvas/95 px-4 backdrop-blur transition-[top] duration-200 ease-out sm:-mx-6 sm:px-6"
-        style={{ top: "var(--masthead-h, 56px)" }}
+        className="sticky z-20 -mx-4 mb-6 border-b border-white/50 bg-white/55 px-4 shadow-[0_16px_40px_rgba(15,17,21,0.08)] backdrop-blur-xl transition-[top] duration-200 ease-out sm:-mx-6 sm:px-6"
+        style={{ top: 0 }}
       >
         {/* Row 1: view toggle + search */}
-        <div className="flex items-center gap-3 pt-3 sm:pt-4">
+        <div className="flex items-center gap-3 pt-2">
           <div
             role="tablist"
             aria-label="Choose view"
@@ -228,7 +228,7 @@ export function EventsBrowser({
 
         {/* Row 2: category chips */}
         <div
-          className="flex flex-wrap items-center gap-1.5 py-3"
+          className="flex flex-wrap items-center gap-1.5 py-2"
           aria-label="Filter events by category"
         >
           {CATEGORIES.map((c) => {
@@ -242,7 +242,7 @@ export function EventsBrowser({
                 className={`interactive-focus inline-flex min-h-8 items-center rounded-full border px-3 py-1 text-[13px] transition-colors ${
                   active
                     ? "border-ink bg-ink text-white"
-                    : "border-ink/15 bg-canvas text-ink hover:border-ink"
+                    : "border-ink/15 bg-white/60 text-ink hover:border-ink hover:bg-white/85"
                 }`}
               >
                 {c.label}
