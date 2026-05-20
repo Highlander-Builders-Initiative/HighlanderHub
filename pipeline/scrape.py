@@ -89,9 +89,47 @@ def _write_item(item_dict: dict[str, Any], handle: str) -> bool:
     return True
 
 
+# Hardcoded User ID mapping to completely bypass Instagram GraphQL lookups for known accounts.
+# These IDs are permanent and will never change, ensuring high speed and reliability.
+KNOWN_USER_IDS = {
+    "cyber_ucr": 38460809748,
+    "acm_ucr": 10839758322,
+    "ucrvsa": 241289265,
+}
+
+
+def _resolve_profile(L: instaloader.Instaloader, handle: str) -> instaloader.Profile:
+    """Resolve a username to an instaloader Profile object using a hybrid approach.
+
+    1. If the handle has a hardcoded ID, instantiate Profile directly using the ID (0 network requests).
+    2. Fallback to Instagram search (TopSearchResults GET query) which is unaffected by GraphQL bugs.
+    3. Final fallback to instaloader's default from_username (GraphQL).
+    """
+    normalized_handle = handle.lower()
+
+    # 1. Use hardcoded static IDs (Workaround B)
+    if normalized_handle in KNOWN_USER_IDS:
+        userid = KNOWN_USER_IDS[normalized_handle]
+        log.info("%s: Resolved handle using static KNOWN_USER_IDS mapping (ID: %s)", handle, userid)
+        return instaloader.Profile(L.context, {"username": handle, "id": str(userid)})
+
+    # 2. Fallback to Search GET request (completely unaffected by issue #2695)
+    try:
+        search_results = instaloader.TopSearchResults(L.context, handle)
+        for profile in search_results.get_profiles():
+            if profile.username.lower() == normalized_handle:
+                log.info("%s: Resolved handle via search (ID: %s)", handle, profile.userid)
+                return profile
+    except Exception as e:
+        log.warning("%s: Search resolution failed: %s. Falling back to default lookup.", handle, e)
+
+    # 3. Final fallback to instaloader's default from_username
+    return instaloader.Profile.from_username(L.context, handle)
+
+
 def scrape_account(L: instaloader.Instaloader, handle: str) -> tuple[int, int]:
     """Fetch stories for one account. Returns (seen, new)."""
-    profile = instaloader.Profile.from_username(L.context, handle)
+    profile = _resolve_profile(L, handle)
     seen = new = 0
     for story in L.get_stories(userids=[profile.userid]):
         for item in story.get_items():
