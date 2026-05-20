@@ -6,13 +6,13 @@ test("campus date helpers stay aligned across runtime timezones", () => {
   const result = spawnSync(
     process.execPath,
     [
-      "--experimental-strip-types",
       "--input-type=module",
       "--eval",
       `
+        import { importTsModule } from "./tests/helpers/import-ts-module.mjs";
         import { mock } from "node:test";
         mock.timers.enable({ apis: ["Date"], now: new Date("2026-05-18T08:00:00Z") });
-        const dates = await import("./src/lib/dates.ts");
+        const dates = await importTsModule("src/lib/dates.ts");
         const iso = "2026-05-19T06:30:00Z";
         console.log(JSON.stringify({
           dayKey: dates.pacificDayKey(iso),
@@ -44,13 +44,13 @@ test("Pacific day-key helpers do calendar math outside the browser timezone", ()
   const result = spawnSync(
     process.execPath,
     [
-      "--experimental-strip-types",
       "--input-type=module",
       "--eval",
       `
+        import { importTsModule } from "./tests/helpers/import-ts-module.mjs";
         import { mock } from "node:test";
         mock.timers.enable({ apis: ["Date"], now: new Date("2026-05-20T02:00:00Z") });
-        const dates = await import("./src/lib/dates.ts");
+        const dates = await importTsModule("src/lib/dates.ts");
         console.log(JSON.stringify({
           todayKey: dates.pacificTodayKey(),
           monthStart: dates.startOfPacificMonthKey("2026-05-19"),

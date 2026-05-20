@@ -10,11 +10,11 @@ test("event validation helpers reject unsafe URLs and backwards end times", () =
   const result = spawnSync(
     process.execPath,
     [
-      "--experimental-strip-types",
       "--input-type=module",
       "--eval",
       `
-        const validation = await import("./src/lib/event-validation.ts");
+        import { importTsModule } from "./tests/helpers/import-ts-module.mjs";
+        const validation = await importTsModule("src/lib/event-validation.ts");
         const ok = validation.validateEventTimes("2026-05-20T12:00", "2026-05-20T12:00");
         const backwards = validation.validateEventTimes("2026-05-20T12:00", "2026-05-20T11:59");
         const badStart = validation.validateEventTimes("not a date", "");
