@@ -37,4 +37,4 @@ images with a mix of OCR and an LLM, so the occasional misread happens.
 
 ## License
 
-MIT.
+MIT
