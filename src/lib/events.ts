@@ -99,6 +99,10 @@ function describeSupabaseError(error: unknown): string {
   return "Unknown Supabase error";
 }
 
+function activeEventFilter(nowIso: string): string {
+  return `ends_at.gte.${nowIso},and(ends_at.is.null,starts_at.gte.${nowIso})`;
+}
+
 function reportDbFailure(
   operation: string,
   error: unknown,
@@ -165,6 +169,7 @@ export async function getEventsSummary(): Promise<EventsSummary> {
     };
   }
 
+  const nowIso = new Date().toISOString();
   const today = startOfPacificToday();
   const todayIso = today.toISOString();
   const inSevenDays = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
@@ -175,7 +180,7 @@ export async function getEventsSummary(): Promise<EventsSummary> {
       supabase
         .from("events")
         .select("id", { count: "exact", head: true })
-        .gte("starts_at", todayIso)
+        .or(activeEventFilter(nowIso))
     ),
     getCount("this-week event count", () =>
       supabase
@@ -201,9 +206,9 @@ export async function getEventsSummary(): Promise<EventsSummary> {
 }
 
 /**
- * Reads upcoming events from Supabase, sorted by start time ascending.
- * "Upcoming" = starting on or after today (UTC midnight). Past events are
- * filtered out so the list's top row is always the current/next day.
+ * Reads visible events from Supabase, sorted by start time ascending.
+ * Events stay visible until their `ends_at` time; if they have no end time,
+ * they fall back to `starts_at` so one-off posts still disappear.
  */
 export async function getEventsPage({
   limit = EVENTS_PAGE_SIZE,
@@ -221,12 +226,13 @@ export async function getEventsPage({
   const pageSize = Math.max(1, Math.min(limit, 60));
   const from = Math.max(0, offset);
   const to = from + pageSize;
+  const nowIso = new Date().toISOString();
 
   const data = await withDbRetry("events", () =>
     supabase
       .from("events")
       .select("*")
-      .gte("starts_at", startOfPacificToday().toISOString())
+      .or(activeEventFilter(nowIso))
       .order("starts_at", { ascending: true })
       .range(from, to)
   );

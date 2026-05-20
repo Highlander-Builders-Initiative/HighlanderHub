@@ -30,6 +30,18 @@ test("missing event details render the app-level not-found page", () => {
   assert.match(notFound, /href="\/events"/);
 });
 
+test("event queries keep events visible until their end time", () => {
+  assert.match(source, /function activeEventFilter\(nowIso: string/);
+  assert.match(
+    source,
+    /getCount\("event count", \(\) =>[\s\S]*?\.or\(activeEventFilter\(nowIso\)\)/
+  );
+  assert.match(
+    source,
+    /withDbRetry\("events", \(\) =>[\s\S]*?\.or\(activeEventFilter\(nowIso\)\)/
+  );
+});
+
 test("Supabase-backed event routes are request-time rendered", () => {
   assert.match(read("src/app/page.tsx"), /export const dynamic = "force-dynamic"/);
   assert.match(read("src/app/events/page.tsx"), /export const dynamic = "force-dynamic"/);
