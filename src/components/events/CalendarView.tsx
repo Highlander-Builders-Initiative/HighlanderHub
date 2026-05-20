@@ -4,7 +4,17 @@ import { useMemo, useState } from "react";
 import type { CampusEvent } from "@/types/event";
 import { CATEGORY_STYLES } from "../ui/CategoryBadge";
 import { EventCard } from "./EventCard";
-import { formatDay, pacificDayKey } from "@/lib/dates";
+import {
+  addPacificDays,
+  addPacificMonths,
+  formatPacificDayKey,
+  formatPacificMonth,
+  pacificDayKey,
+  pacificDayOfMonth,
+  pacificTodayKey,
+  pacificWeekdayIndex,
+  startOfPacificMonthKey,
+} from "@/lib/dates";
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -19,25 +29,12 @@ const DOT_COLORS: Record<string, string> = {
   free_food: "bg-gold",
 };
 
-function toKey(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
-function startOfMonth(d: Date): Date {
-  return new Date(d.getFullYear(), d.getMonth(), 1);
-}
-
 export function CalendarView({ events }: { events: CampusEvent[] }) {
-  const today = useMemo(() => {
-    const t = new Date();
-    t.setHours(0, 0, 0, 0);
-    return t;
-  }, []);
-  const [cursor, setCursor] = useState<Date>(() => startOfMonth(today));
-  const [selectedKey, setSelectedKey] = useState<string>(toKey(today));
+  const todayKey = useMemo(() => pacificTodayKey(), []);
+  const [cursorKey, setCursorKey] = useState<string>(() =>
+    startOfPacificMonthKey(todayKey)
+  );
+  const [selectedKey, setSelectedKey] = useState<string>(todayKey);
 
   const byDay = useMemo(() => {
     const map = new Map<string, CampusEvent[]>();
@@ -51,28 +48,27 @@ export function CalendarView({ events }: { events: CampusEvent[] }) {
   }, [events]);
 
   const cells = useMemo(() => {
-    const monthStart = startOfMonth(cursor);
-    const gridStart = new Date(monthStart);
-    gridStart.setDate(gridStart.getDate() - gridStart.getDay());
+    const gridStart = addPacificDays(
+      cursorKey,
+      -pacificWeekdayIndex(cursorKey)
+    );
     return Array.from({ length: 42 }, (_, i) => {
-      const d = new Date(gridStart);
-      d.setDate(gridStart.getDate() + i);
-      return d;
+      return addPacificDays(gridStart, i);
     });
-  }, [cursor]);
+  }, [cursorKey]);
 
-  const monthLabel = cursor
-    .toLocaleDateString("en-US", { month: "long", year: "numeric" })
-    .toLowerCase();
+  const monthLabel = formatPacificMonth(cursorKey).toLowerCase();
 
   const selectedEvents = byDay.get(selectedKey) ?? [];
   const mobileAgendaDays = useMemo(
     () =>
-      cells.filter((d) => {
-        const key = toKey(d);
-        return d.getMonth() === cursor.getMonth() && (byDay.get(key)?.length ?? 0) > 0;
+      cells.filter((key) => {
+        return (
+          key.slice(0, 7) === cursorKey.slice(0, 7) &&
+          (byDay.get(key)?.length ?? 0) > 0
+        );
       }),
-    [byDay, cells, cursor]
+    [byDay, cells, cursorKey]
   );
 
   return (
@@ -87,8 +83,8 @@ export function CalendarView({ events }: { events: CampusEvent[] }) {
             <button
               type="button"
               onClick={() => {
-                setCursor(new Date(today));
-                setSelectedKey(toKey(today));
+                setCursorKey(startOfPacificMonthKey(todayKey));
+                setSelectedKey(todayKey);
               }}
               className="interactive-focus rounded-md border border-ink/15 px-3 py-1 text-sm transition-colors hover:border-ink"
             >
@@ -96,11 +92,7 @@ export function CalendarView({ events }: { events: CampusEvent[] }) {
             </button>
             <button
               type="button"
-              onClick={() =>
-                setCursor(
-                  new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1)
-                )
-              }
+              onClick={() => setCursorKey(addPacificMonths(cursorKey, -1))}
               aria-label="Previous month"
               className="interactive-focus inline-flex h-8 w-8 items-center justify-center rounded-md border border-ink/15 transition-colors hover:border-ink"
             >
@@ -108,11 +100,7 @@ export function CalendarView({ events }: { events: CampusEvent[] }) {
             </button>
             <button
               type="button"
-              onClick={() =>
-                setCursor(
-                  new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1)
-                )
-              }
+              onClick={() => setCursorKey(addPacificMonths(cursorKey, 1))}
               aria-label="Next month"
               className="interactive-focus inline-flex h-8 w-8 items-center justify-center rounded-md border border-ink/15 transition-colors hover:border-ink"
             >
@@ -128,8 +116,7 @@ export function CalendarView({ events }: { events: CampusEvent[] }) {
             </div>
           ) : (
             <div className="divide-y divide-ink/10">
-              {mobileAgendaDays.map((d) => {
-                const key = toKey(d);
+              {mobileAgendaDays.map((key) => {
                 const dayEvents = byDay.get(key) ?? [];
                 const categories = Array.from(
                   new Set(dayEvents.map((e) => e.category))
@@ -141,7 +128,7 @@ export function CalendarView({ events }: { events: CampusEvent[] }) {
                     <button
                       type="button"
                       onClick={() => setSelectedKey(key)}
-                      aria-label={`Show events for ${formatDay(key + "T12:00:00")}`}
+                      aria-label={`Show events for ${formatPacificDayKey(key)}`}
                       className={[
                         "interactive-focus flex min-h-12 w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left transition-colors",
                         isSelected ? "bg-ink text-white" : "hover:bg-ink/[0.03]",
@@ -154,7 +141,7 @@ export function CalendarView({ events }: { events: CampusEvent[] }) {
                             isSelected ? "text-white" : "text-ink",
                           ].join(" ")}
                         >
-                          {formatDay(key + "T12:00:00")}
+                          {formatPacificDayKey(key)}
                         </span>
                         <span
                           className={[
@@ -210,10 +197,9 @@ export function CalendarView({ events }: { events: CampusEvent[] }) {
           </div>
 
           <div className="grid grid-cols-7">
-            {cells.map((d, idx) => {
-              const key = toKey(d);
-              const inMonth = d.getMonth() === cursor.getMonth();
-              const isToday = key === toKey(today);
+            {cells.map((key, idx) => {
+              const inMonth = key.slice(0, 7) === cursorKey.slice(0, 7);
+              const isToday = key === todayKey;
               const isSelected = key === selectedKey;
               const dayEvents = byDay.get(key) ?? [];
               const categories = Array.from(
@@ -243,7 +229,7 @@ export function CalendarView({ events }: { events: CampusEvent[] }) {
                       isSelected ? "text-white/70" : "text-muted",
                     ].join(" ")}
                   >
-                    {String(d.getDate()).padStart(2, "0")}
+                    {String(pacificDayOfMonth(key)).padStart(2, "0")}
                   </span>
                   <span
                     className={[
@@ -256,7 +242,7 @@ export function CalendarView({ events }: { events: CampusEvent[] }) {
                     ].join(" ")}
                     aria-hidden
                   >
-                    {d.getDate()}
+                    {pacificDayOfMonth(key)}
                   </span>
 
                   {dayEvents.length > 0 && (
@@ -301,7 +287,7 @@ export function CalendarView({ events }: { events: CampusEvent[] }) {
       <aside className="hidden space-y-4 sm:block">
         <div className="flex items-baseline justify-between gap-3 border-b border-ink/10 pb-3">
           <h3 className="font-display text-xl font-semibold tracking-[-0.02em] text-ink">
-            {formatDay(selectedKey + "T12:00:00")}
+            {formatPacificDayKey(selectedKey)}
           </h3>
           <span className="text-sm text-muted">
             {selectedEvents.length}{" "}

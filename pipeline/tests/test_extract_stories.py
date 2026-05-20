@@ -201,6 +201,36 @@ class ExtractStoriesTests(unittest.TestCase):
         assert row is not None
         self.assertIsNone(row["ends_at"])
 
+    def test_event_row_drops_unsafe_external_urls(self) -> None:
+        raw = {
+            "id": "3894795737410658771",
+            "handle": "cyber_ucr",
+            "image_url": "ftp://cdn.example/flyer.jpg",
+            "story_cta_url": "mailto:club@example.com",
+            "permalink": "javascript:alert(1)",
+        }
+        cached = {
+            "status": "ok",
+            "result": {
+                "is_event": True,
+                "title": "Security Night Workshop",
+                "starts_at": "2026-05-15T19:00:00-07:00",
+            },
+        }
+
+        row = self.extract_stories._to_event_row(
+            raw,
+            cached,
+            {"label": "UCR Cybersecurity Club", "category": "club"},
+            "2026-05-14T12:00:00+00:00",
+        )
+
+        self.assertIsNotNone(row)
+        assert row is not None
+        self.assertIsNone(row["source_url"])
+        self.assertIsNone(row["image_url"])
+        self.assertIsNone(row["rsvp_url"])
+
     def test_bool_or_default_parses_common_llm_boolean_forms(self) -> None:
         parse = self.extract_stories._bool_or_default
 
@@ -211,6 +241,17 @@ class ExtractStoriesTests(unittest.TestCase):
         self.assertFalse(parse(0, True))
         self.assertTrue(parse("not a boolean", True))
         self.assertFalse(parse("not a boolean", False))
+
+    def test_normalize_url_only_allows_http_urls(self) -> None:
+        normalize = self.extract_stories._normalize_url
+
+        self.assertEqual("https://lu.ma/example", normalize("lu.ma/example"))
+        self.assertEqual("https://events.ucr.edu/foo", normalize("//events.ucr.edu/foo"))
+        self.assertEqual("http://example.com/a", normalize("http://example.com/a"))
+        self.assertEqual("https://example.com/a", normalize("https://example.com/a"))
+        self.assertIsNone(normalize("javascript:alert(1)"))
+        self.assertIsNone(normalize("mailto:club@example.com"))
+        self.assertIsNone(normalize("ftp://example.com/file"))
 
 
 if __name__ == "__main__":

@@ -19,6 +19,7 @@ import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
+from urllib.parse import urlsplit
 
 from config import RAW_DIR, ensure_dirs
 from db import upsert_batched
@@ -60,12 +61,32 @@ _FREE_FOOD_PATTERNS = re.compile(
 
 _HTML_TAG = re.compile(r"<[^>]+>")
 _WHITESPACE = re.compile(r"\s+")
+_URL_SCHEME_RE = re.compile(r"^[a-z][a-z0-9+\-.]*:", re.IGNORECASE)
 
 
 def _strip_html(s: str | None) -> str:
     if not s:
         return ""
     return _WHITESPACE.sub(" ", html.unescape(_HTML_TAG.sub(" ", s))).strip()
+
+
+def _normalize_url(value: Any) -> str | None:
+    if not isinstance(value, str):
+        return None
+    text = value.strip()
+    if not text:
+        return None
+    if text.startswith("//"):
+        text = f"https:{text}"
+    elif not _URL_SCHEME_RE.match(text):
+        text = f"https://{text}"
+
+    parsed = urlsplit(text)
+    if parsed.scheme.lower() not in {"http", "https"}:
+        return None
+    if not parsed.netloc:
+        return None
+    return text
 
 
 def _filter_names(raw: dict[str, Any], key: str) -> list[str]:
@@ -211,7 +232,7 @@ def _to_event_row(raw: dict[str, Any], scraped_at: str) -> dict[str, Any] | None
     if hashtag and isinstance(hashtag, str):
         tags.append(f"#{hashtag.lstrip('#')}")
 
-    ticket_url = raw.get("ticket_url")
+    ticket_url = _normalize_url(raw.get("ticket_url"))
 
     return {
         "id": f"ucr_events_{lid}",
@@ -224,8 +245,8 @@ def _to_event_row(raw: dict[str, Any], scraped_at: str) -> dict[str, Any] | None
         "category": category,
         "tags": tags,
         "source": "campus_website",
-        "source_url": raw.get("localist_url") or raw.get("url"),
-        "image_url": raw.get("photo_url"),
+        "source_url": _normalize_url(raw.get("localist_url") or raw.get("url")),
+        "image_url": _normalize_url(raw.get("photo_url")),
         "is_free": bool(raw.get("free", True)),
         "rsvp_required": bool(ticket_url),
         "rsvp_url": ticket_url or None,
@@ -277,7 +298,7 @@ def _to_event_row_hlink(raw: dict[str, Any], scraped_at: str) -> dict[str, Any] 
     )
 
     image_path = raw.get("imagePath")
-    image_url = f"{_HLINK_IMAGE_BASE}{image_path}" if image_path else None
+    image_url = _normalize_url(f"{_HLINK_IMAGE_BASE}{image_path}" if image_path else None)
 
     host = (raw.get("organizationName") or "").strip() or "UC Riverside"
     location = (raw.get("location") or "").strip() or "UC Riverside"
@@ -293,7 +314,7 @@ def _to_event_row_hlink(raw: dict[str, Any], scraped_at: str) -> dict[str, Any] 
         "category": category,
         "tags": tags,
         "source": "campus_website",
-        "source_url": _HLINK_EVENT_URL.format(id=eid),
+        "source_url": _normalize_url(_HLINK_EVENT_URL.format(id=eid)),
         "image_url": image_url,
         "is_free": True,
         "rsvp_required": False,

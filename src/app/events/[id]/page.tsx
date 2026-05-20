@@ -11,6 +11,7 @@ import { ShareButton } from "@/components/events/ShareButton";
 import { TrackedAnchor } from "@/components/events/TrackedAnchor";
 import { CATEGORY_RAIL } from "@/lib/category-colors";
 import { SITE_NAME, SITE_PREVIEW_IMAGE, absoluteUrl } from "@/lib/seo";
+import { normalizeHttpUrl } from "@/lib/event-validation";
 import type { CampusEvent } from "@/types/event";
 
 export const dynamic = "force-dynamic";
@@ -73,7 +74,10 @@ export default async function EventDetailPage({
   const event = await getEventById(id);
   if (!event) notFound();
 
-  const primaryUrl = event.rsvpUrl ?? event.sourceUrl;
+  const safeRsvpUrl = normalizeHttpUrl(event.rsvpUrl);
+  const safeSourceUrl = normalizeHttpUrl(event.sourceUrl);
+  const primaryUrl = safeRsvpUrl ?? safeSourceUrl;
+  const primaryKind = safeRsvpUrl ? "rsvp" : "view_source";
 
   return (
     <main className="min-h-screen bg-canvas pb-28 md:pb-0">
@@ -169,13 +173,13 @@ export default async function EventDetailPage({
                 {primaryUrl && (
                   <TrackedAnchor
                     event="primary"
-                    ctaKind={event.rsvpUrl ? "rsvp" : "view_source"}
+                    ctaKind={primaryKind}
                     eventId={event.id}
                     surface="desktop"
                     href={primaryUrl}
                     className="interactive-focus inline-flex min-h-12 items-center gap-2 rounded-lg bg-ink px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-85"
                   >
-                    {event.rsvpUrl ? "RSVP" : "View source"}
+                    {safeRsvpUrl ? "RSVP" : "View source"}
                     <span aria-hidden>↗</span>
                   </TrackedAnchor>
                 )}
@@ -201,13 +205,13 @@ export default async function EventDetailPage({
           {primaryUrl ? (
             <TrackedAnchor
               event="primary"
-              ctaKind={event.rsvpUrl ? "rsvp" : "view_source"}
+              ctaKind={primaryKind}
               eventId={event.id}
               surface="mobile"
               href={primaryUrl}
               className="interactive-focus flex-1 inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-ink px-4 py-3 text-sm font-medium text-white"
             >
-              {event.rsvpUrl ? "RSVP" : "View source"}
+              {safeRsvpUrl ? "RSVP" : "View source"}
               <span aria-hidden>↗</span>
             </TrackedAnchor>
           ) : null}

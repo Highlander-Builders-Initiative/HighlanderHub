@@ -50,10 +50,10 @@ def main() -> None:
     ok &= _safe("ucr_events.scrape", ucr_events.main)
     ok &= _safe("highlander_link.scrape", highlander_link.main)
     # Extraction and normalization always run using whatever is on disk.
-    _safe("instagram.extract", extract_stories.main)
-    _safe("instagram.normalize", normalize.main)
+    ok &= _safe("instagram.extract", extract_stories.main)
+    ok &= _safe("instagram.normalize", normalize.main)
     # normalize_events handles both ucr_events and highlander_link.
-    _safe("events.normalize", normalize_events.main)
+    ok &= _safe("events.normalize", normalize_events.main)
     if not ok:
         sys.exit(1)
 

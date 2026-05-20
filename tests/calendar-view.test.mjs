@@ -11,5 +11,7 @@ test("calendar view switches to a stacked mobile agenda before the grid layout",
   assert.match(source, /sm:hidden/);
   assert.match(source, /hidden sm:block/);
   assert.match(source, /mobileAgendaDays/);
-  assert.match(source, /aria-label=\{`Show events for \$\{formatDay/);
+  assert.match(source, /aria-label=\{`Show events for \$\{formatPacificDayKey/);
+  assert.match(source, /pacificTodayKey/);
+  assert.match(source, /addPacificDays/);
 });

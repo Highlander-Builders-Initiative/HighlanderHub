@@ -1,6 +1,8 @@
+import { cache } from "react";
 import type { CampusEvent } from "@/types/event";
 import { supabase } from "@/lib/supabase";
 import { startOfPacificToday } from "@/lib/dates";
+import { normalizeHttpUrl } from "@/lib/event-validation";
 
 const DB_RETRY_ATTEMPTS = 2;
 export const EVENTS_PAGE_SIZE = 24;
@@ -82,11 +84,11 @@ function toCampusEvent(r: EventRow): CampusEvent {
     category: r.category,
     tags: r.tags,
     source: r.source,
-    sourceUrl: r.source_url ?? undefined,
-    imageUrl: r.image_url ?? undefined,
+    sourceUrl: normalizeHttpUrl(r.source_url) ?? undefined,
+    imageUrl: normalizeHttpUrl(r.image_url) ?? undefined,
     isFree: r.is_free,
     rsvpRequired: r.rsvp_required,
-    rsvpUrl: r.rsvp_url ?? undefined,
+    rsvpUrl: normalizeHttpUrl(r.rsvp_url) ?? undefined,
     scrapedAt: r.scraped_at,
   };
 }
@@ -254,7 +256,9 @@ export async function getEvents(
   return page.events;
 }
 
-export async function getEventById(id: string): Promise<CampusEvent | null> {
+export const getEventById = cache(async function getEventById(
+  id: string
+): Promise<CampusEvent | null> {
   if (useE2eFixtures()) {
     return id === E2E_FIXTURE_EVENT.id ? E2E_FIXTURE_EVENT : null;
   }
@@ -272,4 +276,4 @@ export async function getEventById(id: string): Promise<CampusEvent | null> {
 
   if (!data) return null;
   return toCampusEvent(data as EventRow);
-}
+});

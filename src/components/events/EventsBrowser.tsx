@@ -5,7 +5,7 @@ import type { CampusEvent, EventCategory } from "@/types/event";
 import { EventCard } from "./EventCard";
 import { CalendarView } from "./CalendarView";
 import { SubmitEventCta } from "./SubmitEventCta";
-import { formatDay } from "@/lib/dates";
+import { formatPacificDayKey } from "@/lib/dates";
 import { groupByDay } from "@/lib/event-grouping";
 import { track } from "@/lib/analytics";
 
@@ -301,7 +301,7 @@ export function EventsBrowser({
               <div key={day} className="mb-14">
                 <div className="mb-5 flex items-baseline justify-between gap-4 border-b border-ink/10 pb-3">
                   <h3 className="font-display text-2xl font-semibold tracking-[-0.02em] text-ink">
-                    {formatDay(day + "T12:00:00")}
+                    {formatPacificDayKey(day)}
                   </h3>
                   <span className="text-sm text-muted">
                     {dayEvents.length}{" "}

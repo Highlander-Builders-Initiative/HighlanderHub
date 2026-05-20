@@ -13,6 +13,7 @@ import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
+from urllib.parse import urlsplit
 
 from config import (
     EXTRACTED_DIR,
@@ -340,11 +341,17 @@ def _normalize_url(value: Any) -> str | None:
     text = value.strip()
     if not text:
         return None
-    if _URL_SCHEME_RE.match(text):
-        return text
     if text.startswith("//"):
-        return f"https:{text}"
-    return f"https://{text}"
+        text = f"https:{text}"
+    elif not _URL_SCHEME_RE.match(text):
+        text = f"https://{text}"
+
+    parsed = urlsplit(text)
+    if parsed.scheme.lower() not in {"http", "https"}:
+        return None
+    if not parsed.netloc:
+        return None
+    return text
 
 
 def _normalize_timestamptz(value: Any) -> str | None:
@@ -405,8 +412,8 @@ def _to_event_row(
         "category": _category(llm.get("category")),
         "tags": _clean_tags(llm.get("tags")),
         "source": "instagram",
-        "source_url": raw.get("permalink"),
-        "image_url": raw.get("image_url"),
+        "source_url": _normalize_url(raw.get("permalink")),
+        "image_url": _normalize_url(raw.get("image_url")),
         "is_free": _bool_or_default(llm.get("is_free"), True),
         "rsvp_required": _bool_or_default(llm.get("rsvp_required"), False),
         "rsvp_url": rsvp_url,

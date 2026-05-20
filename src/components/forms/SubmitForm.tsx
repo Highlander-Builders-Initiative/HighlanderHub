@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { track } from "@/lib/analytics";
+import { normalizeHttpUrl, validateEventTimes } from "@/lib/event-validation";
 import type { EventCategory } from "@/types/event";
 
 const CATEGORIES: { value: EventCategory; label: string }[] = [
@@ -25,8 +26,12 @@ type Status =
 type FieldName =
   | "title"
   | "starts_at"
+  | "ends_at"
   | "location"
   | "host"
+  | "source_url"
+  | "image_url"
+  | "rsvp_url"
   | "submitter_name"
   | "submitter_email";
 
@@ -41,10 +46,23 @@ const REQUIRED_FIELDS: FieldName[] = [
 
 type FieldErrors = Partial<Record<FieldName, string>>;
 
+const OPTIONAL_URL_FIELDS: FieldName[] = ["source_url", "image_url", "rsvp_url"];
+const URL_ERROR = "Use an http(s) URL.";
+
 function validateRequiredFields(form: FormData): FieldErrors {
   return REQUIRED_FIELDS.reduce<FieldErrors>((errors, field) => {
     if (!String(form.get(field) ?? "").trim()) {
       errors[field] = "This field is required.";
+    }
+    return errors;
+  }, {});
+}
+
+function validateOptionalUrlFields(form: FormData): FieldErrors {
+  return OPTIONAL_URL_FIELDS.reduce<FieldErrors>((errors, field) => {
+    const value = String(form.get(field) ?? "").trim();
+    if (value && !normalizeHttpUrl(value)) {
+      errors[field] = URL_ERROR;
     }
     return errors;
   }, {});
@@ -69,10 +87,31 @@ export default function SubmitForm() {
     e.preventDefault();
 
     const form = new FormData(e.currentTarget);
-    const nextFieldErrors = validateRequiredFields(form);
+    const timeValidation = validateEventTimes(
+      form.get("starts_at"),
+      form.get("ends_at")
+    );
+    const nextFieldErrors = {
+      ...validateRequiredFields(form),
+      ...validateOptionalUrlFields(form),
+    };
+
+    if (
+      timeValidation.error &&
+      timeValidation.field &&
+      !nextFieldErrors[timeValidation.field]
+    ) {
+      nextFieldErrors[timeValidation.field] = timeValidation.error;
+    }
 
     if (Object.keys(nextFieldErrors).length > 0) {
       setFieldErrors(nextFieldErrors);
+      setStatus({ kind: "idle" });
+      return;
+    }
+
+    if (!timeValidation.startsAt) {
+      setFieldErrors({ starts_at: "Start time is invalid." });
       setStatus({ kind: "idle" });
       return;
     }
@@ -81,14 +120,15 @@ export default function SubmitForm() {
     setStatus({ kind: "submitting" });
 
     const tagsRaw = (form.get("tags") as string) || "";
+    const sourceUrl = normalizeHttpUrl(form.get("source_url"));
+    const imageUrl = normalizeHttpUrl(form.get("image_url"));
+    const rsvpUrl = normalizeHttpUrl(form.get("rsvp_url"));
 
     const row = {
       title: form.get("title") as string,
       description: (form.get("description") as string) || "",
-      starts_at: new Date(form.get("starts_at") as string).toISOString(),
-      ends_at: form.get("ends_at")
-        ? new Date(form.get("ends_at") as string).toISOString()
-        : null,
+      starts_at: timeValidation.startsAt,
+      ends_at: timeValidation.endsAt,
       location: form.get("location") as string,
       host: form.get("host") as string,
       category: form.get("category") as EventCategory,
@@ -96,11 +136,11 @@ export default function SubmitForm() {
         .split(",")
         .map((t) => t.trim())
         .filter(Boolean),
-      source_url: (form.get("source_url") as string) || null,
-      image_url: (form.get("image_url") as string) || null,
+      source_url: sourceUrl,
+      image_url: imageUrl,
       is_free: form.get("is_free") === "on",
       rsvp_required: form.get("rsvp_required") === "on",
-      rsvp_url: (form.get("rsvp_url") as string) || null,
+      rsvp_url: rsvpUrl,
       submitter_name: form.get("submitter_name") as string,
       submitter_email: form.get("submitter_email") as string,
       submitter_org: (form.get("submitter_org") as string) || null,
@@ -158,7 +198,12 @@ export default function SubmitForm() {
           required
           error={fieldErrors.starts_at}
         />
-        <Field label="Ends (optional)" name="ends_at" type="datetime-local" />
+        <Field
+          label="Ends (optional)"
+          name="ends_at"
+          type="datetime-local"
+          error={fieldErrors.ends_at}
+        />
       </div>
 
       <Field
@@ -188,12 +233,14 @@ export default function SubmitForm() {
         label="Event page or flyer URL (optional)"
         name="source_url"
         type="url"
+        error={fieldErrors.source_url}
       />
       <Field
         label="Image URL (optional)"
         name="image_url"
         type="url"
         placeholder="https://..."
+        error={fieldErrors.image_url}
       />
 
       <div className="flex gap-6">
@@ -204,6 +251,7 @@ export default function SubmitForm() {
         label="RSVP / ticket URL (if required)"
         name="rsvp_url"
         type="url"
+        error={fieldErrors.rsvp_url}
       />
 
       <hr className="border-stone-300" />

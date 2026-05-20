@@ -1,5 +1,6 @@
 import type { CampusEvent } from "@/types/event";
 import { formatTimeRange } from "@/lib/dates";
+import { normalizeHttpUrl } from "@/lib/event-validation";
 
 function calendarDate(value: string) {
   return new Date(value)
@@ -27,7 +28,7 @@ export function calendarHref(event: CampusEvent) {
 }
 
 export function shareHref(event: CampusEvent) {
-  const url = event.rsvpUrl ?? event.sourceUrl;
+  const url = normalizeHttpUrl(event.rsvpUrl) ?? normalizeHttpUrl(event.sourceUrl);
   const body = [
     event.title,
     formatTimeRange(event.startsAt, event.endsAt),
