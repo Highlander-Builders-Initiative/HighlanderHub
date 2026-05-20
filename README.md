@@ -32,8 +32,7 @@ add it as a recurring source.
 ## Spot something off?
 
 If an event has the wrong date, a broken RSVP link, or shouldn't be there at
-all, open an issue and we'll fix it. We extract event details from flyer
-images with a mix of OCR and an LLM, so the occasional misread happens.
+all, open an issue and we'll fix it.
 
 ## License
 
