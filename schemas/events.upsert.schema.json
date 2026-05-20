@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://highlanderhub.local/schemas/events.upsert.schema.json",
+  "title": "EventsUpsertRow",
+  "description": "Snake_case row shape pipeline upserts into Supabase `events` and the Next.js app reads via EventRow. DB columns created_at/updated_at are server-managed and omitted here.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "title",
+    "description",
+    "starts_at",
+    "location",
+    "host",
+    "category",
+    "tags",
+    "source",
+    "is_free",
+    "rsvp_required",
+    "scraped_at"
+  ],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "title": { "type": "string", "minLength": 1 },
+    "description": { "type": "string" },
+    "starts_at": { "type": "string", "format": "date-time" },
+    "ends_at": { "type": ["string", "null"], "format": "date-time" },
+    "location": { "type": "string" },
+    "host": { "type": "string" },
+    "host_handle": { "type": ["string", "null"] },
+    "category": {
+      "type": "string",
+      "enum": [
+        "club",
+        "academic",
+        "social",
+        "career",
+        "sports",
+        "arts",
+        "community",
+        "free_food"
+      ]
+    },
+    "tags": { "type": "array", "items": { "type": "string" } },
+    "source": {
+      "type": "string",
+      "enum": [
+        "instagram",
+        "highlander_link",
+        "campus_website",
+        "club_website",
+        "manual"
+      ]
+    },
+    "source_url": { "type": ["string", "null"] },
+    "image_url": { "type": ["string", "null"] },
+    "is_free": { "type": "boolean" },
+    "rsvp_required": { "type": "boolean" },
+    "rsvp_url": { "type": ["string", "null"] },
+    "scraped_at": { "type": "string", "format": "date-time" }
+  }
+}

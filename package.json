@@ -7,6 +7,7 @@
     "build": "next build",
     "e2e": "playwright test",
     "test": "node --test tests/*.test.mjs",
+    "generate:rows": "node scripts/generate-row-types.mjs",
     "start": "next start",
     "lint": "next lint"
   },

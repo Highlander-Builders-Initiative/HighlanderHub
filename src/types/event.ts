@@ -1,19 +1,6 @@
-export type EventSource =
-  | "instagram"
-  | "highlander_link"
-  | "campus_website"
-  | "club_website"
-  | "manual";
+import type { EventCategory, EventSource } from "@/lib/supabase-rows";
 
-export type EventCategory =
-  | "club"
-  | "academic"
-  | "social"
-  | "career"
-  | "sports"
-  | "arts"
-  | "community"
-  | "free_food";
+export type { EventCategory, EventSource };
 
 export interface CampusEvent {
   id: string;

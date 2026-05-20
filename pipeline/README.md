@@ -106,10 +106,16 @@ IG cadence drives the schedule.
 
 ## Supabase row shapes
 
+Cross-language contracts live in [`schemas/`](../schemas/README.md): JSON Schema
+for upsert rows, generated `src/lib/supabase-rows.ts`, and contract tests in
+`tests/schema-contracts.test.mjs` + `pipeline/tests/test_schema_contract.py`.
+Postgres migrations under `supabase/migrations/` remain the database source of
+truth.
+
 ### `events`
 
 Already in the DB shape that `src/lib/events.ts` maps into `CampusEvent`
-(see `src/types/event.ts`).
+(see `src/types/event.ts`; row type is `EventRow` in `src/lib/supabase-rows.ts`).
 
 ```jsonc
 {

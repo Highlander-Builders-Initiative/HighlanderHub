@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://highlanderhub.local/schemas/stories.upsert.schema.json",
+  "title": "StoriesUpsertRow",
+  "description": "Snake_case row shape pipeline upserts into Supabase `stories`. created_at is server-managed and omitted here.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "handle",
+    "is_video",
+    "posted_at",
+    "caption_mentions"
+  ],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "handle": { "type": "string", "minLength": 1 },
+    "account_label": { "type": ["string", "null"] },
+    "account_category": { "type": ["string", "null"] },
+    "owner_userid": { "type": ["integer", "null"] },
+    "owner_username": { "type": ["string", "null"] },
+    "typename": { "type": ["string", "null"] },
+    "is_video": { "type": "boolean" },
+    "posted_at": { "type": "string", "format": "date-time" },
+    "expires_at": { "type": ["string", "null"], "format": "date-time" },
+    "image_url": { "type": ["string", "null"] },
+    "video_url": { "type": ["string", "null"] },
+    "caption": { "type": ["string", "null"] },
+    "caption_mentions": { "type": "array", "items": { "type": "string" } },
+    "story_cta_url": { "type": ["string", "null"] },
+    "permalink": { "type": ["string", "null"] }
+  }
+}

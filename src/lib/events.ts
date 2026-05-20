@@ -1,5 +1,6 @@
 import { cache } from "react";
 import type { CampusEvent } from "@/types/event";
+import type { EventRow } from "@/lib/supabase-rows";
 import { supabase } from "@/lib/supabase";
 import { startOfPacificToday } from "@/lib/dates";
 import { normalizeHttpUrl } from "@/lib/event-validation";
@@ -26,27 +27,7 @@ export type EventsSummary = {
 };
 
 // DB columns are snake_case (Postgres convention); the app uses camelCase
-// CampusEvent. This adapter is the single conversion point.
-interface EventRow {
-  id: string;
-  title: string;
-  description: string;
-  starts_at: string;
-  ends_at: string | null;
-  location: string;
-  host: string;
-  host_handle: string | null;
-  category: CampusEvent["category"];
-  tags: string[];
-  source: CampusEvent["source"];
-  source_url: string | null;
-  image_url: string | null;
-  is_free: boolean;
-  rsvp_required: boolean;
-  rsvp_url: string | null;
-  scraped_at: string;
-}
-
+// CampusEvent. EventRow is generated from schemas/events.upsert.schema.json.
 function toCampusEvent(r: EventRow): CampusEvent {
   return {
     id: r.id,
