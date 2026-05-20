@@ -18,48 +18,63 @@ export default function GlobalError({
       <body
         style={{
           margin: 0,
-          padding: "64px 24px",
+          minHeight: "100vh",
+          padding: "56px 24px",
           fontFamily:
-            "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
-          background: "#fbf9f5",
-          color: "#1c1a17",
+            "var(--font-body), Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
+          background: "#ffffff",
+          color: "#0f1115",
         }}
       >
-        <main style={{ maxWidth: 560, margin: "0 auto" }}>
+        <main style={{ maxWidth: 720, margin: "0 auto" }}>
           <p
             style={{
-              fontFamily: "ui-monospace, SFMono-Regular, monospace",
+              fontFamily:
+                "var(--font-mono), ui-monospace, SFMono-Regular, monospace",
               fontSize: 11,
-              letterSpacing: "0.14em",
+              letterSpacing: "0.16em",
               textTransform: "uppercase",
-              color: "#6b6760",
+              color: "#6b7280",
               margin: 0,
             }}
           >
-            Fatal error
+            Highlander Hub
           </p>
           <h1
             style={{
-              fontSize: 28,
+              maxWidth: 620,
+              fontFamily:
+                "var(--font-display), ui-sans-serif, system-ui, sans-serif",
+              fontSize: "clamp(34px, 7vw, 56px)",
               fontWeight: 600,
-              letterSpacing: "-0.02em",
-              margin: "8px 0 0",
+              lineHeight: 1.05,
+              letterSpacing: "-0.03em",
+              margin: "16px 0 0",
             }}
           >
-            Something broke loading the app.
+            Campus events hit a snag.
           </h1>
-          <p style={{ fontSize: 14, color: "#6b6760", marginTop: 12 }}>
+          <p
+            aria-live="polite"
+            style={{
+              maxWidth: 560,
+              fontSize: 16,
+              lineHeight: 1.6,
+              color: "#6b7280",
+              marginTop: 16,
+            }}
+          >
             {error.message || "Unknown error."}
           </p>
           <button
             type="button"
             onClick={reset}
             style={{
-              marginTop: 24,
+              marginTop: 32,
               minHeight: 48,
-              padding: "12px 20px",
+              padding: "12px 22px",
               borderRadius: 8,
-              background: "#1c1a17",
+              background: "#0f1115",
               color: "#fff",
               border: 0,
               fontSize: 14,

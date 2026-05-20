@@ -197,3 +197,25 @@ test("site exposes crawler and social preview metadata", () => {
   assert.match(manifest, /\/logo_icon\.png/);
   assert.match(manifest, /"start_url": "\/"/);
 });
+
+test("README documents the current ingestion and submission paths", () => {
+  const readme = read("README.md");
+
+  assert.match(readme, /Highlander Hub/);
+  assert.match(readme, /highlanderlink\.ucr\.edu/);
+  assert.match(readme, /\/submit/);
+  assert.doesNotMatch(readme, /on the roadmap/);
+});
+
+test("global error page keeps Highlander Hub fallback styling", () => {
+  const source = read("src/app/global-error.tsx");
+
+  assert.match(source, /Highlander Hub/);
+  assert.match(source, /Campus events hit a snag/);
+  assert.match(source, /--font-display/);
+  assert.match(source, /#0f1115/);
+  assert.match(source, /#ffffff/);
+  assert.match(source, /aria-live="polite"/);
+  assert.match(source, /Try again/);
+  assert.doesNotMatch(source, /Fatal error/);
+});
