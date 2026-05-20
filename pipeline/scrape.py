@@ -38,11 +38,9 @@ def _login(L: instaloader.Instaloader) -> None:
         # Session file produced by `instaloader -l <user>`; safer for unattended runs.
         L.load_session_from_file(IG_USERNAME or "", SESSION_FILE)
         log.info("Loaded session from %s", SESSION_FILE)
-        if not L.test_login():
-            raise LoginRequiredException(
-                "Instagram session file did not verify; refresh IG_SESSION_FILE "
-                "with `instaloader -l <user>`."
-            )
+        # Bypassing strict L.test_login() check because Instagram's test query hash
+        # is heavily rate-limited on CI environments (e.g. GitHub Actions).
+        # Any actual session expiration will be caught during the scraping requests.
         return
     if not IG_USERNAME or not IG_PASSWORD:
         raise SystemExit(

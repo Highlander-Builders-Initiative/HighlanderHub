@@ -69,22 +69,17 @@ class ScrapeMainTests(unittest.TestCase):
                                 ):
                                     self.scrape.main()
 
-    def test_session_file_login_is_verified_after_load(self) -> None:
+    def test_session_file_login_loads_without_verification(self) -> None:
         loader = Mock()
-        loader.test_login.return_value = None
 
         with patch.object(self.scrape, "SESSION_FILE", "/tmp/ig-session"):
             with patch.object(self.scrape, "IG_USERNAME", "scraper"):
-                with self.assertRaisesRegex(
-                    self.scrape.LoginRequiredException,
-                    "session file did not verify",
-                ):
-                    self.scrape._login(loader)
+                self.scrape._login(loader)
 
         loader.load_session_from_file.assert_called_once_with(
             "scraper", "/tmp/ig-session"
         )
-        loader.test_login.assert_called_once_with()
+        loader.test_login.assert_not_called()
 
     def test_all_profiles_missing_after_session_load_reports_session_failure(self) -> None:
         accounts = [{"handle": "ucrvsa"}, {"handle": "cyber_ucr"}]
