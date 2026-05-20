@@ -94,6 +94,7 @@ KNOWN_USER_IDS = {
     "cyber_ucr": 38460809748,
     "acm_ucr": 10839758322,
     "ucrvsa": 241289265,
+    "hbi.ucr": 77775310353,
 }
 
 
