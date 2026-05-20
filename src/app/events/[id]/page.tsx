@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import { Masthead } from "@/components/layout/Masthead";
 import { Footer } from "@/components/layout/Footer";
 import { CategoryBadge } from "@/components/ui/CategoryBadge";
@@ -8,6 +7,7 @@ import { getEventById } from "@/lib/events";
 import { formatDay, formatTimeRange, relativeDay } from "@/lib/dates";
 import { calendarHref } from "@/lib/event-actions";
 import { ShareButton } from "@/components/events/ShareButton";
+import { EventBackButton } from "@/components/events/EventBackButton";
 import { TrackedAnchor } from "@/components/events/TrackedAnchor";
 import { CATEGORY_RAIL } from "@/lib/category-colors";
 import { SITE_NAME, SITE_PREVIEW_IMAGE, absoluteUrl } from "@/lib/seo";
@@ -84,12 +84,7 @@ export default async function EventDetailPage({
       <Masthead />
 
       <div className="mx-auto max-w-3xl px-4 pb-16 pt-6 sm:px-6">
-        <Link
-          href="/events"
-          className="interactive-focus inline-flex items-center gap-1.5 text-sm text-muted hover:text-ink"
-        >
-          <span aria-hidden>←</span> All events
-        </Link>
+        <EventBackButton />
 
         <article className="mt-6 flex overflow-hidden rounded-xl">
           <span

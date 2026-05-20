@@ -2,36 +2,47 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { type MouseEvent, useState } from "react";
 import type { CampusEvent } from "@/types/event";
 import { formatTime, relativeDay } from "@/lib/dates";
 import { CATEGORY_RAIL } from "@/lib/category-colors";
 import { track } from "@/lib/analytics";
+import { saveScrollPosition } from "@/lib/scroll-restoration";
 import { CategoryBadge } from "../ui/CategoryBadge";
 
 export function EventCard({
   event,
   compact = false,
+  loadedCount,
 }: {
   event: CampusEvent;
   compact?: boolean;
+  loadedCount?: number;
 }) {
   const [imageBroken, setImageBroken] = useState(false);
   const showImage = !compact && !!event.imageUrl && !imageBroken;
+  const href = `/events/${event.id}`;
   const surface = compact ? "calendar_card" : "list_card";
-  const onOpen = () =>
+  const onOpen = (clickEvent: MouseEvent<HTMLAnchorElement>) => {
+    saveScrollPosition(href, {
+      eventId: event.id,
+      eventTop: clickEvent.currentTarget.getBoundingClientRect().top,
+      loadedCount,
+    });
     track("event_open", { id: event.id, category: event.category, surface });
+  };
 
   if (showImage) {
     return (
       <ImageCard
         event={event}
+        href={href}
         onImageError={() => setImageBroken(true)}
         onOpen={onOpen}
       />
     );
   }
-  return <TextCard event={event} onOpen={onOpen} />;
+  return <TextCard event={event} href={href} onOpen={onOpen} />;
 }
 
 function flyerAlt(event: CampusEvent) {
@@ -40,18 +51,21 @@ function flyerAlt(event: CampusEvent) {
 
 function ImageCard({
   event,
+  href,
   onImageError,
   onOpen,
 }: {
   event: CampusEvent;
+  href: string;
   onImageError: () => void;
-  onOpen: () => void;
+  onOpen: (event: MouseEvent<HTMLAnchorElement>) => void;
 }) {
   return (
     <Link
-      href={`/events/${event.id}`}
+      href={href}
       onClick={onOpen}
       aria-label={`${event.title} — ${relativeDay(event.startsAt)} at ${formatTime(event.startsAt)}`}
+      data-event-id={event.id}
       className="interactive-focus card-hover group relative block w-full overflow-hidden rounded-xl border border-ink/15 bg-canvas aspect-[4/5]"
     >
       <Image
@@ -90,16 +104,19 @@ function ImageCard({
 
 function TextCard({
   event,
+  href,
   onOpen,
 }: {
   event: CampusEvent;
-  onOpen: () => void;
+  href: string;
+  onOpen: (event: MouseEvent<HTMLAnchorElement>) => void;
 }) {
   return (
     <Link
-      href={`/events/${event.id}`}
+      href={href}
       onClick={onOpen}
       aria-label={`${event.title} — ${relativeDay(event.startsAt)} at ${formatTime(event.startsAt)}`}
+      data-event-id={event.id}
       className="interactive-focus card-hover group relative flex h-full w-full min-w-0 overflow-hidden rounded-xl"
     >
       <span

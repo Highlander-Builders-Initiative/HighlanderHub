@@ -78,7 +78,10 @@ test("app routes expose 500-level error boundaries", () => {
 test("event cards link to a detail page and stay accessible", () => {
   const source = read("src/components/events/EventCard.tsx");
 
-  assert.match(source, /href=\{`\/events\/\$\{event\.id\}`\}/);
+  assert.match(source, /const href = `\/events\/\$\{event\.id\}`/);
+  assert.match(source, /href=\{href\}/);
+  assert.match(source, /saveScrollPosition/);
+  assert.match(source, /data-event-id=\{event\.id\}/);
   assert.match(source, /aria-label=/);
   assert.match(source, /alt=\{flyerAlt\(event\)\}/);
   assert.match(source, /interactive-focus card-hover/);

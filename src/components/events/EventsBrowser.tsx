@@ -8,6 +8,10 @@ import { SubmitEventCta } from "./SubmitEventCta";
 import { formatPacificDayKey } from "@/lib/dates";
 import { groupByDay } from "@/lib/event-grouping";
 import { track } from "@/lib/analytics";
+import {
+  clearSavedScrollPosition,
+  getSavedScrollPosition,
+} from "@/lib/scroll-restoration";
 
 type ViewMode = "list" | "calendar";
 
@@ -35,6 +39,21 @@ type EventsApiPage = {
   nextOffset: number;
 };
 
+function currentPath() {
+  return `${window.location.pathname}${window.location.search}`;
+}
+
+function restoreToEventCard(eventId: string, eventTop = 0) {
+  const target = document.querySelector<HTMLElement>(
+    `[data-event-id="${CSS.escape(eventId)}"]`
+  );
+  if (!target) return false;
+
+  const root = document.scrollingElement ?? document.documentElement;
+  root.scrollTop = window.scrollY + target.getBoundingClientRect().top - eventTop;
+  return true;
+}
+
 export function EventsBrowser({
   events,
   initialHasMore = false,
@@ -49,6 +68,8 @@ export function EventsBrowser({
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [loadError, setLoadError] = useState("");
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const restoreTarget = useRef<ReturnType<typeof getSavedScrollPosition>>(null);
+  const isRestoringSpot = useRef(false);
   const trimmedQuery = query.trim();
   const hasActiveFilters = category !== "all" || trimmedQuery.length > 0;
 
@@ -57,6 +78,26 @@ export function EventsBrowser({
     setHasMore(initialHasMore);
     setNextOffset(initialNextOffset);
   }, [events, initialHasMore, initialNextOffset]);
+
+  useEffect(() => {
+    restoreTarget.current = getSavedScrollPosition();
+  }, []);
+
+  const tryRestoreSavedSpot = useCallback(() => {
+    const saved = restoreTarget.current;
+    if (!saved || saved.path !== currentPath()) return false;
+
+    if (saved.eventId) {
+      if (!restoreToEventCard(saved.eventId, saved.eventTop)) return false;
+    } else {
+      const root = document.scrollingElement ?? document.documentElement;
+      root.scrollTop = saved.scrollY;
+    }
+
+    clearSavedScrollPosition();
+    restoreTarget.current = null;
+    return true;
+  }, []);
 
   const filtered = useMemo(() => {
     return loadedEvents.filter((ev) => {
@@ -121,7 +162,7 @@ export function EventsBrowser({
   };
 
   const loadMore = useCallback(async () => {
-    if (isLoadingMore || !hasMore) return;
+    if (isRestoringSpot.current || isLoadingMore || !hasMore) return;
 
     setIsLoadingMore(true);
     setLoadError("");
@@ -144,6 +185,59 @@ export function EventsBrowser({
       setIsLoadingMore(false);
     }
   }, [hasMore, isLoadingMore, nextOffset]);
+
+  const restoreSavedSpot = useCallback(async () => {
+    const saved = restoreTarget.current;
+    if (!saved || saved.path !== currentPath()) return;
+    if (tryRestoreSavedSpot()) return;
+    if (!saved.eventId || isRestoringSpot.current || !hasMore) return;
+
+    isRestoringSpot.current = true;
+
+    try {
+      let current = loadedEvents;
+      let next = nextOffset;
+      let more: boolean = hasMore;
+      const targetCount =
+        typeof saved.loadedCount === "number"
+          ? Math.max(saved.loadedCount, current.length)
+          : Number.POSITIVE_INFINITY;
+
+      while (
+        more &&
+        current.length < targetCount &&
+        !current.some((event) => event.id === saved.eventId)
+      ) {
+        const previousNext = next;
+        const previousLength = current.length;
+        const response = await fetch(`/api/events?offset=${next}`);
+        if (!response.ok) throw new Error("Unable to load more events.");
+        const page = (await response.json()) as EventsApiPage;
+        const seen = new Set(current.map((event) => event.id));
+        const nextEvents = page.events.filter((event) => !seen.has(event.id));
+        current = [...current, ...nextEvents];
+        more = page.hasMore;
+        next = page.nextOffset;
+
+        if (next === previousNext && current.length === previousLength) {
+          break;
+        }
+      }
+
+      setLoadedEvents(current);
+      setHasMore(more);
+      setNextOffset(next);
+    } catch {
+      restoreTarget.current = null;
+      clearSavedScrollPosition();
+    } finally {
+      isRestoringSpot.current = false;
+    }
+  }, [hasMore, loadedEvents, nextOffset, tryRestoreSavedSpot]);
+
+  useEffect(() => {
+    void restoreSavedSpot();
+  }, [restoreSavedSpot]);
 
   useEffect(() => {
     if (!hasMore || loadError) return;
@@ -310,7 +404,11 @@ export function EventsBrowser({
                 </div>
                 <div className="grid items-start gap-3 md:grid-cols-2 md:gap-4 lg:grid-cols-3">
                   {dayEvents.map((ev) => (
-                    <EventCard key={ev.id} event={ev} />
+                    <EventCard
+                      key={ev.id}
+                      event={ev}
+                      loadedCount={loadedEvents.length}
+                    />
                   ))}
                 </div>
               </div>

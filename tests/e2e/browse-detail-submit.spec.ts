@@ -16,7 +16,7 @@ test("browses events, opens detail, and submits an event for review", async ({
   await expect(
     page.getByRole("heading", { name: "E2E Test: Highlander Hub Showcase" })
   ).toBeVisible();
-  await expect(page.getByRole("link", { name: /All events/i })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Back/i })).toBeVisible();
   await expect(page.getByRole("link", { name: /Add to calendar/i })).toBeVisible();
   await expect(page.getByRole("button", { name: /Share/i })).toBeVisible();
 

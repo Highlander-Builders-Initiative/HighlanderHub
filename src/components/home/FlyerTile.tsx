@@ -2,11 +2,12 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
 import type { CampusEvent } from "@/types/event";
 import { relativeDay } from "@/lib/dates";
 import { CATEGORY_RAIL } from "@/lib/category-colors";
 import { track } from "@/lib/analytics";
+import { saveScrollPosition } from "@/lib/scroll-restoration";
+import { useState } from "react";
 
 export type FlyerTileSize = "large" | "medium" | "small" | "wide";
 
@@ -41,18 +42,24 @@ export function FlyerTile({
 }) {
   const [imageBroken, setImageBroken] = useState(false);
   const showImage = !!event.imageUrl && !imageBroken;
+  const href = `/events/${event.id}`;
 
   return (
     <Link
-      href={`/events/${event.id}`}
-      onClick={() =>
+      href={href}
+      onClick={(clickEvent) => {
+        saveScrollPosition(href, {
+          eventId: event.id,
+          eventTop: clickEvent.currentTarget.getBoundingClientRect().top,
+        });
         track("event_open", {
           id: event.id,
           category: event.category,
           surface: "mosaic_tile",
-        })
-      }
+        });
+      }}
       aria-label={`${event.title} — ${relativeDay(event.startsAt)}`}
+      data-event-id={event.id}
       style={{ animationDelay: `${enterDelayMs}ms` }}
       className={`interactive-focus card-hover group relative block overflow-hidden rounded-xl border border-ink/15 bg-canvas aspect-[4/5] md:aspect-auto animate-scale-in ${className}`}
     >
