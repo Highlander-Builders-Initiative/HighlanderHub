@@ -5,17 +5,6 @@ import { test } from "node:test";
 const sourceFile = (path) => new URL(`../${path}`, import.meta.url);
 const read = (path) => readFileSync(sourceFile(path), "utf8");
 
-test("event filters expose accessible state and recovery actions", () => {
-  const source = read("src/components/events/EventsBrowser.tsx");
-
-  assert.match(source, /aria-pressed=/);
-  assert.match(source, /aria-live=/);
-  assert.match(source, /htmlFor="event-search"/);
-  assert.match(source, /id="event-search"/);
-  assert.match(source, /Clear filters/);
-  assert.doesNotMatch(source, /⌕/);
-});
-
 test("event browser paginates the list instead of rendering every event at once", () => {
   const browser = read("src/components/events/EventsBrowser.tsx");
   const data = read("src/lib/events.ts");

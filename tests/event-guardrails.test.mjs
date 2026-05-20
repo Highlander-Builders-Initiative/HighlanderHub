@@ -82,6 +82,18 @@ test("event detail lookup is request-level cached", () => {
   assert.match(source, /export const getEventById = cache\(/);
 });
 
+test("e2e fixtures stay outside the main event reader", () => {
+  const events = read("src/lib/events.ts");
+
+  assert.ok(
+    existsSync(sourceFile("src/lib/events-fixtures.ts")),
+    "missing fixture module"
+  );
+  assert.match(events, /from "\.\/events-fixtures"/);
+  assert.doesNotMatch(events, /HIGHLANDERHUB_E2E_FIXTURES/);
+  assert.doesNotMatch(events, /E2E Test: Highlander Hub Showcase/);
+});
+
 test("database migration adds URL scheme and end-time guardrails", () => {
   const migrationsDir = sourceFile("supabase/migrations");
   const migrationName = readdirSync(migrationsDir).find((name) =>
