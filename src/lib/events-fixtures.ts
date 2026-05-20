@@ -21,6 +21,6 @@ export const E2E_FIXTURE_EVENT: CampusEvent = {
   scrapedAt: "2026-05-18T12:00:00.000Z",
 };
 
-export function useE2eFixtures(): boolean {
+export function e2eFixturesEnabled(): boolean {
   return process.env.HIGHLANDERHUB_E2E_FIXTURES === "1";
 }

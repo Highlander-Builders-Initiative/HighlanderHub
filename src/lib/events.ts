@@ -3,7 +3,7 @@ import type { CampusEvent } from "@/types/event";
 import { supabase } from "@/lib/supabase";
 import { startOfPacificToday } from "@/lib/dates";
 import { normalizeHttpUrl } from "@/lib/event-validation";
-import { E2E_FIXTURE_EVENT, useE2eFixtures } from "./events-fixtures";
+import { E2E_FIXTURE_EVENT, e2eFixturesEnabled } from "./events-fixtures";
 
 const DB_RETRY_ATTEMPTS = 2;
 export const EVENTS_PAGE_SIZE = 24;
@@ -139,7 +139,7 @@ async function getCount(
 }
 
 export async function getEventsSummary(): Promise<EventsSummary> {
-  if (useE2eFixtures()) {
+  if (e2eFixturesEnabled()) {
     return {
       total: 1,
       upcomingThisWeek: 1,
@@ -192,7 +192,7 @@ export async function getEventsPage({
   limit = EVENTS_PAGE_SIZE,
   offset = 0,
 }: EventsPageOptions = {}): Promise<EventsPageResult> {
-  if (useE2eFixtures()) {
+  if (e2eFixturesEnabled()) {
     const events = offset === 0 && limit > 0 ? [E2E_FIXTURE_EVENT] : [];
     return {
       events,
@@ -235,7 +235,7 @@ export async function getEvents(
 export const getEventById = cache(async function getEventById(
   id: string
 ): Promise<CampusEvent | null> {
-  if (useE2eFixtures()) {
+  if (e2eFixturesEnabled()) {
     return id === E2E_FIXTURE_EVENT.id ? E2E_FIXTURE_EVENT : null;
   }
 

@@ -9,6 +9,10 @@ out/
 .env.local
 .env*.local
 
+# Playwright
+test-results/
+playwright-report/
+
 # Local/editor/system artifacts
 .DS_Store
 *.tsbuildinfo
