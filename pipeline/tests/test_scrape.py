@@ -102,6 +102,63 @@ class ScrapeMainTests(unittest.TestCase):
                                 ):
                                     self.scrape.main()
 
+    def test_rest_story_item_serialization(self) -> None:
+        item_dict = {
+            "pk": 12345678,
+            "media_type": 2,
+            "taken_at": 1716192000,
+            "expiring_at": 1716278400,
+            "image_versions2": {
+                "candidates": [{"url": "https://ig.com/flyer.jpg"}]
+            },
+            "video_versions": [{"url": "https://ig.com/flyer.mp4"}],
+            "caption": {"text": "Come to our ACM meeting! @member1 @member2"},
+            "story_link_stickers": [
+                {"story_link": {"url": "https://linktr.ee/acm_ucr"}}
+            ]
+        }
+        item = self.scrape.RestStoryItem(item_dict, 10839758322, "acm_ucr")
+
+        self.assertEqual(12345678, item.mediaid)
+        self.assertEqual(10839758322, item.owner_profile.userid)
+        self.assertEqual("acm_ucr", item.owner_profile.username)
+        self.assertEqual("StoryVideo", item.typename)
+        self.assertTrue(item.is_video)
+        self.assertEqual("2024-05-20T08:00:00", item.date_utc.isoformat())
+        self.assertEqual("2024-05-21T08:00:00", item.expiring_utc.isoformat())
+        self.assertEqual("https://ig.com/flyer.jpg", item.url)
+        self.assertEqual("https://ig.com/flyer.mp4", item.video_url)
+        self.assertEqual("Come to our ACM meeting! @member1 @member2", item.caption)
+        self.assertEqual(["member1", "member2"], item.caption_mentions)
+        self.assertEqual("https://linktr.ee/acm_ucr", item.story_cta_url)
+
+    def test_get_stories_via_rest_success(self) -> None:
+        loader = Mock()
+        loader.context.get_iphone_json.return_value = {
+            "reels": {
+                "10839758322": {
+                    "items": [
+                        {
+                            "pk": 987654,
+                            "media_type": 1,
+                            "taken_at": 1716192000,
+                            "image_versions2": {
+                                "candidates": [{"url": "https://ig.com/flyer.jpg"}]
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+
+        stories = self.scrape._get_stories_via_rest(loader, [10839758322], "acm_ucr")
+        self.assertEqual(1, len(stories))
+        items = list(stories[0].get_items())
+        self.assertEqual(1, len(items))
+        self.assertEqual(987654, items[0].mediaid)
+        self.assertFalse(items[0].is_video)
+        self.assertEqual("https://ig.com/flyer.jpg", items[0].url)
+
 
 if __name__ == "__main__":
     unittest.main()

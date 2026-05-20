@@ -11,6 +11,7 @@ import json
 import logging
 import random
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -125,11 +126,151 @@ def _resolve_profile(L: instaloader.Instaloader, handle: str) -> instaloader.Pro
     return instaloader.Profile.from_username(L.context, handle)
 
 
+class RestStoryItem:
+    def __init__(self, item_dict: dict, userid: int, username: str):
+        self._dict = item_dict
+        self._userid = userid
+        self._username = username
+
+    @property
+    def mediaid(self) -> int:
+        return int(self._dict.get("pk") or self._dict.get("id") or 0)
+
+    @property
+    def owner_profile(self):
+        class OwnerProfile:
+            def __init__(self, uid, uname):
+                self.userid = uid
+                self.username = uname
+        return OwnerProfile(self._userid, self._username)
+
+    @property
+    def typename(self) -> str:
+        return "StoryVideo" if self.is_video else "StoryImage"
+
+    @property
+    def is_video(self) -> bool:
+        # media_type: 1 is image, 2 is video
+        return self._dict.get("media_type") == 2 or self._dict.get("is_video", False)
+
+    @property
+    def date_utc(self) -> datetime:
+        taken_at = self._dict.get("taken_at")
+        if taken_at:
+            return datetime.fromtimestamp(taken_at, tz=timezone.utc).replace(tzinfo=None)
+        return datetime.now(tz=timezone.utc).replace(tzinfo=None)
+
+    @property
+    def expiring_utc(self) -> datetime | None:
+        exp_at = self._dict.get("expiring_at")
+        if exp_at:
+            return datetime.fromtimestamp(exp_at, tz=timezone.utc).replace(tzinfo=None)
+        return None
+
+    @property
+    def url(self) -> str:
+        try:
+            candidates = self._dict.get("image_versions2", {}).get("candidates", [])
+            if candidates:
+                return candidates[0]["url"]
+        except Exception:
+            pass
+        return ""
+
+    @property
+    def video_url(self) -> str | None:
+        if not self.is_video:
+            return None
+        try:
+            video_versions = self._dict.get("video_versions", [])
+            if video_versions:
+                return video_versions[0]["url"]
+        except Exception:
+            pass
+        return None
+
+    @property
+    def caption(self) -> str | None:
+        caption_dict = self._dict.get("caption")
+        if isinstance(caption_dict, dict):
+            return caption_dict.get("text")
+        return None
+
+    @property
+    def caption_mentions(self) -> list[str]:
+        cap = self.caption
+        if not cap:
+            return []
+        import re
+        return re.findall(r"@([a-zA-Z0-9_.]+)", cap.lower())
+
+    @property
+    def story_cta_url(self) -> str | None:
+        # Check story link stickers
+        try:
+            for sticker in self._dict.get("story_link_stickers", []):
+                url = sticker.get("story_link", {}).get("url")
+                if url:
+                    return url
+        except Exception:
+            pass
+        
+        # Check story bloks stickers
+        try:
+            for sticker in self._dict.get("story_bloks_stickers", []):
+                url = sticker.get("bloks_sticker", {}).get("story_link", {}).get("url")
+                if url:
+                    return url
+        except Exception:
+            pass
+            
+        return None
+
+
+class RestStory:
+    def __init__(self, items: list[RestStoryItem]):
+        self._items = items
+
+    def get_items(self) -> list[RestStoryItem]:
+        return self._items
+
+
+def _get_stories_via_rest(L: instaloader.Instaloader, userids: list[int], username: str) -> list[RestStory]:
+    stories_list = []
+    for userid in userids:
+        try:
+            path = 'api/v1/feed/reels_media/?reel_ids={}'.format(userid)
+            data = L.context.get_iphone_json(path=path, params={})
+            
+            reels = data.get("reels", {})
+            user_reel = reels.get(str(userid))
+            if not user_reel:
+                log.info("%s (ID: %s): No active stories found in REST reels_media", username, userid)
+                continue
+                
+            items = user_reel.get("items", [])
+            if not items:
+                log.info("%s (ID: %s): Story list is empty in REST reels_media", username, userid)
+                continue
+                
+            log.info("%s (ID: %s): Found %d story items via REST reels_media", username, userid, len(items))
+            story_items = [RestStoryItem(item, userid, username) for item in items]
+            stories_list.append(RestStory(story_items))
+        except Exception as e:
+            log.warning("%s (ID: %s): Failed to fetch stories via REST reels_media: %s", username, userid, e)
+    return stories_list
+
+
 def scrape_account(L: instaloader.Instaloader, handle: str) -> tuple[int, int]:
     """Fetch stories for one account. Returns (seen, new)."""
     profile = _resolve_profile(L, handle)
     seen = new = 0
-    for story in L.get_stories(userids=[profile.userid]):
+    
+    # Use our robust, private mobile REST API fallback helper to bypass the broken
+    # Instagram GraphQL story query (303a4ae99711322310f25250d988f3b7) that is currently
+    # returning 400 Bad Request on Instagram's servers.
+    stories = _get_stories_via_rest(L, [profile.userid], handle)
+    for story in stories:
         for item in story.get_items():
             seen += 1
             payload = _serialize_item(item, handle)
