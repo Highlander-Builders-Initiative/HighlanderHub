@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { Masthead } from "@/components/layout/Masthead";
 import { Footer } from "@/components/layout/Footer";
@@ -9,7 +10,6 @@ import { calendarHref } from "@/lib/event-actions";
 import { ShareButton } from "@/components/events/ShareButton";
 import { EventBackButton } from "@/components/events/EventBackButton";
 import { TrackedAnchor } from "@/components/events/TrackedAnchor";
-import { CATEGORY_RAIL } from "@/lib/category-colors";
 import { SITE_NAME, SITE_PREVIEW_IMAGE, absoluteUrl } from "@/lib/seo";
 import { normalizeHttpUrl } from "@/lib/event-validation";
 import type { CampusEvent } from "@/types/event";
@@ -80,116 +80,137 @@ export default async function EventDetailPage({
   const primaryKind = safeRsvpUrl ? "rsvp" : "view_source";
 
   return (
-    <main className="min-h-screen bg-canvas pb-28 md:pb-0">
+    <main className="relative min-h-screen bg-canvas pb-28 md:pb-0">
       <Masthead />
 
-      <div className="mx-auto max-w-3xl px-4 pb-16 pt-6 sm:px-6">
+      {/* Atmospheric backdrop: the flyer's mood color bleeds in, blurred low,
+          then fades into canvas. Makes low-quality flyers feel intentional. */}
+      {event.imageUrl && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-[58vh] overflow-hidden sm:h-[52vh]"
+        >
+          <Image
+            src={event.imageUrl}
+            alt=""
+            fill
+            sizes="100vw"
+            className="scale-125 object-cover opacity-55 blur-3xl"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-canvas/30 via-canvas/65 to-canvas" />
+        </div>
+      )}
+
+      <div className="relative mx-auto max-w-3xl px-4 pb-16 pt-6 sm:px-6">
         <EventBackButton />
 
-        <article className="mt-6 flex overflow-hidden rounded-xl">
-          <span
-            aria-hidden
-            className={`w-1 shrink-0 ${CATEGORY_RAIL[event.category]}`}
-          />
-          <div className="flex-1 border border-l-0 border-ink/15 bg-canvas">
-            <div className="border-b border-ink/10 px-5 py-4 sm:px-7">
-              <div className="flex flex-wrap items-center gap-2">
-                <CategoryBadge category={event.category} />
-                {event.isFree && (
-                  <span className="inline-flex items-center rounded-full bg-leaf/10 px-2.5 py-0.5 text-[11px] font-medium text-[#1f6f4e]">
-                    Free
-                  </span>
-                )}
-                {event.rsvpRequired && (
-                  <span className="inline-flex items-center rounded-full border border-ink/15 bg-canvas px-2.5 py-0.5 text-[11px] font-medium text-muted">
-                    RSVP req.
-                  </span>
-                )}
-                <span className="ml-auto text-[13px] text-muted">
-                  {SOURCE_LABELS[event.source]}
-                </span>
-              </div>
-
-              <h1 className="mt-4 font-display text-[30px] font-semibold leading-[1.1] tracking-[-0.025em] text-ink sm:text-[40px]">
-                {event.title}
-              </h1>
-
-              <div className="mt-4 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm">
-                <span className="font-display text-lg font-semibold text-ink">
-                  {formatDay(event.startsAt)}
-                </span>
-                <span className="text-[13px] text-muted">
-                  {relativeDay(event.startsAt)}
-                </span>
-                <span className="text-ink/30">·</span>
-                <span className="text-ink">
-                  {formatTimeRange(event.startsAt, event.endsAt)}
-                </span>
+        <article className="mt-8">
+          {event.imageUrl && (
+            <div className="mb-10 w-full max-w-[18rem]">
+              <div className="relative aspect-[4/5] w-full overflow-hidden rounded-xl border border-white/50 bg-surface shadow-cardHover">
+                <Image
+                  src={event.imageUrl}
+                  alt={`Flyer for ${event.title}`}
+                  fill
+                  sizes="(max-width: 640px) 70vw, 18rem"
+                  className="object-cover"
+                  priority
+                />
               </div>
             </div>
+          )}
 
-            <div className="px-5 py-6 sm:px-7">
-              <p className="whitespace-pre-line text-[15px] leading-relaxed text-ink/80">
-                {event.description}
-              </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <CategoryBadge category={event.category} />
+            {event.isFree && (
+              <span className="inline-flex items-center rounded-full bg-leaf/10 px-2.5 py-0.5 text-[11px] font-medium text-[#1f6f4e]">
+                Free
+              </span>
+            )}
+            {event.rsvpRequired && (
+              <span className="inline-flex items-center rounded-full border border-ink/15 px-2.5 py-0.5 text-[11px] font-medium text-muted">
+                RSVP req.
+              </span>
+            )}
+            <span className="ml-auto text-[13px] text-muted">
+              {SOURCE_LABELS[event.source]}
+            </span>
+          </div>
 
-              <dl className="mt-8 grid grid-cols-1 gap-5 border-t border-ink/10 pt-6 sm:grid-cols-2">
-                <div>
-                  <dt className="text-xs uppercase tracking-[0.08em] text-muted">
-                    Where
-                  </dt>
-                  <dd className="mt-1 text-ink">{event.location}</dd>
-                </div>
-                <div>
-                  <dt className="text-xs uppercase tracking-[0.08em] text-muted">
-                    Host
-                  </dt>
-                  <dd className="mt-1 text-ink">
-                    {event.host}
-                    {event.hostHandle && (
-                      <span className="block text-xs text-muted">
-                        {event.hostHandle}
-                      </span>
-                    )}
-                  </dd>
-                </div>
-              </dl>
+          <h1 className="mt-5 font-display text-[32px] font-semibold leading-[1.08] tracking-[-0.025em] text-ink sm:text-[44px]">
+            {event.title}
+          </h1>
 
-              {event.tags.length > 0 && (
-                <div className="mt-6 flex flex-wrap gap-x-3 gap-y-1 text-[13px] text-muted">
-                  {event.tags.map((t) => (
-                    <span key={t}>#{t.replace(/\s+/g, "")}</span>
-                  ))}
-                </div>
-              )}
+          <p className="mt-4 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <span className="font-display text-xl font-semibold text-ink">
+              {formatDay(event.startsAt)}
+            </span>
+            <span className="text-[13px] text-muted">
+              {relativeDay(event.startsAt)}
+            </span>
+            <span className="text-ink/30">·</span>
+            <span className="text-ink">
+              {formatTimeRange(event.startsAt, event.endsAt)}
+            </span>
+          </p>
 
-              {/* Desktop CTAs */}
-              <div className="mt-8 hidden flex-wrap items-center gap-x-5 gap-y-3 border-t border-ink/10 pt-6 md:flex">
-                {primaryUrl && (
-                  <TrackedAnchor
-                    event="primary"
-                    ctaKind={primaryKind}
-                    eventId={event.id}
-                    surface="desktop"
-                    href={primaryUrl}
-                    className="interactive-focus inline-flex min-h-12 items-center gap-2 rounded-lg bg-ink px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-85"
-                  >
-                    {safeRsvpUrl ? "RSVP" : "View source"}
-                    <span aria-hidden>↗</span>
-                  </TrackedAnchor>
-                )}
-                <TrackedAnchor
-                  event="calendar"
-                  eventId={event.id}
-                  surface="desktop"
-                  href={calendarHref(event)}
-                  className="interactive-focus text-sm font-medium text-ink underline-offset-4 hover:underline"
-                >
-                  Add to calendar
-                </TrackedAnchor>
-                <ShareButton event={event} variant="text" />
-              </div>
+          <div className="mt-10 h-px w-full bg-ink/10" />
+
+          <p className="mt-10 max-w-prose whitespace-pre-line text-[16px] leading-relaxed text-ink/80">
+            {event.description}
+          </p>
+
+          <dl className="mt-12 grid grid-cols-1 gap-y-6 gap-x-12 sm:grid-cols-2">
+            <div>
+              <dt className="text-[13px] text-muted">Where</dt>
+              <dd className="mt-1 text-ink">{event.location}</dd>
             </div>
+            <div>
+              <dt className="text-[13px] text-muted">Host</dt>
+              <dd className="mt-1 text-ink">
+                {event.host}
+                {event.hostHandle && (
+                  <span className="block text-xs text-muted">
+                    {event.hostHandle}
+                  </span>
+                )}
+              </dd>
+            </div>
+          </dl>
+
+          {event.tags.length > 0 && (
+            <div className="mt-8 flex flex-wrap gap-x-3 gap-y-1 text-[13px] text-muted">
+              {event.tags.map((t) => (
+                <span key={t}>#{t.replace(/\s+/g, "")}</span>
+              ))}
+            </div>
+          )}
+
+          {/* Desktop CTAs */}
+          <div className="mt-12 hidden flex-wrap items-center gap-x-5 gap-y-3 border-t border-ink/10 pt-8 md:flex">
+            {primaryUrl && (
+              <TrackedAnchor
+                event="primary"
+                ctaKind={primaryKind}
+                eventId={event.id}
+                surface="desktop"
+                href={primaryUrl}
+                className="interactive-focus inline-flex min-h-12 items-center gap-2 rounded-lg bg-ink px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-85"
+              >
+                {safeRsvpUrl ? "RSVP" : "View source"}
+                <span aria-hidden>↗</span>
+              </TrackedAnchor>
+            )}
+            <TrackedAnchor
+              event="calendar"
+              eventId={event.id}
+              surface="desktop"
+              href={calendarHref(event)}
+              className="interactive-focus text-sm font-medium text-ink underline-offset-4 hover:underline"
+            >
+              Add to calendar
+            </TrackedAnchor>
+            <ShareButton event={event} variant="text" />
           </div>
         </article>
       </div>

@@ -157,11 +157,7 @@ export function Features() {
 
 export function FinalCTA() {
   return (
-    <section className="relative border-b border-ink/10 bg-highlander/[0.04]">
-      <span
-        aria-hidden
-        className="absolute inset-y-0 left-0 w-[3px] bg-highlander"
-      />
+    <section className="border-b border-ink/10 bg-surface">
       <div className="mx-auto flex max-w-7xl flex-col items-start gap-8 px-4 py-20 sm:px-6 md:flex-row md:items-end md:justify-between md:py-24">
         <Reveal className="max-w-xl">
           <p className="text-[13px] text-muted">Ready when you are</p>

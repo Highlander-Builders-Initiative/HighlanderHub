@@ -5,7 +5,6 @@ import Link from "next/link";
 import { type MouseEvent, useState } from "react";
 import type { CampusEvent } from "@/types/event";
 import { formatTime, relativeDay } from "@/lib/dates";
-import { CATEGORY_RAIL } from "@/lib/category-colors";
 import { track } from "@/lib/analytics";
 import { saveScrollPosition } from "@/lib/scroll-restoration";
 import { CategoryBadge } from "../ui/CategoryBadge";
@@ -117,13 +116,9 @@ function TextCard({
       onClick={onOpen}
       aria-label={`${event.title}, ${relativeDay(event.startsAt)} at ${formatTime(event.startsAt)}`}
       data-event-id={event.id}
-      className="interactive-focus card-hover group relative flex h-full w-full min-w-0 overflow-hidden rounded-xl"
+      className="interactive-focus card-hover group relative flex h-full w-full min-w-0 overflow-hidden rounded-xl border border-ink/15 bg-canvas"
     >
-      <span
-        aria-hidden
-        className={`w-1 shrink-0 ${CATEGORY_RAIL[event.category]}`}
-      />
-      <div className="flex min-w-0 flex-1 items-stretch border border-l-0 border-ink/15 bg-canvas">
+      <div className="flex min-w-0 flex-1 items-stretch">
         <div className="flex min-w-0 flex-1 flex-col justify-center gap-1 px-4 py-3 sm:px-5 sm:py-4">
           <div className="flex min-w-0 items-center gap-2 text-[13px] text-muted">
             <span className="shrink-0">{formatTime(event.startsAt)}</span>

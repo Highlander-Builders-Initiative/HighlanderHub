@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import type { CampusEvent } from "@/types/event";
 import { relativeDay } from "@/lib/dates";
-import { CATEGORY_RAIL } from "@/lib/category-colors";
 import { track } from "@/lib/analytics";
 import { saveScrollPosition } from "@/lib/scroll-restoration";
 import { useState } from "react";
@@ -73,10 +72,7 @@ export function FlyerTile({
           onError={() => setImageBroken(true)}
         />
       ) : (
-        <div
-          className={`absolute inset-0 ${CATEGORY_RAIL[event.category]} opacity-95`}
-          aria-hidden
-        />
+        <div className="absolute inset-0 bg-surface" aria-hidden />
       )}
 
       {/* Gradient overlay keeps title readable over any flyer. */}
