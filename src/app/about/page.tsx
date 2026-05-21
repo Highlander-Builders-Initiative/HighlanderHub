@@ -6,6 +6,7 @@ import { Footer } from "@/components/layout/Footer";
 import { Reveal } from "@/components/ui/Reveal";
 import { SubmitEventCta } from "@/components/events/SubmitEventCta";
 import { HbiLink } from "@/components/analytics/HbiLink";
+import { AboutFaq } from "@/components/about/AboutFaq";
 
 export const metadata: Metadata = {
   title: "About · Highlander Hub",
@@ -51,18 +52,21 @@ const SOURCES = [
 
 const FAQS = [
   {
+    id: "data-freshness",
     q: "How fresh is the data?",
     a: "Updates run automatically every six hours, so anything posted in the last day usually shows up by the next refresh. Manual submissions get reviewed within a day.",
   },
   {
+    id: "report-wrong-event",
     q: "How do I report a wrong event?",
     a: "DM @hbi.ucr on Instagram with the link. We extract event details from flyer images with OCR + an LLM, so the occasional misread happens — we'll fix it.",
   },
   {
+    id: "add-org-calendar",
     q: "Can my org's calendar be added as a regular source?",
     a: "Yes. DM @hbi.ucr on Instagram with your org's handle (and a public events page if you have one) and we'll add you to the rotation.",
   },
-];
+] as const;
 
 export default function AboutPage() {
   return (
@@ -346,39 +350,7 @@ export default function AboutPage() {
             </h2>
           </Reveal>
 
-          <dl className="mt-10 divide-y divide-ink/10 border-y border-ink/10">
-            {FAQS.map((f) => (
-              <details
-                key={f.q}
-                className="group py-5 [&_summary::-webkit-details-marker]:hidden"
-              >
-                <summary className="interactive-focus flex cursor-pointer items-center justify-between gap-6 list-none">
-                  <dt className="font-display text-base font-semibold tracking-[-0.01em] text-ink md:text-lg">
-                    {f.q}
-                  </dt>
-                  <span
-                    aria-hidden
-                    className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-ink/15 text-ink transition-transform group-open:rotate-45"
-                  >
-                    <svg
-                      viewBox="0 0 20 20"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="h-4 w-4"
-                    >
-                      <path d="M10 4v12M4 10h12" />
-                    </svg>
-                  </span>
-                </summary>
-                <dd className="mt-3 max-w-3xl pr-14 text-sm leading-relaxed text-ink/75 md:text-base">
-                  {f.a}
-                </dd>
-              </details>
-            ))}
-          </dl>
+          <AboutFaq items={FAQS} />
         </div>
       </section>
 
