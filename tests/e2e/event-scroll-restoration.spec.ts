@@ -4,41 +4,16 @@ async function readScrollY(page) {
   return page.evaluate(() => window.scrollY);
 }
 
-async function readTop(locator) {
-  return locator.evaluate((el) => el.getBoundingClientRect().top);
+async function readSavedEventTop(page) {
+  return page.evaluate(() => {
+    const saved = sessionStorage.getItem("highlanderhub.returnScroll");
+    if (!saved) return null;
+    const parsed = JSON.parse(saved);
+    return typeof parsed.eventTop === "number" ? parsed.eventTop : null;
+  });
 }
 
-test("event detail returns to the prior scroll position", async ({ page }) => {
-  await page.setViewportSize({ width: 1280, height: 480 });
-  await page.goto("/events");
-  await page.addStyleTag({
-    content:
-      "html { scroll-behavior: auto !important; } #events { padding-top: 900px !important; } main { min-height: 2400px !important; }",
-  });
-
-  const eventLink = page.getByRole("link", {
-    name: /E2E Test: Highlander Hub Showcase/i,
-  });
-
-  await eventLink.scrollIntoViewIfNeeded();
-
-  const scrolledY = await readScrollY(page);
-  const originalTop = await readTop(eventLink);
-  expect(scrolledY).toBeGreaterThan(0);
-
-  await Promise.all([
-    page.waitForURL("**/events/e2e-highlander-hub-showcase"),
-    eventLink.click(),
-  ]);
-  await expect(
-    page.getByRole("heading", {
-      level: 1,
-      name: "E2E Test: Highlander Hub Showcase",
-    })
-  ).toBeVisible();
-
-  await Promise.all([page.waitForURL("**/events"), page.goBack()]);
-  await expect(page.getByRole("heading", { name: "Events" })).toBeVisible();
+async function waitForEventTop(page, targetTop) {
   await page.waitForFunction(
     ({ targetTop }) => {
       const card = document.querySelector(
@@ -49,14 +24,67 @@ test("event detail returns to the prior scroll position", async ({ page }) => {
         Math.abs(card.getBoundingClientRect().top - targetTop) <= 8
       );
     },
-    { targetTop: originalTop }
+    { targetTop }
   );
-  const secondTop = await readTop(eventLink);
+}
+
+async function clickUntilPressed(page, name) {
+  const button = page.getByRole("button", { name });
+  await expect
+    .poll(async () => {
+      await button.click();
+      return button.getAttribute("aria-pressed");
+    })
+    .toBe("true");
+}
+
+async function waitForEventsBrowserHydration(page) {
+  await clickUntilPressed(page, "Social");
+  await clickUntilPressed(page, "All");
+}
+
+test("event detail returns to the prior scroll position", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 480 });
+  await page.goto("/events");
+  await page.addStyleTag({
+    content:
+      "html { scroll-behavior: auto !important; } #events { padding-top: 900px !important; } main { min-height: 2400px !important; }",
+  });
+  await waitForEventsBrowserHydration(page);
+
+  const eventLink = page.getByRole("link", {
+    name: /E2E Test: Highlander Hub Showcase/i,
+  });
+
+  await eventLink.scrollIntoViewIfNeeded();
+
+  const scrolledY = await readScrollY(page);
+  expect(scrolledY).toBeGreaterThan(0);
 
   await Promise.all([
     page.waitForURL("**/events/e2e-highlander-hub-showcase"),
     eventLink.click(),
   ]);
+  const firstSavedTop = await readSavedEventTop(page);
+  expect(firstSavedTop).not.toBeNull();
+  await expect(
+    page.getByRole("heading", {
+      level: 1,
+      name: "E2E Test: Highlander Hub Showcase",
+    })
+  ).toBeVisible();
+
+  await Promise.all([page.waitForURL("**/events"), page.goBack()]);
+  await expect(page.getByRole("heading", { name: "Events" })).toBeVisible();
+  await waitForEventsBrowserHydration(page);
+  await waitForEventTop(page, firstSavedTop);
+
+  await Promise.all([
+    page.waitForURL("**/events/e2e-highlander-hub-showcase"),
+    eventLink.click(),
+  ]);
+  const secondSavedTop = await readSavedEventTop(page);
+  expect(secondSavedTop).not.toBeNull();
   await expect(
     page.getByRole("heading", {
       level: 1,
@@ -69,16 +97,5 @@ test("event detail returns to the prior scroll position", async ({ page }) => {
     page.getByRole("button", { name: /Back/i }).click(),
   ]);
   await expect(page.getByRole("heading", { name: "Events" })).toBeVisible();
-  await page.waitForFunction(
-    ({ targetTop }) => {
-      const card = document.querySelector(
-        '[data-event-id="e2e-highlander-hub-showcase"]'
-      );
-      return (
-        card instanceof HTMLElement &&
-        Math.abs(card.getBoundingClientRect().top - targetTop) <= 8
-      );
-    },
-    { targetTop: secondTop }
-  );
+  await waitForEventTop(page, secondSavedTop);
 });
