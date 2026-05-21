@@ -3,6 +3,9 @@
     { "handle": "ucrvsa", "label": "UCR VSA", "category": "club" },
     { "handle": "cyber_ucr", "label": "Cyber @ UCR", "category": "club" },
     { "handle": "acm_ucr", "label": "ACM @ UCR", "category": "club" },
-    { "handle": "hbi.ucr", "label": "HBI @ UCR", "category": "club" }
+    { "handle": "hbi.ucr", "label": "HBI @ UCR", "category": "club" },
+    { "handle": "ucr_resed", "label": "ucr residential education", "category": "club" },
+    { "handle": "swe.ucr", "label": "SWE @ UCR", "category": "club" },
+    { "handle": "ucrwrc", "label": "Women's Resource Center @ UCR", "category": "club" }
   ]
 }
