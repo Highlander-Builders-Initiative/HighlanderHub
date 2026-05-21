@@ -43,29 +43,12 @@ body {
   letter-spacing: 0;
 }
 
-/* Tiny caps label */
-.eyebrow {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #6b7280;
-}
-
 /* Hairline rule */
 .hairline {
   height: 1px;
   width: 100%;
   background: #0f1115;
   opacity: 0.08;
-}
-
-/* Index number, decorative */
-.index-num {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  color: #6b7280;
 }
 
 .interactive-focus {

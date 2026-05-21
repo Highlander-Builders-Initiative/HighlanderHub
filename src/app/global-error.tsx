@@ -30,10 +30,8 @@ export default function GlobalError({
           <p
             style={{
               fontFamily:
-                "var(--font-mono), ui-monospace, SFMono-Regular, monospace",
-              fontSize: 11,
-              letterSpacing: "0.16em",
-              textTransform: "uppercase",
+                "var(--font-body), ui-sans-serif, system-ui, sans-serif",
+              fontSize: 13,
               color: "#6b7280",
               margin: 0,
             }}

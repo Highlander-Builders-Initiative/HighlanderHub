@@ -47,10 +47,7 @@ export function Footer() {
 
         {/* Site */}
         <nav aria-labelledby="footer-site" className="md:col-span-3">
-          <p
-            id="footer-site"
-            className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted"
-          >
+          <p id="footer-site" className="text-[13px] font-medium text-muted">
             Site
           </p>
           <ul className="mt-4 space-y-2 text-sm">
@@ -69,10 +66,7 @@ export function Footer() {
 
         {/* Connect */}
         <div className="md:col-span-4">
-          <p
-            id="footer-connect"
-            className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted"
-          >
+          <p id="footer-connect" className="text-[13px] font-medium text-muted">
             Connect
           </p>
           <div

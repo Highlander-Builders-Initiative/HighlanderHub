@@ -163,7 +163,7 @@ export default function SubmitForm() {
         <h2 className="font-serif text-2xl">Got it.</h2>
         <p className="mt-2 text-stone-700">
           Your event is queued for review. You&apos;ll see it on the bulletin
-          once it&apos;s approved — usually within a day.
+          once it&apos;s approved, usually within a day.
         </p>
       </div>
     );
@@ -187,7 +187,7 @@ export default function SubmitForm() {
         label="Description"
         name="description"
         type="textarea"
-        placeholder="A sentence or two — what's happening, who's it for?"
+        placeholder="A sentence or two: what's happening, who's it for?"
       />
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">

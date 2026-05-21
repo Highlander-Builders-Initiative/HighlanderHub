@@ -18,7 +18,7 @@ function buildPayload(event: CampusEvent) {
     event.location,
   ]
     .filter(Boolean)
-    .join(" — ");
+    .join(" · ");
   return { title: event.title, text, url };
 }
 

@@ -43,9 +43,7 @@ const FEATURE_VISUALS = {
   food: (
     <div className="flex h-full items-center p-5">
       <div className="flex flex-1 flex-col gap-1 rounded-lg border border-ink/15 bg-canvas p-3">
-        <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted">
-          12:30 PM today
-        </span>
+        <span className="text-[12px] text-muted">12:30 PM today</span>
         <span className="font-display text-lg font-semibold tracking-[-0.02em] text-ink">
           Free Bagels at the HUB
         </span>
@@ -74,7 +72,7 @@ const FEATURE_VISUALS = {
             }`}
           >
             <span
-              className={`font-mono text-[10px] ${
+              className={`text-[11px] font-medium ${
                 today ? "text-white/70" : "text-muted"
               }`}
             >
@@ -144,9 +142,7 @@ export function Features() {
               {f.visual}
             </div>
             <div className="flex flex-1 flex-col gap-2 p-5">
-              <span className="font-mono text-[11px] tracking-[0.14em] text-muted">
-                {f.number}
-              </span>
+              <span className="text-[13px] text-muted">{f.number}</span>
               <h3 className="font-display text-xl font-semibold tracking-[-0.02em] text-ink">
                 {f.title}
               </h3>
@@ -168,9 +164,7 @@ export function FinalCTA() {
       />
       <div className="mx-auto flex max-w-7xl flex-col items-start gap-8 px-4 py-20 sm:px-6 md:flex-row md:items-end md:justify-between md:py-24">
         <Reveal className="max-w-xl">
-          <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted">
-            Ready when you are
-          </p>
+          <p className="text-[13px] text-muted">Ready when you are</p>
           <h2 className="mt-3 font-display text-4xl font-semibold leading-[1.05] tracking-[-0.03em] text-ink md:text-6xl">
             Stop missing events.
           </h2>
