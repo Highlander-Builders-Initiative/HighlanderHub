@@ -90,9 +90,7 @@ export function RouteLoadingPage({
               : "max-w-7xl py-16 md:py-24"
           }`}
         >
-          <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted">
-            {content.label}
-          </p>
+          <p className="text-[13px] text-muted">{content.label}</p>
           <h1 className="mt-4 max-w-2xl font-display text-[34px] font-semibold leading-[1.05] tracking-[-0.03em] text-ink md:text-5xl">
             {content.title}
           </h1>

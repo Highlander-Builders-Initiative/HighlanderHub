@@ -64,7 +64,7 @@ function ImageCard({
     <Link
       href={href}
       onClick={onOpen}
-      aria-label={`${event.title} — ${relativeDay(event.startsAt)} at ${formatTime(event.startsAt)}`}
+      aria-label={`${event.title}, ${relativeDay(event.startsAt)} at ${formatTime(event.startsAt)}`}
       data-event-id={event.id}
       className="interactive-focus card-hover group relative block w-full overflow-hidden rounded-xl border border-ink/15 bg-canvas aspect-[4/5]"
     >
@@ -83,7 +83,7 @@ function ImageCard({
       />
 
       <div className="absolute inset-x-0 bottom-0 p-3 md:p-4">
-        <p className="font-mono uppercase tracking-[0.16em] text-[10px] text-white/80 md:text-[11px]">
+        <p className="text-[12px] text-white/85 md:text-[13px]">
           {relativeDay(event.startsAt)} · {formatTime(event.startsAt)}
         </p>
         <p className="mt-1 font-display text-base font-semibold leading-tight tracking-[-0.02em] text-white line-clamp-2 md:text-lg">
@@ -115,7 +115,7 @@ function TextCard({
     <Link
       href={href}
       onClick={onOpen}
-      aria-label={`${event.title} — ${relativeDay(event.startsAt)} at ${formatTime(event.startsAt)}`}
+      aria-label={`${event.title}, ${relativeDay(event.startsAt)} at ${formatTime(event.startsAt)}`}
       data-event-id={event.id}
       className="interactive-focus card-hover group relative flex h-full w-full min-w-0 overflow-hidden rounded-xl"
     >
@@ -125,7 +125,7 @@ function TextCard({
       />
       <div className="flex min-w-0 flex-1 items-stretch border border-l-0 border-ink/15 bg-canvas">
         <div className="flex min-w-0 flex-1 flex-col justify-center gap-1 px-4 py-3 sm:px-5 sm:py-4">
-          <div className="flex min-w-0 items-center gap-2 font-mono text-[11px] tracking-[0.06em] text-muted">
+          <div className="flex min-w-0 items-center gap-2 text-[13px] text-muted">
             <span className="shrink-0">{formatTime(event.startsAt)}</span>
             <span className="shrink-0 text-ink/20">·</span>
             <span className="min-w-0 truncate">{event.location}</span>

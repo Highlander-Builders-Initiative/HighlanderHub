@@ -45,7 +45,7 @@ const SOURCES = [
   },
   {
     label: "Manual submissions",
-    body: "Org leads submit events through the bulletin's form. We review each one — usually within a day.",
+    body: "Org leads submit events through the bulletin's form. We review each one, usually within a day.",
     dot: "bg-leaf",
   },
 ];
@@ -59,7 +59,7 @@ const FAQS = [
   {
     id: "report-wrong-event",
     q: "How do I report a wrong event?",
-    a: "DM @hbi.ucr on Instagram with the link. We extract event details from flyer images with OCR + an LLM, so the occasional misread happens — we'll fix it.",
+    a: "DM @hbi.ucr on Instagram with the link. We extract event details from flyer images with OCR + an LLM, so the occasional misread happens. We'll fix it.",
   },
   {
     id: "add-org-calendar",
@@ -77,9 +77,7 @@ export default function AboutPage() {
       <section className="border-b border-ink/10">
         <div className="mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 md:grid-cols-12 md:items-start md:py-24">
           <Reveal className="md:col-span-5">
-            <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted">
-              About
-            </p>
+            <p className="text-[13px] text-muted">About</p>
             <h1 className="mt-4 max-w-xl font-display text-[36px] font-semibold leading-[1.03] tracking-[-0.035em] text-ink sm:text-[46px] md:text-[56px]">
               Campus events are scattered across ten different feeds.
             </h1>
@@ -116,9 +114,7 @@ export default function AboutPage() {
                 as="article"
                 className="flex flex-col gap-2 rounded-xl border border-ink/15 bg-canvas p-6"
               >
-                <span className="font-mono text-[11px] tracking-[0.14em] text-muted">
-                  {p.kicker}
-                </span>
+                <span className="text-[13px] text-muted">{p.kicker}</span>
                 <h2 className="font-display text-xl font-semibold tracking-[-0.02em] text-ink">
                   {p.title}
                 </h2>
@@ -133,9 +129,7 @@ export default function AboutPage() {
       <section className="border-b border-ink/10">
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 md:py-28">
           <Reveal className="max-w-2xl">
-            <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted">
-              Where events come from
-            </p>
+            <p className="text-[13px] text-muted">Where events come from</p>
             <h2 className="mt-3 font-display text-3xl font-semibold leading-[1.1] tracking-[-0.03em] text-ink md:text-4xl">
               Three sources, one bulletin.
             </h2>
@@ -166,7 +160,7 @@ export default function AboutPage() {
           <p className="mt-8 max-w-2xl text-sm text-muted">
             Updates run automatically every six hours. We extract event details
             from flyer images with OCR + an LLM, so the occasional misread
-            happens — spot one and let us know.
+            happens. Spot one and let us know.
           </p>
         </div>
       </section>
@@ -175,9 +169,7 @@ export default function AboutPage() {
       <section className="border-b border-ink/10">
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 md:py-28">
           <Reveal className="max-w-2xl">
-            <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted">
-              Who built it
-            </p>
+            <p className="text-[13px] text-muted">Who built it</p>
             <h2 className="mt-3 font-display text-3xl font-semibold leading-[1.1] tracking-[-0.03em] text-ink md:text-4xl">
               Built by Highlander Builders Initiative.
             </h2>
@@ -197,7 +189,7 @@ export default function AboutPage() {
               className="h-16 w-16 md:h-[72px] md:w-[72px]"
             />
             <div>
-              <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted">
+              <p className="text-[13px] text-muted">
                 Highlander Builders Initiative
               </p>
               <p className="mt-2 font-display text-xl font-semibold tracking-[-0.02em] text-ink md:text-2xl">
@@ -247,9 +239,7 @@ export default function AboutPage() {
       <section className="border-b border-ink/10">
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 md:py-28">
           <Reveal className="max-w-2xl">
-            <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted">
-              Get involved
-            </p>
+            <p className="text-[13px] text-muted">Get involved</p>
             <h2 className="mt-3 font-display text-3xl font-semibold leading-[1.1] tracking-[-0.03em] text-ink md:text-4xl">
               Three ways in.
             </h2>
@@ -261,9 +251,7 @@ export default function AboutPage() {
               as="article"
               className="flex flex-col gap-3 rounded-xl border border-ink/15 bg-canvas p-6"
             >
-              <span className="font-mono text-[11px] tracking-[0.14em] text-muted">
-                For a single event
-              </span>
+              <span className="text-[13px] text-muted">For a single event</span>
               <h3 className="font-display text-xl font-semibold tracking-[-0.02em] text-ink">
                 Submit an event.
               </h3>
@@ -282,7 +270,7 @@ export default function AboutPage() {
               as="article"
               className="flex flex-col gap-3 rounded-xl border border-ink/15 bg-canvas p-6"
             >
-              <span className="font-mono text-[11px] tracking-[0.14em] text-muted">
+              <span className="text-[13px] text-muted">
                 For your whole calendar
               </span>
               <h3 className="font-display text-xl font-semibold tracking-[-0.02em] text-ink">
@@ -312,14 +300,12 @@ export default function AboutPage() {
               as="article"
               className="flex flex-col gap-3 rounded-xl border border-ink/15 bg-canvas p-6"
             >
-              <span className="font-mono text-[11px] tracking-[0.14em] text-muted">
-                For builders
-              </span>
+              <span className="text-[13px] text-muted">For builders</span>
               <h3 className="font-display text-xl font-semibold tracking-[-0.02em] text-ink">
                 Build with HBI.
               </h3>
               <p className="text-sm text-ink/70">
-                We ship real products for UCR students — Highlander Hub is one
+                We ship real products for UCR students. Highlander Hub is one
                 of them. Hop in the Discord to see what we&rsquo;re working on.
               </p>
               <div className="mt-auto pt-3">
@@ -342,9 +328,7 @@ export default function AboutPage() {
       <section>
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 md:py-28">
           <Reveal className="max-w-2xl">
-            <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted">
-              FAQ
-            </p>
+            <p className="text-[13px] text-muted">FAQ</p>
             <h2 className="mt-3 font-display text-3xl font-semibold leading-[1.1] tracking-[-0.03em] text-ink md:text-4xl">
               Common questions.
             </h2>

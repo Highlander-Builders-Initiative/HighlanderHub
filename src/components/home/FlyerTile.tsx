@@ -58,7 +58,7 @@ export function FlyerTile({
           surface: "mosaic_tile",
         });
       }}
-      aria-label={`${event.title} — ${relativeDay(event.startsAt)}`}
+      aria-label={`${event.title}, ${relativeDay(event.startsAt)}`}
       data-event-id={event.id}
       style={{ animationDelay: `${enterDelayMs}ms` }}
       className={`interactive-focus card-hover group relative block overflow-hidden rounded-xl border border-ink/15 bg-canvas aspect-[4/5] md:aspect-auto animate-scale-in ${className}`}
@@ -86,9 +86,7 @@ export function FlyerTile({
       />
 
       <div className="absolute inset-x-0 bottom-0 p-3 md:p-4">
-        <p
-          className={`font-mono uppercase tracking-[0.16em] text-white/80 ${META_CLASSES[size]}`}
-        >
+        <p className={`text-white/85 ${META_CLASSES[size]}`}>
           {relativeDay(event.startsAt)}
         </p>
         <p

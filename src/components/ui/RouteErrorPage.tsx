@@ -60,9 +60,7 @@ export function RouteErrorPage({ error, reset, variant }: RouteErrorPageProps) {
 
       <section className="border-b border-ink/10">
         <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 md:py-24">
-          <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted">
-            {content.label}
-          </p>
+          <p className="text-[13px] text-muted">{content.label}</p>
           <h1 className="mt-4 font-display text-[34px] font-semibold leading-[1.05] tracking-[-0.03em] text-ink md:text-5xl">
             {content.title}
           </h1>

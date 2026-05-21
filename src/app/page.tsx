@@ -32,7 +32,7 @@ export default async function HomePage() {
               className="mt-7 max-w-xl text-base leading-relaxed text-ink/75 md:text-lg animate-fade-up"
               style={{ animationDelay: "180ms" }}
             >
-              Club meetings, mixers, career fairs, free food drops — everything
+              Club meetings, mixers, career fairs, free food drops. Everything
               happening on campus, in one place you can actually scan.
             </p>
 
@@ -80,7 +80,7 @@ export default async function HomePage() {
                 />
 
                 <span className="flex flex-col">
-                  <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted">
+                  <span className="text-[13px] text-muted">
                     Brought to you by
                   </span>
                   <span className="font-display text-[15px] font-semibold tracking-[-0.01em] text-ink transition-colors group-hover:text-highlander">

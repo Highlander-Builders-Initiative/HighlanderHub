@@ -163,7 +163,7 @@ export function CalendarView({ events }: { events: CampusEvent[] }) {
                         ))}
                         {dayEvents.length > categories.length && (
                           <span
-                            className={`font-mono text-[10px] ${
+                            className={`text-[11px] font-medium ${
                               isSelected ? "text-white/70" : "text-muted"
                             }`}
                           >
@@ -189,7 +189,7 @@ export function CalendarView({ events }: { events: CampusEvent[] }) {
             {DAY_LABELS.map((d) => (
               <div
                 key={d}
-                className="px-2 py-2 font-mono text-[10px] uppercase tracking-[0.16em] text-muted"
+                className="px-2 py-2 text-[12px] font-medium text-muted"
               >
                 {d}
               </div>
@@ -225,7 +225,7 @@ export function CalendarView({ events }: { events: CampusEvent[] }) {
                 >
                   <span
                     className={[
-                      "font-mono text-xs leading-none",
+                      "text-xs font-medium leading-none",
                       isSelected ? "text-white/70" : "text-muted",
                     ].join(" ")}
                   >
@@ -257,7 +257,7 @@ export function CalendarView({ events }: { events: CampusEvent[] }) {
                       ))}
                       {dayEvents.length > categories.length && (
                         <span
-                          className={`font-mono text-[10px] ${
+                          className={`text-[11px] font-medium ${
                             isSelected ? "text-white/70" : "text-muted"
                           }`}
                         >
@@ -273,7 +273,7 @@ export function CalendarView({ events }: { events: CampusEvent[] }) {
         </div>
 
         {/* Legend */}
-        <div className="hidden flex-wrap items-center gap-x-4 gap-y-2 border-t border-ink/10 px-5 py-3 font-mono text-[10px] uppercase tracking-[0.14em] text-muted sm:flex">
+        <div className="hidden flex-wrap items-center gap-x-4 gap-y-2 border-t border-ink/10 px-5 py-3 text-[12px] text-muted sm:flex">
           {Object.entries(CATEGORY_STYLES).map(([key, s]) => (
             <span key={key} className="inline-flex items-center gap-1.5">
               <span className={`h-1.5 w-1.5 ${DOT_COLORS[key] ?? "bg-ink"}`} />

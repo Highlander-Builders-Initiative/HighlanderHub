@@ -105,7 +105,7 @@ export default async function EventDetailPage({
                     RSVP req.
                   </span>
                 )}
-                <span className="ml-auto font-mono text-[11px] tracking-[0.06em] text-muted">
+                <span className="ml-auto text-[13px] text-muted">
                   {SOURCE_LABELS[event.source]}
                 </span>
               </div>
@@ -118,7 +118,7 @@ export default async function EventDetailPage({
                 <span className="font-display text-lg font-semibold text-ink">
                   {formatDay(event.startsAt)}
                 </span>
-                <span className="font-mono text-[11px] tracking-[0.06em] text-muted">
+                <span className="text-[13px] text-muted">
                   {relativeDay(event.startsAt)}
                 </span>
                 <span className="text-ink/30">·</span>
@@ -147,7 +147,7 @@ export default async function EventDetailPage({
                   <dd className="mt-1 text-ink">
                     {event.host}
                     {event.hostHandle && (
-                      <span className="block font-mono text-xs text-muted">
+                      <span className="block text-xs text-muted">
                         {event.hostHandle}
                       </span>
                     )}
@@ -156,7 +156,7 @@ export default async function EventDetailPage({
               </dl>
 
               {event.tags.length > 0 && (
-                <div className="mt-6 flex flex-wrap gap-x-3 gap-y-1 font-mono text-[12px] text-muted">
+                <div className="mt-6 flex flex-wrap gap-x-3 gap-y-1 text-[13px] text-muted">
                   {event.tags.map((t) => (
                     <span key={t}>#{t.replace(/\s+/g, "")}</span>
                   ))}
