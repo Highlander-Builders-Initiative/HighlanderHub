@@ -1,0 +1,360 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-05-20T00:00:00.000Z",
+  "title": "Design System: Highlander Hub",
+  "extensions": {
+    "colorMeta": {
+      "canvas": {
+        "role": "neutral",
+        "displayName": "Canvas",
+        "canonical": "oklch(1.00 0 0)",
+        "tonalRamp": [
+          "oklch(0.08 0.005 270)",
+          "oklch(0.16 0.005 270)",
+          "oklch(0.30 0.005 270)",
+          "oklch(0.45 0.010 268)",
+          "oklch(0.65 0.008 268)",
+          "oklch(0.80 0.005 268)",
+          "oklch(0.92 0.002 268)",
+          "oklch(0.98 0.000 0)"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Surface",
+        "canonical": "oklch(0.98 0.000 0)",
+        "tonalRamp": [
+          "oklch(0.08 0.005 270)",
+          "oklch(0.16 0.005 270)",
+          "oklch(0.30 0.005 270)",
+          "oklch(0.45 0.010 268)",
+          "oklch(0.65 0.008 268)",
+          "oklch(0.80 0.005 268)",
+          "oklch(0.92 0.002 268)",
+          "oklch(0.98 0.000 0)"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Line",
+        "canonical": "oklch(0.92 0.002 268)",
+        "tonalRamp": [
+          "oklch(0.08 0.005 270)",
+          "oklch(0.16 0.005 270)",
+          "oklch(0.30 0.005 270)",
+          "oklch(0.45 0.010 268)",
+          "oklch(0.65 0.008 268)",
+          "oklch(0.80 0.005 268)",
+          "oklch(0.92 0.002 268)",
+          "oklch(0.98 0.000 0)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "oklch(0.16 0.005 270)",
+        "tonalRamp": [
+          "oklch(0.08 0.005 270)",
+          "oklch(0.16 0.005 270)",
+          "oklch(0.30 0.005 270)",
+          "oklch(0.45 0.010 268)",
+          "oklch(0.65 0.008 268)",
+          "oklch(0.80 0.005 268)",
+          "oklch(0.92 0.002 268)",
+          "oklch(0.98 0.000 0)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted",
+        "canonical": "oklch(0.51 0.020 256)",
+        "tonalRamp": [
+          "oklch(0.08 0.005 270)",
+          "oklch(0.16 0.005 270)",
+          "oklch(0.30 0.005 270)",
+          "oklch(0.45 0.010 268)",
+          "oklch(0.65 0.008 268)",
+          "oklch(0.80 0.005 268)",
+          "oklch(0.92 0.002 268)",
+          "oklch(0.98 0.000 0)"
+        ]
+      },
+      "deep-navy": {
+        "role": "primary",
+        "displayName": "Deep Navy",
+        "canonical": "oklch(0.34 0.166 264)",
+        "tonalRamp": [
+          "oklch(0.15 0.050 264)",
+          "oklch(0.25 0.090 264)",
+          "oklch(0.34 0.166 264)",
+          "oklch(0.45 0.180 264)",
+          "oklch(0.55 0.180 264)",
+          "oklch(0.65 0.160 264)",
+          "oklch(0.80 0.100 264)",
+          "oklch(0.95 0.030 264)"
+        ]
+      },
+      "warm-gold": {
+        "role": "secondary",
+        "displayName": "Warm Gold",
+        "canonical": "oklch(0.79 0.169 78)",
+        "tonalRamp": [
+          "oklch(0.20 0.040 78)",
+          "oklch(0.35 0.080 78)",
+          "oklch(0.50 0.120 78)",
+          "oklch(0.65 0.160 78)",
+          "oklch(0.79 0.169 78)",
+          "oklch(0.85 0.150 78)",
+          "oklch(0.92 0.100 78)",
+          "oklch(0.96 0.040 78)"
+        ]
+      },
+      "citrus-coral": {
+        "role": "secondary",
+        "displayName": "Citrus Coral",
+        "canonical": "oklch(0.65 0.193 27)",
+        "tonalRamp": [
+          "oklch(0.20 0.050 27)",
+          "oklch(0.32 0.100 27)",
+          "oklch(0.45 0.160 27)",
+          "oklch(0.55 0.190 27)",
+          "oklch(0.65 0.193 27)",
+          "oklch(0.75 0.150 27)",
+          "oklch(0.86 0.090 27)",
+          "oklch(0.95 0.030 27)"
+        ]
+      },
+      "forest-leaf": {
+        "role": "secondary",
+        "displayName": "Forest Leaf",
+        "canonical": "oklch(0.61 0.137 156)",
+        "tonalRamp": [
+          "oklch(0.18 0.040 156)",
+          "oklch(0.30 0.080 156)",
+          "oklch(0.45 0.115 156)",
+          "oklch(0.55 0.135 156)",
+          "oklch(0.61 0.137 156)",
+          "oklch(0.74 0.120 156)",
+          "oklch(0.85 0.080 156)",
+          "oklch(0.95 0.025 156)"
+        ]
+      },
+      "clear-sky": {
+        "role": "secondary",
+        "displayName": "Clear Sky",
+        "canonical": "oklch(0.63 0.196 257)",
+        "tonalRamp": [
+          "oklch(0.18 0.050 257)",
+          "oklch(0.30 0.100 257)",
+          "oklch(0.45 0.160 257)",
+          "oklch(0.55 0.190 257)",
+          "oklch(0.63 0.196 257)",
+          "oklch(0.76 0.150 257)",
+          "oklch(0.86 0.090 257)",
+          "oklch(0.96 0.030 257)"
+        ]
+      },
+      "deep-leaf": {
+        "role": "secondary",
+        "displayName": "Deep Leaf",
+        "canonical": "oklch(0.45 0.115 156)",
+        "tonalRamp": [
+          "oklch(0.18 0.040 156)",
+          "oklch(0.30 0.080 156)",
+          "oklch(0.45 0.115 156)",
+          "oklch(0.55 0.135 156)",
+          "oklch(0.61 0.137 156)",
+          "oklch(0.74 0.120 156)",
+          "oklch(0.85 0.080 156)",
+          "oklch(0.95 0.025 156)"
+        ]
+      },
+      "deep-coral": {
+        "role": "secondary",
+        "displayName": "Deep Coral",
+        "canonical": "oklch(0.45 0.160 27)",
+        "tonalRamp": [
+          "oklch(0.20 0.050 27)",
+          "oklch(0.32 0.100 27)",
+          "oklch(0.45 0.160 27)",
+          "oklch(0.55 0.190 27)",
+          "oklch(0.65 0.193 27)",
+          "oklch(0.75 0.150 27)",
+          "oklch(0.86 0.090 27)",
+          "oklch(0.95 0.030 27)"
+        ]
+      },
+      "deep-sky": {
+        "role": "secondary",
+        "displayName": "Deep Sky",
+        "canonical": "oklch(0.45 0.160 257)",
+        "tonalRamp": [
+          "oklch(0.18 0.050 257)",
+          "oklch(0.30 0.100 257)",
+          "oklch(0.45 0.160 257)",
+          "oklch(0.55 0.190 257)",
+          "oklch(0.63 0.196 257)",
+          "oklch(0.76 0.150 257)",
+          "oklch(0.86 0.090 257)",
+          "oklch(0.96 0.030 257)"
+        ]
+      },
+      "deep-gold": {
+        "role": "secondary",
+        "displayName": "Deep Gold",
+        "canonical": "oklch(0.50 0.120 78)",
+        "tonalRamp": [
+          "oklch(0.20 0.040 78)",
+          "oklch(0.35 0.080 78)",
+          "oklch(0.50 0.120 78)",
+          "oklch(0.65 0.160 78)",
+          "oklch(0.79 0.169 78)",
+          "oklch(0.85 0.150 78)",
+          "oklch(0.92 0.100 78)",
+          "oklch(0.96 0.040 78)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Hero headlines only. One per page. Bricolage Grotesque with optical sizing." },
+      "headline": { "displayName": "Headline", "purpose": "Section openers (Features, FinalCTA, route titles)." },
+      "title": { "displayName": "Title", "purpose": "Event card titles, card-level headings. Two-line clamp." },
+      "body": { "displayName": "Body", "purpose": "Paragraph text. Cap line length at 65-75ch. Inter 16px / 1.55." },
+      "meta": { "displayName": "Meta", "purpose": "Quiet labels above or beside primary content (eyebrows, taglines, summary lines, captions). Inter 13px sentence case, muted color." },
+      "numeric": { "displayName": "Numeric", "purpose": "Dates, times, location coordinates, identifiers, calendar grid numbers. IBM Plex Mono 11-12px, light tracking ≤0.06em, sentence case." }
+    },
+    "shadows": [
+      { "name": "card", "value": "0 1px 2px rgba(15, 17, 21, 0.04), 0 4px 12px rgba(15, 17, 21, 0.04)", "purpose": "Ambient lift for resting cards and elevated surfaces. Subtle enough to be felt, not seen." },
+      { "name": "cardHover", "value": "0 4px 8px rgba(15, 17, 21, 0.06), 0 12px 28px rgba(15, 17, 21, 0.08)", "purpose": "Hover state on lifted cards. Pair with the 1px transform-Y lift." }
+    ],
+    "motion": [
+      { "name": "ease-out-expo", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "The system's only easing. Decelerates without bounce. Used for state, hover, entrance, scroll-reveal." },
+      { "name": "duration-state", "value": "180ms", "purpose": "Default duration for state transitions (color, opacity, border)." },
+      { "name": "duration-transform", "value": "200ms", "purpose": "Hover transforms (translateY, scale) and inline icon shifts." },
+      { "name": "duration-entrance", "value": "700ms", "purpose": "Fade-up entrance animations on first paint." },
+      { "name": "duration-reveal", "value": "800ms", "purpose": "Scroll-driven reveal once .is-visible flips." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The single high-confidence CTA per region. Solid ink on canvas, inline trailing arrow optional.",
+      "html": "<button class=\"ds-btn-primary\"><span>Browse events</span><svg viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M4 10h12M11 5l5 5-5 5\"/></svg></button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; gap: 8px; min-height: 48px; padding: 12px 24px; background: #0f1115; color: #ffffff; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 14px; font-weight: 500; border: none; border-radius: 8px; cursor: pointer; transition: opacity 200ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-btn-primary:hover { opacity: 0.85; } .ds-btn-primary:focus-visible { outline: 3px solid #0f1115; outline-offset: 3px; box-shadow: 0 0 0 5px #ffffff; } .ds-btn-primary svg { width: 16px; height: 16px; transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-btn-primary:hover svg { transform: translateX(2px); }"
+    },
+    {
+      "name": "Event Card (text variant)",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "The horizontal text-only event row. Category rail on the left, hairline-bordered content block on the right.",
+      "html": "<a class=\"ds-event-card\" href=\"#\"><span class=\"ds-event-rail\" aria-hidden=\"true\"></span><div class=\"ds-event-body\"><div class=\"ds-event-meta\"><span>4:30 PM</span><span class=\"ds-event-sep\">·</span><span>HUB 302</span></div><h3 class=\"ds-event-title\">ACM x Highlander Builders general meeting</h3><div class=\"ds-event-footer\"><span class=\"ds-event-host\">Association for Computing Machinery</span><span class=\"ds-event-pill\">Club</span><span class=\"ds-event-free\">Free</span></div></div><div class=\"ds-event-chev\" aria-hidden=\"true\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m9 18 6-6-6-6\"/></svg></div></a>",
+      "css": ".ds-event-card { display: flex; overflow: hidden; border-radius: 16px; text-decoration: none; color: inherit; transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), border-color 180ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-event-card:hover { transform: translateY(-1px); } .ds-event-rail { width: 4px; flex-shrink: 0; background: #1e3a8a; } .ds-event-body { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; padding: 12px 16px; background: #ffffff; border: 1px solid rgba(15, 17, 21, 0.15); border-left: 0; } .ds-event-card:hover .ds-event-body { border-color: #0f1115; } .ds-event-meta { display: flex; align-items: center; gap: 8px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.06em; color: #6b7280; } .ds-event-sep { color: rgba(15, 17, 21, 0.20); } .ds-event-title { margin: 0; font-family: 'Bricolage Grotesque', ui-sans-serif, system-ui, sans-serif; font-size: 17px; font-weight: 600; line-height: 1.2; letter-spacing: -0.015em; color: #0f1115; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; } .ds-event-footer { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; } .ds-event-host { font-size: 13px; color: #6b7280; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .ds-event-pill { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 9999px; background: rgba(30, 58, 138, 0.10); color: #1e3a8a; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 11px; font-weight: 500; letter-spacing: 0.01em; } .ds-event-free { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 9999px; background: rgba(47, 158, 111, 0.10); color: #1f6f4e; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 11px; font-weight: 500; } .ds-event-chev { display: flex; align-items: center; padding-right: 12px; background: #ffffff; border: 1px solid rgba(15, 17, 21, 0.15); border-left: 0; color: #6b7280; transition: color 180ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-event-card:hover .ds-event-chev { color: #0f1115; border-color: #0f1115; } .ds-event-chev svg { width: 16px; height: 16px; }"
+    },
+    {
+      "name": "Event Card (image variant)",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "The image-led flyer card. Aspect 4:5, full-bleed flyer, gradient overlay anchoring meta + title.",
+      "html": "<a class=\"ds-event-image\" href=\"#\"><div class=\"ds-event-image-bg\" aria-hidden=\"true\"></div><div class=\"ds-event-image-gradient\" aria-hidden=\"true\"></div><div class=\"ds-event-image-content\"><p class=\"ds-event-image-meta\">Fri 5/24 · 7:00 PM</p><p class=\"ds-event-image-title\">Spring Showcase Banquet</p><div class=\"ds-event-image-pills\"><span class=\"ds-event-image-pill\">Social</span><span class=\"ds-event-image-pill\">Free</span></div></div></a>",
+      "css": ".ds-event-image { position: relative; display: block; aspect-ratio: 4 / 5; overflow: hidden; border-radius: 16px; border: 1px solid rgba(15, 17, 21, 0.15); background: #ffffff; text-decoration: none; transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), border-color 180ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-event-image:hover { transform: translateY(-1px); border-color: #0f1115; } .ds-event-image-bg { position: absolute; inset: 0; background: linear-gradient(135deg, #ef5d4f 0%, #f5b400 100%); } .ds-event-image-gradient { position: absolute; left: 0; right: 0; bottom: 0; height: 66%; background: linear-gradient(to top, rgba(15, 17, 21, 0.90) 0%, rgba(15, 17, 21, 0.50) 50%, transparent 100%); } .ds-event-image-content { position: absolute; left: 0; right: 0; bottom: 0; padding: 16px; } .ds-event-image-meta { margin: 0 0 4px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(255, 255, 255, 0.80); } .ds-event-image-title { margin: 0 0 8px; font-family: 'Bricolage Grotesque', ui-sans-serif, system-ui, sans-serif; font-size: 18px; font-weight: 600; line-height: 1.2; letter-spacing: -0.02em; color: #ffffff; } .ds-event-image-pills { display: flex; flex-wrap: wrap; gap: 6px; } .ds-event-image-pill { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 9999px; background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); color: #ffffff; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 11px; font-weight: 500; }"
+    },
+    {
+      "name": "Category Pill",
+      "kind": "chip",
+      "refersTo": "badge-pill",
+      "description": "Tinted-background category badge with matched darker text color for AA contrast.",
+      "html": "<span class=\"ds-pill ds-pill-club\">Club</span>",
+      "css": ".ds-pill { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 9999px; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 11px; font-weight: 500; letter-spacing: 0.01em; } .ds-pill-club { background: rgba(30, 58, 138, 0.10); color: #1e3a8a; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input-text",
+      "description": "Hairline-bordered field; global focus-ring treatment applies.",
+      "html": "<label class=\"ds-field\"><span class=\"ds-field-label\">Event title</span><input type=\"text\" class=\"ds-input\" placeholder=\"e.g. Spring Showcase Banquet\"/></label>",
+      "css": ".ds-field { display: flex; flex-direction: column; gap: 6px; } .ds-field-label { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: #6b7280; } .ds-input { padding: 10px 12px; background: #ffffff; color: #0f1115; font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 16px; line-height: 1.4; border: 1px solid rgba(15, 17, 21, 0.15); border-radius: 8px; transition: border-color 180ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-input:hover { border-color: rgba(15, 17, 21, 0.30); } .ds-input:focus-visible { outline: 3px solid #0f1115; outline-offset: 3px; box-shadow: 0 0 0 5px #ffffff; border-color: #0f1115; } .ds-input::placeholder { color: #6b7280; }"
+    },
+    {
+      "name": "Masthead Brand Wordmark",
+      "kind": "nav",
+      "refersTo": "masthead",
+      "description": "The split-slash brand wordmark used in the sticky masthead.",
+      "html": "<a class=\"ds-brand\" href=\"#\">highlander<span class=\"ds-brand-slash\">/</span>hub</a>",
+      "css": ".ds-brand { display: inline-flex; align-items: baseline; gap: 0; font-family: 'Bricolage Grotesque', ui-sans-serif, system-ui, sans-serif; font-size: 22px; font-weight: 600; letter-spacing: -0.04em; line-height: 1; color: #0f1115; text-decoration: none; } .ds-brand-slash { color: #000000; }"
+    },
+    {
+      "name": "Eyebrow Label",
+      "kind": "custom",
+      "refersTo": "label",
+      "description": "Tiny-caps meta label. The project's signature meta-treatment.",
+      "html": "<span class=\"ds-eyebrow\">Brought to you by</span>",
+      "css": ".ds-eyebrow { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: #6b7280; }"
+    },
+    {
+      "name": "Hairline Divider",
+      "kind": "custom",
+      "description": "The preferred separator. 1px ink-tinted line.",
+      "html": "<div class=\"ds-hairline\" aria-hidden=\"true\"></div>",
+      "css": ".ds-hairline { height: 1px; width: 100%; background: #0f1115; opacity: 0.08; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Quad",
+    "overview": "Highlander Hub is the screen-side stand-in for the physical UCR campus: many voices, edited gathering, a place rather than a tool. The interface is a place a student passes through, glances at, and leaves having seen something they wouldn't have seen otherwise. It is not a search engine, not a feed, not a marketplace. It is a quad with a bulletin in it. The system reads as edited and paper-confident: display type does the work, chrome stays hairline-thin, and the page is built to be skimmed in five seconds before it asks for any commitment. Color is tightly rationed and meaningful (the category palette is the only place hue lives); everything else sits in tinted neutrals.",
+    "keyCharacteristics": [
+      "Hairline-bordered surfaces; depth via 1px lifts, not shadow blooms (current state; moving toward subtle ambient shadow).",
+      "Bricolage Grotesque display + Inter body + IBM Plex Mono labels. No fourth font.",
+      "Tinted neutrals only, no pure #000.",
+      "Restrained color strategy: category accents at ≤10% of any surface.",
+      "Mobile-first: every layout is designed for a phone first.",
+      "Motion is decelerating-only (ease-out-expo), no bounce, no elastic, reduced-motion honored at the root."
+    ],
+    "rules": [
+      { "name": "The One Voice Rule", "body": "Category color appears as a tinted background (/10 or /15 opacity), never as a saturated fill behind body content. Total accent coverage on any screen stays at or below 10% of the surface. Saturated category color appears in exactly one place: the 4px category rail on the left edge of EventCard.", "section": "colors" },
+      { "name": "The Tinted-Neutral Rule", "body": "No new pure-hex grayscale values. Every neutral tints toward the cool ink hue. If you need a step between surface and line, derive it from the existing ramp.", "section": "colors" },
+      { "name": "The Meaning-Carrying Rule", "body": "Hue is for category. If a UI element uses color but is not signaling a category, it is wrong. Promotional accents, decorative gradients, mood-color washes: prohibited.", "section": "colors" },
+      { "name": "The One-Display Rule", "body": "Bricolage Grotesque is the only display face. Inter is the only body face. IBM Plex Mono is the only mono. No fourth font is added without retiring one of the three.", "section": "typography" },
+      { "name": "The Tracking Rule", "body": "Display type tracks tight (-0.02em to -0.035em). Body and labels use normal tracking; numeric mono uses ≤0.06em. Tracked-out uppercase (tracking-[0.12em] and friends, in any font) is prohibited as a decorative label pattern — it is the SaaS / dev-tool reflex the AI Slop Test rejects.", "section": "typography" },
+      { "name": "The Quiet-Label Rule", "body": "Eyebrows, taglines, summary lines, and captions render in Inter, sentence case, small (12-13px), normal tracking, muted color. No uppercase. No tracked-out caps. No mono-as-decoration. IBM Plex Mono is reserved for genuinely numeric content (dates, times, coordinates, identifiers), never for label decoration. Replaces the retired Eyebrow-Mono Rule.", "section": "typography" },
+      { "name": "The Hairline-Plus-Lift Rule", "body": "Edges live in 1px borders tinted from ink. Depth is a 1px translate on hover, optionally with a tonal shadow. No glow, no double-shadow, no inner shadow.", "section": "elevation" },
+      { "name": "The Quiet-Shadow Rule", "body": "Shadows are tonal (ink-tinted) and low-opacity (≤0.08). No black shadows. No colored shadows. Two flavors: card shadow (small blur, ≤12px primary / ≤28px diffusion) for resting / hover lift on cards; sticky-overlay halo (large blur up to ~40px at ≤0.08 opacity) for separating a sticky glass surface from scrolling content. Outside those flavors, if the blur is visible enough to describe from across the room it is too strong.", "section": "elevation" },
+      { "name": "The Three-Glass Rule", "body": "Glass (backdrop-blur, frosted surfaces) is sanctioned in exactly three places: the Masthead glass variant, the image-overlay Category Pill on Event Cards, and the /events sticky filter bar. Glass is never a default surface; new glass usages require updating this rule.", "section": "components" }
+    ],
+    "dos": [
+      "Do keep the hue-as-meaning discipline: color signals category, full stop.",
+      "Do use Bricolage Grotesque for any display or headline role, Inter for body, IBM Plex Mono for labels, dates, and times.",
+      "Do keep eyebrows, taglines, and summary lines quiet: Inter, small (12-13px), sentence case, normal tracking, muted color. The 'edited bulletin caption' look, not the 'SaaS landing eyebrow' look.",
+      "Do reserve IBM Plex Mono for content that is genuinely numeric (dates, times, coordinates, identifiers), never as decorative label-style.",
+      "Do prefer hairline-bordered surfaces (border-ink/10 to border-ink/15) over background-tinted ones for default cards and rows.",
+      "Do ease motion out only (cubic-bezier(0.16, 1, 0.3, 1)). Durations: 180-300ms for state, 700-800ms for entrance.",
+      "Do honor prefers-reduced-motion on anything you add.",
+      "Do treat the FlyerMosaic image-card and the text-with-category-rail variant as the two canonical ways to render an event.",
+      "Do use the .interactive-focus global class on every interactive element.",
+      "Do size for a phone first. Touch targets ≥44×44px."
+    ],
+    "donts": [
+      "Don't ship the generic SaaS landing look. No hero-metric templates, no identical icon-heading-text card grids, no gradient text.",
+      "Don't ship university .edu CMS energy. No institutional navy headers, no brochure-density link soup.",
+      "Don't ship the Eventbrite / Meetup transactional look. No ad-cluttered list rows, no RSVP-button stripes.",
+      "Don't use border-left or border-right greater than 1px as a colored accent on any component except the sanctioned Category Rail on text-variant Event Cards.",
+      "Don't use background-clip: text with a gradient. Gradient text is decorative-only and never carries meaning here.",
+      "Don't introduce new pure-#000 or pure-#fff values in any new code.",
+      "Don't apply glassmorphism outside the three sanctioned uses: the Masthead glass variant, the image-overlay Category Pill, and the /events sticky filter bar. (The Three-Glass Rule.)",
+      "Don't stack cards inside cards. Nested cards are always wrong.",
+      "Don't reach for a modal as a first thought.",
+      "Don't bounce or elastic motion. Ease-out only.",
+      "Don't animate CSS layout properties. Transform and opacity only.",
+      "Don't write em dashes in UI copy.",
+      "Don't decorate labels, eyebrows, taglines, or section headers with uppercase + tracking in any font. That pattern is the SaaS / dev-tool reflex the AI Slop Test rejects.",
+      "Don't add a fourth font, a fourth radius scale, or a sixth typography step without retiring an existing one."
+    ]
+  }
+}
