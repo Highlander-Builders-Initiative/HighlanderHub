@@ -5,7 +5,8 @@ import Link from "next/link";
 import type { CampusEvent } from "@/types/event";
 import { relativeDay } from "@/lib/dates";
 import { track } from "@/lib/analytics";
-import { saveScrollPosition } from "@/lib/scroll-restoration";
+import { saveEventFeedReturn } from "@/lib/event-feed-session";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export type FlyerTileSize = "large" | "medium" | "small" | "wide";
@@ -39,6 +40,7 @@ export function FlyerTile({
   className?: string;
   enterDelayMs?: number;
 }) {
+  const router = useRouter();
   const [imageBroken, setImageBroken] = useState(false);
   const showImage = !!event.imageUrl && !imageBroken;
   const href = `/events/${event.id}`;
@@ -46,8 +48,10 @@ export function FlyerTile({
   return (
     <Link
       href={href}
+      onMouseEnter={() => router.prefetch(href)}
+      onFocus={() => router.prefetch(href)}
       onClick={(clickEvent) => {
-        saveScrollPosition(href, {
+        saveEventFeedReturn(href, {
           eventId: event.id,
           eventTop: clickEvent.currentTarget.getBoundingClientRect().top,
         });
