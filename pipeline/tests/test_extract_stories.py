@@ -31,17 +31,22 @@ class ExtractStoriesTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             extracted_dir = Path(tmp)
             with patch.object(self.extract_stories, "EXTRACTED_DIR", extracted_dir):
-                with patch.object(
-                    self.extract_stories,
-                    "_download_image",
-                    side_effect=self.extract_stories.ImageExpired("expired"),
-                ) as download:
-                    with patch.object(self.extract_stories, "_vision_ocr") as vision:
-                        with patch.object(self.extract_stories, "_gemini_extract") as gemini:
-                            result = self.extract_stories._process_story(
-                                raw,
-                                {"label": "UCR Cybersecurity Club", "category": "club"},
-                            )
+                with patch.object(self.extract_stories, "_load_remote_cache", return_value=None):
+                    with patch.object(
+                        self.extract_stories,
+                        "_download_image",
+                        side_effect=self.extract_stories.ImageExpired("expired"),
+                    ) as download:
+                        with patch.object(self.extract_stories, "_vision_ocr") as vision:
+                            with patch.object(self.extract_stories, "_gemini_extract") as gemini:
+                                with patch.object(self.extract_stories, "_write_remote_cache"):
+                                    result = self.extract_stories._process_story(
+                                        raw,
+                                        {
+                                            "label": "UCR Cybersecurity Club",
+                                            "category": "club",
+                                        },
+                                    )
 
             self.assertEqual("image_expired", result["status"])
             self.assertTrue((extracted_dir / f"{raw['id']}.json").exists())
@@ -64,18 +69,176 @@ class ExtractStoriesTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             extracted_dir = Path(tmp)
             with patch.object(self.extract_stories, "EXTRACTED_DIR", extracted_dir):
-                with patch.object(self.extract_stories, "_download_image", return_value=b"image"):
-                    with patch.object(self.extract_stories, "_vision_ocr", return_value="  \n "):
-                        with patch.object(self.extract_stories, "_gemini_extract") as gemini:
-                            result = self.extract_stories._process_story(
-                                raw,
-                                {"label": "UCR Cybersecurity Club", "category": "club"},
-                            )
+                with patch.object(self.extract_stories, "_load_remote_cache", return_value=None):
+                    with patch.object(self.extract_stories, "_download_image", return_value=b"image"):
+                        with patch.object(self.extract_stories, "_vision_ocr", return_value="  \n "):
+                            with patch.object(self.extract_stories, "_gemini_extract") as gemini:
+                                with patch.object(self.extract_stories, "_write_remote_cache"):
+                                    result = self.extract_stories._process_story(
+                                        raw,
+                                        {
+                                            "label": "UCR Cybersecurity Club",
+                                            "category": "club",
+                                        },
+                                    )
 
             self.assertEqual("no_text", result["status"])
             cache = json.loads((extracted_dir / f"{raw['id']}.json").read_text())
             self.assertEqual("no_text", cache["status"])
             gemini.assert_not_called()
+
+    def test_supabase_cache_hit_writes_local_cache_without_ocr_or_gemini_calls(self) -> None:
+        raw = {
+            "id": "3894795737410658772",
+            "handle": "cyber_ucr",
+            "is_video": False,
+            "image_url": "https://cdn.example/flyer.jpg",
+        }
+        remote_cache = {
+            "status": "ok",
+            "story_id": raw["id"],
+            "handle": raw["handle"],
+            "ocr_text": "Security Night Workshop",
+            "result": {
+                "is_event": True,
+                "title": "Security Night Workshop",
+                "starts_at": "2026-05-15T19:00:00-07:00",
+            },
+            "extracted_at": "2026-05-14T12:00:00+00:00",
+        }
+
+        with tempfile.TemporaryDirectory() as tmp:
+            extracted_dir = Path(tmp)
+            with patch.object(self.extract_stories, "EXTRACTED_DIR", extracted_dir):
+                with patch.object(
+                    self.extract_stories,
+                    "_load_remote_cache",
+                    return_value=remote_cache,
+                ) as load_remote:
+                    with patch.object(self.extract_stories, "_download_image") as download:
+                        with patch.object(self.extract_stories, "_vision_ocr") as vision:
+                            with patch.object(self.extract_stories, "_gemini_extract") as gemini:
+                                result = self.extract_stories._process_story(
+                                    raw,
+                                    {"label": "UCR Cybersecurity Club", "category": "club"},
+                                )
+
+            self.assertEqual(remote_cache, result)
+            self.assertEqual(
+                remote_cache,
+                json.loads((extracted_dir / f"{raw['id']}.json").read_text()),
+            )
+            load_remote.assert_called_once_with(raw["id"])
+            download.assert_not_called()
+            vision.assert_not_called()
+            gemini.assert_not_called()
+
+    def test_ok_extraction_is_cached_to_supabase_and_disk(self) -> None:
+        raw = {
+            "id": "3894795737410658773",
+            "handle": "cyber_ucr",
+            "is_video": False,
+            "image_url": "https://cdn.example/flyer.jpg",
+            "caption": None,
+            "story_cta_url": None,
+            "posted_at": "2026-05-12T18:30:00+00:00Z",
+        }
+        gemini_result = {
+            "is_event": True,
+            "title": "Security Night Workshop",
+            "starts_at": "2026-05-15T19:00:00-07:00",
+        }
+
+        with tempfile.TemporaryDirectory() as tmp:
+            extracted_dir = Path(tmp)
+            with patch.object(self.extract_stories, "EXTRACTED_DIR", extracted_dir):
+                with patch.object(self.extract_stories, "_load_remote_cache", return_value=None):
+                    with patch.object(self.extract_stories, "_download_image", return_value=b"image"):
+                        with patch.object(
+                            self.extract_stories,
+                            "_vision_ocr",
+                            return_value="Security Night Workshop",
+                        ):
+                            with patch.object(
+                                self.extract_stories,
+                                "_gemini_extract",
+                                return_value=gemini_result,
+                            ):
+                                with patch.object(
+                                    self.extract_stories,
+                                    "_write_remote_cache",
+                                ) as write_remote:
+                                    result = self.extract_stories._process_story(
+                                        raw,
+                                        {"label": "UCR Cybersecurity Club", "category": "club"},
+                                    )
+
+            self.assertEqual("ok", result["status"])
+            self.assertEqual(raw["id"], result["story_id"])
+            self.assertEqual(raw["handle"], result["handle"])
+            self.assertEqual("Security Night Workshop", result["ocr_text"])
+            self.assertEqual(gemini_result, result["result"])
+            self.assertEqual(
+                result,
+                json.loads((extracted_dir / f"{raw['id']}.json").read_text()),
+            )
+            write_remote.assert_called_once_with(result)
+
+    def test_remote_error_cache_is_ignored_so_story_can_retry(self) -> None:
+        raw = {
+            "id": "3894795737410658774",
+            "handle": "cyber_ucr",
+            "is_video": False,
+            "image_url": "https://cdn.example/flyer.jpg",
+        }
+
+        with tempfile.TemporaryDirectory() as tmp:
+            extracted_dir = Path(tmp)
+            with patch.object(self.extract_stories, "EXTRACTED_DIR", extracted_dir):
+                with patch.object(
+                    self.extract_stories,
+                    "_load_remote_cache",
+                    return_value={
+                        "status": "error",
+                        "story_id": raw["id"],
+                        "handle": raw["handle"],
+                        "error": "Gemini outage",
+                        "extracted_at": "2026-05-14T12:00:00+00:00",
+                    },
+                ):
+                    with patch.object(self.extract_stories, "_download_image", return_value=b"image") as download:
+                        with patch.object(self.extract_stories, "_vision_ocr", return_value="  \n "):
+                            with patch.object(self.extract_stories, "_write_remote_cache"):
+                                result = self.extract_stories._process_story(
+                                    raw,
+                                    {"label": "UCR Cybersecurity Club", "category": "club"},
+                                )
+
+            self.assertEqual("no_text", result["status"])
+            download.assert_called_once()
+
+    def test_missing_remote_cache_configuration_is_treated_as_cache_miss(self) -> None:
+        saved_db = sys.modules.get("db")
+        sys.modules["db"] = type(
+            "FakeDb",
+            (),
+            {
+                "client": staticmethod(
+                    lambda: (_ for _ in ()).throw(SystemExit("Supabase env missing"))
+                )
+            },
+        )
+        try:
+            with patch.object(self.extract_stories.log, "warning") as warning:
+                self.assertIsNone(
+                    self.extract_stories._load_remote_cache("3894795737410658775")
+                )
+            warning.assert_called_once()
+        finally:
+            if saved_db is None:
+                sys.modules.pop("db", None)
+            else:
+                sys.modules["db"] = saved_db
 
     def test_cached_event_maps_to_instagram_event_row(self) -> None:
         raw = {

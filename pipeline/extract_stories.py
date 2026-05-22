@@ -38,6 +38,7 @@ EVENT_CATEGORIES = (
     "community",
     "free_food",
 )
+REMOTE_CACHE_TERMINAL_STATUSES = {"ok", "not_event", "no_text", "image_expired"}
 
 GEMINI_RESPONSE_SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -95,6 +96,80 @@ def _write_cache(story_id: str, payload: dict[str, Any]) -> dict[str, Any]:
     with path.open("w", encoding="utf-8") as f:
         json.dump(payload, f, indent=2, sort_keys=True)
     return payload
+
+
+def _remote_cache_row_to_payload(row: dict[str, Any]) -> dict[str, Any] | None:
+    status = row.get("status")
+    if status not in REMOTE_CACHE_TERMINAL_STATUSES:
+        return None
+
+    payload: dict[str, Any] = {
+        "status": status,
+        "story_id": str(row.get("story_id") or ""),
+        "handle": str(row.get("handle") or ""),
+        "extracted_at": row.get("extracted_at") or _utc_now(),
+    }
+    if row.get("ocr_text") is not None:
+        payload["ocr_text"] = row.get("ocr_text")
+    if row.get("result") is not None:
+        payload["result"] = row.get("result")
+    return payload
+
+
+def _load_remote_cache(story_id: str) -> dict[str, Any] | None:
+    try:
+        from db import client
+
+        response = (
+            client()
+            .table("story_extractions")
+            .select("story_id,handle,status,ocr_text,result,extracted_at")
+            .eq("story_id", story_id)
+            .maybe_single()
+            .execute()
+        )
+    except (Exception, SystemExit) as exc:  # noqa: BLE001 - remote cache is best-effort.
+        log.warning("story_extractions: cache lookup failed for %s: %s", story_id, exc)
+        return None
+
+    row = getattr(response, "data", None)
+    if not isinstance(row, dict):
+        return None
+    return _remote_cache_row_to_payload(row)
+
+
+def _write_remote_cache(payload: dict[str, Any]) -> None:
+    status = payload.get("status")
+    if status not in REMOTE_CACHE_TERMINAL_STATUSES:
+        return
+
+    row = {
+        "story_id": payload.get("story_id"),
+        "handle": payload.get("handle"),
+        "status": status,
+        "ocr_text": payload.get("ocr_text"),
+        "result": payload.get("result"),
+        "extracted_at": payload.get("extracted_at") or _utc_now(),
+    }
+    if not row["story_id"]:
+        return
+
+    try:
+        from db import upsert_batched
+
+        upsert_batched("story_extractions", [row], on_conflict="story_id")
+    except (Exception, SystemExit) as exc:  # noqa: BLE001 - local cache remains authoritative.
+        log.warning(
+            "story_extractions: cache write failed for %s: %s",
+            row["story_id"],
+            exc,
+        )
+
+
+def _persist_terminal_cache(story_id: str, payload: dict[str, Any]) -> dict[str, Any]:
+    cached = _write_cache(story_id, payload)
+    _write_remote_cache(cached)
+    return cached
 
 
 def _load_account_meta() -> dict[str, dict[str, Any]]:
@@ -244,6 +319,14 @@ def _process_story(raw: dict[str, Any], meta: dict[str, Any]) -> dict[str, Any]:
         log.info("extract %s: cache %s", label, cached.get("status"))
         return cached
 
+    remote_cached = _load_remote_cache(story_id)
+    if (
+        remote_cached is not None
+        and remote_cached.get("status") in REMOTE_CACHE_TERMINAL_STATUSES
+    ):
+        log.info("extract %s: remote cache %s", label, remote_cached.get("status"))
+        return _write_cache(story_id, remote_cached)
+
     try:
         image = _download_image(raw.get("image_url"))
     except ImageExpired as exc:
@@ -255,7 +338,7 @@ def _process_story(raw: dict[str, Any], meta: dict[str, Any]) -> dict[str, Any]:
             "extracted_at": _utc_now(),
         }
         log.info("extract %s: image_expired", label)
-        return _write_cache(story_id, payload)
+        return _persist_terminal_cache(story_id, payload)
     except Exception as exc:  # noqa: BLE001 - per-story isolation.
         log.warning("extract %s: image download failed: %s", label, exc)
         return {"status": "error", "error": str(exc)}
@@ -274,7 +357,7 @@ def _process_story(raw: dict[str, Any], meta: dict[str, Any]) -> dict[str, Any]:
             "extracted_at": _utc_now(),
         }
         log.info("extract %s: no_text", label)
-        return _write_cache(story_id, payload)
+        return _persist_terminal_cache(story_id, payload)
 
     try:
         result = _gemini_extract(raw, meta, ocr_text)
@@ -292,7 +375,7 @@ def _process_story(raw: dict[str, Any], meta: dict[str, Any]) -> dict[str, Any]:
         "extracted_at": _utc_now(),
     }
     log.info("extract %s: %s", label, status)
-    return _write_cache(story_id, payload)
+    return _persist_terminal_cache(story_id, payload)
 
 
 def _clean_tags(value: Any) -> list[str]:
