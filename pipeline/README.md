@@ -91,7 +91,8 @@ python normalize_events.py   # rebuild events from ucr_events/ + highlander_link
 ```
 
 Re-running is cheap: IG raw files are skipped if present, extracted story
-results are cached in `data/extracted/`, and Localist + HighlanderLink events
+results are cached first in `data/extracted/` and then in Supabase
+`story_extractions` for stateless CI runs, and Localist + HighlanderLink events
 are overwritten because they are mutable.
 
 ## Schedule
@@ -174,19 +175,23 @@ Localist events without a frontend change.
 `extract_stories.py` turns raw IG story image flyers into `events` rows:
 
 1. Walks `data/raw/<handle>/*.json` for handles in `accounts.json`.
-2. Skips videos and already-cached story IDs.
-3. Downloads `image_url`; expired CDN URLs (`403`, `404`, `410`) are cached
+2. Skips videos and story IDs already cached in `data/extracted/`.
+3. If the local cache misses, checks Supabase `story_extractions` for a
+   terminal result and writes that result back to `data/extracted/`.
+4. Downloads `image_url`; expired CDN URLs (`403`, `404`, `410`) are cached
    as `{"status": "image_expired"}`.
-4. Sends image bytes to Google Cloud Vision OCR using `GOOGLE_VISION_API_KEY`.
-5. If OCR text is empty, caches `{"status": "no_text"}` and skips Gemini.
-6. Sends OCR text plus story/account metadata to Gemini 2.5 Flash Lite using
+5. Sends image bytes to Google Cloud Vision OCR using `GOOGLE_VISION_API_KEY`.
+6. If OCR text is empty, caches `{"status": "no_text"}` and skips Gemini.
+7. Sends OCR text plus story/account metadata to Gemini 2.5 Flash Lite using
    `GEMINI_API_KEY` and a JSON response schema.
-7. Caches the parsed result in `data/extracted/<story_id>.json`.
-8. Upserts cached `status == "ok"` event results into Supabase `events`.
+8. Caches terminal extraction results in both
+   `data/extracted/<story_id>.json` and Supabase `story_extractions`.
+9. Upserts cached `status == "ok"` event results into Supabase `events`.
 
 Terminal cache statuses (`image_expired`, `no_text`, `not_event`, `ok`) are
-not reprocessed on later runs. Transient download, Vision, or Gemini failures
-are logged and retried on the next run.
+not reprocessed on later runs. Transient download, Vision, Gemini, or remote
+cache failures are logged and retried on the next run; `error` is allowed in
+the database for diagnostics but is not replayed as a cache hit.
 
 Run extraction by itself after a scrape:
 
