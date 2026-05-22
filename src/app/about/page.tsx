@@ -35,7 +35,7 @@ const PRINCIPLES = [
 const SOURCES = [
   {
     label: "Club Instagram stories",
-    body: "Flyers posted by registered student orgs. We OCR the image and pull title, time, and location with help from an LLM.",
+    body: "Flyers posted by registered student orgs. We read the image to find the title, time, and place.",
     dot: "bg-coral",
   },
   {
@@ -59,7 +59,7 @@ const FAQS = [
   {
     id: "report-wrong-event",
     q: "How do I report a wrong event?",
-    a: "DM @hbi.ucr on Instagram with the link. We extract event details from flyer images with OCR + an LLM, so the occasional misread happens. We'll fix it.",
+    a: "DM @hbi.ucr on Instagram with the link. We read event details off flyer images automatically, so mistakes happen sometimes. We'll fix it.",
   },
   {
     id: "add-org-calendar",
@@ -95,9 +95,9 @@ export default function AboutPage() {
               calendars.
             </p>
             <p>
-              Highlander Hub does that work in one place. We pull from the
-              sources clubs already use, normalize the details, and put it all
-              on a single page you can scan in thirty seconds.
+              Highlander Hub does that work in one place. We gather what clubs
+              already post, clean up the details, and put everything on one
+              page you can scan in thirty seconds.
             </p>
           </Reveal>
         </div>
@@ -158,9 +158,9 @@ export default function AboutPage() {
           </ul>
 
           <p className="mt-8 max-w-2xl text-sm text-muted">
-            Updates run automatically every six hours. We extract event details
-            from flyer images with OCR + an LLM, so the occasional misread
-            happens. Spot one and let us know.
+            We refresh the list every six hours. We read details off flyer
+            images automatically, so mistakes happen sometimes. If you spot
+            one, let us know.
           </p>
         </div>
       </section>

@@ -77,7 +77,7 @@ export function Masthead({
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
         <Link href="/" className="interactive-focus flex items-baseline gap-2.5">
           <span className="font-display text-[18px] font-semibold tracking-[-0.04em] leading-none text-ink sm:text-[22px]">
-            highlander<span className="text-black">/</span>hub
+            highlander<span className="text-muted">/</span>hub
           </span>
         </Link>
 
