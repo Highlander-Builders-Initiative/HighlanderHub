@@ -77,6 +77,25 @@ function clearSavedScrollPosition() {
   window.sessionStorage.removeItem(RETURN_SCROLL_KEY);
 }
 
+function readSavedReturnScrollPosition() {
+  const raw = window.sessionStorage.getItem(RETURN_SCROLL_KEY);
+  if (!raw) return null;
+
+  try {
+    const parsed = JSON.parse(raw) as Partial<SavedScrollPosition>;
+    if (
+      typeof parsed.path !== "string" ||
+      typeof parsed.scrollY !== "number" ||
+      typeof parsed.detailPath !== "string"
+    ) {
+      return null;
+    }
+    return parsed as SavedScrollPosition;
+  } catch {
+    return null;
+  }
+}
+
 function isExpired(savedAt: number) {
   return Date.now() - savedAt > FEED_SESSION_TTL_MS;
 }
@@ -151,6 +170,15 @@ export function saveEventFeedSnapshot(snapshot: SavedEventFeedSnapshotInput) {
 
 export function getSavedEventFeedSnapshot() {
   if (typeof window === "undefined") return null;
+  return readSnapshot();
+}
+
+export function getSavedEventFeedSnapshotForRestore() {
+  if (typeof window === "undefined") return null;
+
+  const returnScroll = readSavedReturnScrollPosition();
+  if (!returnScroll || returnScroll.path !== currentPath()) return null;
+
   return readSnapshot();
 }
 

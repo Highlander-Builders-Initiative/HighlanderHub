@@ -115,6 +115,41 @@ test("event feed session keeps the list snapshot and return metadata together", 
   }
 });
 
+test("event feed session ignores stale snapshots on a fresh events visit", async () => {
+  const env = installBrowserEnv();
+  const previousNow = Date.now;
+  Date.now = () => 1_700_000_000_000;
+
+  try {
+    const session = await importTsModule("src/lib/event-feed-session.ts");
+    session.saveEventFeedSnapshot({
+      path: "/events",
+      scrollY: 900,
+      view: "list",
+      category: "all",
+      query: "",
+      events: [],
+      hasMore: true,
+      nextOffset: 24,
+      loadedCount: 24,
+    });
+
+    assert.ok(session.getSavedEventFeedSnapshot());
+    assert.equal(session.getSavedEventFeedSnapshotForRestore(), null);
+
+    session.saveEventFeedReturn("/events/event-1", {
+      eventId: "event-1",
+      eventTop: 96,
+      loadedCount: 24,
+    });
+
+    assert.ok(session.getSavedEventFeedSnapshotForRestore());
+  } finally {
+    Date.now = previousNow;
+    env.restore();
+  }
+});
+
 test("event feed session entries expire after ten minutes", async () => {
   const env = installBrowserEnv();
   const previousNow = Date.now;

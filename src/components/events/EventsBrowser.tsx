@@ -17,7 +17,7 @@ import { groupByDay } from "@/lib/event-grouping";
 import { track } from "@/lib/analytics";
 import {
   clearEventFeedReturnState,
-  getSavedEventFeedSnapshot,
+  getSavedEventFeedSnapshotForRestore,
   saveEventFeedSnapshot,
 } from "@/lib/event-feed-session";
 import { getSavedScrollPosition } from "@/lib/scroll-restoration";
@@ -78,7 +78,9 @@ export function EventsBrowser({
   const [loadError, setLoadError] = useState("");
   const [isRestoring, setIsRestoring] = useState(false);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
-  const restoreTarget = useRef<ReturnType<typeof getSavedEventFeedSnapshot>>(null);
+  const restoreTarget = useRef<
+    ReturnType<typeof getSavedEventFeedSnapshotForRestore>
+  >(null);
   const returnScrollTarget = useRef<ReturnType<typeof getSavedScrollPosition>>(null);
   const isRestoringSpot = useRef(false);
   const trimmedQuery = query.trim();
@@ -91,7 +93,7 @@ export function EventsBrowser({
   }, [events, initialHasMore, initialNextOffset]);
 
   useEffect(() => {
-    restoreTarget.current = getSavedEventFeedSnapshot();
+    restoreTarget.current = getSavedEventFeedSnapshotForRestore();
     returnScrollTarget.current = getSavedScrollPosition();
   }, []);
 
