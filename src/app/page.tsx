@@ -75,8 +75,10 @@ export default async function HomePage() {
             className="mt-8 max-w-[15ch] font-display text-[38px] font-semibold leading-[1.03] tracking-[-0.035em] text-ink animate-fade-up sm:text-[56px] md:mt-10 md:text-[64px] lg:text-[72px]"
             style={{ animationDelay: "80ms" }}
           >
-            Everything happening at UCR,
-            <span className="block">before you miss it.</span>
+            Every UCR event,
+            <span className="block text-muted">
+              one app.
+            </span>
           </h1>
 
           <div
