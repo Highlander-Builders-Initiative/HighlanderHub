@@ -22,7 +22,7 @@ from typing import Any, Iterable
 from urllib.parse import urlsplit
 
 from config import RAW_DIR, ensure_dirs
-from db import upsert_batched
+from db import delete_rows_by_prefix, upsert_batched
 
 log = logging.getLogger("pipeline.normalize_events")
 
@@ -156,23 +156,41 @@ def _parse_iso(value: Any) -> datetime | None:
     return dt.astimezone(timezone.utc)
 
 
-def _pick_instance(instances: Any) -> dict[str, Any] | None:
-    """Next instance that hasn't ended yet, else the latest past one.
-
-    Localist returns every upcoming occurrence of a recurring event in
-    event_instances. Picking [0] always returned the earliest, even after
-    it had finished — so a Friday-only series scraped Friday evening would
-    keep reporting that morning's date until the next scrape.
-    """
+def _extract_instances(instances: Any) -> list[dict[str, Any]]:
     if not isinstance(instances, list):
-        return None
-    parsed: list[tuple[datetime, dict[str, Any]]] = []
+        return []
+    out: list[dict[str, Any]] = []
     for entry in instances:
         if not isinstance(entry, dict):
             continue
         inner = entry.get("event_instance") or entry
         if not isinstance(inner, dict):
             continue
+        if inner.get("start"):
+            out.append(inner)
+    return out
+
+
+def _upcoming_instances(
+    instances: Any,
+    now: datetime | None = None,
+) -> list[dict[str, Any]]:
+    parsed: list[tuple[datetime, dict[str, Any]]] = []
+    for inner in _extract_instances(instances):
+        ts = _parse_iso(inner.get("end") or inner.get("start"))
+        if ts is None:
+            continue
+        parsed.append((ts, inner))
+    if not parsed:
+        return []
+    parsed.sort(key=lambda x: x[0])
+    cutoff = now or datetime.now(timezone.utc)
+    return [inner for ts, inner in parsed if ts >= cutoff]
+
+
+def _latest_instance(instances: Any) -> dict[str, Any] | None:
+    parsed: list[tuple[datetime, dict[str, Any]]] = []
+    for inner in _extract_instances(instances):
         ts = _parse_iso(inner.get("end") or inner.get("start"))
         if ts is None:
             continue
@@ -180,15 +198,21 @@ def _pick_instance(instances: Any) -> dict[str, Any] | None:
     if not parsed:
         return None
     parsed.sort(key=lambda x: x[0])
-    now = datetime.now(timezone.utc)
-    for ts, inner in parsed:
-        if ts >= now:
-            return inner
     return parsed[-1][1]
 
 
+def _is_recurring_localist_event(raw: dict[str, Any]) -> bool:
+    recurring = raw.get("recurring")
+    if isinstance(recurring, bool):
+        return recurring
+    if isinstance(recurring, str):
+        return recurring.strip().lower() in {"1", "true", "yes", "y"}
+    return len(_extract_instances(raw.get("event_instances"))) > 1
+
+
 def _start_end(raw: dict[str, Any]) -> tuple[str, str | None]:
-    chosen = _pick_instance(raw.get("event_instances"))
+    chosen_instances = _upcoming_instances(raw.get("event_instances"))
+    chosen = chosen_instances[0] if chosen_instances else None
     if chosen is not None:
         start = chosen.get("start") or raw.get("first_date")
         end = chosen.get("end") or raw.get("last_date")
@@ -199,7 +223,26 @@ def _start_end(raw: dict[str, Any]) -> tuple[str, str | None]:
     return start, (end if end and end != start else None)
 
 
-def _to_event_row(raw: dict[str, Any], scraped_at: str) -> dict[str, Any] | None:
+def _instance_suffix(instance: dict[str, Any]) -> str:
+    instance_id = instance.get("id")
+    if instance_id is not None:
+        return str(instance_id)
+    start = str(instance.get("start") or "").strip()
+    return re.sub(r"[^0-9A-Za-z]+", "", start) or "instance"
+
+
+def _localist_row_id(localist_id: Any, instance: dict[str, Any] | None = None) -> str:
+    base = f"ucr_events_{localist_id}"
+    if instance is None:
+        return base
+    return f"{base}_{_instance_suffix(instance)}"
+
+
+def _to_event_row(
+    raw: dict[str, Any],
+    scraped_at: str,
+    instance: dict[str, Any] | None = None,
+) -> dict[str, Any] | None:
     lid = raw.get("id")
     if lid is None:
         return None
@@ -214,7 +257,12 @@ def _to_event_row(raw: dict[str, Any], scraped_at: str) -> dict[str, Any] | None
         or ""
     ).strip()
 
-    starts_at, ends_at = _start_end(raw)
+    if instance is not None:
+        starts_at = instance.get("start") or raw.get("first_date") or raw.get("start") or ""
+        end = instance.get("end") or None
+        ends_at = end if end and end != starts_at else None
+    else:
+        starts_at, ends_at = _start_end(raw)
     if not starts_at:
         return None
 
@@ -233,9 +281,10 @@ def _to_event_row(raw: dict[str, Any], scraped_at: str) -> dict[str, Any] | None
         tags.append(f"#{hashtag.lstrip('#')}")
 
     ticket_url = _normalize_url(raw.get("ticket_url"))
+    row_instance = instance if instance is not None and _is_recurring_localist_event(raw) else None
 
     return {
-        "id": f"ucr_events_{lid}",
+        "id": _localist_row_id(lid, row_instance),
         "title": title[:200],
         "description": description,
         "starts_at": starts_at,
@@ -252,6 +301,38 @@ def _to_event_row(raw: dict[str, Any], scraped_at: str) -> dict[str, Any] | None
         "rsvp_url": ticket_url or None,
         "scraped_at": scraped_at,
     }
+
+
+def _to_event_rows(
+    raw: dict[str, Any],
+    scraped_at: str,
+    now: datetime | None = None,
+) -> list[dict[str, Any]]:
+    if _is_recurring_localist_event(raw):
+        instances = _upcoming_instances(raw.get("event_instances"), now=now)
+        if not instances:
+            last_instance = _latest_instance(raw.get("event_instances"))
+            if last_instance is not None:
+                instances = [last_instance]
+            else:
+                fallback_row = _to_event_row(raw, scraped_at)
+                return [fallback_row] if fallback_row is not None else []
+        rows = [
+            row
+            for instance in instances
+            if (row := _to_event_row(raw, scraped_at, instance=instance)) is not None
+        ]
+        return rows
+    single_instance = _extract_instances(raw.get("event_instances"))
+    row = _to_event_row(raw, scraped_at, instance=single_instance[0] if single_instance else None)
+    return [row] if row is not None else []
+
+
+def _stale_localist_prefixes(raw: dict[str, Any]) -> list[str]:
+    lid = raw.get("id")
+    if lid is None or not _is_recurring_localist_event(raw):
+        return []
+    return [f"ucr_events_{lid}"]
 
 
 _HLINK_IMAGE_BASE = "https://se-images.campuslabs.com/clink/images/"
@@ -342,10 +423,10 @@ def main() -> None:
     scraped_at = datetime.now(timezone.utc).isoformat()
 
     rows: list[dict[str, Any]] = []
+    stale_prefixes: list[str] = []
     for raw in _collect_raw(UCR_EVENTS_RAW):
-        row = _to_event_row(raw, scraped_at)
-        if row is not None:
-            rows.append(row)
+        rows.extend(_to_event_rows(raw, scraped_at))
+        stale_prefixes.extend(_stale_localist_prefixes(raw))
     for raw in _collect_raw(HIGHLANDER_LINK_RAW):
         row = _to_event_row_hlink(raw, scraped_at)
         if row is not None:
@@ -354,6 +435,12 @@ def main() -> None:
     # Dedupe by id (last-write-wins).
     by_id: dict[str, dict[str, Any]] = {r["id"]: r for r in rows}
     deduped = list(by_id.values())
+
+    deleted = 0
+    for prefix in dict.fromkeys(stale_prefixes):
+        deleted += delete_rows_by_prefix("events", prefix)
+    if deleted:
+        log.info("Deleted %d stale Localist event rows from Supabase", deleted)
 
     written = upsert_batched("events", deduped)
     log.info("Wrote %d events to Supabase", written)

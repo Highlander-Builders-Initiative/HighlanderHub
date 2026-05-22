@@ -39,7 +39,11 @@ class SchemaContractTests(unittest.TestCase):
             name: sys.modules.get(name) for name in ("config", "db")
         }
         sys.modules["config"] = fake_config
-        sys.modules["db"] = types.SimpleNamespace(upsert_batched=lambda *a, **k: 0)
+        sys.modules["db"] = types.SimpleNamespace(
+            upsert_batched=lambda *a, **k: 0,
+            delete_rows_by_prefix=lambda *a, **k: 0,
+            delete_rows_by_ids=lambda *a, **k: 0,
+        )
         sys.modules.pop("extract_stories", None)
         sys.modules.pop("normalize_events", None)
         sys.modules.pop("normalize", None)

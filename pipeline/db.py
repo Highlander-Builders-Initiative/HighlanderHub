@@ -48,3 +48,32 @@ def upsert_batched(
         total += len(chunk)
         log.info("%s: upserted %d/%d", table, total, len(rows))
     return total
+
+
+def delete_rows_by_ids(
+    table: str,
+    ids: Iterable[str],
+    batch_size: int = 200,
+) -> int:
+    """Delete rows by primary id in batches. Returns total count requested."""
+    c = client()
+    ids = list(dict.fromkeys(ids))
+    total = 0
+    for i in range(0, len(ids), batch_size):
+        chunk = ids[i : i + batch_size]
+        c.table(table).delete().in_("id", chunk).execute()
+        total += len(chunk)
+        log.info("%s: deleted %d/%d stale rows", table, total, len(ids))
+    return total
+
+
+def delete_rows_by_prefix(table: str, prefix: str) -> int:
+    """Delete rows whose id starts with the given prefix."""
+    c = client()
+    pattern = f"{prefix}%"
+    existing = c.table(table).select("id").like("id", pattern).execute()
+    count = len(getattr(existing, "data", None) or [])
+    if count:
+        c.table(table).delete().like("id", pattern).execute()
+        log.info("%s: deleted %d rows with id prefix %s", table, count, prefix)
+    return count
