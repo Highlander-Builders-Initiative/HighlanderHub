@@ -63,6 +63,53 @@ function restoreToEventCard(eventId: string, eventTop = 0) {
   return true;
 }
 
+async function restoreEventsUntilTarget(
+  current: CampusEvent[],
+  next: number,
+  more: boolean,
+  returnScroll: NonNullable<ReturnType<typeof getSavedScrollPosition>>
+) {
+  let restored = current;
+  let restoredNext = next;
+  let restoredMore = more;
+
+  if (typeof returnScroll.loadedCount === "number") {
+    const limitToFetch = Math.max(0, returnScroll.loadedCount - current.length);
+    if (limitToFetch > 0) {
+      const response = await fetch(
+        `/api/events?offset=${next}&limit=${limitToFetch}`
+      );
+      if (!response.ok) throw new Error("Unable to load more events.");
+      const page = (await response.json()) as EventsApiPage;
+      const seen = new Set(restored.map((event) => event.id));
+      const nextEvents = page.events.filter((event) => !seen.has(event.id));
+      if (nextEvents.length === 0 && page.nextOffset === restoredNext) {
+        return { current: restored, next: restoredNext, more: restoredMore };
+      }
+      restored = [...restored, ...nextEvents];
+      restoredNext = page.nextOffset;
+      restoredMore = page.hasMore;
+    }
+  }
+
+  while (
+    restoredMore &&
+    !restored.some((event) => event.id === returnScroll.eventId)
+  ) {
+    const response = await fetch(`/api/events?offset=${restoredNext}`);
+    if (!response.ok) throw new Error("Unable to load more events.");
+    const page = (await response.json()) as EventsApiPage;
+    const seen = new Set(restored.map((event) => event.id));
+    const nextEvents = page.events.filter((event) => !seen.has(event.id));
+    if (nextEvents.length === 0 && page.nextOffset === restoredNext) break;
+    restored = [...restored, ...nextEvents];
+    restoredNext = page.nextOffset;
+    restoredMore = page.hasMore;
+  }
+
+  return { current: restored, next: restoredNext, more: restoredMore };
+}
+
 export function EventsBrowser({
   events,
   initialHasMore = false,
@@ -234,25 +281,16 @@ export function EventsBrowser({
       await new Promise((resolve) => requestAnimationFrame(resolve));
 
       if (snapshot?.eventId && returnScroll?.eventId === snapshot.eventId) {
-        let current = snapshot.events;
-        let next = snapshot.nextOffset;
-        let more = snapshot.hasMore;
+        const restored = await restoreEventsUntilTarget(
+          snapshot.events,
+          snapshot.nextOffset,
+          snapshot.hasMore,
+          returnScroll
+        );
 
-        while (more && !current.some((event) => event.id === returnScroll.eventId)) {
-          const response = await fetch(`/api/events?offset=${next}`);
-          if (!response.ok) throw new Error("Unable to load more events.");
-          const page = (await response.json()) as EventsApiPage;
-          const seen = new Set(current.map((event) => event.id));
-          const nextEvents = page.events.filter((event) => !seen.has(event.id));
-          if (nextEvents.length === 0 && page.nextOffset === next) break;
-          current = [...current, ...nextEvents];
-          next = page.nextOffset;
-          more = page.hasMore;
-        }
-
-        setLoadedEvents(current);
-        setHasMore(more);
-        setNextOffset(next);
+        setLoadedEvents(restored.current);
+        setHasMore(restored.more);
+        setNextOffset(restored.next);
 
         await new Promise((resolve) => requestAnimationFrame(resolve));
 
@@ -264,25 +302,16 @@ export function EventsBrowser({
           clearRestorationState();
         }
       } else if (returnScroll?.eventId) {
-        let current = loadedEvents;
-        let next = nextOffset;
-        let more = hasMore;
+        const restored = await restoreEventsUntilTarget(
+          loadedEvents,
+          nextOffset,
+          hasMore,
+          returnScroll
+        );
 
-        while (more && !current.some((event) => event.id === returnScroll.eventId)) {
-          const response = await fetch(`/api/events?offset=${next}`);
-          if (!response.ok) throw new Error("Unable to load more events.");
-          const page = (await response.json()) as EventsApiPage;
-          const seen = new Set(current.map((event) => event.id));
-          const nextEvents = page.events.filter((event) => !seen.has(event.id));
-          if (nextEvents.length === 0 && page.nextOffset === next) break;
-          current = [...current, ...nextEvents];
-          next = page.nextOffset;
-          more = page.hasMore;
-        }
-
-        setLoadedEvents(current);
-        setHasMore(more);
-        setNextOffset(next);
+        setLoadedEvents(restored.current);
+        setHasMore(restored.more);
+        setNextOffset(restored.next);
 
         await new Promise((resolve) => requestAnimationFrame(resolve));
 
