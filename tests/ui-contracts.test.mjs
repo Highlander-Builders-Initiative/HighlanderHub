@@ -94,10 +94,12 @@ test("event back navigation restores from a snapshot before falling back to pagi
   const scroll = read("src/lib/scroll-restoration.ts");
 
   assert.match(session, /saveEventFeedSnapshot/);
+  assert.match(session, /getSavedEventFeedSnapshotForRestore/);
   assert.match(session, /getSavedScrollPosition/);
   assert.match(session, /sessionStorage/);
   assert.match(browser, /useLayoutEffect/);
   assert.match(browser, /saveEventFeedSnapshot/);
+  assert.match(browser, /getSavedEventFeedSnapshotForRestore/);
   assert.match(browser, /restoreSavedSpot/);
   assert.match(browser, /root\.style\.scrollBehavior = "auto"/);
   assert.match(browser, /IntersectionObserver/);
