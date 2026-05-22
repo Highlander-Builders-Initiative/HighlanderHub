@@ -1,6 +1,13 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import {
+  useState,
+  useMemo,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useCallback,
+} from "react";
 import type { CampusEvent, EventCategory } from "@/types/event";
 import { EventCard } from "./EventCard";
 import { CalendarView } from "./CalendarView";
@@ -9,9 +16,11 @@ import { formatPacificDayKey } from "@/lib/dates";
 import { groupByDay } from "@/lib/event-grouping";
 import { track } from "@/lib/analytics";
 import {
-  clearSavedScrollPosition,
-  getSavedScrollPosition,
-} from "@/lib/scroll-restoration";
+  clearEventFeedReturnState,
+  getSavedEventFeedSnapshotForRestore,
+  saveEventFeedSnapshot,
+} from "@/lib/event-feed-session";
+import { getSavedScrollPosition } from "@/lib/scroll-restoration";
 
 type ViewMode = "list" | "calendar";
 
@@ -67,8 +76,12 @@ export function EventsBrowser({
   const [nextOffset, setNextOffset] = useState(initialNextOffset);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [loadError, setLoadError] = useState("");
+  const [isRestoring, setIsRestoring] = useState(false);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
-  const restoreTarget = useRef<ReturnType<typeof getSavedScrollPosition>>(null);
+  const restoreTarget = useRef<
+    ReturnType<typeof getSavedEventFeedSnapshotForRestore>
+  >(null);
+  const returnScrollTarget = useRef<ReturnType<typeof getSavedScrollPosition>>(null);
   const isRestoringSpot = useRef(false);
   const trimmedQuery = query.trim();
   const hasActiveFilters = category !== "all" || trimmedQuery.length > 0;
@@ -80,23 +93,29 @@ export function EventsBrowser({
   }, [events, initialHasMore, initialNextOffset]);
 
   useEffect(() => {
-    restoreTarget.current = getSavedScrollPosition();
+    restoreTarget.current = getSavedEventFeedSnapshotForRestore();
+    returnScrollTarget.current = getSavedScrollPosition();
   }, []);
 
-  const tryRestoreSavedSpot = useCallback(() => {
-    const saved = restoreTarget.current;
-    if (!saved || saved.path !== currentPath()) return false;
+  useEffect(() => {
+    if (isRestoringSpot.current) return;
+    saveEventFeedSnapshot({
+      path: currentPath(),
+      scrollY: window.scrollY,
+      events: loadedEvents,
+      hasMore,
+      nextOffset,
+      view,
+      category,
+      query,
+      loadedCount: loadedEvents.length,
+    });
+  }, [loadedEvents, hasMore, nextOffset, view, category, query]);
 
-    if (saved.eventId) {
-      if (!restoreToEventCard(saved.eventId, saved.eventTop)) return false;
-    } else {
-      const root = document.scrollingElement ?? document.documentElement;
-      root.scrollTop = saved.scrollY;
-    }
-
-    clearSavedScrollPosition();
+  const clearRestorationState = useCallback(() => {
+    clearEventFeedReturnState();
     restoreTarget.current = null;
-    return true;
+    returnScrollTarget.current = null;
   }, []);
 
   const filtered = useMemo(() => {
@@ -187,60 +206,110 @@ export function EventsBrowser({
   }, [hasMore, isLoadingMore, nextOffset]);
 
   const restoreSavedSpot = useCallback(async () => {
-    const saved = restoreTarget.current;
-    if (!saved || saved.path !== currentPath()) return;
-    if (tryRestoreSavedSpot()) return;
-    if (!saved.eventId || isRestoringSpot.current || !hasMore) return;
+    const snapshot = restoreTarget.current;
+    const returnScroll = returnScrollTarget.current;
+    const path = currentPath();
+    if (isRestoringSpot.current) return;
+    if (!snapshot && !returnScroll) return;
+    if (snapshot && snapshot.path !== path) return;
+    if (!snapshot && returnScroll?.path !== path) return;
 
     isRestoringSpot.current = true;
+    setIsRestoring(true);
+
+    const root = document.documentElement;
+    const previousScrollBehavior = root.style.scrollBehavior;
+    root.style.scrollBehavior = "auto";
 
     try {
-      let current = loadedEvents;
-      let next = nextOffset;
-      let more: boolean = hasMore;
-      const targetCount =
-        typeof saved.loadedCount === "number"
-          ? Math.max(saved.loadedCount, current.length)
-          : Number.POSITIVE_INFINITY;
-
-      while (
-        more &&
-        current.length < targetCount &&
-        !current.some((event) => event.id === saved.eventId)
-      ) {
-        const previousNext = next;
-        const previousLength = current.length;
-        const response = await fetch(`/api/events?offset=${next}`);
-        if (!response.ok) throw new Error("Unable to load more events.");
-        const page = (await response.json()) as EventsApiPage;
-        const seen = new Set(current.map((event) => event.id));
-        const nextEvents = page.events.filter((event) => !seen.has(event.id));
-        current = [...current, ...nextEvents];
-        more = page.hasMore;
-        next = page.nextOffset;
-
-        if (next === previousNext && current.length === previousLength) {
-          break;
-        }
+      if (snapshot) {
+        setView(snapshot.view);
+        setCategory(snapshot.category);
+        setQuery(snapshot.query);
+        setLoadedEvents(snapshot.events);
+        setHasMore(snapshot.hasMore);
+        setNextOffset(snapshot.nextOffset);
       }
 
-      setLoadedEvents(current);
-      setHasMore(more);
-      setNextOffset(next);
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+
+      if (snapshot?.eventId && returnScroll?.eventId === snapshot.eventId) {
+        let current = snapshot.events;
+        let next = snapshot.nextOffset;
+        let more = snapshot.hasMore;
+
+        while (more && !current.some((event) => event.id === returnScroll.eventId)) {
+          const response = await fetch(`/api/events?offset=${next}`);
+          if (!response.ok) throw new Error("Unable to load more events.");
+          const page = (await response.json()) as EventsApiPage;
+          const seen = new Set(current.map((event) => event.id));
+          const nextEvents = page.events.filter((event) => !seen.has(event.id));
+          if (nextEvents.length === 0 && page.nextOffset === next) break;
+          current = [...current, ...nextEvents];
+          next = page.nextOffset;
+          more = page.hasMore;
+        }
+
+        setLoadedEvents(current);
+        setHasMore(more);
+        setNextOffset(next);
+
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+
+        if (restoreToEventCard(returnScroll.eventId, returnScroll.eventTop)) {
+          clearRestorationState();
+        }
+      } else if (snapshot?.eventId) {
+        if (restoreToEventCard(snapshot.eventId, snapshot.eventTop)) {
+          clearRestorationState();
+        }
+      } else if (returnScroll?.eventId) {
+        let current = loadedEvents;
+        let next = nextOffset;
+        let more = hasMore;
+
+        while (more && !current.some((event) => event.id === returnScroll.eventId)) {
+          const response = await fetch(`/api/events?offset=${next}`);
+          if (!response.ok) throw new Error("Unable to load more events.");
+          const page = (await response.json()) as EventsApiPage;
+          const seen = new Set(current.map((event) => event.id));
+          const nextEvents = page.events.filter((event) => !seen.has(event.id));
+          if (nextEvents.length === 0 && page.nextOffset === next) break;
+          current = [...current, ...nextEvents];
+          next = page.nextOffset;
+          more = page.hasMore;
+        }
+
+        setLoadedEvents(current);
+        setHasMore(more);
+        setNextOffset(next);
+
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+
+        if (restoreToEventCard(returnScroll.eventId, returnScroll.eventTop)) {
+          clearRestorationState();
+        }
+      } else if (returnScroll) {
+        const rootScroller = document.scrollingElement ?? document.documentElement;
+        rootScroller.scrollTop = returnScroll.scrollY;
+        clearRestorationState();
+      }
     } catch {
       restoreTarget.current = null;
-      clearSavedScrollPosition();
+      returnScrollTarget.current = null;
     } finally {
+      root.style.scrollBehavior = previousScrollBehavior;
       isRestoringSpot.current = false;
+      setIsRestoring(false);
     }
-  }, [hasMore, loadedEvents, nextOffset, tryRestoreSavedSpot]);
+  }, [clearRestorationState, hasMore, loadedEvents, nextOffset]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     void restoreSavedSpot();
   }, [restoreSavedSpot]);
 
   useEffect(() => {
-    if (!hasMore || loadError) return;
+    if (!hasMore || loadError || isRestoring) return;
 
     const target = loadMoreRef.current;
     if (!target) return;
@@ -256,16 +325,14 @@ export function EventsBrowser({
 
     observer.observe(target);
     return () => observer.disconnect();
-  }, [hasMore, loadError, loadMore]);
+  }, [hasMore, loadError, loadMore, isRestoring]);
 
   return (
     <section id="events" className="mx-auto max-w-7xl px-4 pb-20 sm:px-6">
-      {/* Filter bar */}
       <div
         className="sticky z-20 -mx-4 mb-6 border-b border-white/50 bg-white/55 px-4 shadow-[0_16px_40px_rgba(15,17,21,0.08)] backdrop-blur-xl transition-[top] duration-200 ease-out sm:-mx-6 sm:px-6"
         style={{ top: 0 }}
       >
-        {/* Row 1: view toggle + search */}
         <div className="flex items-center gap-3 pt-2">
           <div
             role="tablist"
@@ -320,7 +387,6 @@ export function EventsBrowser({
           </div>
         </div>
 
-        {/* Row 2: category chips */}
         <div
           className="flex flex-wrap items-center gap-1.5 py-2"
           aria-label="Filter events by category"
@@ -355,7 +421,6 @@ export function EventsBrowser({
         </div>
       </div>
 
-      {/* Results count */}
       <div
         id="event-filter-summary"
         className="mb-8 text-sm text-muted"

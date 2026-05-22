@@ -80,12 +80,31 @@ test("event cards link to a detail page and stay accessible", () => {
 
   assert.match(source, /const href = `\/events\/\$\{event\.id\}`/);
   assert.match(source, /href=\{href\}/);
-  assert.match(source, /saveScrollPosition/);
+  assert.match(source, /saveEventFeedReturn/);
   assert.match(source, /data-event-id=\{event\.id\}/);
   assert.match(source, /aria-label=/);
   assert.match(source, /alt=\{flyerAlt\(event\)\}/);
   assert.match(source, /interactive-focus card-hover/);
   assert.doesNotMatch(source, /alt=""/);
+});
+
+test("event back navigation restores from a snapshot before falling back to pagination", () => {
+  const browser = read("src/components/events/EventsBrowser.tsx");
+  const session = read("src/lib/event-feed-session.ts");
+  const scroll = read("src/lib/scroll-restoration.ts");
+
+  assert.match(session, /saveEventFeedSnapshot/);
+  assert.match(session, /getSavedEventFeedSnapshotForRestore/);
+  assert.match(session, /getSavedScrollPosition/);
+  assert.match(session, /sessionStorage/);
+  assert.match(browser, /useLayoutEffect/);
+  assert.match(browser, /saveEventFeedSnapshot/);
+  assert.match(browser, /getSavedEventFeedSnapshotForRestore/);
+  assert.match(browser, /restoreSavedSpot/);
+  assert.match(browser, /root\.style\.scrollBehavior = "auto"/);
+  assert.match(browser, /IntersectionObserver/);
+  assert.match(scroll, /getSavedReturnPath/);
+  assert.match(scroll, /highlanderhub\.returnScroll/);
 });
 
 test("home flyer mosaic tiles expose flyer alt text and keyboard focus", () => {
@@ -187,7 +206,7 @@ test("site exposes crawler and social preview metadata", () => {
   assert.match(eventDetail, /event\.imageUrl/);
   assert.match(eventDetail, /\/events\/\$\{event\.id\}/);
 
-  assert.match(submitPage, /title: "Submit an event — Highlander Hub"/);
+  assert.match(submitPage, /title: "Submit an event · Highlander Hub"/);
   assert.match(submitPage, /description:/);
 
   assert.match(sitemap, /MetadataRoute\.Sitemap/);

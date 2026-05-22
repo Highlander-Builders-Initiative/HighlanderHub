@@ -28,6 +28,12 @@ async function waitForEventTop(page, targetTop) {
   );
 }
 
+async function waitForNoLoadError(page) {
+  await expect(page.getByText("Could not load more events. Try again.")).toHaveCount(
+    0
+  );
+}
+
 async function clickUntilPressed(page, name) {
   const button = page.getByRole("button", { name });
   await expect
@@ -76,6 +82,7 @@ test("event detail returns to the prior scroll position", async ({ page }) => {
 
   await Promise.all([page.waitForURL("**/events"), page.goBack()]);
   await expect(page.getByRole("heading", { name: "Events" })).toBeVisible();
+  await waitForNoLoadError(page);
   await waitForEventsBrowserHydration(page);
   await waitForEventTop(page, firstSavedTop);
 
@@ -97,5 +104,6 @@ test("event detail returns to the prior scroll position", async ({ page }) => {
     page.getByRole("button", { name: /Back/i }).click(),
   ]);
   await expect(page.getByRole("heading", { name: "Events" })).toBeVisible();
+  await waitForNoLoadError(page);
   await waitForEventTop(page, secondSavedTop);
 });
