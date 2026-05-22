@@ -102,6 +102,15 @@ test("event back navigation restores from a snapshot before falling back to pagi
   assert.match(browser, /getSavedEventFeedSnapshotForRestore/);
   assert.match(browser, /restoreSavedSpot/);
   assert.match(browser, /root\.style\.scrollBehavior = "auto"/);
+  assert.match(browser, /returnScroll\.loadedCount/);
+  assert.match(
+    browser,
+    /const limitToFetch = Math\.max\(0, returnScroll\.loadedCount - current\.length\);/
+  );
+  assert.match(
+    browser,
+    /fetch\(\s*`\/api\/events\?offset=\$\{next\}&limit=\$\{limitToFetch\}`\s*\)/
+  );
   assert.match(browser, /IntersectionObserver/);
   assert.match(scroll, /getSavedReturnPath/);
   assert.match(scroll, /highlanderhub\.returnScroll/);
