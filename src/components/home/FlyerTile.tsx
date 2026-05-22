@@ -34,11 +34,19 @@ export function FlyerTile({
   size,
   className = "",
   enterDelayMs = 0,
+  aspectClassName = "aspect-[4/5] md:aspect-auto",
+  decorative = false,
 }: {
   event: CampusEvent;
   size: FlyerTileSize;
   className?: string;
   enterDelayMs?: number;
+  /** Aspect-ratio utilities for the tile. The mosaic lets its grid drive
+   *  height on desktop; the marquee needs a fixed ratio at every breakpoint. */
+  aspectClassName?: string;
+  /** A repeated tile in a looping marquee: kept out of the tab order and the
+   *  accessibility tree so screen readers see each event only once. */
+  decorative?: boolean;
 }) {
   const router = useRouter();
   const [imageBroken, setImageBroken] = useState(false);
@@ -62,9 +70,11 @@ export function FlyerTile({
         });
       }}
       aria-label={`${event.title}, ${relativeDay(event.startsAt)}`}
+      aria-hidden={decorative || undefined}
+      tabIndex={decorative ? -1 : undefined}
       data-event-id={event.id}
       style={{ animationDelay: `${enterDelayMs}ms` }}
-      className={`interactive-focus card-hover group relative block overflow-hidden rounded-xl border border-ink/15 bg-canvas aspect-[4/5] md:aspect-auto animate-scale-in ${className}`}
+      className={`interactive-focus card-hover group relative block overflow-hidden rounded-xl border border-ink/15 bg-canvas ${aspectClassName} animate-scale-in ${className}`}
     >
       {showImage ? (
         <Image
