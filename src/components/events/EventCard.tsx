@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { type MouseEvent, useState } from "react";
+import { memo, type MouseEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { CampusEvent } from "@/types/event";
 import { formatTime, relativeDay } from "@/lib/dates";
@@ -15,20 +15,22 @@ function flyerAlt(event: CampusEvent) {
   return `Flyer for ${event.title}`;
 }
 
+type EventCardProps = {
+  event: CampusEvent;
+  compact?: boolean;
+  loadedCount?: number;
+};
+
 /**
  * A single event rendered as a horizontal row: a hue-coded category rail, an
  * optional portrait flyer thumbnail, and a compact text block. Built to be
  * scanned a dozen at a time, not admired one at a time.
  */
-export function EventCard({
+function EventCardComponent({
   event,
   compact = false,
   loadedCount,
-}: {
-  event: CampusEvent;
-  compact?: boolean;
-  loadedCount?: number;
-}) {
+}: EventCardProps) {
   const router = useRouter();
   const [imageBroken, setImageBroken] = useState(false);
   const showImage = !compact && !!event.imageUrl && !imageBroken;
@@ -129,3 +131,6 @@ export function EventCard({
     </Link>
   );
 }
+
+export const EventCard = memo(EventCardComponent);
+EventCard.displayName = "EventCard";
