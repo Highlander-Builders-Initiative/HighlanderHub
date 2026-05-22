@@ -3,10 +3,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { type MouseEvent, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { CampusEvent } from "@/types/event";
 import { formatTime, relativeDay } from "@/lib/dates";
 import { track } from "@/lib/analytics";
-import { saveScrollPosition } from "@/lib/scroll-restoration";
+import { saveEventFeedReturn } from "@/lib/event-feed-session";
 import { CategoryBadge } from "../ui/CategoryBadge";
 
 export function EventCard({
@@ -18,12 +19,13 @@ export function EventCard({
   compact?: boolean;
   loadedCount?: number;
 }) {
+  const router = useRouter();
   const [imageBroken, setImageBroken] = useState(false);
   const showImage = !compact && !!event.imageUrl && !imageBroken;
   const href = `/events/${event.id}`;
   const surface = compact ? "calendar_card" : "list_card";
   const onOpen = (clickEvent: MouseEvent<HTMLAnchorElement>) => {
-    saveScrollPosition(href, {
+    saveEventFeedReturn(href, {
       eventId: event.id,
       eventTop: clickEvent.currentTarget.getBoundingClientRect().top,
       loadedCount,
@@ -36,12 +38,20 @@ export function EventCard({
       <ImageCard
         event={event}
         href={href}
+        onPrefetch={() => router.prefetch(href)}
         onImageError={() => setImageBroken(true)}
         onOpen={onOpen}
       />
     );
   }
-  return <TextCard event={event} href={href} onOpen={onOpen} />;
+  return (
+    <TextCard
+      event={event}
+      href={href}
+      onPrefetch={() => router.prefetch(href)}
+      onOpen={onOpen}
+    />
+  );
 }
 
 function flyerAlt(event: CampusEvent) {
@@ -51,11 +61,13 @@ function flyerAlt(event: CampusEvent) {
 function ImageCard({
   event,
   href,
+  onPrefetch,
   onImageError,
   onOpen,
 }: {
   event: CampusEvent;
   href: string;
+  onPrefetch: () => void;
   onImageError: () => void;
   onOpen: (event: MouseEvent<HTMLAnchorElement>) => void;
 }) {
@@ -63,6 +75,8 @@ function ImageCard({
     <Link
       href={href}
       onClick={onOpen}
+      onMouseEnter={onPrefetch}
+      onFocus={onPrefetch}
       aria-label={`${event.title}, ${relativeDay(event.startsAt)} at ${formatTime(event.startsAt)}`}
       data-event-id={event.id}
       className="interactive-focus card-hover group relative block w-full overflow-hidden rounded-xl border border-ink/15 bg-canvas aspect-[4/5]"
@@ -104,16 +118,20 @@ function ImageCard({
 function TextCard({
   event,
   href,
+  onPrefetch,
   onOpen,
 }: {
   event: CampusEvent;
   href: string;
+  onPrefetch: () => void;
   onOpen: (event: MouseEvent<HTMLAnchorElement>) => void;
 }) {
   return (
     <Link
       href={href}
       onClick={onOpen}
+      onMouseEnter={onPrefetch}
+      onFocus={onPrefetch}
       aria-label={`${event.title}, ${relativeDay(event.startsAt)} at ${formatTime(event.startsAt)}`}
       data-event-id={event.id}
       className="interactive-focus card-hover group relative flex h-full w-full min-w-0 overflow-hidden rounded-xl border border-ink/15 bg-canvas"
