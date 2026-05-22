@@ -48,6 +48,15 @@ type EventsApiPage = {
   nextOffset: number;
 };
 
+function buildEventSearchText(event: CampusEvent) {
+  // Cache the lowercase search blob once per loaded batch so typing only does
+  // substring checks instead of rebuilding the same long strings on every
+  // keystroke.
+  return [event.title, event.description, event.host, event.location, ...event.tags]
+    .join(" ")
+    .toLowerCase();
+}
+
 function currentPath() {
   return `${window.location.pathname}${window.location.search}`;
 }
@@ -131,6 +140,7 @@ export function EventsBrowser({
   const returnScrollTarget = useRef<ReturnType<typeof getSavedScrollPosition>>(null);
   const isRestoringSpot = useRef(false);
   const trimmedQuery = query.trim();
+  const normalizedQuery = trimmedQuery.toLowerCase();
   const hasActiveFilters = category !== "all" || trimmedQuery.length > 0;
 
   useEffect(() => {
@@ -165,8 +175,13 @@ export function EventsBrowser({
     returnScrollTarget.current = null;
   }, []);
 
+  const eventSearchText = useMemo(
+    () => loadedEvents.map(buildEventSearchText),
+    [loadedEvents]
+  );
+
   const filtered = useMemo(() => {
-    return loadedEvents.filter((ev) => {
+    return loadedEvents.filter((ev, index) => {
       if (category === "free_food") {
         if (ev.category !== "free_food" && !ev.tags.includes("free food")) {
           return false;
@@ -174,22 +189,12 @@ export function EventsBrowser({
       } else if (category !== "all" && ev.category !== category) {
         return false;
       }
-      if (trimmedQuery) {
-        const q = trimmedQuery.toLowerCase();
-        const hay = [
-          ev.title,
-          ev.description,
-          ev.host,
-          ev.location,
-          ...ev.tags,
-        ]
-          .join(" ")
-          .toLowerCase();
-        if (!hay.includes(q)) return false;
+      if (normalizedQuery && !eventSearchText[index].includes(normalizedQuery)) {
+        return false;
       }
       return true;
     });
-  }, [loadedEvents, category, trimmedQuery]);
+  }, [loadedEvents, category, normalizedQuery, eventSearchText]);
 
   const grouped = useMemo(() => groupByDay(filtered), [filtered]);
   const dayKeys = Array.from(grouped.keys());
