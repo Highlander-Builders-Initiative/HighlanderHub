@@ -52,24 +52,38 @@ export function FlyerMarquee({ events }: { events: CampusEvent[] }) {
     measure();
     window.addEventListener("resize", measure);
 
-    let raf = 0;
+    let rafId = 0;
     let last = 0;
+    let stopped = false;
+    let carry = 0;
     const tick = (now: number) => {
+      // Stops a loop left behind by a prior effect run (React StrictMode
+      // mounts the effect twice in development) so only one loop ever runs.
+      if (stopped) return;
       if (last === 0) last = now;
       // Clamp dt so a backgrounded tab does not jump the strip on return.
       const dt = Math.min((now - last) / 1000, 0.05);
       last = now;
       if (!pausedRef.current && !reduceMotion.matches && setWidth > 0) {
-        let next = el.scrollLeft + SPEED_PX_PER_SEC * dt;
-        if (next >= setWidth) next -= setWidth;
-        el.scrollLeft = next;
+        // scrollLeft quantizes to whole pixels, so only ever apply whole-pixel
+        // steps and carry the sub-pixel remainder; otherwise a fractional step
+        // rounds up every frame and the strip runs far faster than intended.
+        const advance = SPEED_PX_PER_SEC * dt + carry;
+        const step = Math.floor(advance);
+        carry = advance - step;
+        if (step > 0) {
+          let next = el.scrollLeft + step;
+          if (next >= setWidth) next -= setWidth;
+          el.scrollLeft = next;
+        }
       }
-      raf = requestAnimationFrame(tick);
+      rafId = requestAnimationFrame(tick);
     };
-    raf = requestAnimationFrame(tick);
+    rafId = requestAnimationFrame(tick);
 
     return () => {
-      cancelAnimationFrame(raf);
+      stopped = true;
+      cancelAnimationFrame(rafId);
       window.removeEventListener("resize", measure);
     };
   }, [baseCount]);

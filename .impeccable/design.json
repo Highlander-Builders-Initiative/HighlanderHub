@@ -304,6 +304,20 @@
       "description": "The preferred separator. 1px ink-tinted line.",
       "html": "<div class=\"ds-hairline\" aria-hidden=\"true\"></div>",
       "css": ".ds-hairline { height: 1px; width: 100%; background: #0f1115; opacity: 0.08; }"
+    },
+    {
+      "name": "Flyer Marquee",
+      "kind": "custom",
+      "description": "Continuously scrolling, full-bleed strip of upcoming event flyers. Pauses scroll on hover/focus.",
+      "html": "<div class=\"ds-flyer-marquee\"><div class=\"ds-flyer-track\"><a class=\"ds-event-image\" href=\"#\"><div class=\"ds-event-image-bg\"></div><div class=\"ds-event-image-gradient\"></div><div class=\"ds-event-image-content\"><p class=\"ds-event-image-meta\">Fri 5/24 · 7:00 PM</p><p class=\"ds-event-image-title\">Spring Showcase Banquet</p></div></a><a class=\"ds-event-image\" href=\"#\"><div class=\"ds-event-image-bg\" style=\"background: linear-gradient(135deg, #2f9e6f 0%, #3b82f6 100%)\"></div><div class=\"ds-event-image-gradient\"></div><div class=\"ds-event-image-content\"><p class=\"ds-event-image-meta\">Sat 5/25 · 1:00 PM</p><p class=\"ds-event-image-title\">HBI Builder Hackathon</p></div></a></div></div>",
+      "css": ".ds-flyer-marquee { display: flex; overflow: hidden; width: 100%; position: relative; } .ds-flyer-track { display: flex; gap: 12px; padding: 12px 0; } .ds-event-image { position: relative; display: block; width: 200px; aspect-ratio: 4/5; overflow: hidden; border-radius: 12px; border: 1px solid rgba(15, 17, 21, 0.15); text-decoration: none; } .ds-event-image-bg { position: absolute; inset: 0; background: linear-gradient(135deg, #ef5d4f 0%, #f5b400 100%); } .ds-event-image-gradient { position: absolute; inset: 0; background: linear-gradient(to top, rgba(15, 17, 21, 0.9) 0%, rgba(15, 17, 21, 0.4) 50%, transparent 100%); } .ds-event-image-content { position: absolute; left: 0; right: 0; bottom: 0; padding: 12px; } .ds-event-image-meta { margin: 0; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: rgba(255, 255, 255, 0.8); text-transform: uppercase; } .ds-event-image-title { margin: 4px 0 0; font-family: 'Bricolage Grotesque', sans-serif; font-size: 16px; font-weight: 600; color: #ffffff; line-height: 1.2; }"
+    },
+    {
+      "name": "Text Marquee",
+      "kind": "custom",
+      "description": "Announcement/ticker bar below the masthead with a pulsing status dot.",
+      "html": "<div class=\"ds-marquee-bar\"><div class=\"ds-marquee-content\"><span class=\"ds-marquee-dot-wrapper\"><span class=\"ds-marquee-dot-ping\"></span><span class=\"ds-marquee-dot\"></span></span><ul class=\"ds-marquee-list\"><li>Updated daily</li><li class=\"ds-marquee-sep\">·</li><li>Free food alerts</li><li class=\"ds-marquee-sep\">·</li><li>Club nights</li></ul></div></div>",
+      "css": ".ds-marquee-bar { border-bottom: 1px solid rgba(15, 17, 21, 0.1); background: #ffffff; width: 100%; } .ds-marquee-content { display: flex; align-items: center; gap: 16px; padding: 8px 16px; font-family: Inter, sans-serif; font-size: 14px; color: #6b7280; overflow-x: auto; white-space: nowrap; } .ds-marquee-dot-wrapper { position: relative; display: inline-flex; height: 8px; width: 8px; flex-shrink: 0; } .ds-marquee-dot-ping { position: absolute; height: 100%; width: 100%; border-radius: 9999px; background-color: #2f9e6f; opacity: 0.6; animation: ds-ping 1s cubic-bezier(0, 0, 0.2, 1) infinite; } .ds-marquee-dot { position: relative; height: 8px; width: 8px; border-radius: 9999px; background-color: #2f9e6f; } .ds-marquee-list { display: flex; align-items: center; gap: 20px; list-style: none; margin: 0; padding: 0; } .ds-marquee-sep { color: rgba(15, 17, 21, 0.2); } @keyframes ds-ping { 75%, 100% { transform: scale(2); opacity: 0; } }"
     }
   ],
   "narrative": {
@@ -336,7 +350,7 @@
       "Do prefer hairline-bordered surfaces (border-ink/10 to border-ink/15) over background-tinted ones for default cards and rows.",
       "Do ease motion out only (cubic-bezier(0.16, 1, 0.3, 1)). Durations: 180-300ms for state, 700-800ms for entrance.",
       "Do honor prefers-reduced-motion on anything you add.",
-      "Do treat the FlyerMosaic image-card and the text-with-category-rail variant as the two canonical ways to render an event.",
+      "Do treat the FlyerTile image-card and the text-with-category-rail variant as the two canonical ways to render an event.",
       "Do use the .interactive-focus global class on every interactive element.",
       "Do size for a phone first. Touch targets ≥44×44px."
     ],

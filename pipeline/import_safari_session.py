@@ -1,4 +1,6 @@
+# pyrefly: ignore [missing-import]
 import instaloader
+# pyrefly: ignore [missing-import]
 import browser_cookie3
 from pathlib import Path
 
