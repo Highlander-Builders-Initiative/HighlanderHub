@@ -452,7 +452,7 @@ export function EventsBrowser({
 
       <div
         id="event-filter-summary"
-        className="mb-8 text-sm text-muted"
+        className="mx-auto mb-6 max-w-2xl text-sm text-muted"
         aria-live="polite"
         aria-atomic="true"
       >
@@ -462,7 +462,7 @@ export function EventsBrowser({
       {view === "calendar" ? (
         <CalendarView events={filtered} />
       ) : (
-        <>
+        <div className="mx-auto max-w-2xl">
           {dayKeys.length === 0 && (
             <div className="rounded-xl border border-dashed border-ink/15 px-6 py-20 text-center">
               <p className="font-display text-xl text-ink mb-1">No matches.</p>
@@ -486,8 +486,8 @@ export function EventsBrowser({
           {dayKeys.map((day) => {
             const dayEvents = grouped.get(day)!;
             return (
-              <div key={day} className="mb-14">
-                <div className="mb-5 flex items-baseline justify-between gap-4 border-b border-ink/10 pb-3">
+              <div key={day} className="mb-12">
+                <div className="mb-4 flex items-baseline justify-between gap-4 border-b border-ink/10 pb-3">
                   <h3 className="font-display text-2xl font-semibold tracking-[-0.02em] text-ink">
                     {formatPacificDayKey(day)}
                   </h3>
@@ -496,7 +496,7 @@ export function EventsBrowser({
                     {dayEvents.length === 1 ? "event" : "events"}
                   </span>
                 </div>
-                <div className="grid items-start gap-3 md:grid-cols-2 md:gap-4 lg:grid-cols-3">
+                <div className="flex flex-col gap-2.5">
                   {dayEvents.map((ev) => (
                     <EventCard
                       key={ev.id}
@@ -535,7 +535,7 @@ export function EventsBrowser({
               )}
             </div>
           )}
-        </>
+        </div>
       )}
     </section>
   );
