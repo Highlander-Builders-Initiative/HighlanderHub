@@ -266,6 +266,22 @@ Underlined-bottom-of-active pattern (defined in `globals.css` via `.tab`). Activ
 
 A 1px ink-tinted divider (`.hairline` in `globals.css`). The system's preferred separator. Use this instead of `<hr>`, instead of empty card containers, instead of background-shift divisions.
 
+### Flyer Marquee (signature)
+
+A continuously scrolling, full-bleed strip of upcoming event flyers representing the physical campus bulletin wall, alive.
+- **Scroll Track:** Continuous flex row of `FlyerTile` components (`gap-3 py-3`).
+- **Velocity:** Gentle, automated horizontal crawl (32px per second, `SPEED_PX_PER_SEC`), implemented via a requestAnimationFrame loop with sub-pixel carry to avoid jumping.
+- **Micro-interactions:** Auto-scrolling pauses instantly on pointer enter/focus capture and resumes on pointer leave/blur capture.
+- **Accessibility:** Repeated decorative clone cards are kept out of the focus order (`tabIndex={-1}`) and hidden from screen readers (`aria-hidden="true"`) to prevent double-announcement.
+- **Reduced Motion:** If `prefers-reduced-motion: reduce` is active, the automated scrolling loop is entirely disabled and it remains a standard manual touch/swipe scroller.
+
+### Marquee (utility)
+
+A clean horizontal message ticker used as an active separator or alert bar below the masthead.
+- **Container:** Standard canvas background with a hairline bottom border (`border-b border-ink/10 py-2`).
+- **Notification Dot:** A pulsing green leaf-colored dot (`bg-leaf`) using `animate-ping` to signal fresh content.
+- **List items:** A horizontal flex track of key announcements separated by subtle neutral middle dots (`·`).
+
 ## 6. Do's and Don'ts
 
 ### Do:
@@ -277,7 +293,7 @@ A 1px ink-tinted divider (`.hairline` in `globals.css`). The system's preferred 
 - **Do** prefer hairline-bordered surfaces (`border-ink/10` to `border-ink/15`) over background-tinted ones for default cards and rows.
 - **Do** ease motion out only (`cubic-bezier(0.16, 1, 0.3, 1)`). Durations: 180–300ms for state, 700–800ms for entrance. Always.
 - **Do** honor `prefers-reduced-motion` on anything you add. The root `globals.css` already cancels animation duration globally; do not opt back in.
-- **Do** treat the FlyerMosaic image-card and the text-with-category-rail variant as **the two canonical ways** to render an event. New event surfaces should use one of these two.
+- **Do** treat the FlyerTile image-card and the text-with-category-rail variant as **the two canonical ways** to render an event. New event surfaces should use one of these two.
 - **Do** use the `.interactive-focus` global class on every interactive element. Focus is non-negotiable; this is the WCAG AA commitment from PRODUCT.md made concrete.
 - **Do** size for a phone first. Layouts target mobile breakpoints first, then expand. Touch targets ≥44×44px.
 
