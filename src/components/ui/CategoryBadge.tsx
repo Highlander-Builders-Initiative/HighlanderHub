@@ -28,7 +28,7 @@ export function CategoryBadge({
       : style.cls;
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium tracking-[0.01em] ${cls}`}
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[12px] font-medium tracking-[0.01em] ${cls}`}
     >
       {style.label}
     </span>

@@ -99,7 +99,7 @@ function EventCardComponent({
           </span>
           <CategoryBadge category={event.category} />
           {event.isFree && (
-            <span className="inline-flex items-center rounded-full bg-leaf/10 px-2 py-0.5 text-[11px] font-medium text-[#1f6f4e]">
+            <span className="inline-flex items-center rounded-full bg-leaf/10 px-2 py-0.5 text-[12px] font-medium text-[#1f6f4e]">
               Free
             </span>
           )}

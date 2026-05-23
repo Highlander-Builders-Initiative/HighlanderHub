@@ -123,12 +123,12 @@ export default async function EventDetailPage({
           <div className="flex flex-wrap items-center gap-2">
             <CategoryBadge category={event.category} />
             {event.isFree && (
-              <span className="inline-flex items-center rounded-full bg-leaf/10 px-2.5 py-0.5 text-[11px] font-medium text-[#1f6f4e]">
+              <span className="inline-flex items-center rounded-full bg-leaf/10 px-2.5 py-0.5 text-[12px] font-medium text-[#1f6f4e]">
                 Free
               </span>
             )}
             {event.rsvpRequired && (
-              <span className="inline-flex items-center rounded-full border border-ink/15 px-2.5 py-0.5 text-[11px] font-medium text-muted">
+              <span className="inline-flex items-center rounded-full border border-ink/15 px-2.5 py-0.5 text-[12px] font-medium text-muted">
                 RSVP req.
               </span>
             )}

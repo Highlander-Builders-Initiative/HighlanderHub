@@ -38,7 +38,7 @@ export default async function HomePage() {
             className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 animate-fade-up"
             style={{ animationDelay: "0ms" }}
           >
-            <p className="font-mono text-[11px] tracking-[0.04em] text-muted">
+            <p className="font-mono text-[12px] tracking-[0.04em] text-muted">
               {dateLabel}
               {weekLabel ? ` · ${weekLabel}` : ""}
             </p>
