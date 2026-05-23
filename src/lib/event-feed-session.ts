@@ -168,6 +168,11 @@ export function getSavedEventFeedSnapshot() {
   return readSnapshot();
 }
 
+/**
+ * Feed snapshot for mount-time restore when returning from an event detail page.
+ * Requires return-scroll metadata on the current path; scroll-only restores use
+ * `getSavedScrollPosition()` instead.
+ */
 export function getSavedEventFeedSnapshotForRestore() {
   if (typeof window === "undefined") return null;
 

@@ -45,13 +45,7 @@ test("restoreEventsUntilTarget batches to the saved loaded count, then falls bac
     [event("event-1"), event("event-2")],
     2,
     true,
-    {
-      path: "/events",
-      scrollY: 100,
-      detailPath: "/events/target",
-      eventId: "target",
-      loadedCount: 4,
-    },
+    { eventId: "target", loadedCount: 4 },
     async (offset, limit) => {
       calls.push({ offset, limit });
       const page = pages.shift();
