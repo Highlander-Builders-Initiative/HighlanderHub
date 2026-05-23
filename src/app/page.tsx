@@ -67,37 +67,42 @@ export default async function HomePage() {
           </div>
 
           <h1
-            className="mt-8 max-w-[15ch] font-display text-[38px] font-semibold leading-[1.03] tracking-[-0.035em] text-ink animate-fade-up sm:text-[56px] md:mt-10 md:text-[64px] lg:text-[72px]"
+            className="mt-8 max-w-[15ch] font-display text-[44px] font-semibold leading-[1.03] tracking-[-0.035em] text-ink animate-fade-up sm:text-[56px] md:mt-10 md:text-[64px] lg:text-[72px]"
             style={{ animationDelay: "80ms" }}
           >
             Every UCR event,
             <span className="block text-muted">one page.</span>
           </h1>
 
-          <div
-            className="mt-7 flex flex-col gap-6 animate-fade-up md:mt-9 md:flex-row md:items-end md:justify-between"
+          <p
+            className="mt-7 max-w-md text-base leading-relaxed text-ink/75 animate-fade-up md:mt-9 md:text-lg"
             style={{ animationDelay: "180ms" }}
           >
-            <p className="max-w-md text-base leading-relaxed text-ink/75 md:text-lg">
-              <HeroHighlightCopy />
-            </p>
+            <HeroHighlightCopy />
+          </p>
 
+          <div
+            className="mt-6 animate-fade-up md:mt-8"
+            style={{ animationDelay: "260ms" }}
+          >
             <Link
               href="/events"
-              className="interactive-focus group inline-flex min-h-12 items-center gap-2 self-start rounded-lg bg-ink px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-85"
+              className="interactive-focus group inline-flex items-baseline gap-2 text-base font-medium text-ink"
             >
-              Browse events
+              <span className="underline underline-offset-[6px] decoration-ink/30 transition-colors duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:decoration-ink">
+                Browse events
+              </span>
               <svg
                 aria-hidden
-                viewBox="0 0 20 20"
+                viewBox="0 0 16 16"
                 fill="none"
                 stroke="currentColor"
-                strokeWidth="2"
+                strokeWidth="1.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5"
+                className="h-3.5 w-3.5 translate-y-px transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-0.5"
               >
-                <path d="M4 10h12M11 5l5 5-5 5" />
+                <path d="M3 8h10M9 4l4 4-4 4" />
               </svg>
             </Link>
           </div>
@@ -114,6 +119,25 @@ export default async function HomePage() {
             Now on the wall
           </p>
           <FlyerMarquee events={events} />
+        </div>
+      </section>
+
+      {/* Note from the editors: a short, honest colophon that says where the
+          listings come from. Sits between the bulletin wall and the footer so
+          the page has one more edited beat before it closes. */}
+      <section aria-labelledby="editors-note">
+        <div className="mx-auto grid max-w-7xl gap-6 px-4 py-16 sm:px-6 md:grid-cols-12 md:gap-10 md:py-24">
+          <p
+            id="editors-note"
+            className="text-[13px] text-muted md:col-span-3"
+          >
+            Note from the editors
+          </p>
+          <p className="text-[18px] leading-[1.5] text-ink sm:text-[20px] md:col-span-8 md:col-start-5 md:text-[22px]">
+            We pull listings from where clubs already post: Instagram,
+            events.ucr.edu, and HighlanderLink. One page instead of forty
+            accounts to follow.
+          </p>
         </div>
       </section>
 
