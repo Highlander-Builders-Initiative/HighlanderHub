@@ -5,6 +5,7 @@ import {
   pacificTodayKey,
   pacificWeekdayIndex,
 } from "@/lib/dates";
+import type { DayWindow } from "@/types/events-feed";
 
 export type CategoryValue = EventCategory | "all";
 
@@ -20,14 +21,7 @@ export const CATEGORIES: { value: CategoryValue; label: string }[] = [
   { value: "free_food", label: "Free Food" },
 ];
 
-export type { DayWindow } from "@/types/events-feed";
-
-export const DAY_WINDOWS: { value: DayWindow; label: string }[] = [
-  { value: "all", label: "Anytime" },
-  { value: "today", label: "Today" },
-  { value: "week", label: "This week" },
-  { value: "weekend", label: "Weekend" },
-];
+export { DAY_WINDOWS, type DayWindow } from "@/types/events-feed";
 
 export function matchesCategory(
   ev: CampusEvent,
