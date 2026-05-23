@@ -362,6 +362,7 @@ test("site exposes crawler and social preview metadata", () => {
 
   assert.match(submitPage, /title: "Submit an event · Highlander Hub"/);
   assert.match(submitPage, /description:/);
+  assert.match(submitPage, /SubmitBackButton/);
 
   assert.match(sitemap, /MetadataRoute\.Sitemap/);
   assert.match(sitemap, /\/events/);
