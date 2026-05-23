@@ -21,14 +21,17 @@ test("event browser paginates the list instead of rendering every event at once"
 
 test("events page header uses full upcoming event totals", () => {
   const page = read("src/app/events/page.tsx");
+  const browser = read("src/components/events/EventsBrowser.tsx");
   const data = read("src/lib/events.ts");
 
   assert.match(data, /getEventsSummary/);
   assert.match(data, /head: true/);
   assert.match(data, /count:/);
-  assert.match(page, /summary\.total/);
-  assert.match(page, /summary\.upcomingThisWeek/);
-  assert.match(page, /summary\.freeFood/);
+  assert.match(page, /getEventsSummary/);
+  assert.match(page, /summary=\{summary\}/);
+  assert.match(browser, /summary\.total/);
+  assert.match(browser, /summary\.upcomingThisWeek/);
+  assert.match(browser, /summary\.freeFood/);
   assert.doesNotMatch(page, /events\.length/);
 });
 
@@ -148,7 +151,7 @@ test("masthead keeps navigation reachable on mobile", () => {
   assert.match(source, /position = "sticky"/);
   assert.match(source, /position === "sticky"/);
   assert.match(source, /variant = "glass"/);
-  assert.match(eventsPage, /<Masthead position="static" variant="solid" \/>/);
+  assert.match(eventsPage, /<Masthead position="static" variant="solid" hideNavOnDesktop \/>/);
   assert.doesNotMatch(eventsPage, /hideOnScroll/);
   assert.match(eventsBrowser, /style=\{\{ top: 0 \}\}/);
   assert.match(eventsBrowser, /bg-white\/55/);
