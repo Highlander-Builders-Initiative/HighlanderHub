@@ -3,10 +3,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 export type UploadStatus =
   | { kind: "idle" }
   | { kind: "uploading" }
-  | { kind: "uploaded"; url: string }
+  | { kind: "uploaded"; url: string; path: string; cleanupToken: string }
   | { kind: "error"; message: string };
 
-const FLYER_BUCKET = "submission-flyers";
+export const SUBMISSION_FLYER_BUCKET = "submission-flyers";
 const FLYER_MAX_BYTES = 5 * 1024 * 1024;
 const FLYER_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const FLYER_EXT_BY_TYPE: Record<string, string> = {
@@ -22,6 +22,19 @@ export type FlyerUploadResult =
       status: Extract<UploadStatus, { kind: "error" }>;
       trackMessage?: string;
     };
+
+export type FlyerDeleteResult =
+  | { ok: true }
+  | { ok: false; message: string };
+
+async function sha256Hex(value: string): Promise<string> {
+  const bytes = new TextEncoder().encode(value);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+
+  return Array.from(new Uint8Array(digest), (byte) =>
+    byte.toString(16).padStart(2, "0")
+  ).join("");
+}
 
 export async function uploadSubmissionFlyer(
   supabase: SupabaseClient,
@@ -43,10 +56,13 @@ export async function uploadSubmissionFlyer(
 
   const ext = FLYER_EXT_BY_TYPE[file.type] ?? "jpg";
   const path = `${crypto.randomUUID()}.${ext}`;
+  const cleanupToken = crypto.randomUUID();
+  const cleanupTokenHash = await sha256Hex(cleanupToken);
   const { data, error } = await supabase.storage
-    .from(FLYER_BUCKET)
+    .from(SUBMISSION_FLYER_BUCKET)
     .upload(path, file, {
       contentType: file.type,
+      metadata: { cleanup_token_sha256: cleanupTokenHash },
       upsert: false,
     });
 
@@ -62,11 +78,45 @@ export async function uploadSubmissionFlyer(
   }
 
   const { data: publicData } = supabase.storage
-    .from(FLYER_BUCKET)
+    .from(SUBMISSION_FLYER_BUCKET)
     .getPublicUrl(data.path);
 
   return {
     ok: true,
-    status: { kind: "uploaded", url: publicData.publicUrl },
+    status: {
+      kind: "uploaded",
+      url: publicData.publicUrl,
+      path: data.path,
+      cleanupToken,
+    },
   };
+}
+
+export async function deleteSubmissionFlyer({
+  path,
+  cleanupToken,
+}: Extract<UploadStatus, { kind: "uploaded" }>): Promise<FlyerDeleteResult> {
+  try {
+    const response = await fetch("/api/submission-flyers/delete", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ path, cleanupToken }),
+    });
+
+    if (response.ok) return { ok: true };
+
+    const body = (await response.json().catch(() => null)) as {
+      error?: string;
+    } | null;
+
+    return {
+      ok: false,
+      message: body?.error ?? `delete failed with ${response.status}`,
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      message: error instanceof Error ? error.message : "unknown",
+    };
+  }
 }

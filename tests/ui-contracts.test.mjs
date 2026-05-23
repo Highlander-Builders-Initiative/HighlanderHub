@@ -264,6 +264,7 @@ test("submit form validation and upload helpers live in focused modules", () => 
   const flyer = read("src/lib/submission-flyer.ts");
   const upload = read("src/components/forms/submit/use-flyer-upload.ts");
   const picker = read("src/components/forms/submit/FlyerUpload.tsx");
+  const deleteRoute = read("src/app/api/submission-flyers/delete/route.ts");
 
   assert.match(validation, /validateSubmissionFields/);
   assert.match(validation, /buildSubmissionRow/);
@@ -272,8 +273,15 @@ test("submit form validation and upload helpers live in focused modules", () => 
   assert.match(datetime, /pacificTodayKey/);
   assert.match(flyer, /uploadSubmissionFlyer/);
   assert.match(flyer, /submission-flyers/);
+  assert.match(flyer, /cleanupToken/);
+  assert.match(flyer, /deleteSubmissionFlyer/);
   assert.match(upload, /useFlyerUpload/);
   assert.match(upload, /flyer_uploaded/);
+  assert.match(upload, /flyer_delete_error/);
+  assert.match(deleteRoute, /SUPABASE_SERVICE_ROLE_KEY/);
+  assert.match(deleteRoute, /SUPABASE_SERVICE_KEY/);
+  assert.match(deleteRoute, /bucket\.info\(body\.path\)/);
+  assert.match(deleteRoute, /bucket\.remove\(\[body\.path\]\)/);
   assert.match(picker, /FlyerUploadedTile/);
   assert.match(picker, /or paste a URL/);
   assert.doesNotMatch(picker, /bg-stone-950/);
