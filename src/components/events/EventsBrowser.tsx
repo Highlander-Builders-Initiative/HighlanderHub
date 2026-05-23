@@ -4,6 +4,7 @@ import {
   useState,
   useMemo,
   useEffect,
+  useLayoutEffect,
   useRef,
   useCallback,
 } from "react";
@@ -23,6 +24,7 @@ import {
 import { track } from "@/lib/analytics";
 import { saveEventFeedSnapshot } from "@/lib/events/feed-session";
 import { fetchEventsPage } from "@/lib/events/api";
+import { calendarJumpEndsAtLoadedBoundary } from "@/lib/events/calendar-feed-pagination";
 import { mergeUniqueEventsByStart } from "@/lib/events/merge";
 import {
   type CategoryValue,
@@ -94,7 +96,14 @@ export function EventsBrowser({
 
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const dayHeaderRefs = useRef<Map<string, HTMLElement>>(new Map());
+  const daySectionRefs = useRef<Map<string, HTMLElement>>(new Map());
   const userInitiatedScrollRef = useRef(0);
+  const pendingCalendarScrollRef = useRef<string | null>(null);
+  const calendarJumpSuppressUntilRef = useRef(0);
+  const pendingLoadAnchorRef = useRef<{
+    dayKey: string;
+    top: number;
+  } | null>(null);
 
   useEffect(() => {
     setLoadedEvents(events);
@@ -254,36 +263,83 @@ export function EventsBrowser({
     setQuery("");
   }, []);
 
-  const scrollToDay = useCallback((dayKey: string) => {
-    const el = dayHeaderRefs.current.get(dayKey);
-    if (el) {
-      userInitiatedScrollRef.current = Date.now();
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  }, []);
-
-  const handleCalendarSelect = useCallback((dayKey: string) => {
-    setCalendarCursor(startOfPacificMonthKey(dayKey));
-    const eventsForDay = calendarEvents.filter(
-      (event) => pacificDayKey(event.startsAt) === dayKey
-    );
-    if (eventsForDay.length > 0) {
-      setLoadedEvents((current) =>
-        mergeUniqueEventsByStart(current, eventsForDay)
-      );
-      window.requestAnimationFrame(() => scrollToDay(dayKey));
-    } else {
-      scrollToDay(dayKey);
-    }
-    track("events_calendar_jump", { day: dayKey });
-  }, [calendarEvents, scrollToDay]);
-
   const { observedDayKey, setObservedDayKey } = useObservedDayKey({
     dayHeaderRefs,
+    daySectionRefs,
     dayKeys,
     userInitiatedScrollRef,
     initialDayKey: todayKey,
   });
+
+  const handleCalendarSelect = useCallback(
+    (dayKey: string) => {
+      pendingCalendarScrollRef.current = dayKey;
+      calendarJumpSuppressUntilRef.current = Date.now() + 1200;
+      setObservedDayKey(dayKey);
+      setCalendarCursor(startOfPacificMonthKey(dayKey));
+
+      const lastLoadedDay = dayKeys.at(-1) ?? "";
+      const eventsToMerge =
+        dayKey > lastLoadedDay
+          ? calendarEvents.filter((event) => {
+              const key = pacificDayKey(event.startsAt);
+              return key > lastLoadedDay && key <= dayKey;
+            })
+          : calendarEvents.filter(
+              (event) => pacificDayKey(event.startsAt) === dayKey
+            );
+
+      if (eventsToMerge.length > 0) {
+        setLoadedEvents((current) =>
+          mergeUniqueEventsByStart(current, eventsToMerge)
+        );
+      }
+
+      track("events_calendar_jump", { day: dayKey });
+    },
+    [calendarEvents, setObservedDayKey, dayKeys]
+  );
+
+  useLayoutEffect(() => {
+    const pending = pendingCalendarScrollRef.current;
+    if (!pending) return;
+
+    const el = dayHeaderRefs.current.get(pending);
+    if (!el) {
+      if (!dayKeys.includes(pending)) {
+        pendingCalendarScrollRef.current = null;
+      }
+      return;
+    }
+
+    userInitiatedScrollRef.current = Date.now();
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+
+    const dayKey = pending;
+    const timeoutId = window.setTimeout(() => {
+      if (pendingCalendarScrollRef.current === dayKey) {
+        pendingCalendarScrollRef.current = null;
+      }
+    }, 1200);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [loadedEvents, dayKeys, isLoadingMore]);
+
+  useLayoutEffect(() => {
+    const anchor = pendingLoadAnchorRef.current;
+    if (!anchor) return;
+    pendingLoadAnchorRef.current = null;
+
+    const el = dayHeaderRefs.current.get(anchor.dayKey);
+    if (!el) return;
+
+    const delta = el.getBoundingClientRect().top - anchor.top;
+    if (Math.abs(delta) < 1) return;
+
+    userInitiatedScrollRef.current = Date.now();
+    const root = document.scrollingElement ?? document.documentElement;
+    root.scrollTop += delta;
+  }, [loadedEvents]);
 
   useEffect(() => {
     setCalendarCursor((prev) => {
@@ -292,14 +348,37 @@ export function EventsBrowser({
     });
   }, [observedDayKey]);
 
+  const hideLoadMoreHint = useMemo(
+    () =>
+      calendarJumpEndsAtLoadedBoundary(
+        loadedEvents,
+        calendarEvents,
+        observedDayKey
+      ),
+    [loadedEvents, calendarEvents, observedDayKey]
+  );
+
   const loadMore = useCallback(async () => {
     if (isRestoring || isLoadingMore || !hasMore) return;
+    if (
+      pendingCalendarScrollRef.current ||
+      Date.now() < calendarJumpSuppressUntilRef.current
+    ) {
+      return;
+    }
 
     setIsLoadingMore(true);
     setLoadError("");
 
     try {
       const page = await fetchEventsPage(nextOffset);
+      const anchorEl = dayHeaderRefs.current.get(observedDayKey);
+      if (anchorEl) {
+        pendingLoadAnchorRef.current = {
+          dayKey: observedDayKey,
+          top: anchorEl.getBoundingClientRect().top,
+        };
+      }
 
       setLoadedEvents((current) => {
         return mergeUniqueEventsByStart(current, page.events);
@@ -311,7 +390,7 @@ export function EventsBrowser({
     } finally {
       setIsLoadingMore(false);
     }
-  }, [hasMore, isLoadingMore, nextOffset, isRestoring]);
+  }, [hasMore, isLoadingMore, nextOffset, observedDayKey, isRestoring]);
 
   useInfiniteEventFeedLoader({
     loadMoreRef,
@@ -320,6 +399,8 @@ export function EventsBrowser({
     isLoadingMore,
     isRestoring,
     onLoadMore: loadMore,
+    suppressAutoLoadUntilRef: calendarJumpSuppressUntilRef,
+    pendingCalendarScrollRef,
   });
 
   const openMobileFilters = useCallback(() => {
@@ -342,6 +423,7 @@ export function EventsBrowser({
 
         <EventsFeedColumn
           summary={summary}
+          upcomingTotal={filterCountSource.length}
           query={query}
           onQueryChange={setQuery}
           onOpenMobileFilters={openMobileFilters}
@@ -360,10 +442,12 @@ export function EventsBrowser({
           loadedCount={loadedEvents.length}
           loadMoreRef={loadMoreRef}
           hasMore={hasMore}
+          hideLoadMoreHint={hideLoadMoreHint}
           loadError={loadError}
           isLoadingMore={isLoadingMore}
           onLoadMore={loadMore}
           dayHeaderRefs={dayHeaderRefs}
+          daySectionRefs={daySectionRefs}
         />
 
         <aside
@@ -397,7 +481,6 @@ export function EventsBrowser({
         todayKey={todayKey}
         selectedKey={observedDayKey}
         onSelect={(dayKey) => {
-          setObservedDayKey(dayKey);
           handleCalendarSelect(dayKey);
           setMobileSheetOpen(false);
         }}

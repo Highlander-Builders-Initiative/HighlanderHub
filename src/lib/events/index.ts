@@ -212,7 +212,9 @@ export async function getEventsPage({
           .from("events")
           .select("*")
           .or(activeEventFilter(nowIso))
+          // starts_at is not unique; id keeps offset pages from overlapping.
           .order("starts_at", { ascending: true })
+          .order("id", { ascending: true })
           .range(from, to)
       );
 
@@ -249,6 +251,7 @@ export async function getEventFilterCountSource(): Promise<
           .select("id,title,description,starts_at,location,host,category,tags")
           .or(activeEventFilter(nowIso))
           .order("starts_at", { ascending: true })
+          .order("id", { ascending: true })
       );
 
       return (data as EventRow[]).map(toEventFilterCountSource);
@@ -284,6 +287,7 @@ export async function getCalendarEvents({
           .gte("starts_at", startIso)
           .lt("starts_at", endIso)
           .order("starts_at", { ascending: true })
+          .order("id", { ascending: true })
           .limit(Math.max(1, Math.min(limit, EVENTS_CALENDAR_RANGE_LIMIT)))
       );
 
