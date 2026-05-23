@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
+import { Bricolage_Grotesque, IBM_Plex_Mono } from "next/font/google";
 import {
   SITE_DESCRIPTION,
   SITE_NAME,
@@ -8,6 +9,19 @@ import {
   SITE_URL,
 } from "@/lib/seo";
 import "./globals.css";
+
+const bricolage = Bricolage_Grotesque({
+  subsets: ["latin"],
+  variable: "--font-bricolage",
+  display: "swap",
+});
+
+const ibmPlexMono = IBM_Plex_Mono({
+  weight: ["400", "500"],
+  subsets: ["latin"],
+  variable: "--font-mono",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -51,7 +65,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${bricolage.variable} ${ibmPlexMono.variable}`}>
       <body>
         {children}
         <Analytics />
@@ -59,3 +73,4 @@ export default function RootLayout({
     </html>
   );
 }
+
