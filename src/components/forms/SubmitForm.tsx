@@ -88,6 +88,7 @@ export default function SubmitForm() {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [isImageUrlOpen, setIsImageUrlOpen] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>({ kind: "idle" });
+  const [isRsvpRequired, setIsRsvpRequired] = useState(false);
   const startedRef = useRef(false);
 
   useEffect(() => {
@@ -97,6 +98,10 @@ export default function SubmitForm() {
   useEffect(() => {
     if (fieldErrors.image_url) setIsImageUrlOpen(true);
   }, [fieldErrors.image_url]);
+
+  useEffect(() => {
+    if (fieldErrors.rsvp_url) setIsRsvpRequired(true);
+  }, [fieldErrors.rsvp_url]);
 
   function onFirstInteract() {
     if (startedRef.current) return;
@@ -333,14 +338,23 @@ export default function SubmitForm() {
         />
         <div className="flex gap-6">
           <Checkbox label="Free to attend" name="is_free" defaultChecked />
-          <Checkbox label="RSVP required" name="rsvp_required" />
+          <Checkbox
+            label="RSVP required"
+            name="rsvp_required"
+            onChange={setIsRsvpRequired}
+          />
         </div>
-        <Field
-          label="RSVP / ticket URL (if required)"
-          name="rsvp_url"
-          type="url"
-          error={fieldErrors.rsvp_url}
-        />
+        {isRsvpRequired && (
+          <div className="animate-field-reveal">
+            <Field
+              label="RSVP / ticket URL"
+              name="rsvp_url"
+              type="url"
+              required
+              error={fieldErrors.rsvp_url}
+            />
+          </div>
+        )}
       </FormSection>
 
       <FormSection eyebrow="you">
@@ -657,10 +671,12 @@ function Checkbox({
   label,
   name,
   defaultChecked = false,
+  onChange,
 }: {
   label: string;
   name: string;
   defaultChecked?: boolean;
+  onChange?: (checked: boolean) => void;
 }) {
   return (
     <label className="flex items-center gap-2 text-sm text-ink/80">
@@ -668,6 +684,7 @@ function Checkbox({
         type="checkbox"
         name={name}
         defaultChecked={defaultChecked}
+        onChange={onChange ? (e) => onChange(e.target.checked) : undefined}
         className="interactive-focus h-4 w-4 rounded border-ink/15 text-ink"
       />
       {label}
