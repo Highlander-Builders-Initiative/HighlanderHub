@@ -38,6 +38,103 @@ const FLYER_EXT_BY_TYPE: Record<string, string> = {
   "image/webp": "webp",
 };
 
+type EndChoice = "30m" | "1h" | "1h30" | "custom" | "none";
+
+const END_CHOICE_MINUTES: Record<Exclude<EndChoice, "custom" | "none">, number> = {
+  "30m": 30,
+  "1h": 60,
+  "1h30": 90,
+};
+
+function padTwo(n: number): string {
+  return String(n).padStart(2, "0");
+}
+
+function toDateInput(d: Date): string {
+  return `${d.getFullYear()}-${padTwo(d.getMonth() + 1)}-${padTwo(d.getDate())}`;
+}
+
+function toTimeInput(d: Date): string {
+  return `${padTwo(d.getHours())}:${padTwo(d.getMinutes())}`;
+}
+
+function toLocalDateTime(d: Date): string {
+  return `${toDateInput(d)}T${toTimeInput(d)}`;
+}
+
+function addMinutesLocal(local: string, minutes: number): string {
+  const d = new Date(local);
+  if (!Number.isFinite(d.getTime())) return "";
+  d.setMinutes(d.getMinutes() + minutes);
+  return toLocalDateTime(d);
+}
+
+function todayDateInput(): string {
+  return toDateInput(new Date());
+}
+
+function tomorrowDateInput(): string {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  return toDateInput(d);
+}
+
+function upcomingFridayDateInput(): string {
+  const now = new Date();
+  const day = now.getDay();
+  let delta = (5 - day + 7) % 7;
+  if (delta <= 1) delta += 7;
+  const d = new Date(now);
+  d.setDate(now.getDate() + delta);
+  return toDateInput(d);
+}
+
+function formatChipDate(input: string): string {
+  if (!input) return "";
+  const d = new Date(`${input}T00:00`);
+  if (!Number.isFinite(d.getTime())) return "";
+  const month = d.toLocaleDateString(undefined, { month: "short" });
+  return `${month} ${d.getDate()}`;
+}
+
+function formatPreviewDateTime(local: string): string {
+  if (!local) return "";
+  const d = new Date(local);
+  if (!Number.isFinite(d.getTime())) return "";
+  const weekday = d.toLocaleDateString(undefined, { weekday: "short" });
+  const month = d.toLocaleDateString(undefined, { month: "short" });
+  const time = d.toLocaleTimeString(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+  return `${weekday}, ${month} ${d.getDate()} · ${time}`;
+}
+
+function formatPreviewTime(local: string): string {
+  if (!local) return "";
+  const d = new Date(local);
+  if (!Number.isFinite(d.getTime())) return "";
+  return d.toLocaleTimeString(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function computeEndsAtLocal(
+  startsAtLocal: string,
+  choice: EndChoice,
+  customTime: string
+): string {
+  if (!startsAtLocal) return "";
+  if (choice === "none") return "";
+  if (choice === "custom") {
+    if (!customTime) return "";
+    const datePart = startsAtLocal.slice(0, 10);
+    return `${datePart}T${customTime}`;
+  }
+  return addMinutesLocal(startsAtLocal, END_CHOICE_MINUTES[choice]);
+}
+
 type FieldName =
   | "title"
   | "starts_at"
@@ -89,7 +186,19 @@ export default function SubmitForm() {
   const [isImageUrlOpen, setIsImageUrlOpen] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>({ kind: "idle" });
   const [isRsvpRequired, setIsRsvpRequired] = useState(false);
+  const [startDate, setStartDate] = useState("");
+  const [startTime, setStartTime] = useState("");
+  const [endChoice, setEndChoice] = useState<EndChoice>("1h");
+  const [endCustomTime, setEndCustomTime] = useState("");
   const startedRef = useRef(false);
+
+  const startsAtLocal =
+    startDate && startTime ? `${startDate}T${startTime}` : "";
+  const endsAtLocal = computeEndsAtLocal(
+    startsAtLocal,
+    endChoice,
+    endCustomTime
+  );
 
   useEffect(() => {
     track("submit_page_view", {});
@@ -224,7 +333,11 @@ export default function SubmitForm() {
 
     if (error) {
       track("submission_error", { message: error.message });
-      setStatus({ kind: "error", message: error.message });
+      setStatus({
+        kind: "error",
+        message:
+          "Something went wrong saving this. Try again, or message us on Instagram if it keeps failing.",
+      });
       return;
     }
     track("submission_complete", {});
@@ -266,9 +379,10 @@ export default function SubmitForm() {
           }
         >
           <Field
-            label="Image URL"
+            label="Flyer URL"
             name="image_url"
             type="url"
+            optional
             placeholder="https://..."
             error={fieldErrors.image_url}
           />
@@ -287,32 +401,38 @@ export default function SubmitForm() {
           label="Description"
           name="description"
           type="textarea"
+          optional
           placeholder="A sentence or two: what's happening, who's it for?"
         />
         <SelectField label="Category" name="category" options={CATEGORIES} />
         <Field
-          label="Tags (comma-separated)"
+          label="Tags"
           name="tags"
+          optional
           placeholder="cs, networking, free pizza"
         />
       </FormSection>
 
       <FormSection eyebrow="when and where">
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-          <Field
-            label="Starts"
-            name="starts_at"
-            type="datetime-local"
-            required
-            error={fieldErrors.starts_at}
-          />
-          <Field
-            label="Ends (optional)"
-            name="ends_at"
-            type="datetime-local"
-            error={fieldErrors.ends_at}
-          />
-        </div>
+        <StartTimePicker
+          dateValue={startDate}
+          timeValue={startTime}
+          onChangeDate={setStartDate}
+          onChangeTime={setStartTime}
+          onInteract={onFirstInteract}
+          error={fieldErrors.starts_at}
+        />
+        <EndTimePicker
+          startsAtLocal={startsAtLocal}
+          endChoice={endChoice}
+          endCustomTime={endCustomTime}
+          onChangeChoice={setEndChoice}
+          onChangeCustomTime={setEndCustomTime}
+          onInteract={onFirstInteract}
+          error={fieldErrors.ends_at}
+        />
+        <input type="hidden" name="starts_at" value={startsAtLocal} />
+        <input type="hidden" name="ends_at" value={endsAtLocal} />
         <Field
           label="Location"
           name="location"
@@ -321,7 +441,7 @@ export default function SubmitForm() {
           error={fieldErrors.location}
         />
         <Field
-          label="Host / organization"
+          label="Hosted by"
           name="host"
           required
           placeholder="ACM at UCR"
@@ -331,9 +451,11 @@ export default function SubmitForm() {
 
       <FormSection eyebrow="links and tickets">
         <Field
-          label="Event page or flyer URL (optional)"
+          label="Event page"
           name="source_url"
           type="url"
+          optional
+          placeholder="https://..."
           error={fieldErrors.source_url}
         />
         <div className="flex gap-6">
@@ -347,10 +469,11 @@ export default function SubmitForm() {
         {isRsvpRequired && (
           <div className="animate-field-reveal">
             <Field
-              label="RSVP / ticket URL"
+              label="Ticket link"
               name="rsvp_url"
               type="url"
               required
+              placeholder="https://..."
               error={fieldErrors.rsvp_url}
             />
           </div>
@@ -372,8 +495,9 @@ export default function SubmitForm() {
           error={fieldErrors.submitter_email}
         />
         <Field
-          label="Org affiliation (optional)"
+          label="Org affiliation"
           name="submitter_org"
+          optional
           placeholder="ACM at UCR"
         />
       </FormSection>
@@ -575,6 +699,7 @@ function Field({
   name,
   type = "text",
   required = false,
+  optional = false,
   maxLength,
   placeholder,
   error,
@@ -583,15 +708,13 @@ function Field({
   name: string;
   type?: string;
   required?: boolean;
+  optional?: boolean;
   maxLength?: number;
   placeholder?: string;
   error?: string;
 }) {
-  const hintId = `${name}-hint`;
   const errorId = `${name}-error`;
-  const describedBy = [required ? hintId : null, error ? errorId : null]
-    .filter(Boolean)
-    .join(" ");
+  const describedBy = error ? errorId : undefined;
   const baseClass =
     "interactive-focus mt-1 w-full rounded-md border border-ink/15 bg-canvas px-3 py-2 text-ink placeholder:text-muted focus:border-ink";
   const inputClass = error
@@ -602,10 +725,8 @@ function Field({
     <label className="block">
       <span className="flex items-center justify-between gap-3 text-sm font-medium text-ink/80">
         <span>{label}</span>
-        {required && (
-          <span id={hintId} className="text-xs font-normal text-muted">
-            Required
-          </span>
+        {optional && (
+          <span className="text-xs font-normal text-muted">Optional</span>
         )}
       </span>
       {type === "textarea" ? (
@@ -689,5 +810,245 @@ function Checkbox({
       />
       {label}
     </label>
+  );
+}
+
+function Chip({
+  active,
+  disabled,
+  onClick,
+  children,
+}: {
+  active?: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  const base =
+    "interactive-focus rounded-full px-3 py-1.5 text-xs font-medium transition-colors duration-150";
+  const tone = active
+    ? "border border-ink bg-ink text-canvas"
+    : "border border-ink/15 bg-canvas text-ink/80 hover:border-ink/30 hover:text-ink";
+  const state = disabled
+    ? "cursor-not-allowed opacity-50 hover:border-ink/15 hover:text-ink/80"
+    : "";
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      disabled={disabled}
+      className={`${base} ${tone} ${state}`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function StartTimePicker({
+  dateValue,
+  timeValue,
+  onChangeDate,
+  onChangeTime,
+  onInteract,
+  error,
+}: {
+  dateValue: string;
+  timeValue: string;
+  onChangeDate: (v: string) => void;
+  onChangeTime: (v: string) => void;
+  onInteract: () => void;
+  error?: string;
+}) {
+  const [isPickOpen, setIsPickOpen] = useState(false);
+  const today = todayDateInput();
+  const tomorrow = tomorrowDateInput();
+  const friday = upcomingFridayDateInput();
+
+  function select(value: string) {
+    onInteract();
+    onChangeDate(value);
+    setIsPickOpen(false);
+  }
+
+  const isCustom =
+    dateValue !== "" &&
+    dateValue !== today &&
+    dateValue !== tomorrow &&
+    dateValue !== friday;
+
+  const previewLocal = dateValue && timeValue ? `${dateValue}T${timeValue}` : "";
+
+  return (
+    <div>
+      <div className="mb-2">
+        <span className="text-sm font-medium text-ink/80">Starts</span>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        <Chip active={dateValue === today} onClick={() => select(today)}>
+          Today
+        </Chip>
+        <Chip active={dateValue === tomorrow} onClick={() => select(tomorrow)}>
+          Tomorrow
+        </Chip>
+        <Chip active={dateValue === friday} onClick={() => select(friday)}>
+          {`Fri ${formatChipDate(friday)}`}
+        </Chip>
+        <Chip
+          active={isCustom || isPickOpen}
+          onClick={() => {
+            onInteract();
+            setIsPickOpen((v) => !v);
+          }}
+        >
+          {isCustom ? formatChipDate(dateValue) : "Pick a date"}
+        </Chip>
+      </div>
+
+      {(isPickOpen || isCustom) && (
+        <label className="mt-3 block animate-field-reveal">
+          <span className="sr-only">Pick a date</span>
+          <input
+            type="date"
+            value={dateValue}
+            onChange={(e) => {
+              onInteract();
+              onChangeDate(e.target.value);
+            }}
+            className="interactive-focus w-full rounded-md border border-ink/15 bg-canvas px-3 py-2 text-ink focus:border-ink sm:w-auto"
+          />
+        </label>
+      )}
+
+      <label className="mt-4 block">
+        <span className="text-sm font-medium text-ink/80">Time</span>
+        <input
+          type="time"
+          value={timeValue}
+          onChange={(e) => {
+            onInteract();
+            onChangeTime(e.target.value);
+          }}
+          className={`interactive-focus mt-1 block w-full rounded-md border bg-canvas px-3 py-2 text-ink focus:border-ink sm:w-auto ${
+            error ? "border-deep-coral" : "border-ink/15"
+          }`}
+        />
+      </label>
+
+      {previewLocal && !error && (
+        <p className="mt-3 text-xs text-muted">
+          <span className="font-mono">
+            {formatPreviewDateTime(previewLocal)}
+          </span>
+        </p>
+      )}
+      {error && <p className="mt-2 text-sm text-deep-coral">{error}</p>}
+    </div>
+  );
+}
+
+function EndTimePicker({
+  startsAtLocal,
+  endChoice,
+  endCustomTime,
+  onChangeChoice,
+  onChangeCustomTime,
+  onInteract,
+  error,
+}: {
+  startsAtLocal: string;
+  endChoice: EndChoice;
+  endCustomTime: string;
+  onChangeChoice: (c: EndChoice) => void;
+  onChangeCustomTime: (v: string) => void;
+  onInteract: () => void;
+  error?: string;
+}) {
+  const disabled = !startsAtLocal;
+  const previewLocal = computeEndsAtLocal(
+    startsAtLocal,
+    endChoice,
+    endCustomTime
+  );
+
+  function pick(choice: EndChoice) {
+    onInteract();
+    onChangeChoice(choice);
+  }
+
+  return (
+    <div>
+      <div className="mb-2 flex items-baseline justify-between gap-3">
+        <span className="text-sm font-medium text-ink/80">Ends</span>
+        <span className="text-xs font-normal text-muted">Optional</span>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        <Chip
+          active={endChoice === "30m"}
+          disabled={disabled}
+          onClick={() => pick("30m")}
+        >
+          30 min
+        </Chip>
+        <Chip
+          active={endChoice === "1h"}
+          disabled={disabled}
+          onClick={() => pick("1h")}
+        >
+          1 hr
+        </Chip>
+        <Chip
+          active={endChoice === "1h30"}
+          disabled={disabled}
+          onClick={() => pick("1h30")}
+        >
+          1.5 hr
+        </Chip>
+        <Chip
+          active={endChoice === "custom"}
+          disabled={disabled}
+          onClick={() => pick("custom")}
+        >
+          Custom
+        </Chip>
+        <Chip
+          active={endChoice === "none"}
+          disabled={disabled}
+          onClick={() => pick("none")}
+        >
+          No end time
+        </Chip>
+      </div>
+
+      {disabled && (
+        <p className="mt-2 text-xs text-muted">Pick a start time first.</p>
+      )}
+
+      {!disabled && endChoice === "custom" && (
+        <label className="mt-3 block animate-field-reveal">
+          <span className="sr-only">Custom end time</span>
+          <input
+            type="time"
+            value={endCustomTime}
+            onChange={(e) => {
+              onInteract();
+              onChangeCustomTime(e.target.value);
+            }}
+            className={`interactive-focus block w-full rounded-md border bg-canvas px-3 py-2 text-ink focus:border-ink sm:w-auto ${
+              error ? "border-deep-coral" : "border-ink/15"
+            }`}
+          />
+        </label>
+      )}
+
+      {!disabled && previewLocal && !error && (
+        <p className="mt-3 text-xs text-muted">
+          Until <span className="font-mono">{formatPreviewTime(previewLocal)}</span>
+        </p>
+      )}
+      {error && <p className="mt-2 text-sm text-deep-coral">{error}</p>}
+    </div>
   );
 }
