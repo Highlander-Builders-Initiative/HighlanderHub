@@ -5,6 +5,7 @@ import type { CampusEvent } from "@/types/event";
 import { formatPacificDayKey } from "@/lib/dates";
 import { EventCard } from "./EventCard";
 import { SubmitEventCta } from "./SubmitEventCta";
+import { CATEGORIES, type CategoryValue, type DayWindow } from "./events-filters";
 
 type Props = {
   summary: { total: number; upcomingThisWeek: number; freeFood: number };
@@ -15,6 +16,8 @@ type Props = {
   resultsLabel: string;
   hasActiveFilters: boolean;
   onClearFilters: () => void;
+  category: CategoryValue;
+  dayWindow: DayWindow;
   todayKey: string;
   dayKeys: string[];
   grouped: Map<string, CampusEvent[]>;
@@ -27,6 +30,81 @@ type Props = {
   dayHeaderRefs: MutableRefObject<Map<string, HTMLElement>>;
 };
 
+function categoryLabelFor(value: CategoryValue): string {
+  return CATEGORIES.find((c) => c.value === value)?.label ?? "All";
+}
+
+function windowPhraseFor(value: DayWindow): string {
+  if (value === "today") return "today";
+  if (value === "week") return "this week";
+  if (value === "weekend") return "this weekend";
+  return "";
+}
+
+function diagnoseEmpty(args: {
+  query: string;
+  category: CategoryValue;
+  dayWindow: DayWindow;
+}): { headline: string; nudge: string } {
+  const q = args.query.trim();
+  const hasQ = q.length > 0;
+  const hasC = args.category !== "all";
+  const hasW = args.dayWindow !== "all";
+  const cat = categoryLabelFor(args.category);
+  const win = windowPhraseFor(args.dayWindow);
+  const quoted = `“${q}”`;
+
+  if (hasQ && hasC && hasW) {
+    return {
+      headline: `Nothing in ${cat} ${win} matches ${quoted}.`,
+      nudge: "Clearing the search opens this up faster than loosening the category or window.",
+    };
+  }
+  if (hasQ && hasC) {
+    return {
+      headline: `Nothing in ${cat} matches ${quoted}.`,
+      nudge: "Clear the search first; the category is usually the smaller change.",
+    };
+  }
+  if (hasQ && hasW) {
+    return {
+      headline: `Nothing ${win} matches ${quoted}.`,
+      nudge: "Widen the window past " + win + ", or shorten the search.",
+    };
+  }
+  if (hasC && hasW) {
+    return {
+      headline: `No ${cat} ${win}.`,
+      nudge: `Try opening the window past ${win}; ${cat} is a smaller pool than the date.`,
+    };
+  }
+  if (hasQ) {
+    return {
+      headline: `Nothing on the bulletin matches ${quoted}.`,
+      nudge: "Shorter or different words usually do it; titles, hosts, and tags are all searched.",
+    };
+  }
+  if (hasC) {
+    return {
+      headline: `No ${cat} queued right now.`,
+      nudge: "Switch back to All to see everything that's up.",
+    };
+  }
+  if (hasW) {
+    return {
+      headline: `Nothing on the calendar ${win}.`,
+      nudge:
+        args.dayWindow === "today"
+          ? "Try This week or Weekend instead."
+          : "Open the window to Anytime to see what's queued.",
+    };
+  }
+  return {
+    headline: "The bulletin's quiet right now.",
+    nudge: "Check back later, or be the first to put something up.",
+  };
+}
+
 export function EventsFeedColumn({
   summary,
   query,
@@ -36,6 +114,8 @@ export function EventsFeedColumn({
   resultsLabel,
   hasActiveFilters,
   onClearFilters,
+  category,
+  dayWindow,
   todayKey,
   dayKeys,
   grouped,
@@ -48,6 +128,10 @@ export function EventsFeedColumn({
   dayHeaderRefs,
 }: Props) {
   const showEmptyState = dayKeys.length === 0;
+  const emptyCopy = useMemo(
+    () => diagnoseEmpty({ query, category, dayWindow }),
+    [query, category, dayWindow]
+  );
 
   const daySections = useMemo(
     () =>
@@ -67,9 +151,9 @@ export function EventsFeedColumn({
             Events
           </h1>
           <p className="mt-2 max-w-[58ch] text-[15px] text-ink/75">
-            {summary.total} campus gatherings, with{" "}
-            {summary.upcomingThisWeek} happening this week and{" "}
-            {summary.freeFood} serving free food.
+            {formatPacificDayKey(todayKey)} ·{" "}
+            {summary.upcomingThisWeek}{" "}
+            {summary.upcomingThisWeek === 1 ? "event" : "events"} queued this week
           </p>
         </div>
         <div className="shrink-0 self-start sm:self-end">
@@ -162,22 +246,28 @@ export function EventsFeedColumn({
       </div>
 
       {showEmptyState && (
-        <div className="rounded-xl border border-dashed border-ink/15 px-6 py-20 text-center">
-          <p className="font-display text-xl text-ink mb-1">No matches.</p>
-          <p className="text-sm text-muted">
-            Try a broader filter or clear your search.
+        <div className="py-14 sm:py-20">
+          <p className="max-w-[42ch] font-display text-2xl font-semibold leading-[1.2] tracking-[-0.02em] text-ink sm:text-[28px]">
+            {emptyCopy.headline}
           </p>
-          <button
-            type="button"
-            onClick={onClearFilters}
-            className="interactive-focus mt-5 inline-flex min-h-11 items-center rounded-lg bg-ink px-5 py-2 text-sm font-medium text-white transition-opacity hover:opacity-85"
-          >
-            Clear filters
-          </button>
-          <p className="mt-6 text-sm text-muted">
-            Running something not listed?{" "}
-            <SubmitEventCta variant="link" surface="empty_state" />
+          <p className="mt-3 max-w-[52ch] text-[15px] leading-[1.55] text-ink/70">
+            {emptyCopy.nudge}
           </p>
+          <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm">
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={onClearFilters}
+                className="interactive-focus inline-flex min-h-11 items-center rounded-lg bg-ink px-5 py-2 font-medium text-canvas transition-opacity hover:opacity-85"
+              >
+                Clear filters
+              </button>
+            )}
+            <span className="text-ink/55">
+              Running something not listed?{" "}
+              <SubmitEventCta variant="link" surface="empty_state" />
+            </span>
+          </div>
         </div>
       )}
 
@@ -194,7 +284,7 @@ export function EventsFeedColumn({
             <h3 className="flex items-baseline gap-2.5 font-display text-xl font-semibold tracking-[-0.02em] text-ink sm:text-2xl">
               {formatPacificDayKey(day)}
               {isToday && (
-                <span className="font-body text-[12px] font-medium uppercase tracking-[0.06em] text-ink/55">
+                <span className="font-body text-[12px] font-medium text-ink/55">
                   Today
                 </span>
               )}
@@ -229,7 +319,7 @@ export function EventsFeedColumn({
             </button>
           ) : (
             <p className="text-sm text-muted" role="status">
-              {isLoadingMore ? "Loading..." : "Scroll for more events"}
+              {isLoadingMore ? "Loading" : "More below"}
             </p>
           )}
         </div>

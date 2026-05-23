@@ -6,7 +6,13 @@ import { getSavedReturnPath } from "@/lib/events/feed-session";
 export function EventBackButton() {
   const router = useRouter();
   const handleClick = () => {
-    router.push(getSavedReturnPath() ?? "/events", { scroll: false });
+    const savedPath = getSavedReturnPath();
+    if (savedPath && window.history.length > 1) {
+      router.back();
+      return;
+    }
+
+    router.push(savedPath ?? "/events", { scroll: false });
   };
 
   return (

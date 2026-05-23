@@ -10,7 +10,7 @@ import {
   pacificTodayKey,
   pacificWeekdayIndex,
 } from "@/lib/dates";
-import type { DayWindow } from "@/types/events-feed";
+import { DAY_WINDOWS, type DayWindow } from "@/types/events-feed";
 
 export type CategoryValue = EventCategory | "all";
 
@@ -27,7 +27,31 @@ export const CATEGORIES: { value: CategoryValue; label: string }[] = [
   })),
 ];
 
-export { DAY_WINDOWS, type DayWindow } from "@/types/events-feed";
+export { DAY_WINDOWS };
+export type { DayWindow };
+
+/**
+ * Coerce a raw URL search-param value into a known CategoryValue. Unknown or
+ * missing values fall back to "all"; the URL is the only untrusted input here,
+ * so we never let it widen the filter beyond what the rail can show.
+ */
+export function coerceCategoryParam(
+  raw: string | undefined | null
+): CategoryValue {
+  if (!raw) return "all";
+  return CATEGORIES.some((c) => c.value === raw)
+    ? (raw as CategoryValue)
+    : "all";
+}
+
+export function coerceDayWindowParam(
+  raw: string | undefined | null
+): DayWindow {
+  if (!raw) return "all";
+  return DAY_WINDOWS.some((w) => w.value === raw)
+    ? (raw as DayWindow)
+    : "all";
+}
 
 export function matchesCategory(
   ev: CampusEvent,

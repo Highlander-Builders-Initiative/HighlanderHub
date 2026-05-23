@@ -66,7 +66,7 @@ function EventCardComponent({
         }`}
       >
         <span
-          className={`font-display font-semibold leading-none tracking-[-0.01em] text-ink tabular-nums ${
+          className={`font-mono font-medium leading-none text-ink tabular-nums ${
             compact ? "text-base" : "text-[22px]"
           }`}
         >
@@ -74,7 +74,7 @@ function EventCardComponent({
         </span>
         {period && (
           <span
-            className={`mt-1 font-display font-semibold text-muted ${
+            className={`mt-1 font-mono font-medium text-muted ${
               compact ? "text-[10px]" : "text-[12px]"
             }`}
           >

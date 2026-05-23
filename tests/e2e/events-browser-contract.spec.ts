@@ -25,7 +25,7 @@ test("event filters expose accessible state and recovery actions", async ({
 
   await search.fill("does-not-match");
   await expect(summary).toHaveText("0 matching events");
-  await expect(page.getByText("No matches.")).toBeVisible();
+  await expect(page.getByText(/Nothing in Social matches/)).toBeVisible();
   await expect(page.getByRole("button", { name: "Clear filters" })).toBeVisible();
 
   await page.getByRole("button", { name: "Clear filters" }).click();
@@ -57,9 +57,10 @@ test("calendar shows loading state while month events refresh", async ({
     });
   });
 
+  const calendarGrid = calendarRail.locator("[aria-busy]").first();
   await calendarRail.getByRole("button", { name: "Next month" }).click();
-  await expect(calendarRail.getByRole("status")).toHaveText("Loading");
+  await expect(calendarGrid).toHaveAttribute("aria-busy", "true");
 
   releaseCalendarResponse();
-  await expect(calendarRail.getByRole("status")).toHaveCount(0);
+  await expect(calendarGrid).toHaveAttribute("aria-busy", "false");
 });
