@@ -1,3 +1,5 @@
+import { parsePacificDateTimeInput } from "@/lib/dates";
+
 type TimeField = "starts_at" | "ends_at";
 
 export type EventTimeValidation = {
@@ -24,20 +26,11 @@ export function normalizeHttpUrl(value: unknown): string | null {
   }
 }
 
-function parseDateInput(value: unknown): string | null {
-  const text = asTrimmedString(value);
-  if (!text) return null;
-
-  const date = new Date(text);
-  if (!Number.isFinite(date.getTime())) return null;
-  return date.toISOString();
-}
-
 export function validateEventTimes(
   startValue: unknown,
   endValue: unknown
 ): EventTimeValidation {
-  const startsAt = parseDateInput(startValue);
+  const startsAt = parsePacificDateTimeInput(startValue);
   if (!startsAt) {
     return {
       startsAt: null,
@@ -52,7 +45,7 @@ export function validateEventTimes(
     return { startsAt, endsAt: null, field: null, error: null };
   }
 
-  const endsAt = parseDateInput(rawEnd);
+  const endsAt = parsePacificDateTimeInput(rawEnd);
   if (!endsAt) {
     return {
       startsAt,

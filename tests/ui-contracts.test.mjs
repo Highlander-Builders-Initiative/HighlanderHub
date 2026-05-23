@@ -207,26 +207,49 @@ test("badge colors avoid low-contrast accent text", () => {
 });
 
 test("submit form exposes client-side validation feedback accessibly", () => {
-  const source = read("src/components/forms/SubmitForm.tsx");
+  const source = read("src/components/forms/submit/fields.tsx");
+  const form = read("src/components/forms/submit/SubmitForm.tsx");
+  const validation = read("src/components/forms/submit/submit-validation.ts");
 
-  assert.match(source, /validateRequiredFields/);
+  assert.match(form, /validateSubmissionFields/);
+  assert.match(form, /fieldErrors\.starts_at/);
   assert.match(source, /aria-invalid=\{Boolean\(error\)\}/);
   assert.match(source, /aria-describedby=\{describedBy \|\| undefined\}/);
-  assert.match(source, /This field is required\./);
-  assert.match(source, /Required/);
-  assert.match(source, /bg-stone-950/);
-  assert.match(source, /text-white/);
+  assert.match(validation, /This field is required\./);
+  assert.match(form, /bg-ink/);
+  assert.match(form, /text-canvas/);
   assert.doesNotMatch(source, /placeholder:text-stone-400/);
 });
 
 test("submit form tracks page-view to completion funnel events", () => {
-  const form = read("src/components/forms/SubmitForm.tsx");
+  const form = read("src/components/forms/submit/SubmitForm.tsx");
   const analytics = read("src/lib/analytics.ts");
 
   assert.match(analytics, /submit_page_view: Record<string, never>/);
   assert.match(form, /useEffect/);
   assert.match(form, /track\("submit_page_view", \{\}\)/);
   assert.match(form, /track\("submission_complete", \{\}\)/);
+});
+
+test("submit form validation and upload helpers live in focused modules", () => {
+  const validation = read("src/components/forms/submit/submit-validation.ts");
+  const datetime = read("src/lib/submit-datetime.ts");
+  const flyer = read("src/lib/submission-flyer.ts");
+  const upload = read("src/components/forms/submit/use-flyer-upload.ts");
+  const picker = read("src/components/forms/submit/FlyerUpload.tsx");
+
+  assert.match(validation, /validateSubmissionFields/);
+  assert.match(validation, /buildSubmissionRow/);
+  assert.match(datetime, /computeSubmitEndsAtLocal/);
+  assert.match(datetime, /submitUpcomingFridayDateInput/);
+  assert.match(datetime, /pacificTodayKey/);
+  assert.match(flyer, /uploadSubmissionFlyer/);
+  assert.match(flyer, /submission-flyers/);
+  assert.match(upload, /useFlyerUpload/);
+  assert.match(upload, /flyer_uploaded/);
+  assert.match(picker, /FlyerUploadedTile/);
+  assert.match(picker, /or paste a URL/);
+  assert.doesNotMatch(picker, /bg-stone-950/);
 });
 
 test("site exposes crawler and social preview metadata", () => {

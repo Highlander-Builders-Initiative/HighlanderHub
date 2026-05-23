@@ -18,3 +18,4 @@ playwright-report/
 *.tsbuildinfo
 .claude/
 .cursor/
+.impeccable/

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import SubmitForm from "@/components/forms/SubmitForm";
+import SubmitForm from "@/components/forms/submit/SubmitForm";
 
 export const metadata: Metadata = {
   title: "Submit an event · Highlander Hub",
