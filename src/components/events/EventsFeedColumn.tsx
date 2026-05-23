@@ -203,7 +203,7 @@ export function EventsFeedColumn({
               {dayEvents.length} {dayEvents.length === 1 ? "event" : "events"}
             </span>
           </div>
-          <div className="flex flex-col gap-2.5">
+          <div className="flex flex-col gap-5 sm:gap-2.5">
             {dayEvents.map((ev) => (
               <EventCard key={ev.id} event={ev} loadedCount={loadedCount} />
             ))}
