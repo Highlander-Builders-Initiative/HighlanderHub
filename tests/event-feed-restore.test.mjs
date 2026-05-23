@@ -23,6 +23,77 @@ function richEvent(id, startsAt) {
   };
 }
 
+function makeSessionStorage() {
+  const store = new Map();
+
+  return {
+    store,
+    setItem(key, value) {
+      store.set(key, String(value));
+    },
+    getItem(key) {
+      return store.has(key) ? store.get(key) : null;
+    },
+    removeItem(key) {
+      store.delete(key);
+    },
+  };
+}
+
+function installRestoreDomHarness({ cardTop } = {}) {
+  const sessionStorage = makeSessionStorage();
+  const root = { scrollTop: 0 };
+  const previousWindow = globalThis.window;
+  const previousDocument = globalThis.document;
+  const previousFetch = globalThis.fetch;
+  const previousRaf = globalThis.requestAnimationFrame;
+  const previousCSS = globalThis.CSS;
+  const requestAnimationFrame = (cb) => {
+    cb();
+    return 0;
+  };
+
+  globalThis.window = {
+    location: { pathname: "/events", search: "" },
+    sessionStorage,
+    scrollY: 120,
+    document: { scrollingElement: root, documentElement: root },
+    requestAnimationFrame,
+  };
+  globalThis.document = {
+    scrollingElement: root,
+    documentElement: { ...root, style: {} },
+    querySelector(selector) {
+      if (selector.includes("target")) {
+        return {
+          getBoundingClientRect() {
+            return { top: cardTop };
+          },
+        };
+      }
+      return null;
+    },
+  };
+  globalThis.CSS = {
+    escape(value) {
+      return String(value);
+    },
+  };
+  globalThis.requestAnimationFrame = requestAnimationFrame;
+
+  return {
+    root,
+    sessionStorage,
+    restore() {
+      globalThis.window = previousWindow;
+      globalThis.document = previousDocument;
+      globalThis.fetch = previousFetch;
+      globalThis.requestAnimationFrame = previousRaf;
+      globalThis.CSS = previousCSS;
+    },
+  };
+}
+
 test("restoreEventsUntilTarget batches to the saved loaded count, then falls back to pages", async () => {
   const { restoreEventsUntilTarget } = await importTsModule(
     "src/lib/event-feed-restore.ts"
@@ -69,58 +140,8 @@ test("restoreEventsUntilTarget batches to the saved loaded count, then falls bac
 test("restoreSavedEventFeedSpot handles card and scroll restores from a derived intent", async () => {
   const session = await importTsModule("src/lib/event-feed-session.ts");
   const restore = await importTsModule("src/lib/event-feed-restore.ts");
-  const env = {
-    store: new Map(),
-    setItem(key, value) {
-      this.store.set(key, String(value));
-    },
-    getItem(key) {
-      return this.store.has(key) ? this.store.get(key) : null;
-    },
-    removeItem(key) {
-      this.store.delete(key);
-    },
-  };
-  const root = { scrollTop: 0 };
-  const previousWindow = globalThis.window;
-  const previousDocument = globalThis.document;
-  const previousFetch = globalThis.fetch;
-  const previousRaf = globalThis.requestAnimationFrame;
-  const previousCSS = globalThis.CSS;
-
-  globalThis.window = {
-    location: { pathname: "/events", search: "" },
-    sessionStorage: env,
-    scrollY: 120,
-    document: { scrollingElement: root, documentElement: root },
-    requestAnimationFrame: (cb) => {
-      cb();
-      return 0;
-    },
-  };
-  globalThis.document = {
-    scrollingElement: root,
-    documentElement: { ...root, style: {} },
-    querySelector(selector) {
-      if (selector.includes("target")) {
-        return {
-          getBoundingClientRect() {
-            return { top: 60 };
-          },
-        };
-      }
-      return null;
-    },
-  };
-  globalThis.CSS = {
-    escape(value) {
-      return String(value);
-    },
-  };
-  globalThis.requestAnimationFrame = (cb) => {
-    cb();
-    return 0;
-  };
+  const harness = installRestoreDomHarness({ cardTop: 60 });
+  const { root } = harness;
 
   try {
     const events = [
@@ -227,69 +248,15 @@ test("restoreSavedEventFeedSpot handles card and scroll restores from a derived 
     assert.equal(scrollDidRestore, true);
     assert.equal(root.scrollTop, 333);
   } finally {
-    globalThis.window = previousWindow;
-    globalThis.document = previousDocument;
-    globalThis.fetch = previousFetch;
-    globalThis.requestAnimationFrame = previousRaf;
-    globalThis.CSS = previousCSS;
+    harness.restore();
   }
 });
 
 test("restoreSavedEventFeedSpot uses snapshot pagination when return scroll has eventId but snapshot does not", async () => {
   const session = await importTsModule("src/lib/event-feed-session.ts");
   const restore = await importTsModule("src/lib/event-feed-restore.ts");
-  const env = {
-    store: new Map(),
-    setItem(key, value) {
-      this.store.set(key, String(value));
-    },
-    getItem(key) {
-      return this.store.has(key) ? this.store.get(key) : null;
-    },
-    removeItem(key) {
-      this.store.delete(key);
-    },
-  };
-  const root = { scrollTop: 0, events: [] };
-  const previousWindow = globalThis.window;
-  const previousDocument = globalThis.document;
-  const previousFetch = globalThis.fetch;
-  const previousRaf = globalThis.requestAnimationFrame;
-  const previousCSS = globalThis.CSS;
-
-  globalThis.window = {
-    location: { pathname: "/events", search: "" },
-    sessionStorage: env,
-    scrollY: 120,
-    document: { scrollingElement: root, documentElement: root },
-    requestAnimationFrame: (cb) => {
-      cb();
-      return 0;
-    },
-  };
-  globalThis.document = {
-    scrollingElement: root,
-    documentElement: { ...root, style: {} },
-    querySelector(selector) {
-      if (selector.includes("target")) {
-        return {
-          getBoundingClientRect() {
-            return { top: 40 };
-          },
-        };
-      }
-      return null;
-    },
-  };
-  globalThis.CSS = {
-    escape(value) {
-      return String(value);
-    },
-  };
-  globalThis.requestAnimationFrame = (cb) => {
-    cb();
-    return 0;
-  };
+  const harness = installRestoreDomHarness({ cardTop: 40 });
+  const { root, sessionStorage } = harness;
 
   try {
     const snapshotEvents = [
@@ -309,7 +276,7 @@ test("restoreSavedEventFeedSpot uses snapshot pagination when return scroll has 
       nextOffset: 24,
       loadedCount: 2,
     });
-    env.setItem(
+    sessionStorage.setItem(
       "highlanderhub.returnScroll",
       JSON.stringify({
         path: "/events",
@@ -364,10 +331,6 @@ test("restoreSavedEventFeedSpot uses snapshot pagination when return scroll has 
       /stale-only/
     );
   } finally {
-    globalThis.window = previousWindow;
-    globalThis.document = previousDocument;
-    globalThis.fetch = previousFetch;
-    globalThis.requestAnimationFrame = previousRaf;
-    globalThis.CSS = previousCSS;
+    harness.restore();
   }
 });
