@@ -39,22 +39,53 @@ export function useEventFeedRestore({
   setNextOffset,
 }: UseEventFeedRestoreArgs) {
   const [isRestoring, setIsRestoring] = useState(false);
-  const restoreState = useRef({
-    snapshot: getSavedEventFeedSnapshotForRestore(),
-    returnScroll: getSavedScrollPosition(),
-    currentEvents: events,
-    currentHasMore: initialHasMore,
-    currentNextOffset: initialNextOffset,
-  }).current;
+  const restoreState = useRef<{
+    snapshot: ReturnType<typeof getSavedEventFeedSnapshotForRestore>;
+    returnScroll: ReturnType<typeof getSavedScrollPosition>;
+    currentEvents: CampusEvent[];
+    currentHasMore: boolean;
+    currentNextOffset: number;
+    setCategory: Dispatch<SetStateAction<EventCategory | "all">>;
+    setQuery: Dispatch<SetStateAction<string>>;
+    setDayWindow: Dispatch<SetStateAction<DayWindow>>;
+    setLoadedEvents: Dispatch<SetStateAction<CampusEvent[]>>;
+    setHasMore: Dispatch<SetStateAction<boolean>>;
+    setNextOffset: Dispatch<SetStateAction<number>>;
+  } | null>(null);
+
+  if (restoreState.current === null) {
+    restoreState.current = {
+      snapshot: getSavedEventFeedSnapshotForRestore(),
+      returnScroll: getSavedScrollPosition(),
+      currentEvents: events,
+      currentHasMore: initialHasMore,
+      currentNextOffset: initialNextOffset,
+      setCategory,
+      setQuery,
+      setDayWindow,
+      setLoadedEvents,
+      setHasMore,
+      setNextOffset,
+    };
+  }
 
   useLayoutEffect(() => {
+    const restore = restoreState.current;
+    if (!restore) return;
+
     const {
       snapshot,
       returnScroll,
       currentEvents,
       currentHasMore,
       currentNextOffset,
-    } = restoreState;
+      setCategory,
+      setQuery,
+      setDayWindow,
+      setLoadedEvents,
+      setHasMore,
+      setNextOffset,
+    } = restore;
     if (!snapshot && !returnScroll) return;
 
     const path = `${window.location.pathname}${window.location.search}`;
@@ -88,14 +119,7 @@ export function useEventFeedRestore({
     return () => {
       cancelled = true;
     };
-  }, [
-    setCategory,
-    setQuery,
-    setDayWindow,
-    setLoadedEvents,
-    setHasMore,
-    setNextOffset,
-  ]);
+  }, []);
 
   return isRestoring;
 }

@@ -12,6 +12,7 @@ type Props = {
   selectedKey: string;
   onSelect: (dayKey: string) => void;
   categoriesByDay: Map<string, EventCategory[]>;
+  isLoading: boolean;
   dayWindow: DayWindow;
   onDayWindowChange: (next: DayWindow) => void;
 };
@@ -23,6 +24,7 @@ export function EventsRightRail({
   selectedKey,
   onSelect,
   categoriesByDay,
+  isLoading,
   dayWindow,
   onDayWindowChange,
 }: Props) {
@@ -35,6 +37,7 @@ export function EventsRightRail({
         selectedKey={selectedKey}
         onSelect={onSelect}
         categoriesByDay={categoriesByDay}
+        isLoading={isLoading}
       />
 
       <div className="my-5 h-px bg-ink/10" />
