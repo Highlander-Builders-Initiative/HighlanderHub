@@ -127,11 +127,11 @@ test("event back navigation restores from a snapshot before falling back to pagi
   const browser = read("src/components/events/EventsBrowser.tsx");
   const restore = read("src/lib/event-feed-restore.ts");
   const session = read("src/lib/event-feed-session.ts");
-  const scroll = read("src/lib/scroll-restoration.ts");
 
   assert.match(session, /saveEventFeedSnapshot/);
   assert.match(session, /getSavedEventFeedSnapshotForRestore/);
   assert.match(session, /getSavedScrollPosition/);
+  assert.match(session, /getSavedReturnPath/);
   assert.match(session, /sessionStorage/);
   assert.match(browser, /useLayoutEffect/);
   assert.match(browser, /saveEventFeedSnapshot/);
@@ -139,16 +139,17 @@ test("event back navigation restores from a snapshot before falling back to pagi
   assert.match(browser, /restoreSavedSpot/);
   assert.match(restore, /restoreSavedEventFeedSpot/);
   assert.match(restore, /restoreEventsUntilTarget/);
+  assert.match(restore, /deriveRestoreIntent/);
+  assert.match(restore, /mergeUniqueEventsByStart/);
   assert.match(restore, /root\.style\.scrollBehavior = "auto"/);
-  assert.match(restore, /returnScroll\.loadedCount/);
+  assert.match(restore, /const limitToFetch = Math\.max\(0, target\.loadedCount - current\.length\);/);
   assert.match(
     restore,
-    /const limitToFetch = Math\.max\(0, returnScroll\.loadedCount - current\.length\);/
+    /rootScroller\.scrollTop = intent\.scrollY;/
   );
   assert.match(restore, /fetchEventsPage/);
   assert.match(restore, /restoreToEventCard/);
-  assert.match(scroll, /getSavedReturnPath/);
-  assert.match(scroll, /highlanderhub\.returnScroll/);
+  assert.match(session, /highlanderhub\.returnScroll/);
 });
 
 test("home flyer mosaic tiles expose flyer alt text and keyboard focus", () => {

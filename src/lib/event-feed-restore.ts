@@ -2,17 +2,18 @@ import type { EventCategory, CampusEvent } from "@/types/event";
 import type { DayWindow } from "@/types/events-feed";
 import { clearEventFeedReturnState } from "@/lib/event-feed-session";
 import { fetchEventsPage, type EventsApiPage } from "@/lib/events-api";
-import type { SavedScrollPosition } from "@/lib/scroll-restoration";
+import { mergeUniqueEventsByStart } from "@/lib/events-merge";
+import type { SavedScrollPosition } from "@/lib/event-feed-session";
 
 type EventPageFetcher = (
   offset: number,
   limit?: number
 ) => Promise<EventsApiPage>;
 
-function appendUniqueEvents(current: CampusEvent[], incoming: CampusEvent[]) {
-  const seen = new Set(current.map((event) => event.id));
-  return incoming.filter((event) => !seen.has(event.id));
-}
+type RestoreTarget = {
+  eventId: string;
+  loadedCount?: number;
+};
 
 export function restoreToEventCard(eventId: string, eventTop = 0) {
   const target = document.querySelector<HTMLElement>(
@@ -29,22 +30,22 @@ export async function restoreEventsUntilTarget(
   current: CampusEvent[],
   next: number,
   more: boolean,
-  returnScroll: SavedScrollPosition,
+  target: RestoreTarget,
   fetchPage: EventPageFetcher = fetchEventsPage
 ) {
   let restored = current;
   let restoredNext = next;
   let restoredMore = more;
 
-  if (typeof returnScroll.loadedCount === "number") {
-    const limitToFetch = Math.max(0, returnScroll.loadedCount - current.length);
+  if (typeof target.loadedCount === "number") {
+    const limitToFetch = Math.max(0, target.loadedCount - current.length);
     if (limitToFetch > 0) {
       const page = await fetchPage(next, limitToFetch);
-      const nextEvents = appendUniqueEvents(restored, page.events);
-      if (nextEvents.length === 0 && page.nextOffset === restoredNext) {
+      const nextEvents = mergeUniqueEventsByStart(restored, page.events);
+      if (nextEvents.length === restored.length && page.nextOffset === restoredNext) {
         return { current: restored, next: restoredNext, more: restoredMore };
       }
-      restored = [...restored, ...nextEvents];
+      restored = nextEvents;
       restoredNext = page.nextOffset;
       restoredMore = page.hasMore;
     }
@@ -52,17 +53,80 @@ export async function restoreEventsUntilTarget(
 
   while (
     restoredMore &&
-    !restored.some((event) => event.id === returnScroll.eventId)
+    !restored.some((event) => event.id === target.eventId)
   ) {
     const page = await fetchPage(restoredNext);
-    const nextEvents = appendUniqueEvents(restored, page.events);
-    if (nextEvents.length === 0 && page.nextOffset === restoredNext) break;
-    restored = [...restored, ...nextEvents];
+    const nextEvents = mergeUniqueEventsByStart(restored, page.events);
+    if (nextEvents.length === restored.length && page.nextOffset === restoredNext) break;
+    restored = nextEvents;
     restoredNext = page.nextOffset;
     restoredMore = page.hasMore;
   }
 
   return { current: restored, next: restoredNext, more: restoredMore };
+}
+
+type RestoreIntent =
+  | {
+      kind: "card";
+      eventId: string;
+      eventTop?: number;
+      loadedCount?: number;
+      events: CampusEvent[];
+      hasMore: boolean;
+      nextOffset: number;
+    }
+  | { kind: "scrollY"; scrollY: number }
+  | { kind: "none" };
+
+function deriveRestoreIntent(
+  snapshot: RestoreSavedEventFeedSpotArgs["snapshot"],
+  returnScroll: SavedScrollPosition | null,
+  currentEvents: CampusEvent[],
+  currentHasMore: boolean,
+  currentNextOffset: number
+): RestoreIntent {
+  if (snapshot?.eventId && returnScroll?.eventId === snapshot.eventId) {
+    return {
+      kind: "card",
+      eventId: returnScroll.eventId,
+      eventTop: returnScroll.eventTop,
+      loadedCount: returnScroll.loadedCount ?? snapshot.loadedCount,
+      events: snapshot.events,
+      hasMore: snapshot.hasMore,
+      nextOffset: snapshot.nextOffset,
+    };
+  }
+
+  if (snapshot?.eventId) {
+    return {
+      kind: "card",
+      eventId: snapshot.eventId,
+      eventTop: snapshot.eventTop,
+      loadedCount: snapshot.loadedCount,
+      events: snapshot.events,
+      hasMore: snapshot.hasMore,
+      nextOffset: snapshot.nextOffset,
+    };
+  }
+
+  if (returnScroll?.eventId) {
+    return {
+      kind: "card",
+      eventId: returnScroll.eventId,
+      eventTop: returnScroll.eventTop,
+      loadedCount: returnScroll.loadedCount,
+      events: currentEvents,
+      hasMore: currentHasMore,
+      nextOffset: currentNextOffset,
+    };
+  }
+
+  if (returnScroll) {
+    return { kind: "scrollY", scrollY: returnScroll.scrollY };
+  }
+
+  return { kind: "none" };
 }
 
 type RestoreSavedEventFeedSpotArgs = {
@@ -71,6 +135,7 @@ type RestoreSavedEventFeedSpotArgs = {
     events: CampusEvent[];
     hasMore: boolean;
     nextOffset: number;
+    loadedCount: number;
     category: EventCategory | "all";
     query: string;
     dayWindow: DayWindow;
@@ -127,50 +192,36 @@ export async function restoreSavedEventFeedSpot({
 
     await settleFrame();
 
-    if (snapshot?.eventId && returnScroll?.eventId === snapshot.eventId) {
-      const restored = await restoreEventsUntilTarget(
-        snapshot.events,
-        snapshot.nextOffset,
-        snapshot.hasMore,
-        returnScroll
-      );
+    const intent = deriveRestoreIntent(
+      snapshot,
+      returnScroll,
+      currentEvents,
+      currentHasMore,
+      currentNextOffset
+    );
+    if (intent.kind === "none") return false;
 
-      setLoadedEvents(restored.current);
-      setHasMore(restored.more);
-      setNextOffset(restored.next);
-
-      await settleFrame();
-
-      if (restoreToEventCard(returnScroll.eventId, returnScroll.eventTop)) {
-        clearEventFeedReturnState();
-        return true;
-      }
-    } else if (snapshot?.eventId) {
-      if (restoreToEventCard(snapshot.eventId, snapshot.eventTop)) {
-        clearEventFeedReturnState();
-        return true;
-      }
-    } else if (returnScroll?.eventId) {
-      const restored = await restoreEventsUntilTarget(
-        currentEvents,
-        currentNextOffset,
-        currentHasMore,
-        returnScroll
-      );
-
-      setLoadedEvents(restored.current);
-      setHasMore(restored.more);
-      setNextOffset(restored.next);
-
-      await settleFrame();
-
-      if (restoreToEventCard(returnScroll.eventId, returnScroll.eventTop)) {
-        clearEventFeedReturnState();
-        return true;
-      }
-    } else if (returnScroll) {
+    if (intent.kind === "scrollY") {
       const rootScroller = document.scrollingElement ?? document.documentElement;
-      rootScroller.scrollTop = returnScroll.scrollY;
+      rootScroller.scrollTop = intent.scrollY;
+      clearEventFeedReturnState();
+      return true;
+    }
+
+    const restored = await restoreEventsUntilTarget(
+      intent.events,
+      intent.nextOffset,
+      intent.hasMore,
+      intent
+    );
+
+    setLoadedEvents(restored.current);
+    setHasMore(restored.more);
+    setNextOffset(restored.next);
+
+    await settleFrame();
+
+    if (restoreToEventCard(intent.eventId, intent.eventTop)) {
       clearEventFeedReturnState();
       return true;
     }
