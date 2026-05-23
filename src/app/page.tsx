@@ -57,10 +57,10 @@ export default async function HomePage() {
                 width={20}
                 height={20}
                 aria-hidden
-                className="h-5 w-5 shrink-0 transition-transform group-hover:-rotate-6"
+                className="h-5 w-5 shrink-0 transition-transform"
               />
               <span className="text-[13px] text-muted transition-colors group-hover:text-ink">
-                Built by{" "}
+                Edited daily by{" "}
                 <span className="font-medium text-ink">
                   Highlander Builders Initiative
                 </span>
@@ -68,16 +68,12 @@ export default async function HomePage() {
             </HbiLink>
           </div>
 
-          <div className="mt-5 hairline" />
-
           <h1
             className="mt-8 max-w-[15ch] font-display text-[38px] font-semibold leading-[1.03] tracking-[-0.035em] text-ink animate-fade-up sm:text-[56px] md:mt-10 md:text-[64px] lg:text-[72px]"
             style={{ animationDelay: "80ms" }}
           >
             Every UCR event,
-            <span className="block text-muted">
-              one app.
-            </span>
+            <span className="block text-muted">one page.</span>
           </h1>
 
           <div
@@ -85,36 +81,34 @@ export default async function HomePage() {
             style={{ animationDelay: "180ms" }}
           >
             <p className="max-w-md text-base leading-relaxed text-ink/75 md:text-lg">
-              Club nights, free food, career fairs. Everything happening on
-              campus, pulled into one place you can actually scan.
+              <span className="font-medium text-deep-gold">Free food</span>,{" "}
+              <span className="font-medium text-highlander">club nights</span>,{" "}
+              <span className="font-medium text-deep-sky">intramurals</span>,{" "}
+              <span className="font-medium text-deep-coral">art shows</span>,{" "}
+              <span className="font-medium text-deep-leaf">study groups</span>,{" "}
+              <span className="font-medium text-ink">career fairs</span>.
+              Everything happening on campus, pulled into one place you can
+              actually scan.
             </p>
 
-            <div className="flex items-center gap-5">
-              <Link
-                href="/events"
-                className="interactive-focus group inline-flex min-h-12 items-center gap-2 rounded-lg bg-ink px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-85"
+            <Link
+              href="/events"
+              className="interactive-focus group inline-flex min-h-12 items-center gap-2 self-start rounded-lg bg-ink px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-85"
+            >
+              Browse events
+              <svg
+                aria-hidden
+                viewBox="0 0 20 20"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5"
               >
-                Browse events
-                <svg
-                  aria-hidden
-                  viewBox="0 0 20 20"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5"
-                >
-                  <path d="M4 10h12M11 5l5 5-5 5" />
-                </svg>
-              </Link>
-              <Link
-                href="/submit"
-                className="interactive-focus inline-flex min-h-12 items-center text-sm font-medium text-ink underline decoration-ink/30 underline-offset-4 transition-colors hover:decoration-ink"
-              >
-                Submit an event
-              </Link>
-            </div>
+                <path d="M4 10h12M11 5l5 5-5 5" />
+              </svg>
+            </Link>
           </div>
         </div>
 

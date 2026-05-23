@@ -1,10 +1,10 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
-async function readScrollY(page) {
+async function readScrollY(page: Page) {
   return page.evaluate(() => window.scrollY);
 }
 
-async function readSavedEventTop(page) {
+async function readSavedEventTop(page: Page) {
   return page.evaluate(() => {
     const saved = sessionStorage.getItem("highlanderhub.returnScroll");
     if (!saved) return null;
@@ -13,9 +13,9 @@ async function readSavedEventTop(page) {
   });
 }
 
-async function waitForEventTop(page, targetTop) {
+async function waitForEventTop(page: Page, targetTop: number) {
   await page.waitForFunction(
-    ({ targetTop }) => {
+    ({ targetTop }: { targetTop: number }) => {
       const card = document.querySelector(
         '[data-event-id="e2e-highlander-hub-showcase"]'
       );
@@ -28,13 +28,13 @@ async function waitForEventTop(page, targetTop) {
   );
 }
 
-async function waitForNoLoadError(page) {
+async function waitForNoLoadError(page: Page) {
   await expect(page.getByText("Could not load more events. Try again.")).toHaveCount(
     0
   );
 }
 
-async function clickUntilPressed(page, name) {
+async function clickUntilPressed(page: Page, name: string) {
   const button = page.getByRole("button", { name });
   await expect
     .poll(async () => {
@@ -44,12 +44,16 @@ async function clickUntilPressed(page, name) {
     .toBe("true");
 }
 
-async function waitForEventsBrowserHydration(page) {
+async function waitForEventsBrowserHydration(page: Page) {
   await clickUntilPressed(page, "Social");
   await clickUntilPressed(page, "All");
 }
 
-test("event detail returns to the prior scroll position", async ({ page }) => {
+test("event detail returns to the prior scroll position", async ({
+  page,
+}: {
+  page: Page;
+}) => {
   await page.setViewportSize({ width: 1280, height: 480 });
   await page.goto("/events");
   await page.addStyleTag({

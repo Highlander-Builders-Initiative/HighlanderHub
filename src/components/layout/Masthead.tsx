@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 const NAV_LINKS = [
   { href: "/events", label: "Events", internal: true },
   { href: "/about", label: "About", internal: true },
+  { href: "/submit", label: "Submit", internal: true },
 ];
 
 const HIDE_THRESHOLD = 80;
@@ -89,7 +90,7 @@ export function Masthead({
             <Link
               key={link.href}
               href={link.href}
-              className="interactive-focus px-1 py-2 text-black transition-colors hover:text-ink/70"
+              className="interactive-focus px-1 py-2 text-ink transition-colors hover:text-ink/70"
             >
               {link.label}
             </Link>
@@ -104,7 +105,7 @@ export function Masthead({
             <Link
               key={link.href}
               href={link.href}
-              className="interactive-focus px-1 py-2 text-black hover:text-ink/70"
+              className="interactive-focus px-1 py-2 text-ink hover:text-ink/70"
             >
               {link.label}
             </Link>
