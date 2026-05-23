@@ -309,9 +309,6 @@ def _process_story(raw: dict[str, Any], meta: dict[str, Any]) -> dict[str, Any]:
         log.warning("extract %s: missing story id", label)
         return {"status": "error", "error": "missing story id"}
 
-    if raw.get("is_video"):
-        log.info("extract %s: skipped_video", label)
-        return {"status": "skipped_video"}
 
     cache = _cache_path(story_id)
     if cache.exists():
