@@ -144,7 +144,7 @@ These four colors exist as **category signals**, not decoration. Each one has ex
 
 ### Named Rules
 
-**The One Voice Rule.** Category color appears as a tinted background (`/10` or `/15` opacity), never as a saturated fill behind body content. Total accent coverage on any screen stays at or below 10% of the surface. Saturated category color appears in exactly one place: the 4px category rail on the left edge of `EventCard`.
+**The One Voice Rule.** Category color appears as a tinted background (`/10` or `/15` opacity), never as a saturated fill behind body content. Total accent coverage on any screen stays at or below 10% of the surface. Saturated category color appears in exactly three places, all at the same 6px Category Dot size: `EventCard` (leading the title), `EventsMiniCalendar` (day-cell dots), and `ActiveFilterChips` (category chip dot). One palette, three surfaces, one visual language.
 
 **The Tinted-Neutral Rule.** No new pure-hex grayscale values. Every neutral tints toward the cool ink hue. If you need a step between `surface` and `line`, derive it from the existing ramp, do not invent a flat gray.
 
@@ -217,16 +217,35 @@ Outside those two flavors, if a shadow is visible enough to describe its blur ra
 
 ### Event Card (signature)
 
-The project's distinctive component. Two variants from the same data.
+Editorial listing row. Every card shares the same skeleton: a typographic **time anchor** at the left edge, an optional 88px portrait flyer thumbnail, then the text block. A 6px colored **category dot** leads the title (see Category Dot below).
 
-- **Image variant:** When the event has a flyer image, the card renders the flyer at `4/5` aspect, with a top-to-bottom gradient overlay (`from-ink/90 via-ink/50 to-transparent`) anchoring overlay copy at the bottom. Title in Bricolage 16–18px, date in IBM Plex Mono uppercase, category as a `bg-white/15` glass pill with `backdrop-blur-sm`. This is the only place glass-blur is sanctioned.
-- **Text variant:** When there is no flyer, the card renders as a horizontal row with a 4px solid **category rail** down the left edge (`w-1`) and a hairline-bordered text block to its right. Time + location in IBM Plex Mono meta; title in Bricolage Display Title; host and category badge below. Right-edge chevron icon shifts color on group-hover.
+- **Time column** (`w-16 sm:w-[68px]`, hairline `border-r` to its right): big mono digit (`font-mono text-[22px] tabular-nums`) over a small `text-[12px]` AM/PM period. The eye anchors here first.
+- **Flyer thumb** (`w-[88px]`, optional, hairline `border-r` after): square-ish portrait crop of the event flyer with a subtle hover scale (`group-hover:scale-[1.03]`). Renders only when `event.imageUrl` is present and the image loads successfully.
+- **Text block** (`flex-1`, `px-4 sm:px-5`): leading 6px category dot, then the title in `font-display text-[17px] font-semibold` with `line-clamp-2`, then a meta row (`location · host · category`, optional `Free` pill in `bg-leaf/10 text-deep-leaf`).
 
-### Category Rail (signature, with a caveat)
+Compact variant (used in calendar popouts): `text-base` time digit, `w-[52px]` time column, no flyer thumb, no category text or Free pill in the meta row. The dot stays.
 
-The 4px colored stripe on the left edge of text-variant Event Cards. This is the **only sanctioned use** of a colored side-stripe pattern in the system. It exists because event category is a primary scannable signal, and the rail lets a student parse twenty cards in two seconds by hue alone.
+The earlier 4px colored side-stripe rail has been retired in favor of the leading dot. See Category Dot below for the rationale.
 
-Do not propagate this pattern to other components. New cards, alerts, callouts, list items: full hairline border, full-bleed tinted background, or leading icon. Never another left-stripe.
+### Category Dot (signature)
+
+A 6px colored dot (`h-1.5 w-1.5 rounded-full`) is the system's per-card category signal. Used in exactly three places, always at the same size and palette:
+
+1. **EventCard**: leads the title in the text block (`mt-1.5` to align with the title's optical center). `aria-hidden`; the meta row's category text carries the accessible signal.
+2. **EventsMiniCalendar day cells**: up to three dots at `bottom-1`, encoding which categories have events that day. A density-by-type signal.
+3. **ActiveFilterChips**: leads the category chip in the filter row above the feed.
+
+All three use `CATEGORY_RAIL` from `@/lib/category-colors`:
+
+```ts
+{ club: "bg-highlander", academic: "bg-leaf", social: "bg-coral",
+  career: "bg-ink", sports: "bg-sky", arts: "bg-coral",
+  community: "bg-leaf", free_food: "bg-gold" }
+```
+
+The three surfaces speak the same color language: pick "Free Food" in the chip-bar and gold dots leap out of the calendar and the feed at the same time. That coupling is the whole point of the dot; do not invent a separate palette for a fourth surface.
+
+The retired 4px side-stripe rail this replaces is documented for historical reference: the dot encodes the same category signal at a fraction of the visual weight, and no other component in the system wanted a colored side-stripe sibling. Having a single carve-out invited propagation, so the carve-out itself is gone (see the side-stripe rule under Don't).
 
 ### Badges (Category Pills)
 
@@ -247,8 +266,21 @@ The horizontal filter bar that pins to the top of `/events` while the events gri
 - **Surface:** `bg-white/55 backdrop-blur-xl` glass. The bar is intentionally translucent so the content scrolling beneath is felt, not hidden.
 - **Edge:** `border-b border-white/50` on the bottom; a soft white-tinted edge rather than the standard ink hairline, because the bar overlays content.
 - **Halo:** `shadow-[0_16px_40px_rgba(15,17,21,0.08)]` ambient halo. Large blur, low opacity, ink-tinted. The shadow is what separates the bar from the cards behind it; without it the bar would feel detached. Sanctioned under the second flavor of The Quiet-Shadow Rule.
-- **Internals:** View toggle (tabs) + search input on row 1, category chips on row 2. Search input uses the minimal bottom-border-only treatment, not the standard full-bordered input style; this is intentional for in-bar inline search.
+- **Internals:** Filter button (mobile-only, opens the filter sheet) + search input. Search input uses the minimal bottom-border-only treatment, not the standard full-bordered input style; this is intentional for in-bar inline search.
 - **Do not copy** this treatment to non-sticky bars. The glass + halo is what justifies the design language; on a static bar it reads as decoration.
+
+### Active Filter Chips (signature)
+
+The removable-chip row that renders directly below the sticky filter bar on `/events` when at least one filter is active. One chip per active filter (category, day window, query); each chip is a single pill button that drops that one filter when clicked. "Clear all" sits as a trailing text-underline link.
+
+- **Pill style:** `min-h-11` (touch-target compliant), `rounded-full`, hairline `border-ink/15`, faint `bg-surface` lift, `text-[13px]`, `px-3.5`. Hover darkens to `border-ink`; the `×` glyph shifts from `text-muted` to `text-ink`. The whole pill is the click target; the `×` is the visual affordance only.
+- **Category chip:** leads with a 6px Category Dot (see above).
+- **Day-window chip:** label only.
+- **Query chip:** shows the search term wrapped in curly quotes — `"diwali"`.
+- **Divider:** `border-b border-ink/10` runs below the row. When no filters are active, the row and the divider both unmount; the page reads as if the chip-bar never existed.
+- **A11y:** each chip is a `<button>` with `aria-label` ("Remove Free Food filter", "Clear search for diwali"). Row wrapped in `role="group" aria-label="Active filters"`. The result-count below the row carries the `aria-live="polite"` announcement when a filter is removed.
+
+Do not copy this pattern to non-filter surfaces. The "removable chip row" reads as a filter affordance specifically; on a non-filter surface, it reads as tag-soup.
 
 ### Navigation (Masthead)
 
@@ -292,7 +324,7 @@ A clean horizontal message ticker used as an active separator or alert bar below
 - **Do** prefer hairline-bordered surfaces (`border-ink/10` to `border-ink/15`) over background-tinted ones for default cards and rows.
 - **Do** ease motion out only (`cubic-bezier(0.16, 1, 0.3, 1)`). Durations: 180–300ms for state, 700–800ms for entrance. Always.
 - **Do** honor `prefers-reduced-motion` on anything you add. The root `globals.css` already cancels animation duration globally; do not opt back in.
-- **Do** treat the FlyerTile image-card and the text-with-category-rail variant as **the two canonical ways** to render an event. New event surfaces should use one of these two.
+- **Do** treat the FlyerTile (home mosaic + marquee tiles) and the EventCard (feed listing row, time-anchor + optional flyer thumb + category dot) as **the two canonical ways** to render an event. New event surfaces should use one of these two.
 - **Do** use the `.interactive-focus` global class on every interactive element. Focus is non-negotiable; this is the WCAG AA commitment from PRODUCT.md made concrete.
 - **Do** size for a phone first. Layouts target mobile breakpoints first, then expand. Touch targets ≥44×44px.
 
@@ -301,7 +333,7 @@ A clean horizontal message ticker used as an active separator or alert bar below
 - **Don't** ship the **generic SaaS landing** look. No hero-metric templates, no identical icon-heading-text card grids, no gradient text, no stock photos of diverse-people-smiling-at-laptops. If a section could land on a Y Combinator company's homepage unchanged, rework it.
 - **Don't** ship **university .edu CMS energy**. No institutional navy headers, no brochure-density link soup, no accessibility-as-checkbox afterthought. UCR.edu is not Hub.
 - **Don't** ship the **Eventbrite / Meetup transactional** look. No ad-cluttered list rows, no RSVP-button stripes, no dated marketplace chrome.
-- **Don't** use `border-left` or `border-right` greater than 1px as a colored accent on any component except the sanctioned **Category Rail** on text-variant Event Cards. No new colored side-stripes anywhere else.
+- **Don't** use `border-left` or `border-right` greater than 1px as a colored accent on any component. No colored side-stripes anywhere. (The earlier carve-out for the Category Rail on Event Cards has been retired; the rail was replaced by the Category Dot pattern. See Category Dot under Components.)
 - **Don't** use `background-clip: text` with a gradient. Gradient text is decorative-only and never carries meaning here. Emphasis is weight, size, and color, not gradient.
 - **Don't** introduce new pure-#000 or pure-#fff values in any new code. Use `ink` (#0f1115) and `canvas` (#ffffff is a legacy carry; do not extend it into new contexts) and tint every new neutral toward the cool ink hue.
 - **Don't** apply glassmorphism (backdrop-blur, frosted surfaces) outside the three sanctioned uses: the Masthead glass variant, the image-overlay Category Pill, and the `/events` sticky filter bar. Glass is not a default surface. (**The Three-Glass Rule.**)
