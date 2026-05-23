@@ -89,6 +89,17 @@ function reportDbFailure(
   });
 }
 
+function withE2eFixture<T>(
+  fixture: () => T,
+  production: () => Promise<T>
+): Promise<T> {
+  if (e2eFixturesEnabled()) {
+    return Promise.resolve(fixture());
+  }
+
+  return production();
+}
+
 async function withDbRetry<T extends { error: unknown }>(
   operation: string,
   query: () => PromiseLike<T>,
@@ -111,48 +122,50 @@ async function withDbRetry<T extends { error: unknown }>(
 }
 
 export async function getEventsSummary(): Promise<EventsSummary> {
-  if (e2eFixturesEnabled()) {
-    return {
+  return withE2eFixture(
+    () => ({
       total: 1,
       upcomingThisWeek: 1,
       freeFood: 0,
-    };
-  }
+    }),
+    async () => {
+      const nowIso = new Date().toISOString();
+      const today = startOfPacificToday();
+      const todayIso = today.toISOString();
+      const inSevenDays = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+      const inSevenDaysIso = inSevenDays.toISOString();
 
-  const nowIso = new Date().toISOString();
-  const today = startOfPacificToday();
-  const todayIso = today.toISOString();
-  const inSevenDays = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-  const inSevenDaysIso = inSevenDays.toISOString();
+      const [totalResult, upcomingThisWeekResult, freeFoodResult] =
+        await Promise.all([
+          withDbRetry("event count", () =>
+            supabase
+              .from("events")
+              .select("id", { count: "exact", head: true })
+              .or(activeEventFilter(nowIso))
+          ),
+          withDbRetry("this-week event count", () =>
+            supabase
+              .from("events")
+              .select("id", { count: "exact", head: true })
+              .gte("starts_at", todayIso)
+              .lte("starts_at", inSevenDaysIso)
+          ),
+          withDbRetry("free-food event count", () =>
+            supabase
+              .from("events")
+              .select("id", { count: "exact", head: true })
+              .gte("starts_at", todayIso)
+              .or('category.eq.free_food,tags.cs.{"free food"}')
+          ),
+        ]);
 
-  const [totalResult, upcomingThisWeekResult, freeFoodResult] = await Promise.all([
-    withDbRetry("event count", () =>
-      supabase
-        .from("events")
-        .select("id", { count: "exact", head: true })
-        .or(activeEventFilter(nowIso))
-    ),
-    withDbRetry("this-week event count", () =>
-      supabase
-        .from("events")
-        .select("id", { count: "exact", head: true })
-        .gte("starts_at", todayIso)
-        .lte("starts_at", inSevenDaysIso)
-    ),
-    withDbRetry("free-food event count", () =>
-      supabase
-        .from("events")
-        .select("id", { count: "exact", head: true })
-        .gte("starts_at", todayIso)
-        .or('category.eq.free_food,tags.cs.{"free food"}')
-    ),
-  ]);
-
-  return {
-    total: totalResult.count ?? 0,
-    upcomingThisWeek: upcomingThisWeekResult.count ?? 0,
-    freeFood: freeFoodResult.count ?? 0,
-  };
+      return {
+        total: totalResult.count ?? 0,
+        upcomingThisWeek: upcomingThisWeekResult.count ?? 0,
+        freeFood: freeFoodResult.count ?? 0,
+      };
+    }
+  );
 }
 
 /**
@@ -164,37 +177,40 @@ export async function getEventsPage({
   limit = EVENTS_PAGE_SIZE,
   offset = 0,
 }: EventsPageOptions = {}): Promise<EventsPageResult> {
-  if (e2eFixturesEnabled()) {
-    const events = offset === 0 && limit > 0 ? [E2E_FIXTURE_EVENT] : [];
-    return {
-      events,
-      hasMore: false,
-      nextOffset: events.length,
-    };
-  }
+  return withE2eFixture(
+    () => {
+      const events = offset === 0 && limit > 0 ? [E2E_FIXTURE_EVENT] : [];
+      return {
+        events,
+        hasMore: false,
+        nextOffset: events.length,
+      };
+    },
+    async () => {
+      const pageSize = Math.max(1, Math.min(limit, 60));
+      const from = Math.max(0, offset);
+      const to = from + pageSize;
+      const nowIso = new Date().toISOString();
 
-  const pageSize = Math.max(1, Math.min(limit, 60));
-  const from = Math.max(0, offset);
-  const to = from + pageSize;
-  const nowIso = new Date().toISOString();
+      const { data } = await withDbRetry("events", () =>
+        supabase
+          .from("events")
+          .select("*")
+          .or(activeEventFilter(nowIso))
+          .order("starts_at", { ascending: true })
+          .range(from, to)
+      );
 
-  const { data } = await withDbRetry("events", () =>
-    supabase
-      .from("events")
-      .select("*")
-      .or(activeEventFilter(nowIso))
-      .order("starts_at", { ascending: true })
-      .range(from, to)
+      const rows = data as EventRow[];
+      const events = rows.slice(0, pageSize).map(toCampusEvent);
+
+      return {
+        events,
+        hasMore: rows.length > pageSize,
+        nextOffset: from + events.length,
+      };
+    }
   );
-
-  const rows = data as EventRow[];
-  const events = rows.slice(0, pageSize).map(toCampusEvent);
-
-  return {
-    events,
-    hasMore: rows.length > pageSize,
-    nextOffset: from + events.length,
-  };
 }
 
 export async function getEvents(
@@ -209,52 +225,56 @@ export async function getCalendarEvents({
   endDayKey,
   limit = EVENTS_CALENDAR_RANGE_LIMIT,
 }: CalendarEventsOptions): Promise<CampusEvent[]> {
-  if (e2eFixturesEnabled()) {
-    const fixtureDay = pacificDayKey(E2E_FIXTURE_EVENT.startsAt);
-    return fixtureDay >= startDayKey && fixtureDay <= endDayKey
-      ? [E2E_FIXTURE_EVENT]
-      : [];
-  }
+  return withE2eFixture(
+    () => {
+      const fixtureDay = pacificDayKey(E2E_FIXTURE_EVENT.startsAt);
+      return fixtureDay >= startDayKey && fixtureDay <= endDayKey
+        ? [E2E_FIXTURE_EVENT]
+        : [];
+    },
+    async () => {
+      const startIso = parsePacificDateTimeInput(`${startDayKey}T00:00`);
+      const endIso = parsePacificDateTimeInput(
+        `${addPacificDays(endDayKey, 1)}T00:00`
+      );
+      if (!startIso || !endIso) {
+        throw new Error("Unable to load calendar events. Invalid date range.");
+      }
 
-  const startIso = parsePacificDateTimeInput(`${startDayKey}T00:00`);
-  const endIso = parsePacificDateTimeInput(
-    `${addPacificDays(endDayKey, 1)}T00:00`
+      const { data } = await withDbRetry("calendar events", () =>
+        supabase
+          .from("events")
+          .select("*")
+          .gte("starts_at", startIso)
+          .lt("starts_at", endIso)
+          .order("starts_at", { ascending: true })
+          .limit(Math.max(1, Math.min(limit, EVENTS_CALENDAR_RANGE_LIMIT)))
+      );
+
+      return (data as EventRow[]).map(toCampusEvent);
+    }
   );
-  if (!startIso || !endIso) {
-    throw new Error("Unable to load calendar events. Invalid date range.");
-  }
-
-  const { data } = await withDbRetry("calendar events", () =>
-    supabase
-      .from("events")
-      .select("*")
-      .gte("starts_at", startIso)
-      .lt("starts_at", endIso)
-      .order("starts_at", { ascending: true })
-      .limit(Math.max(1, Math.min(limit, EVENTS_CALENDAR_RANGE_LIMIT)))
-  );
-
-  return (data as EventRow[]).map(toCampusEvent);
 }
 
 export const getEventById = cache(async function getEventById(
   id: string
 ): Promise<CampusEvent | null> {
-  if (e2eFixturesEnabled()) {
-    return id === E2E_FIXTURE_EVENT.id ? E2E_FIXTURE_EVENT : null;
-  }
+  return withE2eFixture(
+    () => (id === E2E_FIXTURE_EVENT.id ? E2E_FIXTURE_EVENT : null),
+    async () => {
+      const { data } = await withDbRetry(
+        "event",
+        () =>
+          supabase
+            .from("events")
+            .select("*")
+            .eq("id", id)
+            .maybeSingle(),
+        { id }
+      );
 
-  const { data } = await withDbRetry(
-    "event",
-    () =>
-      supabase
-        .from("events")
-        .select("*")
-        .eq("id", id)
-        .maybeSingle(),
-    { id }
+      if (!data) return null;
+      return toCampusEvent(data as EventRow);
+    }
   );
-
-  if (!data) return null;
-  return toCampusEvent(data as EventRow);
 });
