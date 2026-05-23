@@ -144,6 +144,8 @@ test("event back navigation restores from a snapshot before falling back to pagi
 
   assert.match(session, /saveEventFeedSnapshot/);
   assert.match(session, /getSavedEventFeedSnapshotForRestore/);
+  assert.match(session, /readEventFeedRestoreState/);
+  assert.match(restoreHook, /readEventFeedRestoreState/);
   assert.match(session, /getSavedScrollPosition/);
   assert.match(session, /getSavedReturnPath/);
   assert.match(session, /sessionStorage/);

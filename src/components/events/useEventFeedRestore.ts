@@ -10,14 +10,12 @@ import {
 import type { CampusEvent, EventCategory } from "@/types/event";
 import type { DayWindow } from "@/types/events-feed";
 import {
-  getSavedEventFeedSnapshotForRestore,
-  getSavedScrollPosition,
+  readEventFeedRestoreState,
+  type EventFeedRestoreState,
 } from "@/lib/event-feed-session";
 import { restoreSavedEventFeedSpot } from "@/lib/event-feed-restore";
 
-type RestoreBootstrap = {
-  snapshot: ReturnType<typeof getSavedEventFeedSnapshotForRestore>;
-  returnScroll: ReturnType<typeof getSavedScrollPosition>;
+type RestoreBootstrap = EventFeedRestoreState & {
   currentEvents: CampusEvent[];
   currentHasMore: boolean;
   currentNextOffset: number;
@@ -51,8 +49,7 @@ export function useEventFeedRestore({
 
   if (bootstrapRef.current === null) {
     bootstrapRef.current = {
-      snapshot: getSavedEventFeedSnapshotForRestore(),
-      returnScroll: getSavedScrollPosition(),
+      ...readEventFeedRestoreState(),
       currentEvents: events,
       currentHasMore: initialHasMore,
       currentNextOffset: initialNextOffset,

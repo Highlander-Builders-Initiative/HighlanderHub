@@ -163,23 +163,61 @@ export function saveEventFeedSnapshot(snapshot: SavedEventFeedSnapshotInput) {
   window.sessionStorage.setItem(FEED_SESSION_KEY, JSON.stringify(memorySnapshot));
 }
 
-export function getSavedEventFeedSnapshot() {
+export type GetSavedEventFeedSnapshotOptions = {
+  /**
+   * When true, only returns a snapshot if return-scroll metadata exists for the
+   * current path (user opened an event from the list). Prevents a stale session
+   * snapshot from overriding a fresh /events visit.
+   */
+  requireReturnScroll?: boolean;
+};
+
+export type EventFeedRestoreState = {
+  /** List snapshot to reapply when returning from event detail; null on a fresh visit. */
+  snapshot: SavedEventFeedSnapshot | null;
+  /** Return-scroll marker when the user opened an event from this list path. */
+  returnScroll: SavedScrollPosition | null;
+};
+
+export function getSavedEventFeedSnapshot(
+  options: GetSavedEventFeedSnapshotOptions = {}
+): SavedEventFeedSnapshot | null {
   if (typeof window === "undefined") return null;
+
+  const { requireReturnScroll = false } = options;
+  if (requireReturnScroll) {
+    const returnScroll = readSavedScrollPositionRaw();
+    if (!returnScroll || returnScroll.path !== currentPath()) return null;
+  }
+
   return readSnapshot();
 }
 
-/**
- * Feed snapshot for mount-time restore when returning from an event detail page.
- * Requires return-scroll metadata on the current path; scroll-only restores use
- * `getSavedScrollPosition()` instead.
- */
+/** @see getSavedEventFeedSnapshot with `{ requireReturnScroll: true }` */
 export function getSavedEventFeedSnapshotForRestore() {
-  if (typeof window === "undefined") return null;
+  return getSavedEventFeedSnapshot({ requireReturnScroll: true });
+}
+
+/**
+ * Session inputs for a one-shot mount restore in EventsBrowser.
+ *
+ * Snapshot and return-scroll are only paired when both apply to the current path,
+ * so a saved list state does not restore on a fresh /events visit. Scroll-only
+ * restore still flows through `returnScroll` inside `restoreSavedEventFeedSpot`.
+ */
+export function readEventFeedRestoreState(): EventFeedRestoreState {
+  if (typeof window === "undefined") {
+    return { snapshot: null, returnScroll: null };
+  }
 
   const returnScroll = readSavedScrollPositionRaw();
-  if (!returnScroll || returnScroll.path !== currentPath()) return null;
+  const returnScrollOnPath =
+    returnScroll && returnScroll.path === currentPath() ? returnScroll : null;
 
-  return readSnapshot();
+  return {
+    snapshot: returnScrollOnPath ? readSnapshot() : null,
+    returnScroll: returnScrollOnPath,
+  };
 }
 
 export function getSavedScrollPosition() {
