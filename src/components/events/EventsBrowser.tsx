@@ -76,7 +76,7 @@ export function EventsBrowser({
     setNextOffset(initialNextOffset);
   }, [events, initialHasMore, initialNextOffset]);
 
-  const calendarEvents = useCalendarMonthEvents({
+  const { calendarEvents, isCalendarLoading } = useCalendarMonthEvents({
     initialCalendarEvents,
     calendarRange,
   });
@@ -280,6 +280,7 @@ export function EventsBrowser({
             selectedKey={observedDayKey}
             onSelect={handleCalendarSelect}
             categoriesByDay={categoriesByDay}
+            isLoading={isCalendarLoading}
             dayWindow={dayWindow}
             onDayWindowChange={handleDayWindow}
           />
@@ -304,6 +305,7 @@ export function EventsBrowser({
           setMobileSheetOpen(false);
         }}
         categoriesByDay={categoriesByDay}
+        isCalendarLoading={isCalendarLoading}
         onClear={clearFilters}
         hasActiveFilters={hasActiveFilters}
         resultCount={filtered.length}

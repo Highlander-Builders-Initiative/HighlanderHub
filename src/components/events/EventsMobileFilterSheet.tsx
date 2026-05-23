@@ -21,6 +21,7 @@ type Props = {
   selectedKey: string;
   onSelect: (dayKey: string) => void;
   categoriesByDay: Map<string, EventCategory[]>;
+  isCalendarLoading: boolean;
   onClear: () => void;
   hasActiveFilters: boolean;
   resultCount: number;
@@ -49,6 +50,7 @@ export function EventsMobileFilterSheet({
   selectedKey,
   onSelect,
   categoriesByDay,
+  isCalendarLoading,
   onClear,
   hasActiveFilters,
   resultCount,
@@ -191,6 +193,7 @@ export function EventsMobileFilterSheet({
               selectedKey={selectedKey}
               onSelect={onSelect}
               categoriesByDay={categoriesByDay}
+              isLoading={isCalendarLoading}
             />
           </div>
         </div>

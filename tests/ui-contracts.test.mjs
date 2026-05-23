@@ -62,13 +62,17 @@ test("calendar loads its own month-range events outside feed pagination", () => 
   assert.match(calendarApi, /searchParams/);
   assert.match(eventsApi, /fetchCalendarEvents/);
   assert.match(browser, /useCalendarMonthEvents/);
+  assert.match(browser, /isCalendarLoading/);
   assert.match(browser, /useEventFeedRestore/);
   assert.match(browser, /mergeUniqueEventsByStart\(current, eventsForDay\)/);
   assert.match(filters, /calendarEvents\?: CampusEvent\[\]/);
   assert.match(filters, /const calendarGrouped = useMemo/);
   assert.match(filters, /for \(const \[key, evs\] of calendarGrouped\)/);
   assert.match(calendar, /pacificCalendarGridRange/);
+  assert.match(calendar, /role="status"/);
   assert.match(calendarHook, /fetchCalendarEvents\(calendarRange\.start, calendarRange\.end\)/);
+  assert.match(calendarHook, /isCalendarLoading/);
+  assert.match(calendarHook, /finally/);
   assert.match(calendarHook, /useEffect/);
   assert.match(restoreHook, /restoreSavedEventFeedSpot/);
   assert.match(restoreHook, /useLayoutEffect/);

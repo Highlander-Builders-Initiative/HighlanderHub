@@ -21,6 +21,7 @@ type Props = {
   selectedKey: string;
   onSelect: (dayKey: string) => void;
   categoriesByDay: Map<string, EventCategory[]>;
+  isLoading: boolean;
 };
 
 export function EventsMiniCalendar({
@@ -30,6 +31,7 @@ export function EventsMiniCalendar({
   selectedKey,
   onSelect,
   categoriesByDay,
+  isLoading,
 }: Props) {
   const cells = useMemo(() => {
     const { start } = pacificCalendarGridRange(cursor);
@@ -42,9 +44,24 @@ export function EventsMiniCalendar({
   return (
     <div>
       <div className="mb-3 flex items-center justify-between gap-2">
-        <h2 className="font-display text-base font-semibold tracking-[-0.015em] text-ink">
-          {monthLabel}
-        </h2>
+        <div className="flex min-w-0 items-center gap-2">
+          <h2 className="font-display text-base font-semibold tracking-[-0.015em] text-ink">
+            {monthLabel}
+          </h2>
+          {isLoading && (
+            <span
+              role="status"
+              aria-live="polite"
+              className="inline-flex items-center gap-1.5 text-[11px] font-medium text-muted"
+            >
+              <span
+                aria-hidden
+                className="h-2 w-2 animate-pulse rounded-full bg-sky"
+              />
+              Loading
+            </span>
+          )}
+        </div>
         <div className="flex items-center gap-0.5">
           <button
             type="button"
@@ -118,7 +135,7 @@ export function EventsMiniCalendar({
               >
                 {pacificDayOfMonth(key)}
               </span>
-              {dots.length > 0 && (
+              {!isLoading && dots.length > 0 && (
                 <span
                   aria-hidden
                   className="absolute bottom-1 flex items-center gap-[2px]"
