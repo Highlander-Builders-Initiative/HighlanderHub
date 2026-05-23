@@ -2,12 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-
-const NAV_LINKS = [
-  { href: "/events", label: "Events" },
-  { href: "/about", label: "About" },
-  { href: "/submit", label: "Submit" },
-] as const;
+import { MASTHEAD_NAV_LINKS } from "@/lib/site-nav";
 
 const NAV_LINK_CLASS =
   "interactive-focus px-1 py-2 text-ink transition-colors hover:text-ink/70";
@@ -98,7 +93,7 @@ export function Masthead({
             hideNavOnDesktop ? "flex lg:hidden" : "flex"
           }`}
         >
-          {NAV_LINKS.map((link) => (
+          {MASTHEAD_NAV_LINKS.map((link) => (
             <Link key={link.href} href={link.href} className={NAV_LINK_CLASS}>
               {link.label}
             </Link>

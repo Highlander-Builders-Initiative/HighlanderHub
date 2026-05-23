@@ -93,6 +93,7 @@ test("event cards link to a detail page and stay accessible", () => {
 
 test("event back navigation restores from a snapshot before falling back to pagination", () => {
   const browser = read("src/components/events/EventsBrowser.tsx");
+  const restore = read("src/lib/event-feed-restore.ts");
   const session = read("src/lib/event-feed-session.ts");
   const scroll = read("src/lib/scroll-restoration.ts");
 
@@ -104,16 +105,14 @@ test("event back navigation restores from a snapshot before falling back to pagi
   assert.match(browser, /saveEventFeedSnapshot/);
   assert.match(browser, /getSavedEventFeedSnapshotForRestore/);
   assert.match(browser, /restoreSavedSpot/);
+  assert.match(browser, /restoreEventsUntilTarget/);
   assert.match(browser, /root\.style\.scrollBehavior = "auto"/);
-  assert.match(browser, /returnScroll\.loadedCount/);
+  assert.match(restore, /returnScroll\.loadedCount/);
   assert.match(
-    browser,
+    restore,
     /const limitToFetch = Math\.max\(0, returnScroll\.loadedCount - current\.length\);/
   );
-  assert.match(
-    browser,
-    /fetch\(\s*`\/api\/events\?offset=\$\{next\}&limit=\$\{limitToFetch\}`\s*\)/
-  );
+  assert.match(restore, /fetch\(`\/api\/events\?\$\{params\}`\)/);
   assert.match(browser, /IntersectionObserver/);
   assert.match(scroll, /getSavedReturnPath/);
   assert.match(scroll, /highlanderhub\.returnScroll/);
@@ -137,16 +136,20 @@ test("event detail page exposes RSVP / calendar / share actions", () => {
 
 test("masthead keeps navigation reachable on mobile", () => {
   const source = read("src/components/layout/Masthead.tsx");
+  const siteNav = read("src/lib/site-nav.ts");
   const eventsPage = read("src/app/events/page.tsx");
   const eventsBrowser = read("src/components/events/EventsBrowser.tsx");
   const homePage = read("src/app/page.tsx");
 
   assert.match(source, /aria-label="Site"/);
   assert.doesNotMatch(source, /Mobile navigation/);
-  assert.match(source, /NAV_LINKS\.map/);
-  assert.match(source, /\/events/);
-  assert.match(source, /"\/about"/);
-  assert.match(source, /"\/submit"/);
+  assert.match(source, /MASTHEAD_NAV_LINKS\.map/);
+  assert.match(source, /@\/lib\/site-nav/);
+  assert.match(siteNav, /SITE_NAV_LINKS/);
+  assert.match(siteNav, /href: "\/"/);
+  assert.match(siteNav, /href: "\/events"/);
+  assert.match(siteNav, /href: "\/about"/);
+  assert.match(siteNav, /href: "\/submit"/);
   assert.match(source, /hideOnScroll/);
   assert.match(source, /position = "sticky"/);
   assert.match(source, /position === "sticky"/);
@@ -157,6 +160,25 @@ test("masthead keeps navigation reachable on mobile", () => {
   assert.match(eventsBrowser, /bg-white\/55/);
   assert.match(eventsBrowser, /backdrop-blur-xl/);
   assert.match(homePage, /<Masthead \/>/);
+});
+
+test("event filters share category and day-window controls across layouts", () => {
+  const leftRail = read("src/components/events/EventsLeftRail.tsx");
+  const rightRail = read("src/components/events/EventsRightRail.tsx");
+  const sheet = read("src/components/events/EventsMobileFilterSheet.tsx");
+  const categoryFilter = read("src/components/events/EventCategoryFilter.tsx");
+  const dayWindowFilter = read("src/components/events/EventDayWindowFilter.tsx");
+
+  assert.match(leftRail, /<EventCategoryFilter/);
+  assert.match(leftRail, /layout="rail"/);
+  assert.match(sheet, /<EventCategoryFilter/);
+  assert.match(sheet, /layout="grid"/);
+  assert.match(rightRail, /<EventDayWindowFilter/);
+  assert.match(rightRail, /layout="rail"/);
+  assert.match(sheet, /<EventDayWindowFilter/);
+  assert.match(sheet, /layout="sheet"/);
+  assert.match(categoryFilter, /CATEGORIES\.map/);
+  assert.match(dayWindowFilter, /DAY_WINDOWS\.map/);
 });
 
 test("motion and focus behavior have accessible fallbacks", () => {
