@@ -49,7 +49,7 @@ const DEFAULT_INITIAL_FILTERS: EventsBrowserInitialFilters = {
 type EventsBrowserProps = {
   events: CampusEvent[];
   calendarEvents: CampusEvent[];
-  summary: { total: number; upcomingThisWeek: number; freeFood: number };
+  summary: { upcomingThisWeek: number };
   initialHasMore?: boolean;
   initialNextOffset?: number;
   initialFilters?: EventsBrowserInitialFilters;

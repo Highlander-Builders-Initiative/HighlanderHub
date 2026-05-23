@@ -71,6 +71,7 @@ test("calendar loads its own month-range events outside feed pagination", () => 
   assert.match(filters, /for \(const \[key, evs\] of calendarGrouped\)/);
   assert.match(calendar, /pacificCalendarGridRange/);
   assert.match(calendar, /aria-busy=\{isLoading\}/);
+  assert.match(calendar, /!isLoading && dots\.length > 0/);
   assert.match(calendarHook, /fetchCalendarEvents\(calendarRange\.start, calendarRange\.end\)/);
   assert.match(calendarHook, /isCalendarLoading/);
   assert.match(calendarHook, /finally/);
@@ -240,7 +241,12 @@ test("event empty state uses hook-owned active filter facts", () => {
   assert.match(filters, /const hasActiveFilters = activeFilters\.hasAny/);
   assert.match(browser, /activeFilters=\{activeFilters\}/);
   assert.match(feedColumn, /diagnoseEmpty\(activeFilters\)/);
+  assert.match(feedColumn, /EMPTY_COPY_BY_MASK/);
+  assert.match(feedColumn, /const mask =/);
   assert.match(feedColumn, /const hasActiveFilters = activeFilters\.hasAny/);
+  assert.doesNotMatch(feedColumn, /hasQ &&/);
+  assert.doesNotMatch(feedColumn, /hasC &&/);
+  assert.doesNotMatch(feedColumn, /hasW\)/);
   assert.doesNotMatch(feedColumn, /query\.trim\(\)/);
   assert.doesNotMatch(feedColumn, /category !== "all"/);
   assert.doesNotMatch(feedColumn, /dayWindow !== "all"/);
