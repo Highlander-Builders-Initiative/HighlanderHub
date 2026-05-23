@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { getSavedReturnPath } from "@/lib/event-feed-session";
+import { getSavedReturnPath } from "@/lib/events/feed-session";
 
 export function EventBackButton() {
   const router = useRouter();

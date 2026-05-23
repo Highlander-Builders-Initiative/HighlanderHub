@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import type { CampusEvent, EventCategory } from "@/types/event";
-import { groupByDay } from "@/lib/event-grouping";
+import { groupByDay } from "@/lib/events/grouping";
 import {
   CATEGORIES,
   matchesCategory,

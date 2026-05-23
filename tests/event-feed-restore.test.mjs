@@ -96,7 +96,7 @@ function installRestoreDomHarness({ cardTop } = {}) {
 
 test("restoreEventsUntilTarget batches to the saved loaded count, then falls back to pages", async () => {
   const { restoreEventsUntilTarget } = await importTsModule(
-    "src/lib/event-feed-restore.ts"
+    "src/lib/events/feed-restore.ts"
   );
   const calls = [];
   const pages = [
@@ -138,8 +138,8 @@ test("restoreEventsUntilTarget batches to the saved loaded count, then falls bac
 });
 
 test("restoreSavedEventFeedSpot handles card and scroll restores from a derived intent", async () => {
-  const session = await importTsModule("src/lib/event-feed-session.ts");
-  const restore = await importTsModule("src/lib/event-feed-restore.ts");
+  const session = await importTsModule("src/lib/events/feed-session.ts");
+  const restore = await importTsModule("src/lib/events/feed-restore.ts");
   const harness = installRestoreDomHarness({ cardTop: 60 });
   const { root } = harness;
 
@@ -247,8 +247,8 @@ test("restoreSavedEventFeedSpot handles card and scroll restores from a derived 
 });
 
 test("restoreSavedEventFeedSpot uses snapshot pagination when return scroll has eventId but snapshot does not", async () => {
-  const session = await importTsModule("src/lib/event-feed-session.ts");
-  const restore = await importTsModule("src/lib/event-feed-restore.ts");
+  const session = await importTsModule("src/lib/events/feed-session.ts");
+  const restore = await importTsModule("src/lib/events/feed-restore.ts");
   const harness = installRestoreDomHarness({ cardTop: 40 });
   const { root, sessionStorage } = harness;
 

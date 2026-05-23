@@ -19,9 +19,9 @@ import {
   startOfPacificMonthKey,
 } from "@/lib/dates";
 import { track } from "@/lib/analytics";
-import { saveEventFeedSnapshot } from "@/lib/event-feed-session";
-import { fetchEventsPage } from "@/lib/events-api";
-import { mergeUniqueEventsByStart } from "@/lib/events-merge";
+import { saveEventFeedSnapshot } from "@/lib/events/feed-session";
+import { fetchEventsPage } from "@/lib/events/api";
+import { mergeUniqueEventsByStart } from "@/lib/events/merge";
 import {
   type CategoryValue,
   type DayWindow,
@@ -31,7 +31,7 @@ import { useEventFeedFilters } from "./useEventFeedFilters";
 import { useInfiniteEventFeedLoader } from "./useInfiniteEventFeedLoader";
 import { useEventFeedRestore } from "./useEventFeedRestore";
 import { useObservedDayKey } from "./useObservedDayKey";
-import type { EventFeedRestorePatch } from "@/lib/event-feed-restore";
+import type { EventFeedRestorePatch } from "@/lib/events/feed-restore";
 
 type EventsBrowserProps = {
   events: CampusEvent[];

@@ -8,8 +8,8 @@ const read = (path) => readFileSync(sourceFile(path), "utf8");
 test("event browser paginates the list instead of rendering every event at once", () => {
   const browser = read("src/components/events/EventsBrowser.tsx");
   const loader = read("src/components/events/useInfiniteEventFeedLoader.ts");
-  const data = read("src/lib/events.ts");
-  const eventsApi = read("src/lib/events-api.ts");
+  const data = read("src/lib/events/index.ts");
+  const eventsApi = read("src/lib/events/api.ts");
   const api = read("src/app/api/events/route.ts");
 
   assert.match(data, /EVENTS_PAGE_SIZE/);
@@ -27,7 +27,7 @@ test("event browser paginates the list instead of rendering every event at once"
 test("events page header uses full upcoming event totals", () => {
   const page = read("src/app/events/page.tsx");
   const feedColumn = read("src/components/events/EventsFeedColumn.tsx");
-  const data = read("src/lib/events.ts");
+  const data = read("src/lib/events/index.ts");
 
   assert.match(data, /getEventsSummary/);
   assert.match(data, /head: true/);
@@ -47,8 +47,8 @@ test("calendar loads its own month-range events outside feed pagination", () => 
   const restoreHook = read("src/components/events/useEventFeedRestore.ts");
   const filters = read("src/components/events/useEventFeedFilters.ts");
   const calendar = read("src/components/events/EventsMiniCalendar.tsx");
-  const data = read("src/lib/events.ts");
-  const eventsApi = read("src/lib/events-api.ts");
+  const data = read("src/lib/events/index.ts");
+  const eventsApi = read("src/lib/events/api.ts");
   const calendarApi = read("src/app/api/events/calendar/route.ts");
 
   assert.match(data, /export async function getCalendarEvents/);
@@ -138,8 +138,8 @@ test("event cards link to a detail page and stay accessible", () => {
 
 test("event back navigation restores from a snapshot before falling back to pagination", () => {
   const browser = read("src/components/events/EventsBrowser.tsx");
-  const restore = read("src/lib/event-feed-restore.ts");
-  const session = read("src/lib/event-feed-session.ts");
+  const restore = read("src/lib/events/feed-restore.ts");
+  const session = read("src/lib/events/feed-session.ts");
   const restoreHook = read("src/components/events/useEventFeedRestore.ts");
 
   assert.match(session, /saveEventFeedSnapshot/);

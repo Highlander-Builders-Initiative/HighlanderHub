@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { CampusEvent } from "@/types/event";
 import { formatDay, formatTimeRange } from "@/lib/dates";
-import { shareHref } from "@/lib/event-actions";
+import { shareHref } from "@/lib/events/actions";
 import { track } from "@/lib/analytics";
 
 type Variant = "text" | "icon";

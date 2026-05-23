@@ -1,4 +1,4 @@
-import { normalizeHttpUrl } from "@/lib/event-validation";
+import { normalizeHttpUrl } from "@/lib/events/validation";
 import type { EventCategory } from "@/types/event";
 
 export type FieldName =

@@ -5,11 +5,11 @@ import type { CampusEvent } from "@/types/event";
 import {
   readEventFeedRestoreState,
   type EventFeedRestoreState,
-} from "@/lib/event-feed-session";
+} from "@/lib/events/feed-session";
 import {
   restoreSavedEventFeedSpot,
   type EventFeedRestorePatch,
-} from "@/lib/event-feed-restore";
+} from "@/lib/events/feed-restore";
 
 type RestoreBootstrap = EventFeedRestoreState & {
   currentEvents: CampusEvent[];

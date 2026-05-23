@@ -1,12 +1,14 @@
 {
-  "name": "ucr-events",
+  "name": "highlander-hub",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "e2e": "playwright test",
-    "test": "node --test tests/*.test.mjs",
+    "test:unit": "node --test tests/*.test.mjs",
+    "test:e2e": "playwright test",
+    "test": "npm run test:unit",
     "generate:rows": "node scripts/generate-row-types.mjs",
     "start": "next start",
     "lint": "next lint"

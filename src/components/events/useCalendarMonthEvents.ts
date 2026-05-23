@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { CampusEvent } from "@/types/event";
-import { fetchCalendarEvents } from "@/lib/events-api";
+import { fetchCalendarEvents } from "@/lib/events/api";
 
 type CalendarRange = {
   start: string;

@@ -6,9 +6,9 @@ import { memo, type MouseEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { CampusEvent } from "@/types/event";
 import { formatTime } from "@/lib/dates";
-import { eventFlyerAlt, eventListLinkLabel } from "@/lib/event-a11y";
+import { eventFlyerAlt, eventListLinkLabel } from "@/lib/events/a11y";
 import { track } from "@/lib/analytics";
-import { saveEventFeedReturn } from "@/lib/event-feed-session";
+import { saveEventFeedReturn } from "@/lib/events/feed-session";
 import { CATEGORY_RAIL } from "@/lib/category-colors";
 import { CategoryBadge } from "../ui/CategoryBadge";
 

@@ -55,7 +55,7 @@ test("event feed session keeps the list snapshot and return metadata together", 
   Date.now = () => 1_700_000_000_000;
 
   try {
-    const session = await importTsModule("src/lib/event-feed-session.ts");
+    const session = await importTsModule("src/lib/events/feed-session.ts");
     const events = [
       {
         id: "event-1",
@@ -119,7 +119,7 @@ test("event feed session ignores stale snapshots on a fresh events visit", async
   Date.now = () => 1_700_000_000_000;
 
   try {
-    const session = await importTsModule("src/lib/event-feed-session.ts");
+    const session = await importTsModule("src/lib/events/feed-session.ts");
     session.saveEventFeedSnapshot({
       path: "/events",
       scrollY: 900,
@@ -164,7 +164,7 @@ test("event feed session entries expire after ten minutes", async () => {
   Date.now = () => 1_700_000_000_000;
 
   try {
-    const session = await importTsModule("src/lib/event-feed-session.ts");
+    const session = await importTsModule("src/lib/events/feed-session.ts");
     session.saveEventFeedSnapshot({
       path: "/events",
       scrollY: 420,
@@ -191,7 +191,7 @@ test("event feed session rejects stale calendar snapshots as invalid", async () 
   const env = installBrowserEnv();
 
   try {
-    const session = await importTsModule("src/lib/event-feed-session.ts");
+    const session = await importTsModule("src/lib/events/feed-session.ts");
     env.store.set(
       "highlanderhub.eventFeed",
       JSON.stringify({
@@ -221,7 +221,7 @@ test("event feed session accepts every generated category value", async () => {
   Date.now = () => 1_700_000_000_000;
 
   try {
-    const session = await importTsModule("src/lib/event-feed-session.ts");
+    const session = await importTsModule("src/lib/events/feed-session.ts");
     const { EVENT_CATEGORIES } = await importTsModule("src/types/event.ts");
 
     for (const category of EVENT_CATEGORIES) {

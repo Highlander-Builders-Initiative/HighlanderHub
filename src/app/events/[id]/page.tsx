@@ -6,12 +6,12 @@ import { Footer } from "@/components/layout/Footer";
 import { CategoryBadge } from "@/components/ui/CategoryBadge";
 import { getEventById } from "@/lib/events";
 import { formatDay, formatTimeRange, relativeDay } from "@/lib/dates";
-import { calendarHref } from "@/lib/event-actions";
+import { calendarHref } from "@/lib/events/actions";
 import { ShareButton } from "@/components/events/ShareButton";
 import { EventBackButton } from "@/components/events/EventBackButton";
 import { TrackedAnchor } from "@/components/events/TrackedAnchor";
 import { SITE_NAME, SITE_PREVIEW_IMAGE, absoluteUrl } from "@/lib/seo";
-import { normalizeHttpUrl } from "@/lib/event-validation";
+import { normalizeHttpUrl } from "@/lib/events/validation";
 import type { CampusEvent } from "@/types/event";
 
 export const dynamic = "force-dynamic";

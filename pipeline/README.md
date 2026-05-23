@@ -4,9 +4,9 @@ Three sources right now, hand-off to the Next.js app via Supabase tables:
 
 | Source | Scraper | Raw | Table | App reader |
 | --- | --- | --- | --- | --- |
-| Instagram stories | `scrape.py` ([instaloader](https://github.com/instaloader/instaloader)) + `extract_stories.py` | `data/raw/<handle>/` | `stories`, `events` | `src/lib/events.ts` |
-| events.ucr.edu (Localist) | `ucr_events.py` (JSON API) | `data/raw/ucr_events/` | `events` | `src/lib/events.ts` |
-| highlanderlink.ucr.edu (CampusLabs Engage) | `highlander_link.py` (JSON API) | `data/raw/highlander_link/` | `events` | `src/lib/events.ts` |
+| Instagram stories | `scrape.py` ([instaloader](https://github.com/instaloader/instaloader)) + `extract_stories.py` | `data/raw/<handle>/` | `stories`, `events` | `src/lib/events/index.ts` |
+| events.ucr.edu (Localist) | `ucr_events.py` (JSON API) | `data/raw/ucr_events/` | `events` | `src/lib/events/index.ts` |
+| highlanderlink.ucr.edu (CampusLabs Engage) | `highlander_link.py` (JSON API) | `data/raw/highlander_link/` | `events` | `src/lib/events/index.ts` |
 
 `run.py` scrapes everything, extracts IG event rows, then normalizes. Failures
 in one source don't kill the others — the raw archive on disk is the source of
@@ -115,7 +115,7 @@ truth.
 
 ### `events`
 
-Already in the DB shape that `src/lib/events.ts` maps into `CampusEvent`
+Already in the DB shape that `src/lib/events/index.ts` maps into `CampusEvent`
 (see `src/types/event.ts`; row type is `EventRow` in `src/lib/supabase-rows.ts`).
 
 ```jsonc
@@ -166,7 +166,7 @@ Already in the DB shape that `src/lib/events.ts` maps into `CampusEvent`
 ## Hand-off to the app
 
 The Next.js app reads upcoming events from the Supabase `events` table via
-`src/lib/events.ts`. `extract_stories.py` writes Instagram flyers into that
+`src/lib/events/index.ts`. `extract_stories.py` writes Instagram flyers into that
 same table with `source='instagram'`, so extracted IG events appear alongside
 Localist events without a frontend change.
 
