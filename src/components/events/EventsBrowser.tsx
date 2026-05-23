@@ -149,6 +149,7 @@ export function EventsBrowser({
 
   const {
     trimmedQuery,
+    activeFilters,
     filtered,
     counts,
     grouped,
@@ -329,10 +330,8 @@ export function EventsBrowser({
           onOpenMobileFilters={openMobileFilters}
           activeFilterCount={activeFilterCount}
           resultsLabel={resultsLabel}
-          hasActiveFilters={hasActiveFilters}
+          activeFilters={activeFilters}
           onClearFilters={clearFilters}
-          category={category}
-          dayWindow={dayWindow}
           todayKey={todayKey}
           dayKeys={dayKeys}
           grouped={grouped}

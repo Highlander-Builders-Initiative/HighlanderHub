@@ -6,6 +6,7 @@ import { formatPacificDayKey } from "@/lib/dates";
 import { EventCard } from "./EventCard";
 import { SubmitEventCta } from "./SubmitEventCta";
 import { CATEGORIES, type CategoryValue, type DayWindow } from "./events-filters";
+import type { EventFeedActiveFilters } from "./useEventFeedFilters";
 
 type Props = {
   summary: { total: number; upcomingThisWeek: number; freeFood: number };
@@ -14,10 +15,8 @@ type Props = {
   onOpenMobileFilters: () => void;
   activeFilterCount: number;
   resultsLabel: string;
-  hasActiveFilters: boolean;
+  activeFilters: EventFeedActiveFilters;
   onClearFilters: () => void;
-  category: CategoryValue;
-  dayWindow: DayWindow;
   todayKey: string;
   dayKeys: string[];
   grouped: Map<string, CampusEvent[]>;
@@ -41,17 +40,16 @@ function windowPhraseFor(value: DayWindow): string {
   return "";
 }
 
-function diagnoseEmpty(args: {
-  query: string;
-  category: CategoryValue;
-  dayWindow: DayWindow;
-}): { headline: string; nudge: string } {
-  const q = args.query.trim();
-  const hasQ = q.length > 0;
-  const hasC = args.category !== "all";
-  const hasW = args.dayWindow !== "all";
-  const cat = categoryLabelFor(args.category);
-  const win = windowPhraseFor(args.dayWindow);
+function diagnoseEmpty(filters: EventFeedActiveFilters): {
+  headline: string;
+  nudge: string;
+} {
+  const q = filters.query;
+  const hasQ = filters.hasQuery;
+  const hasC = filters.hasCategory;
+  const hasW = filters.hasDayWindow;
+  const cat = categoryLabelFor(filters.category);
+  const win = windowPhraseFor(filters.dayWindow);
   const quoted = `“${q}”`;
 
   if (hasQ && hasC && hasW) {
@@ -94,7 +92,7 @@ function diagnoseEmpty(args: {
     return {
       headline: `Nothing on the calendar ${win}.`,
       nudge:
-        args.dayWindow === "today"
+        filters.dayWindow === "today"
           ? "Try This week or Weekend instead."
           : "Open the window to Anytime to see what's queued.",
     };
@@ -112,10 +110,8 @@ export function EventsFeedColumn({
   onOpenMobileFilters,
   activeFilterCount,
   resultsLabel,
-  hasActiveFilters,
+  activeFilters,
   onClearFilters,
-  category,
-  dayWindow,
   todayKey,
   dayKeys,
   grouped,
@@ -128,10 +124,8 @@ export function EventsFeedColumn({
   dayHeaderRefs,
 }: Props) {
   const showEmptyState = dayKeys.length === 0;
-  const emptyCopy = useMemo(
-    () => diagnoseEmpty({ query, category, dayWindow }),
-    [query, category, dayWindow]
-  );
+  const emptyCopy = useMemo(() => diagnoseEmpty(activeFilters), [activeFilters]);
+  const hasActiveFilters = activeFilters.hasAny;
 
   const daySections = useMemo(
     () =>

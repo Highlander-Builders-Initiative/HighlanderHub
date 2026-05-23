@@ -26,6 +26,16 @@ type UseEventFeedFiltersArgs = {
   todayKey: string;
 };
 
+export type EventFeedActiveFilters = {
+  query: string;
+  hasQuery: boolean;
+  category: CategoryValue;
+  hasCategory: boolean;
+  dayWindow: DayWindow;
+  hasDayWindow: boolean;
+  hasAny: boolean;
+};
+
 export function useEventFeedFilters({
   loadedEvents,
   calendarEvents,
@@ -36,6 +46,20 @@ export function useEventFeedFilters({
 }: UseEventFeedFiltersArgs) {
   const trimmedQuery = query.trim();
   const normalizedQuery = trimmedQuery.toLowerCase();
+  const activeFilters = useMemo<EventFeedActiveFilters>(() => {
+    const hasQuery = trimmedQuery.length > 0;
+    const hasCategory = category !== "all";
+    const hasDayWindow = dayWindow !== "all";
+    return {
+      query: trimmedQuery,
+      hasQuery,
+      category,
+      hasCategory,
+      dayWindow,
+      hasDayWindow,
+      hasAny: hasQuery || hasCategory || hasDayWindow,
+    };
+  }, [category, dayWindow, trimmedQuery]);
 
   const eventSearchText = useMemo(
     () => loadedEvents.map(buildEventSearchText),
@@ -118,18 +142,19 @@ export function useEventFeedFilters({
     return map;
   }, [calendarGrouped]);
 
-  const hasActiveFilters =
-    category !== "all" || trimmedQuery.length > 0 || dayWindow !== "all";
+  const hasActiveFilters = activeFilters.hasAny;
 
   const resultsLabel = hasActiveFilters
     ? `${filtered.length} matching ${filtered.length === 1 ? "event" : "events"}`
     : `${filtered.length} ${filtered.length === 1 ? "event" : "events"} loaded`;
 
   const activeFilterCount =
-    (category !== "all" ? 1 : 0) + (dayWindow !== "all" ? 1 : 0);
+    (activeFilters.hasCategory ? 1 : 0) +
+    (activeFilters.hasDayWindow ? 1 : 0);
 
   return {
     trimmedQuery,
+    activeFilters,
     filteredExceptCategory,
     filtered,
     counts,
