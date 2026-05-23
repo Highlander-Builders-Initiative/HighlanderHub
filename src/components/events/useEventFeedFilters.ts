@@ -175,9 +175,12 @@ export function useEventFeedFilters({
 
   const hasActiveFilters = activeFilters.hasAny;
 
+  const loadedTotal = filtered.length;
   const feedTotal = filterCountSource.length;
   const resultsLabel = hasActiveFilters
     ? `${filtered.length} matching ${filtered.length === 1 ? "event" : "events"}`
+    : loadedTotal === feedTotal
+      ? `${loadedTotal} ${loadedTotal === 1 ? "event" : "events"} loaded`
     : `${filtered.length} of ${feedTotal} ${feedTotal === 1 ? "event" : "events"} loaded`;
 
   const activeFilterCount =
