@@ -213,5 +213,7 @@ export function saveEventFeedReturn(
 }
 
 export function clearEventFeedReturnState() {
+  // Restore success only clears the return-scroll marker.
+  // The feed snapshot is intentionally left to TTL-based expiry.
   clearSavedScrollPosition();
 }
