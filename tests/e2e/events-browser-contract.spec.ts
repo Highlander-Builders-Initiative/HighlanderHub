@@ -31,3 +31,35 @@ test("event filters expose accessible state and recovery actions", async ({
   await page.getByRole("button", { name: "Clear filters" }).click();
   await expect(summary).toHaveText("1 event loaded");
 });
+
+test("calendar shows loading state while month events refresh", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto("/events");
+
+  const calendarRail = page.locator(
+    'aside[aria-label="Calendar and time filter"]'
+  );
+  await expect(calendarRail.getByRole("heading")).toBeVisible();
+
+  let releaseCalendarResponse!: () => void;
+  const calendarResponse = new Promise<void>((resolve) => {
+    releaseCalendarResponse = resolve;
+  });
+
+  await page.route("**/api/events/calendar**", async (route) => {
+    await calendarResponse;
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ events: [] }),
+    });
+  });
+
+  await calendarRail.getByRole("button", { name: "Next month" }).click();
+  await expect(calendarRail.getByRole("status")).toHaveText("Loading");
+
+  releaseCalendarResponse();
+  await expect(calendarRail.getByRole("status")).toHaveCount(0);
+});
