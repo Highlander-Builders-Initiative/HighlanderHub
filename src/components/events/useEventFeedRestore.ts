@@ -89,7 +89,6 @@ export function useEventFeedRestore({
       cancelled = true;
     };
   }, [
-    restoreState,
     setCategory,
     setQuery,
     setDayWindow,
