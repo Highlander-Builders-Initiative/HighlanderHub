@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import type { CampusEvent, EventCategory } from "@/types/event";
+import { getEmptyFeedCopy } from "@/lib/events/empty-feed-copy";
 import { groupByDay } from "@/lib/events/grouping";
 import {
   CATEGORIES,
@@ -60,6 +61,10 @@ export function useEventFeedFilters({
       hasAny: hasQuery || hasCategory || hasDayWindow,
     };
   }, [category, dayWindow, trimmedQuery]);
+  const emptyCopy = useMemo(
+    () => getEmptyFeedCopy(activeFilters),
+    [activeFilters]
+  );
 
   const eventSearchText = useMemo(
     () => loadedEvents.map(buildEventSearchText),
@@ -155,6 +160,7 @@ export function useEventFeedFilters({
   return {
     trimmedQuery,
     activeFilters,
+    emptyCopy,
     filteredExceptCategory,
     filtered,
     counts,

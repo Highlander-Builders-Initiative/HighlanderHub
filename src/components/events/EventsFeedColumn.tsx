@@ -3,9 +3,10 @@
 import { useMemo, type MutableRefObject, type RefObject } from "react";
 import type { CampusEvent } from "@/types/event";
 import { formatPacificDayKey } from "@/lib/dates";
+import type { EmptyFeedCopy } from "@/lib/events/empty-feed-copy";
 import { EventCard } from "./EventCard";
 import { SubmitEventCta } from "./SubmitEventCta";
-import { CATEGORIES, type CategoryValue, type DayWindow } from "./events-filters";
+import { ActiveFilterChips } from "./ActiveFilterChips";
 import type { EventFeedActiveFilters } from "./useEventFeedFilters";
 
 type Props = {
@@ -16,7 +17,12 @@ type Props = {
   activeFilterCount: number;
   resultsLabel: string;
   activeFilters: EventFeedActiveFilters;
+  emptyCopy: EmptyFeedCopy;
+  hasActiveFilters: boolean;
   onClearFilters: () => void;
+  onClearCategory: () => void;
+  onClearDayWindow: () => void;
+  onClearQuery: () => void;
   todayKey: string;
   dayKeys: string[];
   grouped: Map<string, CampusEvent[]>;
@@ -29,90 +35,6 @@ type Props = {
   dayHeaderRefs: MutableRefObject<Map<string, HTMLElement>>;
 };
 
-function categoryLabelFor(value: CategoryValue): string {
-  return CATEGORIES.find((c) => c.value === value)?.label ?? "All";
-}
-
-function windowPhraseFor(value: DayWindow): string {
-  if (value === "today") return "today";
-  if (value === "week") return "this week";
-  if (value === "weekend") return "this weekend";
-  return "";
-}
-
-type EmptyCopy = {
-  headline: string;
-  nudge: string;
-};
-
-type EmptyCopyContext = {
-  cat: string;
-  win: string;
-  quoted: string;
-  dayWindow: DayWindow;
-};
-
-type EmptyCopyFactory = (context: EmptyCopyContext) => EmptyCopy;
-
-const EMPTY_HAS_QUERY = 1;
-const EMPTY_HAS_CATEGORY = 2;
-const EMPTY_HAS_WINDOW = 4;
-
-const EMPTY_COPY_BY_MASK: Record<number, EmptyCopyFactory> = {
-  [EMPTY_HAS_QUERY | EMPTY_HAS_CATEGORY | EMPTY_HAS_WINDOW]: ({ cat, win, quoted }) => ({
-    headline: `Nothing in ${cat} ${win} matches ${quoted}.`,
-    nudge: "Clearing the search opens this up faster than loosening the category or window.",
-  }),
-  [EMPTY_HAS_QUERY | EMPTY_HAS_CATEGORY]: ({ cat, quoted }) => ({
-    headline: `Nothing in ${cat} matches ${quoted}.`,
-    nudge: "Clear the search first; the category is usually the smaller change.",
-  }),
-  [EMPTY_HAS_QUERY | EMPTY_HAS_WINDOW]: ({ win, quoted }) => ({
-    headline: `Nothing ${win} matches ${quoted}.`,
-    nudge: "Widen the window past " + win + ", or shorten the search.",
-  }),
-  [EMPTY_HAS_CATEGORY | EMPTY_HAS_WINDOW]: ({ cat, win }) => ({
-    headline: `No ${cat} ${win}.`,
-    nudge: `Try opening the window past ${win}; ${cat} is a smaller pool than the date.`,
-  }),
-  [EMPTY_HAS_QUERY]: ({ quoted }) => ({
-    headline: `Nothing on the bulletin matches ${quoted}.`,
-    nudge: "Shorter or different words usually do it; titles, hosts, and tags are all searched.",
-  }),
-  [EMPTY_HAS_CATEGORY]: ({ cat }) => ({
-    headline: `No ${cat} queued right now.`,
-    nudge: "Switch back to All to see everything that's up.",
-  }),
-  [EMPTY_HAS_WINDOW]: ({ win, dayWindow }) => ({
-    headline: `Nothing on the calendar ${win}.`,
-    nudge:
-      dayWindow === "today"
-        ? "Try This week or Weekend instead."
-        : "Open the window to Anytime to see what's queued.",
-  }),
-  0: () => ({
-    headline: "The bulletin's quiet right now.",
-    nudge: "Check back later, or be the first to put something up.",
-  }),
-};
-
-function diagnoseEmpty(filters: EventFeedActiveFilters): EmptyCopy {
-  const cat = categoryLabelFor(filters.category);
-  const win = windowPhraseFor(filters.dayWindow);
-  const quoted = `“${filters.query}”`;
-  const mask =
-    (filters.hasQuery ? EMPTY_HAS_QUERY : 0) |
-    (filters.hasCategory ? EMPTY_HAS_CATEGORY : 0) |
-    (filters.hasDayWindow ? EMPTY_HAS_WINDOW : 0);
-
-  return EMPTY_COPY_BY_MASK[mask]({
-    cat,
-    win,
-    quoted,
-    dayWindow: filters.dayWindow,
-  });
-}
-
 export function EventsFeedColumn({
   summary,
   query,
@@ -121,7 +43,12 @@ export function EventsFeedColumn({
   activeFilterCount,
   resultsLabel,
   activeFilters,
+  emptyCopy,
+  hasActiveFilters,
   onClearFilters,
+  onClearCategory,
+  onClearDayWindow,
+  onClearQuery,
   todayKey,
   dayKeys,
   grouped,
@@ -134,8 +61,6 @@ export function EventsFeedColumn({
   dayHeaderRefs,
 }: Props) {
   const showEmptyState = dayKeys.length === 0;
-  const emptyCopy = diagnoseEmpty(activeFilters);
-  const hasActiveFilters = activeFilters.hasAny;
 
   const daySections = useMemo(
     () =>
@@ -229,7 +154,15 @@ export function EventsFeedColumn({
         </div>
       </div>
 
-      <div className="mb-6 flex items-baseline justify-between gap-3">
+      <ActiveFilterChips
+        activeFilters={activeFilters}
+        onClearCategory={onClearCategory}
+        onClearDayWindow={onClearDayWindow}
+        onClearQuery={onClearQuery}
+        onClearAll={onClearFilters}
+      />
+
+      <div className="mb-6">
         <p
           id="event-filter-summary"
           className="text-sm text-muted"
@@ -238,15 +171,6 @@ export function EventsFeedColumn({
         >
           {resultsLabel}
         </p>
-        {hasActiveFilters && (
-          <button
-            type="button"
-            onClick={onClearFilters}
-            className="interactive-focus shrink-0 text-[13px] font-medium text-ink underline-offset-4 hover:underline"
-          >
-            Clear
-          </button>
-        )}
       </div>
 
       {showEmptyState && (
