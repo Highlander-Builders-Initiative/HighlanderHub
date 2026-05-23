@@ -7,6 +7,7 @@ import {
   useRef,
   useCallback,
 } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import type { CampusEvent } from "@/types/event";
 import { EventsLeftRail } from "./EventsLeftRail";
 import { EventsRightRail } from "./EventsRightRail";
@@ -33,12 +34,25 @@ import { useEventFeedRestore } from "./useEventFeedRestore";
 import { useObservedDayKey } from "./useObservedDayKey";
 import type { EventFeedRestorePatch } from "@/lib/events/feed-restore";
 
+export type EventsBrowserInitialFilters = {
+  category: CategoryValue;
+  query: string;
+  dayWindow: DayWindow;
+};
+
+const DEFAULT_INITIAL_FILTERS: EventsBrowserInitialFilters = {
+  category: "all",
+  query: "",
+  dayWindow: "all",
+};
+
 type EventsBrowserProps = {
   events: CampusEvent[];
   calendarEvents: CampusEvent[];
   summary: { total: number; upcomingThisWeek: number; freeFood: number };
   initialHasMore?: boolean;
   initialNextOffset?: number;
+  initialFilters?: EventsBrowserInitialFilters;
 };
 
 export function EventsBrowser({
@@ -47,10 +61,18 @@ export function EventsBrowser({
   summary,
   initialHasMore = false,
   initialNextOffset = events.length,
+  initialFilters = DEFAULT_INITIAL_FILTERS,
 }: EventsBrowserProps) {
-  const [category, setCategory] = useState<CategoryValue>("all");
-  const [query, setQuery] = useState("");
-  const [dayWindow, setDayWindow] = useState<DayWindow>("all");
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const [category, setCategory] = useState<CategoryValue>(
+    initialFilters.category
+  );
+  const [query, setQuery] = useState(initialFilters.query);
+  const [dayWindow, setDayWindow] = useState<DayWindow>(
+    initialFilters.dayWindow
+  );
   const [loadedEvents, setLoadedEvents] = useState(events);
   const [hasMore, setHasMore] = useState(initialHasMore);
   const [nextOffset, setNextOffset] = useState(initialNextOffset);
@@ -144,19 +166,54 @@ export function EventsBrowser({
     todayKey,
   });
 
-  const lastTrackedQuery = useRef("");
+  // Mirror the active filter state to the URL via ?cat=&q=&when=. Uses
+  // router.replace so each keystroke / chip click does not push a history
+  // entry; deep links survive, the back button doesn't.
+  const writeFiltersToUrl = useCallback(
+    (next: {
+      category: CategoryValue;
+      query: string;
+      dayWindow: DayWindow;
+    }) => {
+      const params = new URLSearchParams();
+      if (next.category !== "all") params.set("cat", next.category);
+      if (next.query) params.set("q", next.query);
+      if (next.dayWindow !== "all") params.set("when", next.dayWindow);
+      const search = params.toString();
+      router.replace(search ? `${pathname}?${search}` : pathname, {
+        scroll: false,
+      });
+    },
+    [router, pathname]
+  );
+
+  // Category and day-window are discrete clicks; write the URL immediately so
+  // a chip toggle is shareable the same frame it lands.
   useEffect(() => {
+    if (isRestoring) return;
+    writeFiltersToUrl({ category, query: trimmedQuery, dayWindow });
+    // trimmedQuery is intentionally excluded: text input shares the 600ms
+    // debouncer below, which writes the URL and fires analytics together.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [category, dayWindow, isRestoring, writeFiltersToUrl]);
+
+  // Search input piggybacks on the existing 600ms debouncer that gates the
+  // events_search analytics ping; one timer writes the URL and fires the ping
+  // together, so we never thrash the address bar mid-keystroke.
+  const lastTrackedQuery = useRef(initialFilters.query.trim());
+  useEffect(() => {
+    if (isRestoring) return;
     if (trimmedQuery === lastTrackedQuery.current) return;
     const t = setTimeout(() => {
-      if (trimmedQuery.length === 0) {
-        lastTrackedQuery.current = "";
-        return;
+      writeFiltersToUrl({ category, query: trimmedQuery, dayWindow });
+      if (trimmedQuery.length > 0) {
+        track("events_search", { query_length: trimmedQuery.length });
       }
-      track("events_search", { query_length: trimmedQuery.length });
       lastTrackedQuery.current = trimmedQuery;
     }, 600);
     return () => clearTimeout(t);
-  }, [trimmedQuery]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trimmedQuery, isRestoring, writeFiltersToUrl]);
 
   const clearFilters = useCallback(() => {
     setCategory("all");
@@ -274,6 +331,8 @@ export function EventsBrowser({
           resultsLabel={resultsLabel}
           hasActiveFilters={hasActiveFilters}
           onClearFilters={clearFilters}
+          category={category}
+          dayWindow={dayWindow}
           todayKey={todayKey}
           dayKeys={dayKeys}
           grouped={grouped}

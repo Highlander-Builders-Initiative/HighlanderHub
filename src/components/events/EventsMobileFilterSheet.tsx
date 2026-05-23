@@ -133,7 +133,7 @@ export function EventsMobileFilterSheet({
       <div
         ref={panelRef}
         tabIndex={-1}
-        className="relative flex max-h-[88vh] flex-col rounded-t-2xl bg-canvas shadow-[0_-12px_40px_rgba(15,17,21,0.18)]"
+        className="relative flex max-h-[88vh] flex-col rounded-t-2xl bg-canvas shadow-[0_-8px_28px_rgba(15,17,21,0.08)]"
         style={{
           animation:
             "sheet-up 280ms cubic-bezier(0.16, 1, 0.3, 1) both",

@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import { Masthead } from "@/components/layout/Masthead";
 import { EventsBrowser } from "@/components/events/EventsBrowser";
+import {
+  coerceCategoryParam,
+  coerceDayWindowParam,
+} from "@/components/events/events-filters";
 import { Footer } from "@/components/layout/Footer";
 import {
   getCalendarEvents,
@@ -21,7 +25,16 @@ export const metadata: Metadata = {
     "Browse and filter campus and club events at UC Riverside and around the city.",
 };
 
-export default async function EventsPage() {
+type SearchParam = string | string[] | undefined;
+function firstParam(raw: SearchParam): string | undefined {
+  return Array.isArray(raw) ? raw[0] : raw;
+}
+
+type EventsPageProps = {
+  searchParams: { [key: string]: SearchParam };
+};
+
+export default async function EventsPage({ searchParams }: EventsPageProps) {
   const calendarRange = pacificCalendarGridRange(
     startOfPacificMonthKey(pacificTodayKey())
   );
@@ -35,6 +48,12 @@ export default async function EventsPage() {
   ]);
   const events = initialPage.events;
 
+  const initialFilters = {
+    category: coerceCategoryParam(firstParam(searchParams.cat)),
+    query: firstParam(searchParams.q) ?? "",
+    dayWindow: coerceDayWindowParam(firstParam(searchParams.when)),
+  };
+
   return (
     <main className="min-h-screen bg-canvas">
       <Masthead position="static" variant="solid" hideNavOnDesktop />
@@ -45,6 +64,7 @@ export default async function EventsPage() {
         summary={summary}
         initialHasMore={initialPage.hasMore}
         initialNextOffset={initialPage.nextOffset}
+        initialFilters={initialFilters}
       />
 
       <Footer />

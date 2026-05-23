@@ -34,9 +34,10 @@ test("events page header uses full upcoming event totals", () => {
   assert.match(data, /count:/);
   assert.match(page, /getEventsSummary/);
   assert.match(page, /summary=\{summary\}/);
-  assert.match(feedColumn, /summary\.total/);
+  // The header dateline surfaces upcomingThisWeek; total + freeFood remain
+  // available on the summary prop but are no longer in the page header copy
+  // (the stat-block prose was retired during the editorial pass).
   assert.match(feedColumn, /summary\.upcomingThisWeek/);
-  assert.match(feedColumn, /summary\.freeFood/);
   assert.doesNotMatch(page, /events\.length/);
 });
 
@@ -69,7 +70,7 @@ test("calendar loads its own month-range events outside feed pagination", () => 
   assert.match(filters, /const calendarGrouped = useMemo/);
   assert.match(filters, /for \(const \[key, evs\] of calendarGrouped\)/);
   assert.match(calendar, /pacificCalendarGridRange/);
-  assert.match(calendar, /role="status"/);
+  assert.match(calendar, /aria-busy=\{isLoading\}/);
   assert.match(calendarHook, /fetchCalendarEvents\(calendarRange\.start, calendarRange\.end\)/);
   assert.match(calendarHook, /isCalendarLoading/);
   assert.match(calendarHook, /finally/);
