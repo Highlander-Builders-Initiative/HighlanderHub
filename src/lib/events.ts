@@ -89,41 +89,20 @@ function reportDbFailure(
   });
 }
 
-async function withDbRetry<T>(
+async function withDbRetry<T extends { error: unknown }>(
   operation: string,
-  query: () => PromiseLike<{ data: T; error: unknown }>,
+  query: () => PromiseLike<T>,
   context?: Record<string, string>
 ): Promise<T> {
   let lastError: unknown = null;
 
   for (let attempt = 1; attempt <= DB_RETRY_ATTEMPTS; attempt += 1) {
-    const { data, error } = await query();
-    if (!error) return data;
+    const result = await query();
+    if (!result.error) return result;
 
-    lastError = error;
+    lastError = result.error;
     console.warn(`[events-db] ${operation} attempt ${attempt} failed`, {
-      message: describeSupabaseError(error),
-      ...context,
-    });
-  }
-
-  reportDbFailure(operation, lastError, context);
-}
-
-async function getCount(
-  operation: string,
-  query: () => PromiseLike<{ count: number | null; error: unknown }>,
-  context?: Record<string, string>
-): Promise<number> {
-  let lastError: unknown = null;
-
-  for (let attempt = 1; attempt <= DB_RETRY_ATTEMPTS; attempt += 1) {
-    const { count, error } = await query();
-    if (!error) return count ?? 0;
-
-    lastError = error;
-    console.warn(`[events-db] ${operation} attempt ${attempt} failed`, {
-      message: describeSupabaseError(error),
+      message: describeSupabaseError(result.error),
       ...context,
     });
   }
@@ -146,21 +125,21 @@ export async function getEventsSummary(): Promise<EventsSummary> {
   const inSevenDays = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
   const inSevenDaysIso = inSevenDays.toISOString();
 
-  const [total, upcomingThisWeek, freeFood] = await Promise.all([
-    getCount("event count", () =>
+  const [totalResult, upcomingThisWeekResult, freeFoodResult] = await Promise.all([
+    withDbRetry("event count", () =>
       supabase
         .from("events")
         .select("id", { count: "exact", head: true })
         .or(activeEventFilter(nowIso))
     ),
-    getCount("this-week event count", () =>
+    withDbRetry("this-week event count", () =>
       supabase
         .from("events")
         .select("id", { count: "exact", head: true })
         .gte("starts_at", todayIso)
         .lte("starts_at", inSevenDaysIso)
     ),
-    getCount("free-food event count", () =>
+    withDbRetry("free-food event count", () =>
       supabase
         .from("events")
         .select("id", { count: "exact", head: true })
@@ -170,9 +149,9 @@ export async function getEventsSummary(): Promise<EventsSummary> {
   ]);
 
   return {
-    total,
-    upcomingThisWeek,
-    freeFood,
+    total: totalResult.count ?? 0,
+    upcomingThisWeek: upcomingThisWeekResult.count ?? 0,
+    freeFood: freeFoodResult.count ?? 0,
   };
 }
 
@@ -199,7 +178,7 @@ export async function getEventsPage({
   const to = from + pageSize;
   const nowIso = new Date().toISOString();
 
-  const data = await withDbRetry("events", () =>
+  const { data } = await withDbRetry("events", () =>
     supabase
       .from("events")
       .select("*")
@@ -245,7 +224,7 @@ export async function getCalendarEvents({
     throw new Error("Unable to load calendar events. Invalid date range.");
   }
 
-  const data = await withDbRetry("calendar events", () =>
+  const { data } = await withDbRetry("calendar events", () =>
     supabase
       .from("events")
       .select("*")
@@ -265,7 +244,7 @@ export const getEventById = cache(async function getEventById(
     return id === E2E_FIXTURE_EVENT.id ? E2E_FIXTURE_EVENT : null;
   }
 
-  const data = await withDbRetry(
+  const { data } = await withDbRetry(
     "event",
     () =>
       supabase

@@ -1,6 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { sha256Hex } from "@/lib/crypto";
 import { SUBMISSION_FLYER_BUCKET } from "@/lib/submission-flyer";
 
 export const dynamic = "force-dynamic";
@@ -21,15 +22,6 @@ function readStorageConfig() {
   if (!url || !serviceRoleKey) return null;
 
   return { url, serviceRoleKey };
-}
-
-async function sha256Hex(value: string): Promise<string> {
-  const bytes = new TextEncoder().encode(value);
-  const digest = await crypto.subtle.digest("SHA-256", bytes);
-
-  return Array.from(new Uint8Array(digest), (byte) =>
-    byte.toString(16).padStart(2, "0")
-  ).join("");
 }
 
 function isEqualHex(a: string, b: string): boolean {

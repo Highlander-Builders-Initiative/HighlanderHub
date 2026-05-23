@@ -60,7 +60,7 @@ test("calendar loads its own month-range events outside feed pagination", () => 
   assert.match(calendarApi, /searchParams/);
   assert.match(eventsApi, /fetchCalendarEvents/);
   assert.match(browser, /fetchCalendarEvents\(calendarRange\.start, calendarRange\.end\)/);
-  assert.match(browser, /mergeEventsByStart\(current, eventsForDay\)/);
+  assert.match(browser, /mergeUniqueEventsByStart\(current, eventsForDay\)/);
   assert.match(filters, /calendarEvents\?: CampusEvent\[\]/);
   assert.match(filters, /const calendarGrouped = useMemo/);
   assert.match(filters, /for \(const \[key, evs\] of calendarGrouped\)/);
@@ -136,7 +136,6 @@ test("event back navigation restores from a snapshot before falling back to pagi
   assert.match(browser, /useLayoutEffect/);
   assert.match(browser, /saveEventFeedSnapshot/);
   assert.match(browser, /getSavedEventFeedSnapshotForRestore/);
-  assert.match(browser, /restoreSavedSpot/);
   assert.match(restore, /restoreSavedEventFeedSpot/);
   assert.match(restore, /restoreEventsUntilTarget/);
   assert.match(restore, /deriveRestoreIntent/);
@@ -149,6 +148,7 @@ test("event back navigation restores from a snapshot before falling back to pagi
   );
   assert.match(restore, /fetchEventsPage/);
   assert.match(restore, /restoreToEventCard/);
+  assert.match(browser, /restoreSavedEventFeedSpot/);
   assert.match(session, /highlanderhub\.returnScroll/);
 });
 
