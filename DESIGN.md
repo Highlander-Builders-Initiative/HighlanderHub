@@ -36,13 +36,13 @@ typography:
     lineHeight: 1.2
     letterSpacing: "-0.015em"
   body:
-    fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Bricolage Grotesque, ui-sans-serif, system-ui, sans-serif"
     fontSize: "1rem"
     fontWeight: 400
     lineHeight: 1.55
     letterSpacing: "normal"
   meta:
-    fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Bricolage Grotesque, ui-sans-serif, system-ui, sans-serif"
     fontSize: "0.8125rem"
     fontWeight: 400
     lineHeight: 1.4
@@ -103,13 +103,13 @@ components:
 
 Highlander Hub is the screen-side stand-in for the physical UCR campus: many voices, edited gathering, a place rather than a tool. The interface is a place a student passes through, glances at, and leaves having seen something they wouldn't have seen otherwise. It is not a search engine, not a feed, not a marketplace. It is a quad with a bulletin in it.
 
-The system reads as **edited and paper-confident**: display type does the work, chrome stays hairline-thin, and the page is built to be skimmed in five seconds before it asks for any commitment. Color is tightly rationed and meaningful (the category palette is the only place hue lives); everything else sits in tinted neutrals. The voice is warm, never corporate; specific to UCR, never genericized. The brand personality from PRODUCT.md, **warm, curated, quick**, is enforced visually by a small set of doctrine: tinted neutrals, one display family, one body family, one mono, and a Restrained color strategy that holds accent usage well below 10% of any surface.
+The system reads as **edited and paper-confident**: display type does the work, chrome stays hairline-thin, and the page is built to be skimmed in five seconds before it asks for any commitment. Color is tightly rationed and meaningful (the category palette is the only place hue lives); everything else sits in tinted neutrals. The voice is warm, never corporate; specific to UCR, never genericized. The brand personality from PRODUCT.md, **warm, curated, quick**, is enforced visually by a small set of doctrine: tinted neutrals, two faces (Bricolage Grotesque for display and body, IBM Plex Mono for numerics), and a Restrained color strategy that holds accent usage well below 10% of any surface.
 
 The system explicitly rejects three aesthetic families called out as anti-references in PRODUCT.md: **generic SaaS landing** (hero-metric templates, identical card grids, gradient text), **university .edu CMS** (institutional navy soup, brochure density, slow chrome), and **Eventbrite / Meetup transactional** (ad clutter, RSVP-button soup, marketplace dating). If a screen could be confused for any of those at a glance, it has failed.
 
 **Key Characteristics:**
 - Hairline-bordered surfaces; depth via 1px lifts, not shadow blooms (current state; see Elevation for direction).
-- Bricolage Grotesque display + Inter body + IBM Plex Mono labels. No fourth font.
+- Bricolage Grotesque carries display and body; IBM Plex Mono carries numerics. Two faces, never a third.
 - OKLCH thinking, hex frontmatter; tinted neutrals only, no pure #000.
 - Restrained color strategy: category accents at ≤10% of any surface, expressed as tinted backgrounds (`/10`–`/15`) plus a darker matched text color for AA contrast.
 - Mobile-first: every layout is designed for a phone first, scaled out.
@@ -152,11 +152,10 @@ These four colors exist as **category signals**, not decoration. Each one has ex
 
 ## 3. Typography
 
-**Display Font:** Bricolage Grotesque (with `ui-sans-serif, system-ui, sans-serif` fallback)
-**Body Font:** Inter (with `ui-sans-serif, system-ui, sans-serif` fallback)
-**Label / Mono Font:** IBM Plex Mono (with `ui-monospace, monospace` fallback)
+**Display & Body Font:** Bricolage Grotesque (with `ui-sans-serif, system-ui, sans-serif` fallback)
+**Numeric / Mono Font:** IBM Plex Mono (with `ui-monospace, monospace` fallback)
 
-**Character:** Bricolage Grotesque is the editorial-display voice: optical-sizing on, slight negative tracking, semibold default. It does the work. Inter sits at 16px / 1.55 line-height for body, a calm reading face that never competes with the display, and at 13px for quiet labels, taglines, and meta strings. IBM Plex Mono is reserved for content that is genuinely numeric (dates, times, location coordinates, identifiers), never decorative caps. The pairing is intentionally student-magazine: a confident headline face over a calm body face, with mono used only where it earns its place.
+**Character:** Bricolage Grotesque carries both display and body. At display sizes (28–72px) it runs with optical-sizing on, semibold weight, and negative tracking (-0.02 to -0.035em). At body sizes (16px / 1.55 line-height) the same family drops to regular weight, neutral tracking, and the variable font's `opsz` axis automatically picks the body master, reading quiet and magazine-like. Meta strings (13px, muted) use the same family without uppercase or tracked-out treatment. IBM Plex Mono is reserved for content that is genuinely numeric (dates, times, location coordinates, identifiers), never decorative caps. A single-family display+body pairing reads more confidently edited than the earlier Bricolage-over-Inter pairing did, and it is one fewer face for the AI Slop Test to flag (Inter, alongside Roboto, Geist, and Plus Jakarta Sans, has become a reflex font on the web).
 
 ### Hierarchy
 
@@ -164,16 +163,16 @@ These four colors exist as **category signals**, not decoration. Each one has ex
 - **Headline** (600, 1.75rem / 28px, line-height 1.15, tracking -0.02em): Section openers (Features, FinalCTA, page titles).
 - **Title** (600, 1.125rem / 18px, line-height 1.2, tracking -0.015em): Event card titles, card-level headings. Two-line clamp.
 - **Body** (400, 1rem / 16px, line-height 1.55): Paragraph text. Cap line length at 65–75ch.
-- **Meta** (400, 0.8125rem / 13px, line-height 1.4, normal tracking): Quiet labels above or beside primary content: eyebrows, taglines, summary lines, captions. Inter, sentence case, muted color. No uppercase, no tracking-out.
-- **Numeric** (400, 0.6875–0.75rem / 11–12px, line-height 1, light tracking ≤0.06em, sentence case): Dates, times, location strings, identifiers, calendar grid numbers. IBM Plex Mono. Used only where the content is genuinely numeric or coordinate-like, never as decorative label-style.
+- **Meta** (400, 0.8125rem / 13px, line-height 1.4, normal tracking): Quiet labels above or beside primary content: eyebrows, taglines, summary lines, captions. Bricolage Grotesque regular, sentence case, muted color. No uppercase, no tracking-out.
+- **Numeric** (400, 0.6875–0.75rem / 11–12px, line-height 1, light tracking ≤0.06em, sentence case): Dates, times, location strings, identifiers, calendar grid numbers. IBM Plex Mono. Used only where the content is genuinely numeric or coordinate-like, never as decorative label-style. The home dateline anchors at 12px (top of range); secondary tabular usages (filter counts, event time strips) sit at 11px.
 
 ### Named Rules
 
-**The One-Display Rule.** Bricolage Grotesque is the only display face. Inter is the only body face. IBM Plex Mono is the only mono. No fourth font is added without retiring one of the three.
+**The Two-Face Rule.** Bricolage Grotesque carries display and body. IBM Plex Mono carries numerics. Those are the two faces. No third font is added without retiring one of the two. (This rule replaces the earlier One-Display Rule, which assumed a separate body face; Inter was retired when its overuse on the web outweighed the contrast it provided against the display.)
 
 **The Tracking Rule.** Display type tracks tight (-0.02em to -0.035em). Body and labels use normal tracking; numeric mono uses ≤0.06em. Tracked-out uppercase (`tracking-[0.12em]` and friends, in any font) is prohibited as a decorative label pattern. It is the SaaS / dev-tool reflex the AI Slop Test rejects.
 
-**The Quiet-Label Rule.** Eyebrows, taglines, summary lines, and captions render in Inter, sentence case, small (12–13px), normal tracking, muted color. No uppercase. No tracked-out caps. No mono-as-decoration. IBM Plex Mono is reserved for genuinely numeric content (dates, times, coordinates, identifiers), never for label decoration. (This rule replaces the earlier Eyebrow-Mono Rule; that pattern read as AI/SaaS reflex.)
+**The Quiet-Label Rule.** Eyebrows, taglines, summary lines, and captions render in Bricolage Grotesque regular, sentence case, small (12–13px), normal tracking, muted color. No uppercase. No tracked-out caps. No mono-as-decoration. IBM Plex Mono is reserved for genuinely numeric content (dates, times, coordinates, identifiers), never for label decoration. (This rule replaces the earlier Eyebrow-Mono Rule; that pattern read as AI/SaaS reflex.)
 
 ## 4. Elevation
 
@@ -231,13 +230,13 @@ Do not propagate this pattern to other components. New cards, alerts, callouts, 
 
 ### Badges (Category Pills)
 
-- **Style:** Pill (rounded-full), 10px × 4px padding (`px-2.5 py-0.5`), 11px medium weight, 0.01em tracking.
+- **Style:** Pill (rounded-full), 10px × 4px padding (`px-2.5 py-0.5`), 12px medium weight, 0.01em tracking.
 - **Color logic:** Background uses the category color at 10–15% opacity; text uses the matched darker variant for AA contrast. The four matched pairs are documented under Colors.
 - **Overlay variant:** When rendered over an image (flyer overlay), the pill uses `bg-white/15` glass with `backdrop-blur-sm` and white text. This is the second sanctioned glass usage.
 
 ### Inputs / Fields
 
-- **Style:** Canvas background, hairline ink border, 8px radius (`rounded-md`), 10–12px vertical padding, Inter body text at 16px. (Spec; the submit form should be audited against this and brought into line if it drifts.)
+- **Style:** Canvas background, hairline ink border, 8px radius (`rounded-md`), 10–12px vertical padding, Bricolage Grotesque body text at 16px. (Spec; the submit form should be audited against this and brought into line if it drifts.)
 - **Focus:** Uses the global `.interactive-focus` treatment: 3px ink outline, 3px offset, 5px canvas ring. Consistent with buttons. No glow, no border color shift.
 - **Error / Disabled:** Not yet codified. When introduced, errors use Deep Coral text and a coral-tinted background; disabled drops to muted text on surface background.
 
@@ -254,7 +253,7 @@ The horizontal filter bar that pins to the top of `/events` while the events gri
 ### Navigation (Masthead)
 
 - **Style:** Sticky 56px-tall bar (`h-14`), glass variant by default (`bg-white/40 backdrop-blur-xl`), solid variant available with `border-b border-ink/10 bg-canvas/95 backdrop-blur` for routes that need a stronger separation.
-- **Typography:** Brand wordmark in Bricolage Display 18–22px semibold, tight tracking. Nav links in Inter 14px medium with `hover:text-ink/70` color shift, 200ms transition. The split brand mark (`highlander/hub`) is a fixed treatment; do not stylize the slash.
+- **Typography:** Brand wordmark in Bricolage Display 18–22px semibold, tight tracking. Nav links in Bricolage Grotesque 14px medium with `hover:text-ink/70` color shift, 200ms transition. The split brand mark (`highlander/hub`) is a fixed treatment; do not stylize the slash.
 - **Active states:** Underline-from-active for tabbed sections (defined globally via `.tab[aria-selected="true"]::after`).
 - **Mobile treatment:** Nav links shrink to 13px medium. No hamburger; the two links inline.
 
@@ -287,8 +286,8 @@ A clean horizontal message ticker used as an active separator or alert bar below
 ### Do:
 
 - **Do** keep the hue-as-meaning discipline: color signals category, full stop. If you reach for a color and it is not a category, stop and use type weight or spacing.
-- **Do** use Bricolage Grotesque for any display or headline role, Inter for body, IBM Plex Mono for labels, dates, and times. Three fonts. No fourth.
-- **Do** keep eyebrows, taglines, and summary lines quiet: Inter, small (12–13px), sentence case, normal tracking, muted color. The "edited bulletin caption" look, not the "SaaS landing eyebrow" look.
+- **Do** use Bricolage Grotesque for display, headline, body, and non-numeric labels, and IBM Plex Mono for numerics (dates, times, identifiers, calendar numbers). Two faces. No third.
+- **Do** keep eyebrows, taglines, and summary lines quiet: Bricolage Grotesque regular, small (12–13px), sentence case, normal tracking, muted color. The "edited bulletin caption" look, not the "SaaS landing eyebrow" look.
 - **Do** reserve IBM Plex Mono for content that is genuinely numeric (dates, times, coordinates, identifiers), never as decorative label-style.
 - **Do** prefer hairline-bordered surfaces (`border-ink/10` to `border-ink/15`) over background-tinted ones for default cards and rows.
 - **Do** ease motion out only (`cubic-bezier(0.16, 1, 0.3, 1)`). Durations: 180–300ms for state, 700–800ms for entrance. Always.
@@ -311,5 +310,5 @@ A clean horizontal message ticker used as an active separator or alert bar below
 - **Don't** bounce or elastic motion. Ease-out only, never elastic, never spring, never overshoot.
 - **Don't** animate CSS layout properties (`width`, `height`, `top`, `left`, `padding`, `margin`). Transform and opacity only.
 - **Don't** write em dashes in UI copy or commit messages. Use commas, colons, semicolons, periods, or parentheses.
-- **Don't** decorate labels, eyebrows, taglines, or section headers with `uppercase tracking-[...]` in any font. That pattern is the SaaS / dev-tool reflex the AI Slop Test rejects. Use sentence-case Inter at small size, muted color.
+- **Don't** decorate labels, eyebrows, taglines, or section headers with `uppercase tracking-[...]` in any font. That pattern is the SaaS / dev-tool reflex the AI Slop Test rejects. Use sentence-case Bricolage Grotesque at small size, muted color.
 - **Don't** add a fourth font, a fourth radius scale, or a sixth typography step without retiring an existing one.

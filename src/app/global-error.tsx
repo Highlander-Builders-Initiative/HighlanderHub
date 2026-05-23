@@ -21,7 +21,7 @@ export default function GlobalError({
           minHeight: "100vh",
           padding: "56px 24px",
           fontFamily:
-            "var(--font-body), Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
+            "var(--font-body), \"Bricolage Grotesque\", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
           background: "#ffffff",
           color: "#0f1115",
         }}
