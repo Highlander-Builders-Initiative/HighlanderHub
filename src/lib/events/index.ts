@@ -163,6 +163,7 @@ export async function getEventsSummary(): Promise<EventsSummary> {
               .select("id", { count: "exact", head: true })
               .gte("starts_at", todayIso)
               .lte("starts_at", inSevenDaysIso)
+              .or(activeEventFilter(nowIso))
           ),
           withDbRetry("free-food event count", () =>
             supabase
