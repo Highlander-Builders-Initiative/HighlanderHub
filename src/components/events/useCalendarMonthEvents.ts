@@ -49,7 +49,6 @@ export function useCalendarMonthEvents({
       })
       .catch(() => {
         if (cancelled) return;
-        setCalendarEvents([]);
       })
       .finally(() => {
         if (cancelled) return;

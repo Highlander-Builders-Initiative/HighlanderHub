@@ -305,7 +305,7 @@ export function EventsBrowser({
           setMobileSheetOpen(false);
         }}
         categoriesByDay={categoriesByDay}
-        isCalendarLoading={isCalendarLoading}
+        isLoading={isCalendarLoading}
         onClear={clearFilters}
         hasActiveFilters={hasActiveFilters}
         resultCount={filtered.length}

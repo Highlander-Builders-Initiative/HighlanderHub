@@ -8,12 +8,20 @@ import {
   type SetStateAction,
 } from "react";
 import type { CampusEvent, EventCategory } from "@/types/event";
-import type { DayWindow } from "./events-filters";
+import type { DayWindow } from "@/types/events-feed";
 import {
   getSavedEventFeedSnapshotForRestore,
   getSavedScrollPosition,
 } from "@/lib/event-feed-session";
 import { restoreSavedEventFeedSpot } from "@/lib/event-feed-restore";
+
+type RestoreBootstrap = {
+  snapshot: ReturnType<typeof getSavedEventFeedSnapshotForRestore>;
+  returnScroll: ReturnType<typeof getSavedScrollPosition>;
+  currentEvents: CampusEvent[];
+  currentHasMore: boolean;
+  currentNextOffset: number;
+};
 
 type UseEventFeedRestoreArgs = {
   events: CampusEvent[];
@@ -39,39 +47,21 @@ export function useEventFeedRestore({
   setNextOffset,
 }: UseEventFeedRestoreArgs) {
   const [isRestoring, setIsRestoring] = useState(false);
-  const restoreState = useRef<{
-    snapshot: ReturnType<typeof getSavedEventFeedSnapshotForRestore>;
-    returnScroll: ReturnType<typeof getSavedScrollPosition>;
-    currentEvents: CampusEvent[];
-    currentHasMore: boolean;
-    currentNextOffset: number;
-    setCategory: Dispatch<SetStateAction<EventCategory | "all">>;
-    setQuery: Dispatch<SetStateAction<string>>;
-    setDayWindow: Dispatch<SetStateAction<DayWindow>>;
-    setLoadedEvents: Dispatch<SetStateAction<CampusEvent[]>>;
-    setHasMore: Dispatch<SetStateAction<boolean>>;
-    setNextOffset: Dispatch<SetStateAction<number>>;
-  } | null>(null);
+  const bootstrapRef = useRef<RestoreBootstrap | null>(null);
 
-  if (restoreState.current === null) {
-    restoreState.current = {
+  if (bootstrapRef.current === null) {
+    bootstrapRef.current = {
       snapshot: getSavedEventFeedSnapshotForRestore(),
       returnScroll: getSavedScrollPosition(),
       currentEvents: events,
       currentHasMore: initialHasMore,
       currentNextOffset: initialNextOffset,
-      setCategory,
-      setQuery,
-      setDayWindow,
-      setLoadedEvents,
-      setHasMore,
-      setNextOffset,
     };
   }
 
   useLayoutEffect(() => {
-    const restore = restoreState.current;
-    if (!restore) return;
+    const bootstrap = bootstrapRef.current;
+    if (!bootstrap) return;
 
     const {
       snapshot,
@@ -79,19 +69,10 @@ export function useEventFeedRestore({
       currentEvents,
       currentHasMore,
       currentNextOffset,
-      setCategory,
-      setQuery,
-      setDayWindow,
-      setLoadedEvents,
-      setHasMore,
-      setNextOffset,
-    } = restore;
+    } = bootstrap;
     if (!snapshot && !returnScroll) return;
 
     const path = `${window.location.pathname}${window.location.search}`;
-    if (snapshot && snapshot.path !== path) return;
-    if (!snapshot && returnScroll?.path !== path) return;
-
     let cancelled = false;
     setIsRestoring(true);
 
@@ -119,7 +100,14 @@ export function useEventFeedRestore({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [
+    setCategory,
+    setQuery,
+    setDayWindow,
+    setLoadedEvents,
+    setHasMore,
+    setNextOffset,
+  ]);
 
   return isRestoring;
 }
