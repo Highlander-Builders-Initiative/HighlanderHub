@@ -26,7 +26,7 @@ const META_CLASSES: Record<FlyerTileSize, string> = {
 };
 
 function flyerAlt(event: CampusEvent) {
-  return `Flyer for ${event.title}`;
+  return `${event.title} flyer, ${relativeDay(event.startsAt)}`;
 }
 
 export function FlyerTile({

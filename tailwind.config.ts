@@ -15,12 +15,16 @@ const config: Config = {
         line: "#e7e7e9",
         ink: "#0f1115",
         muted: "#6b7280",
-        // Accents
-        highlander: "#1e3a8a", // UCR-ish deep blue
+        // Accents (category signals — pair light with deep for AA text on canvas)
+        highlander: "#1e3a8a", // UCR-ish deep blue (also serves as deep-navy)
         gold: "#f5b400",       // UCR gold
         coral: "#ef5d4f",
         leaf: "#2f9e6f",
         sky: "#3b82f6",
+        "deep-gold": "#8a6300",
+        "deep-coral": "#b33a30",
+        "deep-leaf": "#1f6f4e",
+        "deep-sky": "#1d5fbf",
       },
       fontFamily: {
         display: ["var(--font-display)", "ui-sans-serif", "system-ui", "sans-serif"],
