@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import type { CampusEvent, EventCategory } from "@/types/event";
+import type { EventFilterCountSource } from "@/types/events-feed";
 import { getEmptyFeedCopy } from "@/lib/events/empty-feed-copy";
 import { groupByDay } from "@/lib/events/grouping";
 import {
@@ -12,7 +13,7 @@ import {
   type DayWindow,
 } from "./events-filters";
 
-function buildEventSearchText(event: CampusEvent) {
+function buildEventSearchText(event: EventFilterCountSource) {
   return [event.title, event.description, event.host, event.location, ...event.tags]
     .join(" ")
     .toLowerCase();
@@ -20,6 +21,7 @@ function buildEventSearchText(event: CampusEvent) {
 
 type UseEventFeedFiltersArgs = {
   loadedEvents: CampusEvent[];
+  filterCountSource: EventFilterCountSource[];
   calendarEvents?: CampusEvent[];
   category: CategoryValue;
   query: string;
@@ -39,6 +41,7 @@ export type EventFeedActiveFilters = {
 
 export function useEventFeedFilters({
   loadedEvents,
+  filterCountSource,
   calendarEvents,
   category,
   query,
@@ -70,6 +73,10 @@ export function useEventFeedFilters({
     () => loadedEvents.map(buildEventSearchText),
     [loadedEvents]
   );
+  const countSourceSearchText = useMemo(
+    () => filterCountSource.map(buildEventSearchText),
+    [filterCountSource]
+  );
   const calendarSourceEvents = calendarEvents ?? loadedEvents;
   const calendarSearchText = useMemo(
     () => calendarSourceEvents.map(buildEventSearchText),
@@ -85,6 +92,25 @@ export function useEventFeedFilters({
       return true;
     });
   }, [loadedEvents, normalizedQuery, eventSearchText, dayWindow, todayKey]);
+
+  const countSourceExceptCategory = useMemo(() => {
+    return filterCountSource.filter((ev, index) => {
+      if (
+        normalizedQuery &&
+        !countSourceSearchText[index].includes(normalizedQuery)
+      ) {
+        return false;
+      }
+      if (!matchesDayWindow(ev, dayWindow, todayKey)) return false;
+      return true;
+    });
+  }, [
+    filterCountSource,
+    normalizedQuery,
+    countSourceSearchText,
+    dayWindow,
+    todayKey,
+  ]);
 
   const filteredCalendarEvents = useMemo(() => {
     return calendarSourceEvents.filter((ev, index) => {
@@ -113,16 +139,16 @@ export function useEventFeedFilters({
 
   const counts = useMemo(() => {
     const map = new Map<CategoryValue, number>();
-    map.set("all", filteredExceptCategory.length);
+    map.set("all", countSourceExceptCategory.length);
     for (const c of CATEGORIES) {
       if (c.value === "all") continue;
       map.set(
         c.value,
-        filteredExceptCategory.filter((ev) => matchesCategory(ev, c.value)).length
+        countSourceExceptCategory.filter((ev) => matchesCategory(ev, c.value)).length
       );
     }
     return map;
-  }, [filteredExceptCategory]);
+  }, [countSourceExceptCategory]);
 
   const grouped = useMemo(() => groupByDay(filtered), [filtered]);
   const calendarGrouped = useMemo(

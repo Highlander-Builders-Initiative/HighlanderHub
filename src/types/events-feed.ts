@@ -1,3 +1,5 @@
+import type { CampusEvent } from "./event";
+
 export const DAY_WINDOWS = [
   { value: "all", label: "Anytime", phrase: "" },
   { value: "today", label: "Today", phrase: "today" },
@@ -6,3 +8,15 @@ export const DAY_WINDOWS = [
 ] as const;
 
 export type DayWindow = (typeof DAY_WINDOWS)[number]["value"];
+
+export type EventFilterCountSource = Pick<
+  CampusEvent,
+  | "id"
+  | "title"
+  | "description"
+  | "startsAt"
+  | "location"
+  | "host"
+  | "category"
+  | "tags"
+>;

@@ -66,7 +66,7 @@ export function coerceDayWindowParam(
 }
 
 export function matchesCategory(
-  ev: CampusEvent,
+  ev: Pick<CampusEvent, "category" | "tags">,
   cat: CategoryValue
 ): boolean {
   if (cat === "all") return true;
@@ -106,7 +106,7 @@ export function dayWindowRange(
 }
 
 export function matchesDayWindow(
-  ev: CampusEvent,
+  ev: Pick<CampusEvent, "startsAt">,
   window: DayWindow,
   today = pacificTodayKey()
 ): boolean {

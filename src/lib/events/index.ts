@@ -1,5 +1,6 @@
 import { cache } from "react";
 import type { CampusEvent } from "@/types/event";
+import type { EventFilterCountSource } from "@/types/events-feed";
 import type { EventRow } from "@/lib/supabase-rows";
 import { supabase } from "@/lib/supabase";
 import {
@@ -59,6 +60,19 @@ function toCampusEvent(r: EventRow): CampusEvent {
     rsvpRequired: r.rsvp_required,
     rsvpUrl: normalizeHttpUrl(r.rsvp_url) ?? undefined,
     scrapedAt: r.scraped_at,
+  };
+}
+
+function toEventFilterCountSource(r: EventRow): EventFilterCountSource {
+  return {
+    id: r.id,
+    title: r.title,
+    description: r.description,
+    startsAt: r.starts_at,
+    location: r.location,
+    host: r.host,
+    category: r.category,
+    tags: r.tags,
   };
 }
 
@@ -218,6 +232,27 @@ export async function getEvents(
 ): Promise<CampusEvent[]> {
   const page = await getEventsPage(options);
   return page.events;
+}
+
+export async function getEventFilterCountSource(): Promise<
+  EventFilterCountSource[]
+> {
+  return withE2eFixture(
+    () => [E2E_FIXTURE_EVENT],
+    async () => {
+      const nowIso = new Date().toISOString();
+
+      const { data } = await withDbRetry("event filter counts", () =>
+        supabase
+          .from("events")
+          .select("id,title,description,starts_at,location,host,category,tags")
+          .or(activeEventFilter(nowIso))
+          .order("starts_at", { ascending: true })
+      );
+
+      return (data as EventRow[]).map(toEventFilterCountSource);
+    }
+  );
 }
 
 export async function getCalendarEvents({
