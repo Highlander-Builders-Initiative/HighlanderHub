@@ -64,9 +64,37 @@ test("event category badge counts come from the full count source, not the loade
 
   assert.ok(result);
   assert.equal(result.filtered.length, 1);
+  assert.equal(result.resultsLabel, "1 of 3 events loaded");
   assert.equal(result.counts.get("all"), 3);
   assert.equal(result.counts.get("social"), 2);
   assert.equal(result.counts.get("academic"), 1);
+});
+
+test("event filter summary omits the total when every event is loaded", async () => {
+  ensureTempNodeModules();
+  const { useEventFeedFilters } = await importTsModule(
+    "src/components/events/useEventFeedFilters.ts"
+  );
+  let result;
+  const socialEvent = makeEvent("loaded-social", "social");
+
+  function Harness() {
+    result = useEventFeedFilters({
+      loadedEvents: [socialEvent],
+      filterCountSource: [socialEvent],
+      category: "all",
+      query: "",
+      dayWindow: "all",
+      todayKey: "2026-05-23",
+    });
+
+    return React.createElement("pre", null, result.resultsLabel);
+  }
+
+  renderToStaticMarkup(React.createElement(Harness));
+
+  assert.ok(result);
+  assert.equal(result.resultsLabel, "1 event loaded");
 });
 
 test("event category badges use a full-feed count source outside pagination", () => {
