@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  useLayoutEffect,
-  useRef,
-  useState,
-} from "react";
+import { useLayoutEffect, useState } from "react";
 import type { CampusEvent } from "@/types/event";
 import {
   readEventFeedRestoreState,
@@ -35,21 +31,14 @@ export function useEventFeedRestore({
   applyRestore,
 }: UseEventFeedRestoreArgs) {
   const [isRestoring, setIsRestoring] = useState(false);
-  const bootstrapRef = useRef<RestoreBootstrap | null>(null);
-
-  if (bootstrapRef.current === null) {
-    bootstrapRef.current = {
-      ...readEventFeedRestoreState(),
-      currentEvents: events,
-      currentHasMore: initialHasMore,
-      currentNextOffset: initialNextOffset,
-    };
-  }
+  const [bootstrap] = useState<RestoreBootstrap>(() => ({
+    ...readEventFeedRestoreState(),
+    currentEvents: events,
+    currentHasMore: initialHasMore,
+    currentNextOffset: initialNextOffset,
+  }));
 
   useLayoutEffect(() => {
-    const bootstrap = bootstrapRef.current;
-    if (!bootstrap) return;
-
     const {
       snapshot,
       returnScroll,

@@ -1,7 +1,10 @@
 import type { EventCategory, CampusEvent } from "@/types/event";
 import type { DayWindow } from "@/types/events-feed";
-import { clearEventFeedReturnState } from "@/lib/event-feed-session";
-import type { SavedScrollPosition } from "@/lib/event-feed-session";
+import {
+  clearEventFeedReturnState,
+  type SavedEventFeedSnapshot,
+  type SavedScrollPosition,
+} from "@/lib/event-feed-session";
 import { fetchEventsPage, type EventsApiPage } from "@/lib/events-api";
 import { mergeUniqueEventsByStart } from "@/lib/events-merge";
 
@@ -131,19 +134,10 @@ function deriveRestoreIntent(
   return { kind: "none" };
 }
 
+type RestoreSnapshot = Omit<SavedEventFeedSnapshot, "savedAt" | "scrollY">;
+
 type RestoreSavedEventFeedSpotArgs = {
-  snapshot: {
-    path: string;
-    events: CampusEvent[];
-    hasMore: boolean;
-    nextOffset: number;
-    loadedCount: number;
-    category: EventCategory | "all";
-    query: string;
-    dayWindow: DayWindow;
-    eventId?: string;
-    eventTop?: number;
-  } | null;
+  snapshot: RestoreSnapshot | null;
   returnScroll: SavedScrollPosition | null;
   path: string;
   currentEvents: CampusEvent[];

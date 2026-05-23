@@ -193,11 +193,6 @@ export function getSavedEventFeedSnapshot(
   return readSnapshot();
 }
 
-/** @see getSavedEventFeedSnapshot with `{ requireReturnScroll: true }` */
-export function getSavedEventFeedSnapshotForRestore() {
-  return getSavedEventFeedSnapshot({ requireReturnScroll: true });
-}
-
 /**
  * Session inputs for a one-shot mount restore in EventsBrowser.
  *

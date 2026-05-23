@@ -143,7 +143,7 @@ test("event back navigation restores from a snapshot before falling back to pagi
   const restoreHook = read("src/components/events/useEventFeedRestore.ts");
 
   assert.match(session, /saveEventFeedSnapshot/);
-  assert.match(session, /getSavedEventFeedSnapshotForRestore/);
+  assert.match(session, /requireReturnScroll/);
   assert.match(session, /readEventFeedRestoreState/);
   assert.match(restoreHook, /readEventFeedRestoreState/);
   assert.match(session, /getSavedScrollPosition/);
