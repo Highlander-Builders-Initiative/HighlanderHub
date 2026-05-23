@@ -6,7 +6,7 @@ import { test } from "node:test";
 const sourceFile = (path) => new URL(`../${path}`, import.meta.url);
 const read = (path) => readFileSync(sourceFile(path), "utf8");
 
-test("event validation helpers reject unsafe URLs and backwards end times", () => {
+test("event validation helpers reject unsafe URLs and use Pacific wall-clock times", () => {
   const result = spawnSync(
     process.execPath,
     [
@@ -37,7 +37,7 @@ test("event validation helpers reject unsafe URLs and backwards end times", () =
     ],
     {
       cwd: process.cwd(),
-      env: { ...process.env, TZ: "America/Los_Angeles" },
+      env: { ...process.env, TZ: "Asia/Tokyo" },
       encoding: "utf8",
     }
   );
