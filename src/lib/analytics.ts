@@ -18,6 +18,8 @@ type EventMap = {
   submission_start: Record<string, never>;
   submission_complete: Record<string, never>;
   submission_error: { message: string };
+  flyer_uploaded: { size: number; type: string };
+  flyer_upload_error: { message: string };
 };
 
 export function track<K extends keyof EventMap>(
