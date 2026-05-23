@@ -4,10 +4,13 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 const NAV_LINKS = [
-  { href: "/events", label: "Events", internal: true },
-  { href: "/about", label: "About", internal: true },
-  { href: "/submit", label: "Submit", internal: true },
-];
+  { href: "/events", label: "Events" },
+  { href: "/about", label: "About" },
+  { href: "/submit", label: "Submit" },
+] as const;
+
+const NAV_LINK_CLASS =
+  "interactive-focus px-1 py-2 text-ink transition-colors hover:text-ink/70";
 
 const HIDE_THRESHOLD = 80;
 const DELTA = 6;
@@ -83,30 +86,11 @@ export function Masthead({
         </Link>
 
         <nav
-          aria-label="Sections"
-          className="hidden items-center gap-5 text-sm font-medium md:flex"
+          aria-label="Site"
+          className="flex items-center gap-4 text-[13px] font-medium md:gap-5 md:text-sm"
         >
           {NAV_LINKS.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="interactive-focus px-1 py-2 text-ink transition-colors hover:text-ink/70"
-            >
-              {link.label}
-            </Link>
-          ))}
-        </nav>
-
-        <nav
-          aria-label="Mobile navigation"
-          className="flex items-center gap-4 text-[13px] font-medium md:hidden"
-        >
-          {NAV_LINKS.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="interactive-focus px-1 py-2 text-ink hover:text-ink/70"
-            >
+            <Link key={link.href} href={link.href} className={NAV_LINK_CLASS}>
               {link.label}
             </Link>
           ))}

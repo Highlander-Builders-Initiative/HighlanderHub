@@ -3,9 +3,14 @@ import Link from "next/link";
 import { Masthead } from "@/components/layout/Masthead";
 import { Footer } from "@/components/layout/Footer";
 import { FlyerMarquee } from "@/components/home/FlyerMarquee";
+import { HeroHighlightCopy } from "@/components/home/hero-highlights";
 import { HbiLink } from "@/components/analytics/HbiLink";
 import { getEvents, getEventsSummary } from "@/lib/events";
-import { formatPacificDayKey, pacificTodayKey } from "@/lib/dates";
+import {
+  formatPacificDayKey,
+  formatUpcomingWeekLabel,
+  pacificTodayKey,
+} from "@/lib/dates";
 
 export const dynamic = "force-dynamic";
 
@@ -17,15 +22,9 @@ export default async function HomePage() {
   ]);
 
   const dateLabel = formatPacificDayKey(pacificTodayKey());
-  const weekCount = summary?.upcomingThisWeek ?? null;
-  const weekLabel =
-    weekCount === null
-      ? null
-      : weekCount === 0
-        ? "nothing posted yet this week"
-        : weekCount === 1
-          ? "1 event this week"
-          : `${weekCount} events this week`;
+  const weekLabel = formatUpcomingWeekLabel(
+    summary?.upcomingThisWeek ?? null
+  );
 
   return (
     <main className="min-h-screen bg-canvas">
@@ -48,7 +47,6 @@ export default async function HomePage() {
               href="https://www.instagram.com/hbi.ucr"
               location="hero"
               channel="instagram"
-              ariaLabel="Built by Highlander Builders Initiative"
               className="interactive-focus group inline-flex items-center gap-2"
             >
               <Image
@@ -81,14 +79,7 @@ export default async function HomePage() {
             style={{ animationDelay: "180ms" }}
           >
             <p className="max-w-md text-base leading-relaxed text-ink/75 md:text-lg">
-              <span className="font-medium text-deep-gold">Free food</span>,{" "}
-              <span className="font-medium text-highlander">club nights</span>,{" "}
-              <span className="font-medium text-deep-sky">intramurals</span>,{" "}
-              <span className="font-medium text-deep-coral">art shows</span>,{" "}
-              <span className="font-medium text-deep-leaf">study groups</span>,{" "}
-              <span className="font-medium text-ink">career fairs</span>.
-              Everything happening on campus, pulled into one place you can
-              actually scan.
+              <HeroHighlightCopy />
             </p>
 
             <Link

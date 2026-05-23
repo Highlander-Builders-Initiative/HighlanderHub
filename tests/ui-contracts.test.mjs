@@ -83,7 +83,7 @@ test("event cards link to a detail page and stay accessible", () => {
   assert.match(source, /saveEventFeedReturn/);
   assert.match(source, /data-event-id=\{event\.id\}/);
   assert.match(source, /aria-label=/);
-  assert.match(source, /alt=\{flyerAlt\(event\)\}/);
+  assert.match(source, /alt=\{eventFlyerAlt\(event\)\}/);
   assert.match(source, /interactive-focus card-hover/);
   assert.doesNotMatch(source, /alt=""/);
 });
@@ -119,7 +119,7 @@ test("event back navigation restores from a snapshot before falling back to pagi
 test("home flyer mosaic tiles expose flyer alt text and keyboard focus", () => {
   const source = read("src/components/home/FlyerTile.tsx");
 
-  assert.match(source, /alt=\{flyerAlt\(event\)\}/);
+  assert.match(source, /alt=\{eventFlyerAlt\(event\)\}/);
   assert.match(source, /interactive-focus card-hover/);
   assert.doesNotMatch(source, /alt=""/);
 });
@@ -138,9 +138,12 @@ test("masthead keeps navigation reachable on mobile", () => {
   const eventsBrowser = read("src/components/events/EventsBrowser.tsx");
   const homePage = read("src/app/page.tsx");
 
-  assert.match(source, /md:hidden/);
+  assert.match(source, /aria-label="Site"/);
+  assert.doesNotMatch(source, /Mobile navigation/);
+  assert.match(source, /NAV_LINKS\.map/);
   assert.match(source, /\/events/);
   assert.match(source, /"\/about"/);
+  assert.match(source, /"\/submit"/);
   assert.match(source, /hideOnScroll/);
   assert.match(source, /position = "sticky"/);
   assert.match(source, /position === "sticky"/);

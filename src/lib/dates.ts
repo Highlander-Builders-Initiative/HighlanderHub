@@ -127,6 +127,13 @@ export function formatTimeRange(startIso: string, endIso?: string): string {
   return `${start} – ${formatTime(endIso)}`;
 }
 
+export function formatUpcomingWeekLabel(count: number | null): string | null {
+  if (count === null) return null;
+  if (count === 0) return "nothing posted yet this week";
+  if (count === 1) return "1 event this week";
+  return `${count} events this week`;
+}
+
 export function relativeDay(iso: string): string {
   const today = pacificMidnightMs(new Date().toISOString());
   const target = pacificMidnightMs(iso);

@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { CampusEvent } from "@/types/event";
 import { relativeDay } from "@/lib/dates";
+import { eventFlyerAlt, eventTileLinkLabel } from "@/lib/event-a11y";
 import { track } from "@/lib/analytics";
 import { saveEventFeedReturn } from "@/lib/event-feed-session";
 import { useRouter } from "next/navigation";
@@ -24,10 +25,6 @@ const META_CLASSES: Record<FlyerTileSize, string> = {
   small: "text-[10px]",
   wide: "text-[10px]",
 };
-
-function flyerAlt(event: CampusEvent) {
-  return `${event.title} flyer, ${relativeDay(event.startsAt)}`;
-}
 
 export function FlyerTile({
   event,
@@ -69,7 +66,7 @@ export function FlyerTile({
           surface: "mosaic_tile",
         });
       }}
-      aria-label={`${event.title}, ${relativeDay(event.startsAt)}`}
+      aria-label={eventTileLinkLabel(event)}
       aria-hidden={decorative || undefined}
       tabIndex={decorative ? -1 : undefined}
       data-event-id={event.id}
@@ -79,7 +76,7 @@ export function FlyerTile({
       {showImage ? (
         <Image
           src={event.imageUrl!}
-          alt={flyerAlt(event)}
+          alt={eventFlyerAlt(event)}
           fill
           sizes="(max-width: 768px) 100vw, 50vw"
           className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
