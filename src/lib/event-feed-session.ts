@@ -1,21 +1,18 @@
 import type { CampusEvent, EventCategory } from "@/types/event";
+import type { DayWindow } from "@/types/events-feed";
 
 const FEED_SESSION_KEY = "highlanderhub.eventFeed";
 const RETURN_SCROLL_KEY = "highlanderhub.returnScroll";
 const FEED_SESSION_TTL_MS = 10 * 60 * 1000;
-
-type SavedDayWindow = "all" | "today" | "week" | "weekend";
-
 export type SavedEventFeedSnapshot = {
   path: string;
   scrollY: number;
   events: CampusEvent[];
   hasMore: boolean;
   nextOffset: number;
-  view: "list" | "calendar";
   category: EventCategory | "all";
   query: string;
-  dayWindow: SavedDayWindow;
+  dayWindow: DayWindow;
   loadedCount: number;
   eventId?: string;
   eventTop?: number;
@@ -57,30 +54,11 @@ function saveScrollPosition(
   );
 }
 
-function readSavedScrollPosition() {
-  const raw = window.sessionStorage.getItem(RETURN_SCROLL_KEY);
-  if (!raw) return null;
-
-  try {
-    const parsed = JSON.parse(raw) as Partial<SavedScrollPosition>;
-    if (
-      typeof parsed.path !== "string" ||
-      typeof parsed.scrollY !== "number" ||
-      typeof parsed.detailPath !== "string"
-    ) {
-      return null;
-    }
-    return parsed as SavedScrollPosition;
-  } catch {
-    return null;
-  }
-}
-
 function clearSavedScrollPosition() {
   window.sessionStorage.removeItem(RETURN_SCROLL_KEY);
 }
 
-function readSavedReturnScrollPosition() {
+function readReturnScrollRaw() {
   const raw = window.sessionStorage.getItem(RETURN_SCROLL_KEY);
   if (!raw) return null;
 
@@ -103,7 +81,7 @@ function isExpired(savedAt: number) {
   return Date.now() - savedAt > FEED_SESSION_TTL_MS;
 }
 
-function isSavedDayWindow(value: unknown): value is SavedDayWindow {
+function isSavedDayWindow(value: unknown): value is DayWindow {
   return (
     value === "all" ||
     value === "today" ||
@@ -117,7 +95,9 @@ function readSessionSnapshot() {
   if (!raw) return null;
 
   try {
-    const parsed = JSON.parse(raw) as Partial<SavedEventFeedSnapshot>;
+    const parsed = JSON.parse(raw) as Partial<SavedEventFeedSnapshot> & {
+      view?: unknown;
+    };
     if (
       typeof parsed.path !== "string" ||
       typeof parsed.scrollY !== "number" ||
@@ -125,7 +105,9 @@ function readSessionSnapshot() {
       !Array.isArray(parsed.events) ||
       typeof parsed.hasMore !== "boolean" ||
       typeof parsed.nextOffset !== "number" ||
-      (parsed.view !== "list" && parsed.view !== "calendar") ||
+      (Object.prototype.hasOwnProperty.call(parsed, "view") &&
+        parsed.view !== "list") ||
+      !isSavedDayWindow(parsed.dayWindow) ||
       (parsed.category !== "all" &&
         parsed.category !== "club" &&
         parsed.category !== "academic" &&
@@ -141,13 +123,6 @@ function readSessionSnapshot() {
       return null;
     }
 
-    if (
-      Object.prototype.hasOwnProperty.call(parsed, "dayWindow") &&
-      !isSavedDayWindow(parsed.dayWindow)
-    ) {
-      return null;
-    }
-
     if (isExpired(parsed.savedAt)) {
       window.sessionStorage.removeItem(FEED_SESSION_KEY);
       if (memorySnapshot?.savedAt === parsed.savedAt) {
@@ -156,10 +131,8 @@ function readSessionSnapshot() {
       return null;
     }
 
-    return {
-      ...parsed,
-      dayWindow: isSavedDayWindow(parsed.dayWindow) ? parsed.dayWindow : "all",
-    } as SavedEventFeedSnapshot;
+    const { view: _view, ...snapshot } = parsed;
+    return snapshot as SavedEventFeedSnapshot;
   } catch {
     return null;
   }
@@ -198,7 +171,7 @@ export function getSavedEventFeedSnapshot() {
 export function getSavedEventFeedSnapshotForRestore() {
   if (typeof window === "undefined") return null;
 
-  const returnScroll = readSavedReturnScrollPosition();
+  const returnScroll = readReturnScrollRaw();
   if (!returnScroll || returnScroll.path !== currentPath()) return null;
 
   return readSnapshot();
@@ -206,7 +179,7 @@ export function getSavedEventFeedSnapshotForRestore() {
 
 export function getSavedScrollPosition() {
   if (typeof window === "undefined") return null;
-  return readSavedScrollPosition();
+  return readReturnScrollRaw();
 }
 
 export function saveEventFeedReturn(

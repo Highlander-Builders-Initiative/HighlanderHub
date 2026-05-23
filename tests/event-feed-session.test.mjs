@@ -77,7 +77,6 @@ test("event feed session keeps the list snapshot and return metadata together", 
     session.saveEventFeedSnapshot({
       path: "/events",
       scrollY: 420,
-      view: "list",
       category: "all",
       query: "",
       dayWindow: "all",
@@ -91,7 +90,6 @@ test("event feed session keeps the list snapshot and return metadata together", 
     assert.ok(saved);
     assert.equal(saved.path, "/events");
     assert.equal(saved.events.length, 1);
-    assert.equal(saved.view, "list");
 
     session.saveEventFeedReturn("/events/event-1", {
       eventId: "event-1",
@@ -126,7 +124,6 @@ test("event feed session ignores stale snapshots on a fresh events visit", async
     session.saveEventFeedSnapshot({
       path: "/events",
       scrollY: 900,
-      view: "list",
       category: "all",
       query: "",
       dayWindow: "weekend",
@@ -162,7 +159,6 @@ test("event feed session entries expire after ten minutes", async () => {
     session.saveEventFeedSnapshot({
       path: "/events",
       scrollY: 420,
-      view: "calendar",
       category: "social",
       query: "dance",
       dayWindow: "today",
@@ -178,6 +174,34 @@ test("event feed session entries expire after ten minutes", async () => {
     assert.equal(env.store.size, 0);
   } finally {
     Date.now = previousNow;
+    env.restore();
+  }
+});
+
+test("event feed session rejects stale calendar snapshots as invalid", async () => {
+  const env = installBrowserEnv();
+
+  try {
+    const session = await importTsModule("src/lib/event-feed-session.ts");
+    env.store.set(
+      "highlanderhub.eventFeed",
+      JSON.stringify({
+        path: "/events",
+        scrollY: 420,
+        events: [],
+        hasMore: false,
+        nextOffset: 0,
+        view: "calendar",
+        category: "all",
+        query: "",
+        dayWindow: "all",
+        loadedCount: 0,
+        savedAt: 1_700_000_000_000,
+      })
+    );
+
+    assert.equal(session.getSavedEventFeedSnapshot(), null);
+  } finally {
     env.restore();
   }
 });

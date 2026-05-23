@@ -20,7 +20,7 @@ export const CATEGORIES: { value: CategoryValue; label: string }[] = [
   { value: "free_food", label: "Free Food" },
 ];
 
-export type DayWindow = "all" | "today" | "week" | "weekend";
+export type { DayWindow } from "@/types/events-feed";
 
 export const DAY_WINDOWS: { value: DayWindow; label: string }[] = [
   { value: "all", label: "Anytime" },
