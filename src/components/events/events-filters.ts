@@ -30,6 +30,18 @@ export const CATEGORIES: { value: CategoryValue; label: string }[] = [
 export { DAY_WINDOWS };
 export type { DayWindow };
 
+export function categoryLabel(value: CategoryValue): string {
+  return CATEGORIES.find((c) => c.value === value)?.label ?? "All";
+}
+
+export function dayWindowLabel(value: DayWindow): string {
+  return DAY_WINDOWS.find((w) => w.value === value)?.label ?? "";
+}
+
+export function dayWindowPhrase(value: DayWindow): string {
+  return DAY_WINDOWS.find((w) => w.value === value)?.phrase ?? "";
+}
+
 /**
  * Coerce a raw URL search-param value into a known CategoryValue. Unknown or
  * missing values fall back to "all"; the URL is the only untrusted input here,

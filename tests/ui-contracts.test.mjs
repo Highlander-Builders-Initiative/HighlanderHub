@@ -232,18 +232,31 @@ test("event filters share category and day-window controls across layouts", () =
   assert.match(dayWindowFilter, /DAY_WINDOWS\.map/);
 });
 
-test("event empty state uses hook-owned active filter facts", () => {
+test("event empty state copy stays outside the presentation column", () => {
   const feedColumn = read("src/components/events/EventsFeedColumn.tsx");
   const filters = read("src/components/events/useEventFeedFilters.ts");
+  const emptyCopy = read("src/lib/events/empty-feed-copy.ts");
   const browser = read("src/components/events/EventsBrowser.tsx");
 
   assert.match(filters, /activeFilters = useMemo<EventFeedActiveFilters>/);
+  assert.match(filters, /getEmptyFeedCopy\(activeFilters\)/);
+  assert.match(filters, /emptyCopy/);
   assert.match(filters, /const hasActiveFilters = activeFilters\.hasAny/);
   assert.match(browser, /activeFilters=\{activeFilters\}/);
-  assert.match(feedColumn, /diagnoseEmpty\(activeFilters\)/);
-  assert.match(feedColumn, /EMPTY_COPY_BY_MASK/);
-  assert.match(feedColumn, /const mask =/);
-  assert.match(feedColumn, /const hasActiveFilters = activeFilters\.hasAny/);
+  assert.match(browser, /emptyCopy=\{emptyCopy\}/);
+  assert.match(browser, /hasActiveFilters=\{hasActiveFilters\}/);
+  assert.match(feedColumn, /emptyCopy: EmptyFeedCopy/);
+  assert.match(feedColumn, /emptyCopy\.headline/);
+  assert.match(feedColumn, /emptyCopy\.nudge/);
+  assert.match(emptyCopy, /EMPTY_COPY_BY_MASK/);
+  assert.match(emptyCopy, /const mask =/);
+  assert.match(emptyCopy, /export function getEmptyFeedCopy/);
+  assert.doesNotMatch(feedColumn, /diagnoseEmpty/);
+  assert.doesNotMatch(feedColumn, /EMPTY_COPY_BY_MASK/);
+  assert.doesNotMatch(feedColumn, /categoryLabelFor/);
+  assert.doesNotMatch(feedColumn, /windowPhraseFor/);
+  assert.doesNotMatch(feedColumn, /const mask =/);
+  assert.doesNotMatch(feedColumn, /activeFilters\.hasAny/);
   assert.doesNotMatch(feedColumn, /hasQ &&/);
   assert.doesNotMatch(feedColumn, /hasC &&/);
   assert.doesNotMatch(feedColumn, /hasW\)/);

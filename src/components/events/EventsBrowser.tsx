@@ -150,6 +150,7 @@ export function EventsBrowser({
   const {
     trimmedQuery,
     activeFilters,
+    emptyCopy,
     filtered,
     counts,
     grouped,
@@ -235,6 +236,18 @@ export function EventsBrowser({
   const handleDayWindow = useCallback((next: DayWindow) => {
     setDayWindow(next);
     track("events_day_window", { window: next });
+  }, []);
+
+  const clearCategory = useCallback(() => {
+    handleCategory("all");
+  }, [handleCategory]);
+
+  const clearDayWindow = useCallback(() => {
+    handleDayWindow("all");
+  }, [handleDayWindow]);
+
+  const clearQuery = useCallback(() => {
+    setQuery("");
   }, []);
 
   const scrollToDay = useCallback((dayKey: string) => {
@@ -331,7 +344,12 @@ export function EventsBrowser({
           activeFilterCount={activeFilterCount}
           resultsLabel={resultsLabel}
           activeFilters={activeFilters}
+          emptyCopy={emptyCopy}
+          hasActiveFilters={hasActiveFilters}
           onClearFilters={clearFilters}
+          onClearCategory={clearCategory}
+          onClearDayWindow={clearDayWindow}
+          onClearQuery={clearQuery}
           todayKey={todayKey}
           dayKeys={dayKeys}
           grouped={grouped}

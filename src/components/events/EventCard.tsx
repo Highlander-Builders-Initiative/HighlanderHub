@@ -9,6 +9,7 @@ import { formatTimeParts } from "@/lib/dates";
 import { eventFlyerAlt, eventListLinkLabel } from "@/lib/events/a11y";
 import { track } from "@/lib/analytics";
 import { saveEventFeedReturn } from "@/lib/events/feed-session";
+import { CATEGORY_RAIL } from "@/lib/category-colors";
 
 type EventCardProps = {
   event: CampusEvent;
@@ -22,7 +23,8 @@ function shortCategory(category: CampusEvent["category"]): string {
 
 /**
  * Editorial listing row. Time at the left as a typographic anchor, optional
- * flyer thumbnail, then content. Monochrome surface; color lives in filters.
+ * flyer thumbnail, then content. A 6px category dot leads the title, matching
+ * the mini-calendar and chip-bar palette.
  */
 function EventCardComponent({
   event,
@@ -103,9 +105,15 @@ function EventCardComponent({
           compact ? "py-2.5" : "py-3 sm:py-3.5"
         }`}
       >
-        <h3 className="font-display text-[17px] font-semibold leading-[1.25] tracking-[-0.015em] text-ink line-clamp-2 break-words group-hover:underline group-hover:decoration-ink/40 group-hover:underline-offset-4">
-          {event.title}
-        </h3>
+        <div className="flex min-w-0 items-start gap-1.5">
+          <span
+            aria-hidden
+            className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${CATEGORY_RAIL[event.category]}`}
+          />
+          <h3 className="font-display text-[17px] font-semibold leading-[1.25] tracking-[-0.015em] text-ink line-clamp-2 break-words group-hover:underline group-hover:decoration-ink/40 group-hover:underline-offset-4">
+            {event.title}
+          </h3>
+        </div>
 
         <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-[13px] text-muted">
           <span className="min-w-0 truncate">{event.location}</span>
