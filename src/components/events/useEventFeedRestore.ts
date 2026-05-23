@@ -4,16 +4,16 @@ import {
   useLayoutEffect,
   useRef,
   useState,
-  type Dispatch,
-  type SetStateAction,
 } from "react";
-import type { CampusEvent, EventCategory } from "@/types/event";
-import type { DayWindow } from "@/types/events-feed";
+import type { CampusEvent } from "@/types/event";
 import {
   readEventFeedRestoreState,
   type EventFeedRestoreState,
 } from "@/lib/event-feed-session";
-import { restoreSavedEventFeedSpot } from "@/lib/event-feed-restore";
+import {
+  restoreSavedEventFeedSpot,
+  type EventFeedRestorePatch,
+} from "@/lib/event-feed-restore";
 
 type RestoreBootstrap = EventFeedRestoreState & {
   currentEvents: CampusEvent[];
@@ -25,24 +25,14 @@ type UseEventFeedRestoreArgs = {
   events: CampusEvent[];
   initialHasMore: boolean;
   initialNextOffset: number;
-  setCategory: Dispatch<SetStateAction<EventCategory | "all">>;
-  setQuery: Dispatch<SetStateAction<string>>;
-  setDayWindow: Dispatch<SetStateAction<DayWindow>>;
-  setLoadedEvents: Dispatch<SetStateAction<CampusEvent[]>>;
-  setHasMore: Dispatch<SetStateAction<boolean>>;
-  setNextOffset: Dispatch<SetStateAction<number>>;
+  applyRestore: (patch: EventFeedRestorePatch) => void;
 };
 
 export function useEventFeedRestore({
   events,
   initialHasMore,
   initialNextOffset,
-  setCategory,
-  setQuery,
-  setDayWindow,
-  setLoadedEvents,
-  setHasMore,
-  setNextOffset,
+  applyRestore,
 }: UseEventFeedRestoreArgs) {
   const [isRestoring, setIsRestoring] = useState(false);
   const bootstrapRef = useRef<RestoreBootstrap | null>(null);
@@ -82,12 +72,7 @@ export function useEventFeedRestore({
           currentEvents,
           currentHasMore,
           currentNextOffset,
-          setCategory,
-          setQuery,
-          setDayWindow,
-          setLoadedEvents,
-          setHasMore,
-          setNextOffset,
+          applyRestore,
         });
       } finally {
         if (!cancelled) setIsRestoring(false);
@@ -98,12 +83,7 @@ export function useEventFeedRestore({
       cancelled = true;
     };
   }, [
-    setCategory,
-    setQuery,
-    setDayWindow,
-    setLoadedEvents,
-    setHasMore,
-    setNextOffset,
+    applyRestore,
   ]);
 
   return isRestoring;

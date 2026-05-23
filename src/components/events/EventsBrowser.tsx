@@ -31,6 +31,7 @@ import { useEventFeedFilters } from "./useEventFeedFilters";
 import { useInfiniteEventFeedLoader } from "./useInfiniteEventFeedLoader";
 import { useEventFeedRestore } from "./useEventFeedRestore";
 import { useObservedDayKey } from "./useObservedDayKey";
+import type { EventFeedRestorePatch } from "@/lib/event-feed-restore";
 
 type EventsBrowserProps = {
   events: CampusEvent[];
@@ -76,6 +77,27 @@ export function EventsBrowser({
     setNextOffset(initialNextOffset);
   }, [events, initialHasMore, initialNextOffset]);
 
+  const applyRestore = useCallback((patch: EventFeedRestorePatch) => {
+    if (patch.category !== undefined) {
+      setCategory(patch.category);
+    }
+    if (patch.query !== undefined) {
+      setQuery(patch.query);
+    }
+    if (patch.dayWindow !== undefined) {
+      setDayWindow(patch.dayWindow);
+    }
+    if (patch.loadedEvents !== undefined) {
+      setLoadedEvents(patch.loadedEvents);
+    }
+    if (patch.hasMore !== undefined) {
+      setHasMore(patch.hasMore);
+    }
+    if (patch.nextOffset !== undefined) {
+      setNextOffset(patch.nextOffset);
+    }
+  }, []);
+
   const { calendarEvents, isCalendarLoading } = useCalendarMonthEvents({
     initialCalendarEvents,
     calendarRange,
@@ -85,12 +107,7 @@ export function EventsBrowser({
     events,
     initialHasMore,
     initialNextOffset,
-    setCategory,
-    setQuery,
-    setDayWindow,
-    setLoadedEvents,
-    setHasMore,
-    setNextOffset,
+    applyRestore,
   });
 
   useEffect(() => {
