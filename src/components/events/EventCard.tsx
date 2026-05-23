@@ -4,13 +4,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { memo, type MouseEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { CampusEvent } from "@/types/event";
-import { formatTime } from "@/lib/dates";
+import { EVENT_CATEGORY_LABELS, type CampusEvent } from "@/types/event";
+import { formatTimeParts } from "@/lib/dates";
 import { eventFlyerAlt, eventListLinkLabel } from "@/lib/events/a11y";
 import { track } from "@/lib/analytics";
 import { saveEventFeedReturn } from "@/lib/events/feed-session";
-import { CATEGORY_RAIL } from "@/lib/category-colors";
-import { CategoryBadge } from "../ui/CategoryBadge";
 
 type EventCardProps = {
   event: CampusEvent;
@@ -18,10 +16,13 @@ type EventCardProps = {
   loadedCount?: number;
 };
 
+function shortCategory(category: CampusEvent["category"]): string {
+  return EVENT_CATEGORY_LABELS[category].split(" / ")[0];
+}
+
 /**
- * A single event rendered as a horizontal row: a hue-coded category rail, an
- * optional portrait flyer thumbnail, and a compact text block. Built to be
- * scanned a dozen at a time, not admired one at a time.
+ * Editorial listing row. Time at the left as a typographic anchor, optional
+ * flyer thumbnail, then content. Monochrome surface; color lives in filters.
  */
 function EventCardComponent({
   event,
@@ -33,6 +34,7 @@ function EventCardComponent({
   const showImage = !compact && !!event.imageUrl && !imageBroken;
   const href = `/events/${event.id}`;
   const surface = compact ? "calendar_card" : "list_card";
+  const { time, period } = formatTimeParts(event.startsAt);
 
   const onOpen = (clickEvent: MouseEvent<HTMLAnchorElement>) => {
     saveEventFeedReturn(href, {
@@ -54,23 +56,41 @@ function EventCardComponent({
       aria-label={eventListLinkLabel(event)}
       data-event-id={event.id}
       className={`interactive-focus card-hover group relative flex w-full min-w-0 overflow-hidden rounded-xl border border-ink/15 bg-canvas ${
-        compact ? "" : "min-h-[7.5rem]"
+        compact ? "" : "min-h-[6rem]"
       }`}
     >
-      {/* Category rail: lets a student parse a stack of cards by hue alone. */}
-      <span
-        aria-hidden
-        className={`w-1 shrink-0 ${CATEGORY_RAIL[event.category]}`}
-      />
+      {/* Time column: typographic anchor at the left edge. */}
+      <div
+        className={`flex shrink-0 flex-col items-center justify-center border-r border-ink/10 px-2 ${
+          compact ? "w-[52px]" : "w-16 sm:w-[68px]"
+        }`}
+      >
+        <span
+          className={`font-display font-semibold leading-none tracking-[-0.01em] text-ink tabular-nums ${
+            compact ? "text-base" : "text-[22px]"
+          }`}
+        >
+          {time}
+        </span>
+        {period && (
+          <span
+            className={`mt-1 font-display font-semibold text-muted ${
+              compact ? "text-[10px]" : "text-[12px]"
+            }`}
+          >
+            {period}
+          </span>
+        )}
+      </div>
 
       {/* Portrait flyer thumbnail, when the event has a usable image. */}
       {showImage && (
-        <div className="relative w-24 shrink-0 overflow-hidden bg-surface">
+        <div className="relative w-[88px] shrink-0 overflow-hidden border-r border-ink/10 bg-surface">
           <Image
             src={event.imageUrl!}
             alt={eventFlyerAlt(event)}
             fill
-            sizes="96px"
+            sizes="88px"
             className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
             onError={() => setImageBroken(true)}
           />
@@ -78,50 +98,31 @@ function EventCardComponent({
       )}
 
       {/* Text block. */}
-      <div className="flex min-w-0 flex-1 flex-col justify-center gap-1.5 px-4 py-3 sm:px-5">
-        <div className="flex min-w-0 items-center gap-1.5 text-[13px] text-muted">
-          <span className="shrink-0 font-mono text-[11px] tracking-[0.04em] leading-none bg-surface border border-ink/5 px-1 py-0.5 rounded-sm">
-            {formatTime(event.startsAt)}
-          </span>
-          <span aria-hidden className="shrink-0 text-ink/20">
-            ·
-          </span>
-          <span className="min-w-0 truncate">{event.location}</span>
-        </div>
-
-        <h3 className="font-display text-lg font-semibold leading-[1.2] tracking-[-0.015em] text-ink line-clamp-2 break-words">
+      <div
+        className={`flex min-w-0 flex-1 flex-col justify-center gap-1 px-4 sm:px-5 ${
+          compact ? "py-2.5" : "py-3 sm:py-3.5"
+        }`}
+      >
+        <h3 className="font-display text-[17px] font-semibold leading-[1.25] tracking-[-0.015em] text-ink line-clamp-2 break-words group-hover:underline group-hover:decoration-ink/40 group-hover:underline-offset-4">
           {event.title}
         </h3>
 
-        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="min-w-0 max-w-full truncate text-[13px] text-muted">
-            {event.host}
-          </span>
-          <CategoryBadge category={event.category} />
-          {event.isFree && (
-            <span className="inline-flex items-center rounded-full bg-leaf/10 px-2 py-0.5 text-[12px] font-medium text-[#1f6f4e]">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-[13px] text-muted">
+          <span className="min-w-0 truncate">{event.location}</span>
+          <span aria-hidden className="shrink-0 text-ink/20">·</span>
+          <span className="min-w-0 max-w-full truncate">{event.host}</span>
+          {!compact && (
+            <>
+              <span aria-hidden className="shrink-0 text-ink/20">·</span>
+              <span className="shrink-0">{shortCategory(event.category)}</span>
+            </>
+          )}
+          {event.isFree && !compact && (
+            <span className="ml-0.5 inline-flex items-center rounded-full bg-leaf/10 px-2 py-0.5 text-[11px] font-medium text-deep-leaf">
               Free
             </span>
           )}
         </div>
-      </div>
-
-      {/* Chevron affordance. */}
-      <div
-        aria-hidden
-        className="flex shrink-0 items-center pr-3 text-muted transition-colors group-hover:text-ink sm:pr-4"
-      >
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="h-4 w-4"
-        >
-          <path d="m9 18 6-6-6-6" />
-        </svg>
       </div>
     </Link>
   );
