@@ -109,9 +109,9 @@ function deriveRestoreIntent(
       eventId: returnScroll.eventId,
       eventTop: returnScroll.eventTop,
       loadedCount: returnScroll.loadedCount,
-      events: currentEvents,
-      hasMore: currentHasMore,
-      nextOffset: currentNextOffset,
+      events: snapshot?.events ?? currentEvents,
+      hasMore: snapshot?.hasMore ?? currentHasMore,
+      nextOffset: snapshot?.nextOffset ?? currentNextOffset,
     };
   }
 

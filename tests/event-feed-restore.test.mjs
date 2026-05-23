@@ -240,3 +240,140 @@ test("restoreSavedEventFeedSpot handles card and scroll restores from a derived 
     globalThis.CSS = previousCSS;
   }
 });
+
+test("restoreSavedEventFeedSpot uses snapshot pagination when return scroll has eventId but snapshot does not", async () => {
+  const session = await importTsModule("src/lib/event-feed-session.ts");
+  const restore = await importTsModule("src/lib/event-feed-restore.ts");
+  const env = {
+    store: new Map(),
+    setItem(key, value) {
+      this.store.set(key, String(value));
+    },
+    getItem(key) {
+      return this.store.has(key) ? this.store.get(key) : null;
+    },
+    removeItem(key) {
+      this.store.delete(key);
+    },
+  };
+  const root = { scrollTop: 0, events: [] };
+  const previousWindow = globalThis.window;
+  const previousDocument = globalThis.document;
+  const previousFetch = globalThis.fetch;
+  const previousRaf = globalThis.requestAnimationFrame;
+  const previousCSS = globalThis.CSS;
+
+  globalThis.window = {
+    location: { pathname: "/events", search: "" },
+    sessionStorage: env,
+    scrollY: 120,
+    document: { scrollingElement: root, documentElement: root },
+    requestAnimationFrame: (cb) => {
+      cb();
+      return 0;
+    },
+  };
+  globalThis.document = {
+    scrollingElement: root,
+    documentElement: { ...root, style: {} },
+    querySelector(selector) {
+      if (selector.includes("target")) {
+        return {
+          getBoundingClientRect() {
+            return { top: 40 };
+          },
+        };
+      }
+      return null;
+    },
+  };
+  globalThis.CSS = {
+    escape(value) {
+      return String(value);
+    },
+  };
+  globalThis.requestAnimationFrame = (cb) => {
+    cb();
+    return 0;
+  };
+
+  try {
+    const snapshotEvents = [
+      richEvent("event-1", "2026-05-20T18:30:00.000-07:00"),
+      richEvent("event-2", "2026-05-20T19:30:00.000-07:00"),
+    ];
+    const staleMountEvents = [richEvent("stale-only", "2026-05-19T12:00:00.000-07:00")];
+
+    session.saveEventFeedSnapshot({
+      path: "/events",
+      scrollY: 420,
+      category: "all",
+      query: "",
+      dayWindow: "all",
+      events: snapshotEvents,
+      hasMore: true,
+      nextOffset: 24,
+      loadedCount: 2,
+    });
+    env.setItem(
+      "highlanderhub.returnScroll",
+      JSON.stringify({
+        path: "/events",
+        scrollY: 420,
+        detailPath: "/events/target",
+        eventId: "target",
+        eventTop: 20,
+        loadedCount: 2,
+      })
+    );
+
+    const calls = [];
+    globalThis.fetch = async (url) => {
+      calls.push(url);
+      return {
+        ok: true,
+        json: async () => ({
+          events: [richEvent("target", "2026-05-20T20:30:00.000-07:00")],
+          hasMore: false,
+          nextOffset: 26,
+        }),
+      };
+    };
+
+    const didRestore = await restore.restoreSavedEventFeedSpot({
+      snapshot: session.getSavedEventFeedSnapshot(),
+      returnScroll: session.getSavedScrollPosition(),
+      path: "/events",
+      currentEvents: staleMountEvents,
+      currentHasMore: false,
+      currentNextOffset: 0,
+      setCategory() {},
+      setQuery() {},
+      setDayWindow() {},
+      setLoadedEvents(next) {
+        root.events = next;
+      },
+      setHasMore() {},
+      setNextOffset() {},
+    });
+
+    assert.equal(didRestore, true);
+    assert.equal(calls.length, 1);
+    assert.match(calls[0], /offset=24/);
+    assert.doesNotMatch(calls[0], /offset=0/);
+    assert.deepEqual(
+      root.events.map((ev) => ev.id),
+      ["event-1", "event-2", "target"]
+    );
+    assert.doesNotMatch(
+      root.events.map((ev) => ev.id).join(","),
+      /stale-only/
+    );
+  } finally {
+    globalThis.window = previousWindow;
+    globalThis.document = previousDocument;
+    globalThis.fetch = previousFetch;
+    globalThis.requestAnimationFrame = previousRaf;
+    globalThis.CSS = previousCSS;
+  }
+});
