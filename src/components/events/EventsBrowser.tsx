@@ -176,9 +176,10 @@ export function EventsBrowser({
       view: "list",
       category,
       query,
+      dayWindow,
       loadedCount: loadedEvents.length,
     });
-  }, [loadedEvents, hasMore, nextOffset, category, query]);
+  }, [loadedEvents, hasMore, nextOffset, category, query, dayWindow]);
 
   const clearRestorationState = useCallback(() => {
     clearEventFeedReturnState();
@@ -263,6 +264,10 @@ export function EventsBrowser({
     setQuery("");
     setDayWindow("all");
     track("events_clear_filters", {});
+  }, []);
+
+  const closeMobileSheet = useCallback(() => {
+    setMobileSheetOpen(false);
   }, []);
 
   const handleCategory = useCallback((next: CategoryValue) => {
@@ -374,6 +379,7 @@ export function EventsBrowser({
       if (snapshot) {
         setCategory(snapshot.category);
         setQuery(snapshot.query);
+        setDayWindow(snapshot.dayWindow);
         setLoadedEvents(snapshot.events);
         setHasMore(snapshot.hasMore);
         setNextOffset(snapshot.nextOffset);
@@ -687,7 +693,7 @@ export function EventsBrowser({
 
       <EventsMobileFilterSheet
         open={mobileSheetOpen}
-        onClose={() => setMobileSheetOpen(false)}
+        onClose={closeMobileSheet}
         category={category}
         onCategoryChange={handleCategory}
         counts={counts}

@@ -30,6 +30,15 @@ type Props = {
   resultCount: number;
 };
 
+const FOCUSABLE_SELECTOR = [
+  "button:not([disabled])",
+  "[href]",
+  "input:not([disabled])",
+  "select:not([disabled])",
+  "textarea:not([disabled])",
+  "[tabindex]:not([tabindex='-1'])",
+].join(",");
+
 export function EventsMobileFilterSheet({
   open,
   onClose,
@@ -49,22 +58,58 @@ export function EventsMobileFilterSheet({
   resultCount,
 }: Props) {
   const closeRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const lastActiveElementRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (!open) return;
 
+    lastActiveElementRef.current = document.activeElement as HTMLElement | null;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    closeRef.current?.focus();
+    const focusables = () =>
+      Array.from(panelRef.current?.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR) ?? [])
+        .filter((el) => !el.hasAttribute("disabled") && el.tabIndex !== -1);
+
+    const first = focusables()[0] ?? closeRef.current;
+    first?.focus();
 
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+        return;
+      }
+
+      if (e.key !== "Tab") return;
+
+      const tabbables = focusables();
+      if (tabbables.length === 0) {
+        e.preventDefault();
+        closeRef.current?.focus();
+        return;
+      }
+
+      const firstTabbable = tabbables[0];
+      const lastTabbable = tabbables[tabbables.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+
+      if (e.shiftKey) {
+        if (!active || active === firstTabbable || !panelRef.current?.contains(active)) {
+          e.preventDefault();
+          lastTabbable.focus();
+        }
+      } else if (!active || active === lastTabbable || !panelRef.current?.contains(active)) {
+        e.preventDefault();
+        firstTabbable.focus();
+      }
     };
     window.addEventListener("keydown", onKey);
 
     return () => {
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", onKey);
+      lastActiveElementRef.current?.focus?.();
     };
   }, [open, onClose]);
 
@@ -88,6 +133,8 @@ export function EventsMobileFilterSheet({
 
       {/* Sheet */}
       <div
+        ref={panelRef}
+        tabIndex={-1}
         className="relative flex max-h-[88vh] flex-col rounded-t-2xl bg-canvas shadow-[0_-12px_40px_rgba(15,17,21,0.18)]"
         style={{
           animation:

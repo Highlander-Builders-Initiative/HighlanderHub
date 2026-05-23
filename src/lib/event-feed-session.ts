@@ -4,6 +4,8 @@ const FEED_SESSION_KEY = "highlanderhub.eventFeed";
 const RETURN_SCROLL_KEY = "highlanderhub.returnScroll";
 const FEED_SESSION_TTL_MS = 10 * 60 * 1000;
 
+type SavedDayWindow = "all" | "today" | "week" | "weekend";
+
 export type SavedEventFeedSnapshot = {
   path: string;
   scrollY: number;
@@ -13,6 +15,7 @@ export type SavedEventFeedSnapshot = {
   view: "list" | "calendar";
   category: EventCategory | "all";
   query: string;
+  dayWindow: SavedDayWindow;
   loadedCount: number;
   eventId?: string;
   eventTop?: number;
@@ -100,6 +103,15 @@ function isExpired(savedAt: number) {
   return Date.now() - savedAt > FEED_SESSION_TTL_MS;
 }
 
+function isSavedDayWindow(value: unknown): value is SavedDayWindow {
+  return (
+    value === "all" ||
+    value === "today" ||
+    value === "week" ||
+    value === "weekend"
+  );
+}
+
 function readSessionSnapshot() {
   const raw = window.sessionStorage.getItem(FEED_SESSION_KEY);
   if (!raw) return null;
@@ -129,6 +141,13 @@ function readSessionSnapshot() {
       return null;
     }
 
+    if (
+      Object.prototype.hasOwnProperty.call(parsed, "dayWindow") &&
+      !isSavedDayWindow(parsed.dayWindow)
+    ) {
+      return null;
+    }
+
     if (isExpired(parsed.savedAt)) {
       window.sessionStorage.removeItem(FEED_SESSION_KEY);
       if (memorySnapshot?.savedAt === parsed.savedAt) {
@@ -137,7 +156,10 @@ function readSessionSnapshot() {
       return null;
     }
 
-    return parsed as SavedEventFeedSnapshot;
+    return {
+      ...parsed,
+      dayWindow: isSavedDayWindow(parsed.dayWindow) ? parsed.dayWindow : "all",
+    } as SavedEventFeedSnapshot;
   } catch {
     return null;
   }
