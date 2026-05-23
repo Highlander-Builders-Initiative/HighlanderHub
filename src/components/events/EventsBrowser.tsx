@@ -4,7 +4,6 @@ import {
   useState,
   useMemo,
   useEffect,
-  useLayoutEffect,
   useRef,
   useCallback,
 } from "react";
@@ -20,20 +19,17 @@ import {
   startOfPacificMonthKey,
 } from "@/lib/dates";
 import { track } from "@/lib/analytics";
-import {
-  getSavedEventFeedSnapshotForRestore,
-  getSavedScrollPosition,
-  saveEventFeedSnapshot,
-} from "@/lib/event-feed-session";
-import { fetchCalendarEvents, fetchEventsPage } from "@/lib/events-api";
+import { saveEventFeedSnapshot } from "@/lib/event-feed-session";
+import { fetchEventsPage } from "@/lib/events-api";
 import { mergeUniqueEventsByStart } from "@/lib/events-merge";
-import { restoreSavedEventFeedSpot } from "@/lib/event-feed-restore";
 import {
   type CategoryValue,
   type DayWindow,
 } from "./events-filters";
+import { useCalendarMonthEvents } from "./useCalendarMonthEvents";
 import { useEventFeedFilters } from "./useEventFeedFilters";
 import { useInfiniteEventFeedLoader } from "./useInfiniteEventFeedLoader";
+import { useEventFeedRestore } from "./useEventFeedRestore";
 import { useObservedDayKey } from "./useObservedDayKey";
 
 type EventsBrowserProps = {
@@ -43,10 +39,6 @@ type EventsBrowserProps = {
   initialHasMore?: boolean;
   initialNextOffset?: number;
 };
-
-function calendarRangeKey(range: { start: string; end: string }) {
-  return `${range.start}:${range.end}`;
-}
 
 export function EventsBrowser({
   events,
@@ -61,10 +53,8 @@ export function EventsBrowser({
   const [loadedEvents, setLoadedEvents] = useState(events);
   const [hasMore, setHasMore] = useState(initialHasMore);
   const [nextOffset, setNextOffset] = useState(initialNextOffset);
-  const [calendarEvents, setCalendarEvents] = useState(initialCalendarEvents);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [loadError, setLoadError] = useState("");
-  const [isRestoring, setIsRestoring] = useState(false);
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
 
   const todayKey = useMemo(() => pacificTodayKey(), []);
@@ -79,14 +69,6 @@ export function EventsBrowser({
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const dayHeaderRefs = useRef<Map<string, HTMLElement>>(new Map());
   const userInitiatedScrollRef = useRef(0);
-  const loadedCalendarRangeKey = useRef(calendarRangeKey(calendarRange));
-  const restoreState = useRef({
-    snapshot: getSavedEventFeedSnapshotForRestore(),
-    returnScroll: getSavedScrollPosition(),
-    currentEvents: events,
-    currentHasMore: initialHasMore,
-    currentNextOffset: initialNextOffset,
-  }).current;
 
   useEffect(() => {
     setLoadedEvents(events);
@@ -94,30 +76,22 @@ export function EventsBrowser({
     setNextOffset(initialNextOffset);
   }, [events, initialHasMore, initialNextOffset]);
 
-  useEffect(() => {
-    setCalendarEvents(initialCalendarEvents);
-  }, [initialCalendarEvents]);
+  const calendarEvents = useCalendarMonthEvents({
+    initialCalendarEvents,
+    calendarRange,
+  });
 
-  useEffect(() => {
-    const key = calendarRangeKey(calendarRange);
-    if (key === loadedCalendarRangeKey.current) return;
-
-    let cancelled = false;
-    fetchCalendarEvents(calendarRange.start, calendarRange.end)
-      .then((nextEvents) => {
-        if (cancelled) return;
-        loadedCalendarRangeKey.current = key;
-        setCalendarEvents(nextEvents);
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setCalendarEvents([]);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [calendarRange]);
+  const isRestoring = useEventFeedRestore({
+    events,
+    initialHasMore,
+    initialNextOffset,
+    setCategory,
+    setQuery,
+    setDayWindow,
+    setLoadedEvents,
+    setHasMore,
+    setNextOffset,
+  });
 
   useEffect(() => {
     if (isRestoring) return;
@@ -246,44 +220,6 @@ export function EventsBrowser({
       setIsLoadingMore(false);
     }
   }, [hasMore, isLoadingMore, nextOffset, isRestoring]);
-
-  useLayoutEffect(() => {
-    const { snapshot, returnScroll, currentEvents, currentHasMore, currentNextOffset } =
-      restoreState;
-    if (!snapshot && !returnScroll) return;
-
-    const path = `${window.location.pathname}${window.location.search}`;
-    if (snapshot && snapshot.path !== path) return;
-    if (!snapshot && returnScroll?.path !== path) return;
-
-    let cancelled = false;
-    setIsRestoring(true);
-
-    void (async () => {
-      try {
-        await restoreSavedEventFeedSpot({
-          snapshot,
-          returnScroll,
-          path,
-          currentEvents,
-          currentHasMore,
-          currentNextOffset,
-          setCategory,
-          setQuery,
-          setDayWindow,
-          setLoadedEvents,
-          setHasMore,
-          setNextOffset,
-        });
-      } finally {
-        if (!cancelled) setIsRestoring(false);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [restoreState]);
 
   useInfiniteEventFeedLoader({
     loadMoreRef,
