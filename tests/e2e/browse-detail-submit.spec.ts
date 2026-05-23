@@ -33,9 +33,10 @@ test("browses events, opens detail, and submits an event for review", async ({
   await page
     .getByLabel("Description")
     .fill("Submitted by Playwright to verify the review flow.");
-  await page.getByLabel("Starts").fill("2026-05-20T18:30");
+  await page.getByRole("button", { name: "Tomorrow" }).click();
+  await page.getByLabel("Time").fill("18:30");
   await page.getByLabel("Location").fill("HUB 302");
-  await page.getByLabel("Host / organization").fill("Highlander Hub QA");
+  await page.getByLabel("Hosted by").fill("Highlander Hub QA");
   await page.getByLabel("Your name").fill("Test Submitter");
   await page.getByLabel("Your email").fill("submitter@example.com");
 
