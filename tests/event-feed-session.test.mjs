@@ -133,7 +133,15 @@ test("event feed session ignores stale snapshots on a fresh events visit", async
     });
 
     assert.ok(session.getSavedEventFeedSnapshot());
+    assert.equal(
+      session.getSavedEventFeedSnapshot({ requireReturnScroll: true }),
+      null
+    );
     assert.equal(session.getSavedEventFeedSnapshotForRestore(), null);
+    assert.deepEqual(session.readEventFeedRestoreState(), {
+      snapshot: null,
+      returnScroll: null,
+    });
 
     session.saveEventFeedReturn("/events/event-1", {
       eventId: "event-1",
@@ -142,6 +150,10 @@ test("event feed session ignores stale snapshots on a fresh events visit", async
     });
 
     assert.ok(session.getSavedEventFeedSnapshotForRestore());
+    const restoreState = session.readEventFeedRestoreState();
+    assert.ok(restoreState.snapshot);
+    assert.ok(restoreState.returnScroll);
+    assert.equal(restoreState.returnScroll.eventId, "event-1");
   } finally {
     Date.now = previousNow;
     env.restore();
