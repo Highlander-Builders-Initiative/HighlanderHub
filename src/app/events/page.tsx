@@ -8,6 +8,7 @@ import {
 import { Footer } from "@/components/layout/Footer";
 import {
   getCalendarEvents,
+  getEventFilterCountSource,
   getEventsPage,
   getEventsSummary,
 } from "@/lib/events";
@@ -38,14 +39,16 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
   const calendarRange = pacificCalendarGridRange(
     startOfPacificMonthKey(pacificTodayKey())
   );
-  const [initialPage, calendarEvents, summary] = await Promise.all([
-    getEventsPage(),
-    getCalendarEvents({
-      startDayKey: calendarRange.start,
-      endDayKey: calendarRange.end,
-    }),
-    getEventsSummary(),
-  ]);
+  const [initialPage, calendarEvents, summary, filterCountSource] =
+    await Promise.all([
+      getEventsPage(),
+      getCalendarEvents({
+        startDayKey: calendarRange.start,
+        endDayKey: calendarRange.end,
+      }),
+      getEventsSummary(),
+      getEventFilterCountSource(),
+    ]);
   const events = initialPage.events;
 
   const initialFilters = {
@@ -62,6 +65,7 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
         events={events}
         calendarEvents={calendarEvents}
         summary={summary}
+        filterCountSource={filterCountSource}
         initialHasMore={initialPage.hasMore}
         initialNextOffset={initialPage.nextOffset}
         initialFilters={initialFilters}

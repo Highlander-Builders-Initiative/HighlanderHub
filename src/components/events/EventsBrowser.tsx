@@ -9,6 +9,7 @@ import {
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import type { CampusEvent } from "@/types/event";
+import type { EventFilterCountSource } from "@/types/events-feed";
 import { EventsLeftRail } from "./EventsLeftRail";
 import { EventsRightRail } from "./EventsRightRail";
 import { EventsMobileFilterSheet } from "./EventsMobileFilterSheet";
@@ -49,6 +50,7 @@ const DEFAULT_INITIAL_FILTERS: EventsBrowserInitialFilters = {
 type EventsBrowserProps = {
   events: CampusEvent[];
   calendarEvents: CampusEvent[];
+  filterCountSource: EventFilterCountSource[];
   summary: { upcomingThisWeek: number };
   initialHasMore?: boolean;
   initialNextOffset?: number;
@@ -58,6 +60,7 @@ type EventsBrowserProps = {
 export function EventsBrowser({
   events,
   calendarEvents: initialCalendarEvents,
+  filterCountSource,
   summary,
   initialHasMore = false,
   initialNextOffset = events.length,
@@ -161,6 +164,7 @@ export function EventsBrowser({
     activeFilterCount,
   } = useEventFeedFilters({
     loadedEvents,
+    filterCountSource,
     calendarEvents,
     category,
     query,
