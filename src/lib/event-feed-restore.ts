@@ -1,9 +1,9 @@
 import type { EventCategory, CampusEvent } from "@/types/event";
 import type { DayWindow } from "@/types/events-feed";
 import { clearEventFeedReturnState } from "@/lib/event-feed-session";
+import type { SavedScrollPosition } from "@/lib/event-feed-session";
 import { fetchEventsPage, type EventsApiPage } from "@/lib/events-api";
 import { mergeUniqueEventsByStart } from "@/lib/events-merge";
-import type { SavedScrollPosition } from "@/lib/event-feed-session";
 
 type EventPageFetcher = (
   offset: number,

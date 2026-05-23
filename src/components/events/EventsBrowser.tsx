@@ -21,12 +21,12 @@ import {
 } from "@/lib/dates";
 import { track } from "@/lib/analytics";
 import {
-  clearEventFeedReturnState,
   getSavedEventFeedSnapshotForRestore,
   getSavedScrollPosition,
   saveEventFeedSnapshot,
 } from "@/lib/event-feed-session";
 import { fetchCalendarEvents, fetchEventsPage } from "@/lib/events-api";
+import { mergeUniqueEventsByStart } from "@/lib/events-merge";
 import { restoreSavedEventFeedSpot } from "@/lib/event-feed-restore";
 import {
   type CategoryValue,
@@ -46,19 +46,6 @@ type EventsBrowserProps = {
 
 function calendarRangeKey(range: { start: string; end: string }) {
   return `${range.start}:${range.end}`;
-}
-
-function mergeEventsByStart(
-  current: CampusEvent[],
-  incoming: CampusEvent[]
-): CampusEvent[] {
-  const merged = new Map(current.map((event) => [event.id, event]));
-  for (const event of incoming) {
-    if (!merged.has(event.id)) merged.set(event.id, event);
-  }
-  return Array.from(merged.values()).sort(
-    (a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt)
-  );
 }
 
 export function EventsBrowser({
@@ -93,11 +80,13 @@ export function EventsBrowser({
   const dayHeaderRefs = useRef<Map<string, HTMLElement>>(new Map());
   const userInitiatedScrollRef = useRef(0);
   const loadedCalendarRangeKey = useRef(calendarRangeKey(calendarRange));
-  const restoreTarget = useRef<
-    ReturnType<typeof getSavedEventFeedSnapshotForRestore>
-  >(null);
-  const returnScrollTarget = useRef<ReturnType<typeof getSavedScrollPosition>>(null);
-  const isRestoringSpot = useRef(false);
+  const restoreState = useRef({
+    snapshot: getSavedEventFeedSnapshotForRestore(),
+    returnScroll: getSavedScrollPosition(),
+    currentEvents: events,
+    currentHasMore: initialHasMore,
+    currentNextOffset: initialNextOffset,
+  }).current;
 
   useEffect(() => {
     setLoadedEvents(events);
@@ -131,12 +120,7 @@ export function EventsBrowser({
   }, [calendarRange]);
 
   useEffect(() => {
-    restoreTarget.current = getSavedEventFeedSnapshotForRestore();
-    returnScrollTarget.current = getSavedScrollPosition();
-  }, []);
-
-  useEffect(() => {
-    if (isRestoringSpot.current) return;
+    if (isRestoring) return;
     saveEventFeedSnapshot({
       path: `${window.location.pathname}${window.location.search}`,
       scrollY: window.scrollY,
@@ -148,13 +132,7 @@ export function EventsBrowser({
       dayWindow,
       loadedCount: loadedEvents.length,
     });
-  }, [loadedEvents, hasMore, nextOffset, category, query, dayWindow]);
-
-  const clearRestorationState = useCallback(() => {
-    clearEventFeedReturnState();
-    restoreTarget.current = null;
-    returnScrollTarget.current = null;
-  }, []);
+  }, [loadedEvents, hasMore, nextOffset, category, query, dayWindow, isRestoring]);
 
   const {
     trimmedQuery,
@@ -224,7 +202,9 @@ export function EventsBrowser({
       (event) => pacificDayKey(event.startsAt) === dayKey
     );
     if (eventsForDay.length > 0) {
-      setLoadedEvents((current) => mergeEventsByStart(current, eventsForDay));
+      setLoadedEvents((current) =>
+        mergeUniqueEventsByStart(current, eventsForDay)
+      );
       window.requestAnimationFrame(() => scrollToDay(dayKey));
     } else {
       scrollToDay(dayKey);
@@ -247,7 +227,7 @@ export function EventsBrowser({
   }, [observedDayKey]);
 
   const loadMore = useCallback(async () => {
-    if (isRestoringSpot.current || isLoadingMore || !hasMore) return;
+    if (isRestoring || isLoadingMore || !hasMore) return;
 
     setIsLoadingMore(true);
     setLoadError("");
@@ -256,9 +236,7 @@ export function EventsBrowser({
       const page = await fetchEventsPage(nextOffset);
 
       setLoadedEvents((current) => {
-        const seen = new Set(current.map((event) => event.id));
-        const nextEvents = page.events.filter((event) => !seen.has(event.id));
-        return [...current, ...nextEvents];
+        return mergeUniqueEventsByStart(current, page.events);
       });
       setHasMore(page.hasMore);
       setNextOffset(page.nextOffset);
@@ -267,51 +245,45 @@ export function EventsBrowser({
     } finally {
       setIsLoadingMore(false);
     }
-  }, [hasMore, isLoadingMore, nextOffset]);
+  }, [hasMore, isLoadingMore, nextOffset, isRestoring]);
 
-  const restoreSavedSpot = useCallback(async () => {
-    const snapshot = restoreTarget.current;
-    const returnScroll = returnScrollTarget.current;
-    if (isRestoringSpot.current) return;
+  useLayoutEffect(() => {
+    const { snapshot, returnScroll, currentEvents, currentHasMore, currentNextOffset } =
+      restoreState;
+    if (!snapshot && !returnScroll) return;
 
     const path = `${window.location.pathname}${window.location.search}`;
-    if (!snapshot && !returnScroll) return;
     if (snapshot && snapshot.path !== path) return;
     if (!snapshot && returnScroll?.path !== path) return;
 
-    isRestoringSpot.current = true;
+    let cancelled = false;
     setIsRestoring(true);
 
-    try {
-      const restored = await restoreSavedEventFeedSpot({
-        snapshot,
-        returnScroll,
-        path,
-        currentEvents: loadedEvents,
-        currentHasMore: hasMore,
-        currentNextOffset: nextOffset,
-        setCategory,
-        setQuery,
-        setDayWindow,
-        setLoadedEvents,
-        setHasMore,
-        setNextOffset,
-      });
-      if (restored) {
-        clearRestorationState();
+    void (async () => {
+      try {
+        await restoreSavedEventFeedSpot({
+          snapshot,
+          returnScroll,
+          path,
+          currentEvents,
+          currentHasMore,
+          currentNextOffset,
+          setCategory,
+          setQuery,
+          setDayWindow,
+          setLoadedEvents,
+          setHasMore,
+          setNextOffset,
+        });
+      } finally {
+        if (!cancelled) setIsRestoring(false);
       }
-    } catch {
-      restoreTarget.current = null;
-      returnScrollTarget.current = null;
-    } finally {
-      isRestoringSpot.current = false;
-      setIsRestoring(false);
-    }
-  }, [clearRestorationState, hasMore, loadedEvents, nextOffset]);
+    })();
 
-  useLayoutEffect(() => {
-    void restoreSavedSpot();
-  }, [restoreSavedSpot]);
+    return () => {
+      cancelled = true;
+    };
+  }, [restoreState]);
 
   useInfiniteEventFeedLoader({
     loadMoreRef,

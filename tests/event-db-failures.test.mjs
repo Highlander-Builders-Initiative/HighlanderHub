@@ -34,7 +34,7 @@ test("event queries keep events visible until their end time", () => {
   assert.match(source, /function activeEventFilter\(nowIso: string/);
   assert.match(
     source,
-    /getCount\("event count", \(\) =>[\s\S]*?\.or\(activeEventFilter\(nowIso\)\)/
+    /withDbRetry\("event count", \(\) =>[\s\S]*?\.or\(activeEventFilter\(nowIso\)\)/
   );
   assert.match(
     source,
