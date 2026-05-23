@@ -34,6 +34,10 @@ add it as a recurring source.
 If an event has the wrong date, a broken RSVP link, or shouldn't be there at
 all, open an issue and we'll fix it.
 
+## Development
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for how the app, pipeline, and database fit together.
+
 ## License
 
 MIT

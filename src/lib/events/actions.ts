@@ -1,6 +1,6 @@
 import type { CampusEvent } from "@/types/event";
 import { formatTimeRange } from "@/lib/dates";
-import { normalizeHttpUrl } from "@/lib/event-validation";
+import { normalizeHttpUrl } from "@/lib/events/validation";
 
 function calendarDate(value: string) {
   return new Date(value)

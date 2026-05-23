@@ -16,6 +16,7 @@ playwright-report/
 # Local/editor/system artifacts
 .DS_Store
 *.tsbuildinfo
+.agents/
 .claude/
 .cursor/
 .impeccable/

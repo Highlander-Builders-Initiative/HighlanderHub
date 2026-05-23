@@ -8,7 +8,7 @@ import {
   type FormEvent,
 } from "react";
 import { track } from "@/lib/analytics";
-import { validateEventTimes } from "@/lib/event-validation";
+import { validateEventTimes } from "@/lib/events/validation";
 import { computeSubmitEndsAtLocal, type EndChoice } from "@/lib/submit-datetime";
 import { supabase } from "@/lib/supabase";
 import { SUBMIT_EVENT_CATEGORIES } from "@/types/event";

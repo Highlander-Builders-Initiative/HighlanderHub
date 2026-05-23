@@ -4,9 +4,9 @@ import {
   clearEventFeedReturnState,
   type SavedEventFeedSnapshot,
   type SavedScrollPosition,
-} from "@/lib/event-feed-session";
-import { fetchEventsPage, type EventsApiPage } from "@/lib/events-api";
-import { mergeUniqueEventsByStart } from "@/lib/events-merge";
+} from "@/lib/events/feed-session";
+import { fetchEventsPage, type EventsApiPage } from "@/lib/events/api";
+import { mergeUniqueEventsByStart } from "@/lib/events/merge";
 
 export type EventFeedRestorePatch = {
   category?: EventCategory | "all";

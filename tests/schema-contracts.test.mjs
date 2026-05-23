@@ -42,7 +42,7 @@ test("generated StoryRow matches stories upsert schema", () => {
 });
 
 test("events.ts reads rows through generated EventRow type", () => {
-  const eventsTs = readFileSync(new URL("../src/lib/events.ts", import.meta.url), "utf8");
+  const eventsTs = readFileSync(new URL("../src/lib/events/index.ts", import.meta.url), "utf8");
   assert.match(eventsTs, /from "@\/lib\/supabase-rows"/);
   assert.match(eventsTs, /EventRow/);
   assert.doesNotMatch(eventsTs, /interface EventRow/);

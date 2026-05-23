@@ -14,7 +14,7 @@ test("event validation helpers reject unsafe URLs and use Pacific wall-clock tim
       "--eval",
       `
         import { importTsModule } from "./tests/helpers/import-ts-module.mjs";
-        const validation = await importTsModule("src/lib/event-validation.ts");
+        const validation = await importTsModule("src/lib/events/validation.ts");
         const ok = validation.validateEventTimes("2026-05-20T12:00", "2026-05-20T12:00");
         const backwards = validation.validateEventTimes("2026-05-20T12:00", "2026-05-20T11:59");
         const badStart = validation.validateEventTimes("not a date", "");
@@ -108,8 +108,8 @@ test("submission and detail surfaces use shared URL and time guards", () => {
   const form = read("src/components/forms/submit/SubmitForm.tsx");
   const validation = read("src/components/forms/submit/submit-validation.ts");
   const detail = read("src/app/events/[id]/page.tsx");
-  const actions = read("src/lib/event-actions.ts");
-  const events = read("src/lib/events.ts");
+  const actions = read("src/lib/events/actions.ts");
+  const events = read("src/lib/events/index.ts");
 
   assert.match(validation, /normalizeHttpUrl/);
   assert.match(validation, /buildSubmissionRow/);
@@ -126,20 +126,20 @@ test("submission and detail surfaces use shared URL and time guards", () => {
 });
 
 test("event detail lookup is request-level cached", () => {
-  const source = read("src/lib/events.ts");
+  const source = read("src/lib/events/index.ts");
 
   assert.match(source, /import \{ cache \} from "react"/);
   assert.match(source, /export const getEventById = cache\(/);
 });
 
 test("e2e fixtures stay outside the main event reader", () => {
-  const events = read("src/lib/events.ts");
+  const events = read("src/lib/events/index.ts");
 
   assert.ok(
-    existsSync(sourceFile("src/lib/events-fixtures.ts")),
+    existsSync(sourceFile("src/lib/events/fixtures.ts")),
     "missing fixture module"
   );
-  assert.match(events, /from "\.\/events-fixtures"/);
+  assert.match(events, /from "\.\/fixtures"/);
   assert.doesNotMatch(events, /HIGHLANDERHUB_E2E_FIXTURES/);
   assert.doesNotMatch(events, /E2E Test: Highlander Hub Showcase/);
 });

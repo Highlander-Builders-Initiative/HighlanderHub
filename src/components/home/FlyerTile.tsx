@@ -4,9 +4,9 @@ import Image from "next/image";
 import Link from "next/link";
 import type { CampusEvent } from "@/types/event";
 import { relativeDay } from "@/lib/dates";
-import { eventFlyerAlt, eventTileLinkLabel } from "@/lib/event-a11y";
+import { eventFlyerAlt, eventTileLinkLabel } from "@/lib/events/a11y";
 import { track } from "@/lib/analytics";
-import { saveEventFeedReturn } from "@/lib/event-feed-session";
+import { saveEventFeedReturn } from "@/lib/events/feed-session";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 

@@ -5,7 +5,7 @@ import {
   AccordionItem,
   AccordionTrigger,
   AccordionContent,
-} from '@/components/core/accordion';
+} from '@/components/ui/accordion';
 
 export type AboutFaqItem = {
   id: string;

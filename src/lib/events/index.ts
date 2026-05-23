@@ -8,8 +8,8 @@ import {
   parsePacificDateTimeInput,
   startOfPacificToday,
 } from "@/lib/dates";
-import { normalizeHttpUrl } from "@/lib/event-validation";
-import { E2E_FIXTURE_EVENT, e2eFixturesEnabled } from "./events-fixtures";
+import { normalizeHttpUrl } from "@/lib/events/validation";
+import { E2E_FIXTURE_EVENT, e2eFixturesEnabled } from "./fixtures";
 
 const DB_RETRY_ATTEMPTS = 2;
 export const EVENTS_PAGE_SIZE = 24;
