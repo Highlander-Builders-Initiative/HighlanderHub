@@ -1,5 +1,5 @@
 import type { CampusEvent, EventCategory } from "@/types/event";
-import type { DayWindow } from "@/types/events-feed";
+import { DAY_WINDOWS, type DayWindow } from "@/types/events-feed";
 
 const FEED_SESSION_KEY = "highlanderhub.eventFeed";
 const RETURN_SCROLL_KEY = "highlanderhub.returnScroll";
@@ -82,12 +82,7 @@ function isExpired(savedAt: number) {
 }
 
 function isSavedDayWindow(value: unknown): value is DayWindow {
-  return (
-    value === "all" ||
-    value === "today" ||
-    value === "week" ||
-    value === "weekend"
-  );
+  return DAY_WINDOWS.some((window) => window.value === value);
 }
 
 function readSessionSnapshot() {
