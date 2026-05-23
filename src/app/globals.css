@@ -127,6 +127,22 @@ body {
   animation: scale-in 800ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+/* Tight inline reveal for field-level disclosure (conditional inputs,
+   inline expansions). Transform + opacity only, no layout animation. */
+@keyframes field-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-field-reveal {
+  animation: field-reveal 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
 /* Reveal-on-scroll: hidden by default, played when the JS hook flips
    .is-visible. The transition runs once and stays there. */
 .reveal {
