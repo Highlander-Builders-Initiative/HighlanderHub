@@ -188,17 +188,16 @@ test("restoreSavedEventFeedSpot handles card and scroll restores from a derived 
       currentEvents: events,
       currentHasMore: true,
       currentNextOffset: 24,
-      setCategory() {},
-      setQuery() {},
-      setDayWindow() {},
-      setLoadedEvents(next) {
-        root.events = next;
-      },
-      setHasMore(next) {
-        root.hasMore = next;
-      },
-      setNextOffset(next) {
-        root.nextOffset = next;
+      applyRestore(patch) {
+        if (patch.loadedEvents !== undefined) {
+          root.events = patch.loadedEvents;
+        }
+        if (patch.hasMore !== undefined) {
+          root.hasMore = patch.hasMore;
+        }
+        if (patch.nextOffset !== undefined) {
+          root.nextOffset = patch.nextOffset;
+        }
       },
     });
 
@@ -237,12 +236,7 @@ test("restoreSavedEventFeedSpot handles card and scroll restores from a derived 
       currentEvents: [],
       currentHasMore: false,
       currentNextOffset: 0,
-      setCategory() {},
-      setQuery() {},
-      setDayWindow() {},
-      setLoadedEvents() {},
-      setHasMore() {},
-      setNextOffset() {},
+      applyRestore() {},
     });
 
     assert.equal(scrollDidRestore, true);
@@ -308,14 +302,11 @@ test("restoreSavedEventFeedSpot uses snapshot pagination when return scroll has 
       currentEvents: staleMountEvents,
       currentHasMore: false,
       currentNextOffset: 0,
-      setCategory() {},
-      setQuery() {},
-      setDayWindow() {},
-      setLoadedEvents(next) {
-        root.events = next;
+      applyRestore(patch) {
+        if (patch.loadedEvents !== undefined) {
+          root.events = patch.loadedEvents;
+        }
       },
-      setHasMore() {},
-      setNextOffset() {},
     });
 
     assert.equal(didRestore, true);

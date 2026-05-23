@@ -5,6 +5,15 @@ import type { SavedScrollPosition } from "@/lib/event-feed-session";
 import { fetchEventsPage, type EventsApiPage } from "@/lib/events-api";
 import { mergeUniqueEventsByStart } from "@/lib/events-merge";
 
+export type EventFeedRestorePatch = {
+  category?: EventCategory | "all";
+  query?: string;
+  dayWindow?: DayWindow;
+  loadedEvents?: CampusEvent[];
+  hasMore?: boolean;
+  nextOffset?: number;
+};
+
 type EventPageFetcher = (
   offset: number,
   limit?: number
@@ -140,12 +149,7 @@ type RestoreSavedEventFeedSpotArgs = {
   currentEvents: CampusEvent[];
   currentHasMore: boolean;
   currentNextOffset: number;
-  setCategory: (next: EventCategory | "all") => void;
-  setQuery: (next: string) => void;
-  setDayWindow: (next: DayWindow) => void;
-  setLoadedEvents: (next: CampusEvent[]) => void;
-  setHasMore: (next: boolean) => void;
-  setNextOffset: (next: number) => void;
+  applyRestore: (patch: EventFeedRestorePatch) => void;
 };
 
 async function settleFrame() {
@@ -159,12 +163,7 @@ export async function restoreSavedEventFeedSpot({
   currentEvents,
   currentHasMore,
   currentNextOffset,
-  setCategory,
-  setQuery,
-  setDayWindow,
-  setLoadedEvents,
-  setHasMore,
-  setNextOffset,
+  applyRestore,
 }: RestoreSavedEventFeedSpotArgs): Promise<boolean> {
   if (snapshot && snapshot.path !== path) return false;
   if (!snapshot && returnScroll?.path !== path) return false;
@@ -175,12 +174,14 @@ export async function restoreSavedEventFeedSpot({
 
   try {
     if (snapshot) {
-      setCategory(snapshot.category);
-      setQuery(snapshot.query);
-      setDayWindow(snapshot.dayWindow);
-      setLoadedEvents(snapshot.events);
-      setHasMore(snapshot.hasMore);
-      setNextOffset(snapshot.nextOffset);
+      applyRestore({
+        category: snapshot.category,
+        query: snapshot.query,
+        dayWindow: snapshot.dayWindow,
+        loadedEvents: snapshot.events,
+        hasMore: snapshot.hasMore,
+        nextOffset: snapshot.nextOffset,
+      });
     }
 
     await settleFrame();
@@ -208,9 +209,11 @@ export async function restoreSavedEventFeedSpot({
       intent
     );
 
-    setLoadedEvents(restored.current);
-    setHasMore(restored.more);
-    setNextOffset(restored.next);
+    applyRestore({
+      loadedEvents: restored.current,
+      hasMore: restored.more,
+      nextOffset: restored.next,
+    });
 
     await settleFrame();
 
