@@ -1,4 +1,8 @@
-import type { CampusEvent, EventCategory } from "@/types/event";
+import {
+  EVENT_CATEGORIES,
+  type CampusEvent,
+  type EventCategory,
+} from "@/types/event";
 import { DAY_WINDOWS, type DayWindow } from "@/types/events-feed";
 
 const FEED_SESSION_KEY = "highlanderhub.eventFeed";
@@ -88,6 +92,12 @@ function isSavedDayWindow(value: unknown): value is DayWindow {
   return DAY_WINDOWS.some((window) => window.value === value);
 }
 
+function isSavedCategory(value: unknown): value is EventCategory | "all" {
+  return (
+    value === "all" || EVENT_CATEGORIES.includes(value as EventCategory)
+  );
+}
+
 function readSessionSnapshot() {
   const raw = window.sessionStorage.getItem(FEED_SESSION_KEY);
   if (!raw) return null;
@@ -106,15 +116,7 @@ function readSessionSnapshot() {
       (Object.prototype.hasOwnProperty.call(parsed, "view") &&
         parsed.view !== "list") ||
       !isSavedDayWindow(parsed.dayWindow) ||
-      (parsed.category !== "all" &&
-        parsed.category !== "club" &&
-        parsed.category !== "academic" &&
-        parsed.category !== "social" &&
-        parsed.category !== "career" &&
-        parsed.category !== "sports" &&
-        parsed.category !== "arts" &&
-        parsed.category !== "community" &&
-        parsed.category !== "free_food") ||
+      !isSavedCategory(parsed.category) ||
       typeof parsed.query !== "string" ||
       typeof parsed.loadedCount !== "number"
     ) {
