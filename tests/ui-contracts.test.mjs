@@ -40,6 +40,33 @@ test("events page header uses full upcoming event totals", () => {
   assert.doesNotMatch(page, /events\.length/);
 });
 
+test("calendar loads its own month-range events outside feed pagination", () => {
+  const page = read("src/app/events/page.tsx");
+  const browser = read("src/components/events/EventsBrowser.tsx");
+  const filters = read("src/components/events/useEventFeedFilters.ts");
+  const calendar = read("src/components/events/EventsMiniCalendar.tsx");
+  const data = read("src/lib/events.ts");
+  const eventsApi = read("src/lib/events-api.ts");
+  const calendarApi = read("src/app/api/events/calendar/route.ts");
+
+  assert.match(data, /export async function getCalendarEvents/);
+  assert.match(data, /\.gte\("starts_at", startIso\)/);
+  assert.match(data, /\.lt\("starts_at", endIso\)/);
+  assert.match(data, /parsePacificDateTimeInput\(`\$\{startDayKey\}T00:00`\)/);
+  assert.doesNotMatch(data, /calendar events"[\s\S]*activeEventFilter/);
+  assert.match(page, /getCalendarEvents/);
+  assert.match(page, /calendarEvents=\{calendarEvents\}/);
+  assert.match(calendarApi, /getCalendarEvents/);
+  assert.match(calendarApi, /searchParams/);
+  assert.match(eventsApi, /fetchCalendarEvents/);
+  assert.match(browser, /fetchCalendarEvents\(calendarRange\.start, calendarRange\.end\)/);
+  assert.match(browser, /mergeEventsByStart\(current, eventsForDay\)/);
+  assert.match(filters, /calendarEvents\?: CampusEvent\[\]/);
+  assert.match(filters, /const calendarGrouped = useMemo/);
+  assert.match(filters, /for \(const \[key, evs\] of calendarGrouped\)/);
+  assert.match(calendar, /pacificCalendarGridRange/);
+});
+
 test("app routes expose loading UI while server data resolves", () => {
   const sharedLoading = read("src/components/ui/RouteLoadingPage.tsx");
   const routeLoaders = [

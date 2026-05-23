@@ -19,3 +19,18 @@ export async function fetchEventsPage(
   if (!response.ok) throw new Error("Unable to load more events.");
   return (await response.json()) as EventsApiPage;
 }
+
+export async function fetchCalendarEvents(
+  startDayKey: string,
+  endDayKey: string
+): Promise<CampusEvent[]> {
+  const params = new URLSearchParams({
+    start: startDayKey,
+    end: endDayKey,
+  });
+
+  const response = await fetch(`/api/events/calendar?${params}`);
+  if (!response.ok) throw new Error("Unable to load calendar events.");
+  const payload = (await response.json()) as { events: CampusEvent[] };
+  return payload.events;
+}

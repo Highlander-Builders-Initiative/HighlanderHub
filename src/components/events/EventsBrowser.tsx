@@ -14,6 +14,8 @@ import { EventsRightRail } from "./EventsRightRail";
 import { EventsMobileFilterSheet } from "./EventsMobileFilterSheet";
 import { EventsFeedColumn } from "./EventsFeedColumn";
 import {
+  pacificCalendarGridRange,
+  pacificDayKey,
   pacificTodayKey,
   startOfPacificMonthKey,
 } from "@/lib/dates";
@@ -23,7 +25,7 @@ import {
   getSavedEventFeedSnapshotForRestore,
   saveEventFeedSnapshot,
 } from "@/lib/event-feed-session";
-import { fetchEventsPage } from "@/lib/events-api";
+import { fetchCalendarEvents, fetchEventsPage } from "@/lib/events-api";
 import { getSavedScrollPosition } from "@/lib/scroll-restoration";
 import { restoreSavedEventFeedSpot } from "@/lib/event-feed-restore";
 import {
@@ -36,13 +38,32 @@ import { useObservedDayKey } from "./useObservedDayKey";
 
 type EventsBrowserProps = {
   events: CampusEvent[];
+  calendarEvents: CampusEvent[];
   summary: { total: number; upcomingThisWeek: number; freeFood: number };
   initialHasMore?: boolean;
   initialNextOffset?: number;
 };
 
+function calendarRangeKey(range: { start: string; end: string }) {
+  return `${range.start}:${range.end}`;
+}
+
+function mergeEventsByStart(
+  current: CampusEvent[],
+  incoming: CampusEvent[]
+): CampusEvent[] {
+  const merged = new Map(current.map((event) => [event.id, event]));
+  for (const event of incoming) {
+    if (!merged.has(event.id)) merged.set(event.id, event);
+  }
+  return Array.from(merged.values()).sort(
+    (a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt)
+  );
+}
+
 export function EventsBrowser({
   events,
+  calendarEvents: initialCalendarEvents,
   summary,
   initialHasMore = false,
   initialNextOffset = events.length,
@@ -53,6 +74,7 @@ export function EventsBrowser({
   const [loadedEvents, setLoadedEvents] = useState(events);
   const [hasMore, setHasMore] = useState(initialHasMore);
   const [nextOffset, setNextOffset] = useState(initialNextOffset);
+  const [calendarEvents, setCalendarEvents] = useState(initialCalendarEvents);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [loadError, setLoadError] = useState("");
   const [isRestoring, setIsRestoring] = useState(false);
@@ -62,10 +84,15 @@ export function EventsBrowser({
   const [calendarCursor, setCalendarCursor] = useState<string>(() =>
     startOfPacificMonthKey(todayKey)
   );
+  const calendarRange = useMemo(
+    () => pacificCalendarGridRange(calendarCursor),
+    [calendarCursor]
+  );
 
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const dayHeaderRefs = useRef<Map<string, HTMLElement>>(new Map());
   const userInitiatedScrollRef = useRef(0);
+  const loadedCalendarRangeKey = useRef(calendarRangeKey(calendarRange));
   const restoreTarget = useRef<
     ReturnType<typeof getSavedEventFeedSnapshotForRestore>
   >(null);
@@ -77,6 +104,31 @@ export function EventsBrowser({
     setHasMore(initialHasMore);
     setNextOffset(initialNextOffset);
   }, [events, initialHasMore, initialNextOffset]);
+
+  useEffect(() => {
+    setCalendarEvents(initialCalendarEvents);
+  }, [initialCalendarEvents]);
+
+  useEffect(() => {
+    const key = calendarRangeKey(calendarRange);
+    if (key === loadedCalendarRangeKey.current) return;
+
+    let cancelled = false;
+    fetchCalendarEvents(calendarRange.start, calendarRange.end)
+      .then((nextEvents) => {
+        if (cancelled) return;
+        loadedCalendarRangeKey.current = key;
+        setCalendarEvents(nextEvents);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setCalendarEvents([]);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [calendarRange]);
 
   useEffect(() => {
     restoreTarget.current = getSavedEventFeedSnapshotForRestore();
@@ -116,6 +168,7 @@ export function EventsBrowser({
     activeFilterCount,
   } = useEventFeedFilters({
     loadedEvents,
+    calendarEvents,
     category,
     query,
     dayWindow,
@@ -157,15 +210,27 @@ export function EventsBrowser({
     track("events_day_window", { window: next });
   }, []);
 
-  const handleCalendarSelect = useCallback((dayKey: string) => {
-    setCalendarCursor(startOfPacificMonthKey(dayKey));
+  const scrollToDay = useCallback((dayKey: string) => {
     const el = dayHeaderRefs.current.get(dayKey);
     if (el) {
       userInitiatedScrollRef.current = Date.now();
       el.scrollIntoView({ behavior: "smooth", block: "start" });
     }
-    track("events_calendar_jump", { day: dayKey });
   }, []);
+
+  const handleCalendarSelect = useCallback((dayKey: string) => {
+    setCalendarCursor(startOfPacificMonthKey(dayKey));
+    const eventsForDay = calendarEvents.filter(
+      (event) => pacificDayKey(event.startsAt) === dayKey
+    );
+    if (eventsForDay.length > 0) {
+      setLoadedEvents((current) => mergeEventsByStart(current, eventsForDay));
+      window.requestAnimationFrame(() => scrollToDay(dayKey));
+    } else {
+      scrollToDay(dayKey);
+    }
+    track("events_calendar_jump", { day: dayKey });
+  }, [calendarEvents, scrollToDay]);
 
   const { observedDayKey, setObservedDayKey } = useObservedDayKey({
     dayHeaderRefs,
