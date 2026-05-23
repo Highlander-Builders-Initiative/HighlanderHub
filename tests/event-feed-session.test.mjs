@@ -204,3 +204,42 @@ test("event feed session rejects stale calendar snapshots as invalid", async () 
     env.restore();
   }
 });
+
+test("event feed session accepts every generated category value", async () => {
+  const env = installBrowserEnv({ search: "?category=club" });
+  const previousNow = Date.now;
+  Date.now = () => 1_700_000_000_000;
+
+  try {
+    const session = await importTsModule("src/lib/event-feed-session.ts");
+    const { EVENT_CATEGORIES } = await importTsModule("src/types/event.ts");
+
+    for (const category of EVENT_CATEGORIES) {
+      const search = `?category=${category}`;
+      const path = `/events${search}`;
+      globalThis.window.location.search = search;
+      env.store.set(
+        "highlanderhub.eventFeed",
+        JSON.stringify({
+          path,
+          scrollY: 420,
+          events: [],
+          hasMore: false,
+          nextOffset: 0,
+          category,
+          query: "",
+          dayWindow: "all",
+          loadedCount: 0,
+          savedAt: 1_700_000_000_000,
+        })
+      );
+
+      const saved = session.getSavedEventFeedSnapshot();
+      assert.ok(saved, `expected ${category} snapshot to be accepted`);
+      assert.equal(saved.category, category);
+    }
+  } finally {
+    Date.now = previousNow;
+    env.restore();
+  }
+});

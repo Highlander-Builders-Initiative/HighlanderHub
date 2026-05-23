@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { track } from "@/lib/analytics";
 import { supabase } from "@/lib/supabase";
 import {
@@ -11,12 +11,21 @@ import {
 
 export type { UploadStatus };
 
+type UploadedStatus = Extract<UploadStatus, { kind: "uploaded" }>;
+
 export function useFlyerUpload() {
   const [status, setStatus] = useState<UploadStatus>({ kind: "idle" });
+  const uploadedRef = useRef<UploadedStatus | null>(null);
+
+  const setUploadStatus = useCallback((nextStatus: UploadStatus) => {
+    uploadedRef.current =
+      nextStatus.kind === "uploaded" ? nextStatus : null;
+    setStatus(nextStatus);
+  }, []);
 
   const clearUpload = useCallback(async () => {
-    const uploadToDelete = status.kind === "uploaded" ? status : null;
-    setStatus({ kind: "idle" });
+    const uploadToDelete = uploadedRef.current;
+    setUploadStatus({ kind: "idle" });
 
     if (!uploadToDelete) return;
 
@@ -24,18 +33,18 @@ export function useFlyerUpload() {
     if (!result.ok) {
       track("flyer_delete_error", { message: result.message });
     }
-  }, [status]);
+  }, [setUploadStatus]);
 
   const uploadFlyer = useCallback(async (file: File) => {
-    const previousUpload = status.kind === "uploaded" ? status : null;
-    setStatus({ kind: "uploading" });
+    const previousUpload = uploadedRef.current;
+    setUploadStatus({ kind: "uploading" });
     const result = await uploadSubmissionFlyer(supabase, file);
 
     if (!result.ok) {
       if (result.trackMessage) {
         track("flyer_upload_error", { message: result.trackMessage });
       }
-      setStatus(result.status);
+      setUploadStatus(result.status);
       if (previousUpload) {
         const deleteResult = await deleteSubmissionFlyer(previousUpload);
         if (!deleteResult.ok) {
@@ -46,14 +55,14 @@ export function useFlyerUpload() {
     }
 
     track("flyer_uploaded", { size: file.size, type: file.type });
-    setStatus(result.status);
+    setUploadStatus(result.status);
     if (previousUpload) {
       const deleteResult = await deleteSubmissionFlyer(previousUpload);
       if (!deleteResult.ok) {
         track("flyer_delete_error", { message: deleteResult.message });
       }
     }
-  }, [status]);
+  }, [setUploadStatus]);
 
   return { status, uploadFlyer, clearUpload };
 }

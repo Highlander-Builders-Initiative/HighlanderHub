@@ -277,6 +277,8 @@ test("submit form validation and upload helpers live in focused modules", () => 
   assert.match(flyer, /cleanupToken/);
   assert.match(flyer, /deleteSubmissionFlyer/);
   assert.match(upload, /useFlyerUpload/);
+  assert.match(upload, /uploadedRef/);
+  assert.doesNotMatch(upload, /\[status\]/);
   assert.match(upload, /flyer_uploaded/);
   assert.match(upload, /flyer_delete_error/);
   assert.match(deleteRoute, /SUPABASE_SERVICE_ROLE_KEY/);
