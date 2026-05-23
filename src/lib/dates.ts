@@ -106,6 +106,14 @@ export function pacificDayOfMonth(dayKey: string): number {
   return parseDayKey(dayKey).day;
 }
 
+export function pacificCalendarGridRange(monthKey: string): {
+  start: string;
+  end: string;
+} {
+  const start = addPacificDays(monthKey, -pacificWeekdayIndex(monthKey));
+  return { start, end: addPacificDays(start, 41) };
+}
+
 export function formatPacificDayKey(dayKey: string): string {
   return fullDayFmt.format(dayKeyToNoonUtc(dayKey));
 }

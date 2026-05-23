@@ -2,7 +2,16 @@ import type { Metadata } from "next";
 import { Masthead } from "@/components/layout/Masthead";
 import { EventsBrowser } from "@/components/events/EventsBrowser";
 import { Footer } from "@/components/layout/Footer";
-import { getEventsPage, getEventsSummary } from "@/lib/events";
+import {
+  getCalendarEvents,
+  getEventsPage,
+  getEventsSummary,
+} from "@/lib/events";
+import {
+  pacificCalendarGridRange,
+  pacificTodayKey,
+  startOfPacificMonthKey,
+} from "@/lib/dates";
 
 export const dynamic = "force-dynamic";
 
@@ -13,8 +22,15 @@ export const metadata: Metadata = {
 };
 
 export default async function EventsPage() {
-  const [initialPage, summary] = await Promise.all([
+  const calendarRange = pacificCalendarGridRange(
+    startOfPacificMonthKey(pacificTodayKey())
+  );
+  const [initialPage, calendarEvents, summary] = await Promise.all([
     getEventsPage(),
+    getCalendarEvents({
+      startDayKey: calendarRange.start,
+      endDayKey: calendarRange.end,
+    }),
     getEventsSummary(),
   ]);
   const events = initialPage.events;
@@ -25,6 +41,7 @@ export default async function EventsPage() {
 
       <EventsBrowser
         events={events}
+        calendarEvents={calendarEvents}
         summary={summary}
         initialHasMore={initialPage.hasMore}
         initialNextOffset={initialPage.nextOffset}

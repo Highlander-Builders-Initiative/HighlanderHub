@@ -19,6 +19,7 @@ function buildEventSearchText(event: CampusEvent) {
 
 type UseEventFeedFiltersArgs = {
   loadedEvents: CampusEvent[];
+  calendarEvents?: CampusEvent[];
   category: CategoryValue;
   query: string;
   dayWindow: DayWindow;
@@ -27,6 +28,7 @@ type UseEventFeedFiltersArgs = {
 
 export function useEventFeedFilters({
   loadedEvents,
+  calendarEvents,
   category,
   query,
   dayWindow,
@@ -39,6 +41,11 @@ export function useEventFeedFilters({
     () => loadedEvents.map(buildEventSearchText),
     [loadedEvents]
   );
+  const calendarSourceEvents = calendarEvents ?? loadedEvents;
+  const calendarSearchText = useMemo(
+    () => calendarSourceEvents.map(buildEventSearchText),
+    [calendarSourceEvents]
+  );
 
   const filteredExceptCategory = useMemo(() => {
     return loadedEvents.filter((ev, index) => {
@@ -49,6 +56,27 @@ export function useEventFeedFilters({
       return true;
     });
   }, [loadedEvents, normalizedQuery, eventSearchText, dayWindow, todayKey]);
+
+  const filteredCalendarEvents = useMemo(() => {
+    return calendarSourceEvents.filter((ev, index) => {
+      if (
+        normalizedQuery &&
+        !calendarSearchText[index].includes(normalizedQuery)
+      ) {
+        return false;
+      }
+      if (!matchesDayWindow(ev, dayWindow, todayKey)) return false;
+      if (!matchesCategory(ev, category)) return false;
+      return true;
+    });
+  }, [
+    calendarSourceEvents,
+    normalizedQuery,
+    calendarSearchText,
+    dayWindow,
+    todayKey,
+    category,
+  ]);
 
   const filtered = useMemo(() => {
     return filteredExceptCategory.filter((ev) => matchesCategory(ev, category));
@@ -68,11 +96,15 @@ export function useEventFeedFilters({
   }, [filteredExceptCategory]);
 
   const grouped = useMemo(() => groupByDay(filtered), [filtered]);
+  const calendarGrouped = useMemo(
+    () => groupByDay(filteredCalendarEvents),
+    [filteredCalendarEvents]
+  );
   const dayKeys = Array.from(grouped.keys());
 
   const categoriesByDay = useMemo(() => {
     const map = new Map<string, EventCategory[]>();
-    for (const [key, evs] of grouped) {
+    for (const [key, evs] of calendarGrouped) {
       const seen = new Set<EventCategory>();
       const ordered: EventCategory[] = [];
       for (const ev of evs) {
@@ -84,7 +116,7 @@ export function useEventFeedFilters({
       map.set(key, ordered);
     }
     return map;
-  }, [grouped]);
+  }, [calendarGrouped]);
 
   const hasActiveFilters =
     category !== "all" || trimmedQuery.length > 0 || dayWindow !== "all";

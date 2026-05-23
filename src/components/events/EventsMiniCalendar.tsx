@@ -7,8 +7,8 @@ import {
   addPacificDays,
   addPacificMonths,
   formatPacificMonth,
+  pacificCalendarGridRange,
   pacificDayOfMonth,
-  pacificWeekdayIndex,
   startOfPacificMonthKey,
 } from "@/lib/dates";
 
@@ -32,7 +32,7 @@ export function EventsMiniCalendar({
   categoriesByDay,
 }: Props) {
   const cells = useMemo(() => {
-    const start = addPacificDays(cursor, -pacificWeekdayIndex(cursor));
+    const { start } = pacificCalendarGridRange(cursor);
     return Array.from({ length: 42 }, (_, i) => addPacificDays(start, i));
   }, [cursor]);
 

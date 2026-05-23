@@ -2,16 +2,28 @@ import { cache } from "react";
 import type { CampusEvent } from "@/types/event";
 import type { EventRow } from "@/lib/supabase-rows";
 import { supabase } from "@/lib/supabase";
-import { startOfPacificToday } from "@/lib/dates";
+import {
+  addPacificDays,
+  pacificDayKey,
+  parsePacificDateTimeInput,
+  startOfPacificToday,
+} from "@/lib/dates";
 import { normalizeHttpUrl } from "@/lib/event-validation";
 import { E2E_FIXTURE_EVENT, e2eFixturesEnabled } from "./events-fixtures";
 
 const DB_RETRY_ATTEMPTS = 2;
 export const EVENTS_PAGE_SIZE = 24;
+export const EVENTS_CALENDAR_RANGE_LIMIT = 500;
 
 type EventsPageOptions = {
   limit?: number;
   offset?: number;
+};
+
+type CalendarEventsOptions = {
+  startDayKey: string;
+  endDayKey: string;
+  limit?: number;
 };
 
 export type EventsPageResult = {
@@ -211,6 +223,39 @@ export async function getEvents(
 ): Promise<CampusEvent[]> {
   const page = await getEventsPage(options);
   return page.events;
+}
+
+export async function getCalendarEvents({
+  startDayKey,
+  endDayKey,
+  limit = EVENTS_CALENDAR_RANGE_LIMIT,
+}: CalendarEventsOptions): Promise<CampusEvent[]> {
+  if (e2eFixturesEnabled()) {
+    const fixtureDay = pacificDayKey(E2E_FIXTURE_EVENT.startsAt);
+    return fixtureDay >= startDayKey && fixtureDay <= endDayKey
+      ? [E2E_FIXTURE_EVENT]
+      : [];
+  }
+
+  const startIso = parsePacificDateTimeInput(`${startDayKey}T00:00`);
+  const endIso = parsePacificDateTimeInput(
+    `${addPacificDays(endDayKey, 1)}T00:00`
+  );
+  if (!startIso || !endIso) {
+    throw new Error("Unable to load calendar events. Invalid date range.");
+  }
+
+  const data = await withDbRetry("calendar events", () =>
+    supabase
+      .from("events")
+      .select("*")
+      .gte("starts_at", startIso)
+      .lt("starts_at", endIso)
+      .order("starts_at", { ascending: true })
+      .limit(Math.max(1, Math.min(limit, EVENTS_CALENDAR_RANGE_LIMIT)))
+  );
+
+  return (data as EventRow[]).map(toCampusEvent);
 }
 
 export const getEventById = cache(async function getEventById(
