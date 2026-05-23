@@ -86,24 +86,17 @@ function deriveRestoreIntent(
   currentHasMore: boolean,
   currentNextOffset: number
 ): RestoreIntent {
-  if (snapshot?.eventId && returnScroll?.eventId === snapshot.eventId) {
-    return {
-      kind: "card",
-      eventId: returnScroll.eventId,
-      eventTop: returnScroll.eventTop,
-      loadedCount: returnScroll.loadedCount ?? snapshot.loadedCount,
-      events: snapshot.events,
-      hasMore: snapshot.hasMore,
-      nextOffset: snapshot.nextOffset,
-    };
-  }
-
   if (snapshot?.eventId) {
+    const matchingReturnTarget =
+      returnScroll?.eventId === snapshot.eventId ? returnScroll : null;
+
     return {
       kind: "card",
       eventId: snapshot.eventId,
-      eventTop: snapshot.eventTop,
-      loadedCount: snapshot.loadedCount,
+      eventTop: matchingReturnTarget
+        ? matchingReturnTarget.eventTop
+        : snapshot.eventTop,
+      loadedCount: matchingReturnTarget?.loadedCount ?? snapshot.loadedCount,
       events: snapshot.events,
       hasMore: snapshot.hasMore,
       nextOffset: snapshot.nextOffset,
