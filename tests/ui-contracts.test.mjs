@@ -231,6 +231,21 @@ test("event filters share category and day-window controls across layouts", () =
   assert.match(dayWindowFilter, /DAY_WINDOWS\.map/);
 });
 
+test("event empty state uses hook-owned active filter facts", () => {
+  const feedColumn = read("src/components/events/EventsFeedColumn.tsx");
+  const filters = read("src/components/events/useEventFeedFilters.ts");
+  const browser = read("src/components/events/EventsBrowser.tsx");
+
+  assert.match(filters, /activeFilters = useMemo<EventFeedActiveFilters>/);
+  assert.match(filters, /const hasActiveFilters = activeFilters\.hasAny/);
+  assert.match(browser, /activeFilters=\{activeFilters\}/);
+  assert.match(feedColumn, /diagnoseEmpty\(activeFilters\)/);
+  assert.match(feedColumn, /const hasActiveFilters = activeFilters\.hasAny/);
+  assert.doesNotMatch(feedColumn, /query\.trim\(\)/);
+  assert.doesNotMatch(feedColumn, /category !== "all"/);
+  assert.doesNotMatch(feedColumn, /dayWindow !== "all"/);
+});
+
 test("motion and focus behavior have accessible fallbacks", () => {
   const source = read("src/app/globals.css");
 
