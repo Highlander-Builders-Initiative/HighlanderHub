@@ -27,7 +27,6 @@ const siteLinks = [
   { label: "Events", href: "/events" },
   { label: "Submit", href: "/submit" },
   { label: "About", href: "/about" },
-  { label: "Features", href: "/#features" },
 ];
 
 export function Footer() {
