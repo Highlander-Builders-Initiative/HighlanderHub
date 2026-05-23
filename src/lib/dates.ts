@@ -251,6 +251,12 @@ export function formatTime(iso: string): string {
   return timeFmt.format(new Date(iso)).toLowerCase().replace(/\s+/g, "");
 }
 
+export function formatTimeParts(iso: string): { time: string; period: string } {
+  const formatted = timeFmt.format(new Date(iso));
+  const [time, period = ""] = formatted.split(" ");
+  return { time, period };
+}
+
 export function formatTimeRange(startIso: string, endIso?: string): string {
   const start = formatTime(startIso);
   if (!endIso) return start;
