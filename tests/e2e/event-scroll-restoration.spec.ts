@@ -49,11 +49,7 @@ async function waitForEventsBrowserHydration(page: Page) {
   await clickUntilPressed(page, "All");
 }
 
-test("event detail returns to the prior scroll position", async ({
-  page,
-}: {
-  page: Page;
-}) => {
+test("event detail returns to the prior scroll position", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 480 });
   await page.goto("/events");
   await page.addStyleTag({

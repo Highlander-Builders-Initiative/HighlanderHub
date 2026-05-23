@@ -5,15 +5,12 @@ import Link from "next/link";
 import { memo, type MouseEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { CampusEvent } from "@/types/event";
-import { formatTime, relativeDay } from "@/lib/dates";
+import { formatTime } from "@/lib/dates";
+import { eventFlyerAlt, eventListLinkLabel } from "@/lib/event-a11y";
 import { track } from "@/lib/analytics";
 import { saveEventFeedReturn } from "@/lib/event-feed-session";
 import { CATEGORY_RAIL } from "@/lib/category-colors";
 import { CategoryBadge } from "../ui/CategoryBadge";
-
-function flyerAlt(event: CampusEvent) {
-  return `Flyer for ${event.title}`;
-}
 
 type EventCardProps = {
   event: CampusEvent;
@@ -54,9 +51,7 @@ function EventCardComponent({
       onClick={onOpen}
       onMouseEnter={prefetch}
       onFocus={prefetch}
-      aria-label={`${event.title}, ${relativeDay(event.startsAt)} at ${formatTime(
-        event.startsAt
-      )}`}
+      aria-label={eventListLinkLabel(event)}
       data-event-id={event.id}
       className={`interactive-focus card-hover group relative flex w-full min-w-0 overflow-hidden rounded-xl border border-ink/15 bg-canvas ${
         compact ? "" : "min-h-[7.5rem]"
@@ -73,7 +68,7 @@ function EventCardComponent({
         <div className="relative w-24 shrink-0 overflow-hidden bg-surface">
           <Image
             src={event.imageUrl!}
-            alt={flyerAlt(event)}
+            alt={eventFlyerAlt(event)}
             fill
             sizes="96px"
             className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
