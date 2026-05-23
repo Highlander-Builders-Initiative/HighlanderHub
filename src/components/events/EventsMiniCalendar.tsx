@@ -126,7 +126,7 @@ export function EventsMiniCalendar({
                 >
                   {pacificDayOfMonth(key)}
                 </span>
-                {dots.length > 0 && (
+                {!isLoading && dots.length > 0 && (
                   <span
                     aria-hidden
                     className="absolute bottom-1 flex items-center gap-[2px]"
