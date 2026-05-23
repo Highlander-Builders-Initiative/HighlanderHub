@@ -137,7 +137,6 @@ test("event feed session ignores stale snapshots on a fresh events visit", async
       session.getSavedEventFeedSnapshot({ requireReturnScroll: true }),
       null
     );
-    assert.equal(session.getSavedEventFeedSnapshotForRestore(), null);
     assert.deepEqual(session.readEventFeedRestoreState(), {
       snapshot: null,
       returnScroll: null,
@@ -149,7 +148,6 @@ test("event feed session ignores stale snapshots on a fresh events visit", async
       loadedCount: 24,
     });
 
-    assert.ok(session.getSavedEventFeedSnapshotForRestore());
     const restoreState = session.readEventFeedRestoreState();
     assert.ok(restoreState.snapshot);
     assert.ok(restoreState.returnScroll);
