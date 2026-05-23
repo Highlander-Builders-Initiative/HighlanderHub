@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { getSavedReturnPath } from "@/lib/scroll-restoration";
+import { getSavedReturnPath } from "@/lib/event-feed-session";
 
 export function EventBackButton() {
   const router = useRouter();

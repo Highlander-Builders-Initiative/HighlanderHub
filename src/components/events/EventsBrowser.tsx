@@ -23,10 +23,10 @@ import { track } from "@/lib/analytics";
 import {
   clearEventFeedReturnState,
   getSavedEventFeedSnapshotForRestore,
+  getSavedScrollPosition,
   saveEventFeedSnapshot,
 } from "@/lib/event-feed-session";
 import { fetchCalendarEvents, fetchEventsPage } from "@/lib/events-api";
-import { getSavedScrollPosition } from "@/lib/scroll-restoration";
 import { restoreSavedEventFeedSpot } from "@/lib/event-feed-restore";
 import {
   type CategoryValue,

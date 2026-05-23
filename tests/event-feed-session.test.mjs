@@ -56,7 +56,6 @@ test("event feed session keeps the list snapshot and return metadata together", 
 
   try {
     const session = await importTsModule("src/lib/event-feed-session.ts");
-    const scroll = await importTsModule("src/lib/scroll-restoration.ts");
     const events = [
       {
         id: "event-1",
@@ -97,7 +96,7 @@ test("event feed session keeps the list snapshot and return metadata together", 
       loadedCount: 1,
     });
 
-    const returned = scroll.getSavedScrollPosition();
+    const returned = session.getSavedScrollPosition();
     assert.ok(returned);
     assert.equal(returned.path, "/events");
     assert.equal(returned.detailPath, "/events/event-1");
@@ -107,7 +106,7 @@ test("event feed session keeps the list snapshot and return metadata together", 
     assert.equal(session.getSavedEventFeedSnapshot()?.eventId, "event-1");
 
     globalThis.window.location.pathname = "/events/event-1";
-    assert.equal(scroll.getSavedReturnPath(), "/events");
+    assert.equal(session.getSavedReturnPath(), "/events");
   } finally {
     Date.now = previousNow;
     env.restore();

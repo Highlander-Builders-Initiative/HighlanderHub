@@ -4,6 +4,7 @@ import { DAY_WINDOWS, type DayWindow } from "@/types/events-feed";
 const FEED_SESSION_KEY = "highlanderhub.eventFeed";
 const RETURN_SCROLL_KEY = "highlanderhub.returnScroll";
 const FEED_SESSION_TTL_MS = 10 * 60 * 1000;
+
 export type SavedEventFeedSnapshot = {
   path: string;
   scrollY: number;
@@ -20,7 +21,13 @@ export type SavedEventFeedSnapshot = {
 };
 
 type SavedEventFeedSnapshotInput = Omit<SavedEventFeedSnapshot, "savedAt">;
-type SavedScrollPosition = {
+type SavedScrollPositionInput = {
+  eventId?: string;
+  eventTop?: number;
+  loadedCount?: number;
+};
+
+export type SavedScrollPosition = {
   path: string;
   scrollY: number;
   detailPath: string;
@@ -35,30 +42,7 @@ function currentPath() {
   return `${window.location.pathname}${window.location.search}`;
 }
 
-function saveScrollPosition(
-  detailPath: string,
-  target?: {
-    eventId?: string;
-    eventTop?: number;
-    loadedCount?: number;
-  }
-) {
-  window.sessionStorage.setItem(
-    RETURN_SCROLL_KEY,
-    JSON.stringify({
-      path: currentPath(),
-      scrollY: window.scrollY,
-      detailPath,
-      ...target,
-    })
-  );
-}
-
-function clearSavedScrollPosition() {
-  window.sessionStorage.removeItem(RETURN_SCROLL_KEY);
-}
-
-function readReturnScrollRaw() {
+function readSavedScrollPositionRaw() {
   const raw = window.sessionStorage.getItem(RETURN_SCROLL_KEY);
   if (!raw) return null;
 
@@ -75,6 +59,25 @@ function readReturnScrollRaw() {
   } catch {
     return null;
   }
+}
+
+function writeSavedScrollPosition(
+  detailPath: string,
+  target?: SavedScrollPositionInput
+) {
+  window.sessionStorage.setItem(
+    RETURN_SCROLL_KEY,
+    JSON.stringify({
+      path: currentPath(),
+      scrollY: window.scrollY,
+      detailPath,
+      ...target,
+    })
+  );
+}
+
+function clearSavedScrollPosition() {
+  window.sessionStorage.removeItem(RETURN_SCROLL_KEY);
 }
 
 function isExpired(savedAt: number) {
@@ -166,7 +169,7 @@ export function getSavedEventFeedSnapshot() {
 export function getSavedEventFeedSnapshotForRestore() {
   if (typeof window === "undefined") return null;
 
-  const returnScroll = readReturnScrollRaw();
+  const returnScroll = readSavedScrollPositionRaw();
   if (!returnScroll || returnScroll.path !== currentPath()) return null;
 
   return readSnapshot();
@@ -174,16 +177,21 @@ export function getSavedEventFeedSnapshotForRestore() {
 
 export function getSavedScrollPosition() {
   if (typeof window === "undefined") return null;
-  return readReturnScrollRaw();
+  return readSavedScrollPositionRaw();
+}
+
+export function getSavedReturnPath() {
+  if (typeof window === "undefined") return null;
+
+  const saved = readSavedScrollPositionRaw();
+  if (!saved || saved.detailPath !== currentPath()) return null;
+
+  return saved.path;
 }
 
 export function saveEventFeedReturn(
   detailPath: string,
-  target?: {
-    eventId?: string;
-    eventTop?: number;
-    loadedCount?: number;
-  }
+  target?: SavedScrollPositionInput
 ) {
   if (typeof window === "undefined") return;
 
@@ -195,18 +203,11 @@ export function saveEventFeedReturn(
       eventTop: target?.eventTop,
     });
   }
-  saveScrollPosition(detailPath, {
+  writeSavedScrollPosition(detailPath, {
     eventId: target?.eventId,
     eventTop: target?.eventTop,
     loadedCount: target?.loadedCount ?? snapshot?.loadedCount,
   });
-}
-
-export function clearEventFeedSnapshot() {
-  if (typeof window === "undefined") return;
-
-  memorySnapshot = null;
-  window.sessionStorage.removeItem(FEED_SESSION_KEY);
 }
 
 export function clearEventFeedReturnState() {
