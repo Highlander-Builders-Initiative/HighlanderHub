@@ -31,33 +31,12 @@ export default async function EventsPage() {
             <h1 className="font-display text-3xl font-semibold leading-[1.05] tracking-[-0.03em] text-ink md:text-5xl">
               Events
             </h1>
-            <p className="mt-2 hidden max-w-xl text-base text-ink/75 md:mt-3 md:block">
-              Filter by category, search across hosts and tags, or switch to
-              calendar view to see your whole month.
+            <p className="mt-2 max-w-xl text-base text-ink/75 md:mt-3">
+              Discover {summary.total} campus gatherings, with {summary.upcomingThisWeek} happening this week and {summary.freeFood} serving free food.
             </p>
           </div>
           <div className="flex flex-col items-stretch gap-4 sm:items-start md:items-end md:gap-5">
             <SubmitEventCta surface="events_header" />
-            <dl className="hidden grid-cols-3 gap-x-6 gap-y-1 md:grid md:text-right">
-              <div>
-                <dt className="text-xs text-muted">Loaded</dt>
-                <dd className="font-display text-2xl font-semibold leading-none text-ink">
-                  {summary.total}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-xs text-muted">This week</dt>
-                <dd className="font-display text-2xl font-semibold leading-none text-ink">
-                  {summary.upcomingThisWeek}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-xs text-muted">Free food</dt>
-                <dd className="font-display text-2xl font-semibold leading-none text-ink">
-                  {summary.freeFood}
-                </dd>
-              </div>
-            </dl>
           </div>
         </div>
       </section>

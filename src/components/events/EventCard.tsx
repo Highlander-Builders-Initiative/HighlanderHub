@@ -83,9 +83,9 @@ function EventCardComponent({
       )}
 
       {/* Text block. */}
-      <div className="flex min-w-0 flex-1 flex-col justify-center gap-1 px-4 py-3 sm:px-5">
+      <div className="flex min-w-0 flex-1 flex-col justify-center gap-1.5 px-4 py-3 sm:px-5">
         <div className="flex min-w-0 items-center gap-1.5 text-[13px] text-muted">
-          <span className="shrink-0 font-mono tracking-[0.01em]">
+          <span className="shrink-0 font-mono text-[11px] tracking-[0.04em] leading-none bg-surface border border-ink/5 px-1 py-0.5 rounded-sm">
             {formatTime(event.startsAt)}
           </span>
           <span aria-hidden className="shrink-0 text-ink/20">
@@ -94,7 +94,7 @@ function EventCardComponent({
           <span className="min-w-0 truncate">{event.location}</span>
         </div>
 
-        <h3 className="font-display text-[16px] font-semibold leading-[1.25] tracking-[-0.015em] text-ink line-clamp-2 break-words sm:text-[17px]">
+        <h3 className="font-display text-lg font-semibold leading-[1.2] tracking-[-0.015em] text-ink line-clamp-2 break-words">
           {event.title}
         </h3>
 

@@ -38,7 +38,7 @@ export function SubmitEventCta({
       onClick={onClick}
       className={
         className ??
-        "interactive-focus group inline-flex min-h-12 items-center gap-2 rounded-lg border border-ink bg-canvas px-5 py-3 text-sm font-medium text-ink transition-colors hover:bg-ink hover:text-white"
+        "interactive-focus group inline-flex min-h-12 items-center gap-2 rounded-lg bg-ink px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-85"
       }
     >
       <svg
