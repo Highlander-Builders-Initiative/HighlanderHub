@@ -1,5 +1,9 @@
-import type { CampusEvent, EventCategory } from "@/types/event";
-import { EVENT_CATEGORIES, EVENT_CATEGORY_LABELS } from "@/lib/supabase-rows";
+import {
+  EVENT_CATEGORIES,
+  EVENT_CATEGORY_LABELS,
+  type CampusEvent,
+  type EventCategory,
+} from "@/types/event";
 import {
   addPacificDays,
   pacificDayKey,

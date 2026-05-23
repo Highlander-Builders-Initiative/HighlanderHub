@@ -1,6 +1,27 @@
-import type { EventCategory, EventSource } from "@/lib/supabase-rows";
+import {
+  EVENT_CATEGORIES,
+  type EventCategory,
+  type EventSource,
+} from "@/lib/supabase-rows";
 
+export { EVENT_CATEGORIES };
 export type { EventCategory, EventSource };
+
+export const EVENT_CATEGORY_LABELS: Record<EventCategory, string> = {
+  club: "Club / org",
+  academic: "Academic / lecture",
+  social: "Social",
+  career: "Career / professional",
+  sports: "Sports / athletics",
+  arts: "Arts / performance",
+  community: "Community / service",
+  free_food: "Free food",
+};
+
+export const SUBMIT_EVENT_CATEGORIES = EVENT_CATEGORIES.map((value) => ({
+  value,
+  label: EVENT_CATEGORY_LABELS[value],
+}));
 
 export interface CampusEvent {
   id: string;

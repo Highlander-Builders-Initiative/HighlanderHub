@@ -22,6 +22,11 @@ const shortDayFmt = new Intl.DateTimeFormat("en-US", {
   month: "short",
   day: "numeric",
 });
+const monthDayFmt = new Intl.DateTimeFormat("en-US", {
+  timeZone: CAMPUS_TZ,
+  month: "short",
+  day: "numeric",
+});
 const monthYearFmt = new Intl.DateTimeFormat("en-US", {
   timeZone: CAMPUS_TZ,
   month: "long",
@@ -36,6 +41,23 @@ const timeFmt = new Intl.DateTimeFormat("en-US", {
   hour: "numeric",
   minute: "2-digit",
 });
+const wallTimeFmt = new Intl.DateTimeFormat("en-US", {
+  timeZone: "UTC",
+  hour: "numeric",
+  minute: "2-digit",
+});
+const pacificDateTimePartsFmt = new Intl.DateTimeFormat("en-US", {
+  timeZone: CAMPUS_TZ,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+  hourCycle: "h23",
+});
+const dateTimeInputRe =
+  /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/;
 
 /** YYYY-MM-DD in campus (Pacific) local time, derived from an ISO instant. */
 export function pacificDayKey(iso: string): string {
@@ -88,8 +110,108 @@ export function formatPacificDayKey(dayKey: string): string {
   return fullDayFmt.format(dayKeyToNoonUtc(dayKey));
 }
 
+export function formatPacificDayKeyShort(dayKey: string): string {
+  return shortDayFmt.format(dayKeyToNoonUtc(dayKey));
+}
+
+export function formatPacificMonthDay(dayKey: string): string {
+  return monthDayFmt.format(dayKeyToNoonUtc(dayKey));
+}
+
 export function formatPacificMonth(dayKey: string): string {
   return monthYearFmt.format(dayKeyToNoonUtc(dayKey));
+}
+
+export function formatWallClockTime(timeInput: string): string {
+  const match = /^(\d{2}):(\d{2})$/.exec(timeInput);
+  if (!match) return "";
+
+  const hour = Number(match[1]);
+  const minute = Number(match[2]);
+  if (hour > 23 || minute > 59) return "";
+
+  return wallTimeFmt.format(new Date(Date.UTC(2000, 0, 1, hour, minute)));
+}
+
+function pacificParts(date: Date) {
+  const parts = pacificDateTimePartsFmt.formatToParts(date);
+  const get = (type: string) =>
+    Number(parts.find((part) => part.type === type)?.value ?? NaN);
+
+  return {
+    year: get("year"),
+    month: get("month"),
+    day: get("day"),
+    hour: get("hour"),
+    minute: get("minute"),
+    second: get("second"),
+  };
+}
+
+function partsAsUtcMs(parts: ReturnType<typeof pacificParts>): number {
+  return Date.UTC(
+    parts.year,
+    parts.month - 1,
+    parts.day,
+    parts.hour,
+    parts.minute,
+    parts.second
+  );
+}
+
+function sameParts(
+  left: ReturnType<typeof pacificParts>,
+  right: ReturnType<typeof pacificParts>
+): boolean {
+  return (
+    left.year === right.year &&
+    left.month === right.month &&
+    left.day === right.day &&
+    left.hour === right.hour &&
+    left.minute === right.minute &&
+    left.second === right.second
+  );
+}
+
+export function parsePacificDateTimeInput(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+
+  const match = dateTimeInputRe.exec(value.trim());
+  if (!match) return null;
+
+  const target = {
+    year: Number(match[1]),
+    month: Number(match[2]),
+    day: Number(match[3]),
+    hour: Number(match[4]),
+    minute: Number(match[5]),
+    second: Number(match[6] ?? 0),
+  };
+
+  if (
+    target.month < 1 ||
+    target.month > 12 ||
+    target.day < 1 ||
+    target.day > 31 ||
+    target.hour > 23 ||
+    target.minute > 59 ||
+    target.second > 59
+  ) {
+    return null;
+  }
+
+  const targetAsUtc = partsAsUtcMs(target);
+  let utcMs = targetAsUtc;
+
+  for (let i = 0; i < 3; i += 1) {
+    const renderedAsUtc = partsAsUtcMs(pacificParts(new Date(utcMs)));
+    const diff = targetAsUtc - renderedAsUtc;
+    if (diff === 0) break;
+    utcMs += diff;
+  }
+
+  const instant = new Date(utcMs);
+  return sameParts(pacificParts(instant), target) ? instant.toISOString() : null;
 }
 
 /** The instant that was midnight in Pacific time on the current Pacific date. */
