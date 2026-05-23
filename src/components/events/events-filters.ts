@@ -1,4 +1,5 @@
 import type { CampusEvent, EventCategory } from "@/types/event";
+import { EVENT_CATEGORIES, EVENT_CATEGORY_LABELS } from "@/lib/supabase-rows";
 import {
   addPacificDays,
   pacificDayKey,
@@ -11,14 +12,15 @@ export type CategoryValue = EventCategory | "all";
 
 export const CATEGORIES: { value: CategoryValue; label: string }[] = [
   { value: "all", label: "All" },
-  { value: "club", label: "Clubs" },
-  { value: "academic", label: "Academic" },
-  { value: "social", label: "Social" },
-  { value: "career", label: "Career" },
-  { value: "sports", label: "Sports" },
-  { value: "arts", label: "Arts" },
-  { value: "community", label: "Community" },
-  { value: "free_food", label: "Free Food" },
+  ...EVENT_CATEGORIES.map((value) => ({
+    value,
+    label:
+      value === "club"
+        ? "Clubs"
+        : value === "free_food"
+          ? "Free Food"
+          : EVENT_CATEGORY_LABELS[value].split(" / ")[0],
+  })),
 ];
 
 export { DAY_WINDOWS, type DayWindow } from "@/types/events-feed";
