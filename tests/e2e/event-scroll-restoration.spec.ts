@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { categoryFilterButton } from "./events-browser-helpers";
 
 async function readScrollY(page: Page) {
   return page.evaluate(() => window.scrollY);
@@ -35,7 +36,7 @@ async function waitForNoLoadError(page: Page) {
 }
 
 async function clickUntilPressed(page: Page, name: string) {
-  const button = page.getByRole("button", { name });
+  const button = categoryFilterButton(page, name);
   await expect
     .poll(async () => {
       await button.click();

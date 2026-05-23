@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { categoryFilterButton } from "./events-browser-helpers";
 
 test("event filters expose accessible state and recovery actions", async ({
   page,
@@ -15,11 +16,9 @@ test("event filters expose accessible state and recovery actions", async ({
   await expect(summary).toHaveAttribute("aria-live", "polite");
   await expect(summary).toHaveText("1 event loaded");
 
-  await page.getByRole("button", { name: "Social" }).click();
-  await expect(page.getByRole("button", { name: "Social" })).toHaveAttribute(
-    "aria-pressed",
-    "true"
-  );
+  const socialFilter = categoryFilterButton(page, "Social");
+  await socialFilter.click();
+  await expect(socialFilter).toHaveAttribute("aria-pressed", "true");
   await expect(summary).toHaveText("1 matching event");
   await expect(page.getByRole("button", { name: "Clear" })).toBeVisible();
 
