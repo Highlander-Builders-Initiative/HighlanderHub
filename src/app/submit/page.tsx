@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import SubmitForm from "@/components/forms/submit/SubmitForm";
+import { SubmitBackButton } from "@/components/events/SubmitBackButton";
 
 export const metadata: Metadata = {
   title: "Submit an event · Highlander Hub",
@@ -10,6 +11,9 @@ export const metadata: Metadata = {
 export default function SubmitPage() {
   return (
     <main className="mx-auto max-w-2xl px-6 py-16">
+      <div className="mb-8">
+        <SubmitBackButton />
+      </div>
       <header className="mb-10">
         <h1 className="font-display text-5xl tracking-tight text-ink">Submit an event</h1>
         <p className="mt-3 text-muted">
