@@ -9,7 +9,8 @@ type EventMap = {
   event_share: { id: string; method: "native" | "clipboard" | "mailto"; surface: "text" | "icon" };
   events_search: { query_length: number };
   events_filter: { category: string };
-  events_view_toggle: { view: "list" | "calendar" };
+  events_day_window: { window: "all" | "today" | "week" | "weekend" };
+  events_calendar_jump: { day: string };
   events_clear_filters: Record<string, never>;
   hbi_cta_click: { location: "hero" | "footer_social" | "about_page"; channel: string };
   submit_cta_click: { surface: "events_header" | "empty_state" | "about_page" };

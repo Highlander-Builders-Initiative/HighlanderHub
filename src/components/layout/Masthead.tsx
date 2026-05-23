@@ -19,12 +19,19 @@ type MastheadProps = {
   hideOnScroll?: boolean;
   position?: "sticky" | "static";
   variant?: "glass" | "solid";
+  /**
+   * Hide the inline nav links on desktop only. Used on /events where the
+   * left rail owns site navigation; mobile still gets the inline links
+   * because no rail exists below the lg breakpoint.
+   */
+  hideNavOnDesktop?: boolean;
 };
 
 export function Masthead({
   hideOnScroll = false,
   position = "sticky",
   variant = "glass",
+  hideNavOnDesktop = false,
 }: MastheadProps) {
   const [hidden, setHidden] = useState(false);
   const lastY = useRef(0);
@@ -87,7 +94,9 @@ export function Masthead({
 
         <nav
           aria-label="Site"
-          className="flex items-center gap-4 text-[13px] font-medium md:gap-5 md:text-sm"
+          className={`items-center gap-4 text-[13px] font-medium md:gap-5 md:text-sm ${
+            hideNavOnDesktop ? "flex lg:hidden" : "flex"
+          }`}
         >
           {NAV_LINKS.map((link) => (
             <Link key={link.href} href={link.href} className={NAV_LINK_CLASS}>
