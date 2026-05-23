@@ -9,13 +9,17 @@ test("event browser paginates the list instead of rendering every event at once"
   const browser = read("src/components/events/EventsBrowser.tsx");
   const loader = read("src/components/events/useInfiniteEventFeedLoader.ts");
   const data = read("src/lib/events.ts");
+  const eventsApi = read("src/lib/events-api.ts");
   const api = read("src/app/api/events/route.ts");
 
   assert.match(data, /EVENTS_PAGE_SIZE/);
   assert.match(data, /\.range\(/);
   assert.match(api, /searchParams/);
+  assert.match(eventsApi, /fetch\(`\/api\/events\?\$\{params\}`\)/);
+  assert.match(eventsApi, /params\.set\("limit"/);
   assert.match(loader, /IntersectionObserver/);
   assert.match(browser, /loadMoreRef/);
+  assert.match(browser, /fetchEventsPage\(nextOffset\)/);
   assert.doesNotMatch(browser, /Load more/);
   assert.match(browser, /hasMore/);
 });
@@ -114,7 +118,7 @@ test("event back navigation restores from a snapshot before falling back to pagi
     restore,
     /const limitToFetch = Math\.max\(0, returnScroll\.loadedCount - current\.length\);/
   );
-  assert.match(restore, /fetch\(`\/api\/events\?\$\{params\}`\)/);
+  assert.match(restore, /fetchEventsPage/);
   assert.match(restore, /restoreToEventCard/);
   assert.match(scroll, /getSavedReturnPath/);
   assert.match(scroll, /highlanderhub\.returnScroll/);

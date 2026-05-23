@@ -1,29 +1,13 @@
 import type { EventCategory, CampusEvent } from "@/types/event";
 import type { DayWindow } from "@/types/events-feed";
 import { clearEventFeedReturnState } from "@/lib/event-feed-session";
+import { fetchEventsPage, type EventsApiPage } from "@/lib/events-api";
 import type { SavedScrollPosition } from "@/lib/scroll-restoration";
-
-type EventsApiPage = {
-  events: CampusEvent[];
-  hasMore: boolean;
-  nextOffset: number;
-};
 
 type EventPageFetcher = (
   offset: number,
   limit?: number
 ) => Promise<EventsApiPage>;
-
-async function fetchEventsPage(offset: number, limit?: number) {
-  const params = new URLSearchParams({ offset: String(offset) });
-  if (typeof limit === "number") {
-    params.set("limit", String(limit));
-  }
-
-  const response = await fetch(`/api/events?${params}`);
-  if (!response.ok) throw new Error("Unable to load more events.");
-  return (await response.json()) as EventsApiPage;
-}
 
 function appendUniqueEvents(current: CampusEvent[], incoming: CampusEvent[]) {
   const seen = new Set(current.map((event) => event.id));

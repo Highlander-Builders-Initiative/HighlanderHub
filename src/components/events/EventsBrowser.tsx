@@ -23,6 +23,7 @@ import {
   getSavedEventFeedSnapshotForRestore,
   saveEventFeedSnapshot,
 } from "@/lib/event-feed-session";
+import { fetchEventsPage } from "@/lib/events-api";
 import { getSavedScrollPosition } from "@/lib/scroll-restoration";
 import { restoreSavedEventFeedSpot } from "@/lib/event-feed-restore";
 import {
@@ -187,13 +188,7 @@ export function EventsBrowser({
     setLoadError("");
 
     try {
-      const response = await fetch(`/api/events?offset=${nextOffset}`);
-      if (!response.ok) throw new Error("Unable to load more events.");
-      const page = (await response.json()) as {
-        events: CampusEvent[];
-        hasMore: boolean;
-        nextOffset: number;
-      };
+      const page = await fetchEventsPage(nextOffset);
 
       setLoadedEvents((current) => {
         const seen = new Set(current.map((event) => event.id));
