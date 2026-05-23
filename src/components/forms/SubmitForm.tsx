@@ -191,6 +191,7 @@ export default function SubmitForm() {
   const [endChoice, setEndChoice] = useState<EndChoice>("1h");
   const [endCustomTime, setEndCustomTime] = useState("");
   const startedRef = useRef(false);
+  const blurredRef = useRef(false);
 
   const startsAtLocal =
     startDate && startTime ? `${startDate}T${startTime}` : "";
@@ -216,6 +217,15 @@ export default function SubmitForm() {
     if (startedRef.current) return;
     startedRef.current = true;
     track("submission_start", {});
+  }
+
+  function onFirstBlur(e: React.FocusEvent<HTMLFormElement>) {
+    if (blurredRef.current) return;
+    const target = e.target as unknown as { name?: string };
+    const name = target?.name;
+    if (!name) return;
+    blurredRef.current = true;
+    track("submission_first_blur", { field: name });
   }
 
   async function uploadFlyer(file: File) {
@@ -346,7 +356,11 @@ export default function SubmitForm() {
 
   if (status.kind === "success") {
     return (
-      <div className="rounded-lg border border-deep-leaf/30 bg-leaf/10 p-6">
+      <div
+        role="status"
+        aria-live="polite"
+        className="rounded-lg border border-deep-leaf/30 bg-leaf/10 p-6"
+      >
         <h2 className="font-display text-2xl">Got it.</h2>
         <p className="mt-2 text-ink/80">
           Your event is queued for review. You&apos;ll see it on the bulletin
@@ -361,6 +375,7 @@ export default function SubmitForm() {
       onSubmit={onSubmit}
       onFocusCapture={onFirstInteract}
       onChange={onFirstInteract}
+      onBlurCapture={onFirstBlur}
     >
       <FormSection first>
         <FlyerUpload
@@ -395,6 +410,7 @@ export default function SubmitForm() {
           name="title"
           required
           maxLength={200}
+          showCounter
           error={fieldErrors.title}
         />
         <Field
@@ -402,6 +418,8 @@ export default function SubmitForm() {
           name="description"
           type="textarea"
           optional
+          rows={4}
+          autoGrow
           placeholder="A sentence or two: what's happening, who's it for?"
         />
         <SelectField label="Category" name="category" options={CATEGORIES} />
@@ -505,7 +523,7 @@ export default function SubmitForm() {
       <button
         type="submit"
         disabled={status.kind === "submitting"}
-        className="interactive-focus mt-10 w-full rounded-lg bg-ink px-6 py-3 font-medium text-canvas transition-opacity duration-200 hover:opacity-85 disabled:cursor-not-allowed disabled:bg-muted disabled:text-canvas disabled:opacity-100"
+        className="interactive-focus mt-10 w-full rounded-lg bg-ink px-6 py-3 font-medium text-canvas transition-opacity duration-200 hover:opacity-85 disabled:cursor-not-allowed disabled:bg-muted disabled:text-canvas disabled:opacity-100 sm:w-auto sm:min-w-[220px]"
       >
         {status.kind === "submitting" ? "Submitting…" : "Submit for review"}
       </button>
@@ -703,6 +721,9 @@ function Field({
   maxLength,
   placeholder,
   error,
+  showCounter = false,
+  autoGrow = false,
+  rows = 3,
 }: {
   label: string;
   name: string;
@@ -712,33 +733,61 @@ function Field({
   maxLength?: number;
   placeholder?: string;
   error?: string;
+  showCounter?: boolean;
+  autoGrow?: boolean;
+  rows?: number;
 }) {
+  const [length, setLength] = useState(0);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const errorId = `${name}-error`;
   const describedBy = error ? errorId : undefined;
   const baseClass =
-    "interactive-focus mt-1 w-full rounded-md border border-ink/15 bg-canvas px-3 py-2 text-ink placeholder:text-muted focus:border-ink";
+    "interactive-focus mt-1 w-full rounded-md border border-ink/15 bg-canvas px-3 py-2 text-ink placeholder:text-muted/70 focus:border-ink";
   const inputClass = error
     ? `${baseClass} border-deep-coral focus:border-deep-coral`
     : baseClass;
+
+  function handleChange(
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) {
+    if (showCounter) setLength(e.target.value.length);
+    if (autoGrow && textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+    }
+  }
+
+  const counterAtRisk = maxLength != null && length >= Math.floor(maxLength * 0.8);
 
   return (
     <label className="block">
       <span className="flex items-center justify-between gap-3 text-sm font-medium text-ink/80">
         <span>{label}</span>
-        {optional && (
+        {showCounter && maxLength != null ? (
+          <span
+            className={`text-xs font-normal tabular-nums ${
+              counterAtRisk ? "text-deep-coral" : "text-muted"
+            }`}
+            aria-live="polite"
+          >
+            {length}/{maxLength}
+          </span>
+        ) : optional ? (
           <span className="text-xs font-normal text-muted">Optional</span>
-        )}
+        ) : null}
       </span>
       {type === "textarea" ? (
         <textarea
+          ref={textareaRef}
           name={name}
           required={required}
           maxLength={maxLength}
           placeholder={placeholder}
-          rows={3}
+          rows={rows}
+          onChange={showCounter || autoGrow ? handleChange : undefined}
           aria-invalid={Boolean(error)}
           aria-describedby={describedBy || undefined}
-          className={inputClass}
+          className={`${inputClass} ${autoGrow ? "resize-none overflow-hidden" : ""}`}
         />
       ) : (
         <input
@@ -747,6 +796,7 @@ function Field({
           required={required}
           maxLength={maxLength}
           placeholder={placeholder}
+          onChange={showCounter ? handleChange : undefined}
           aria-invalid={Boolean(error)}
           aria-describedby={describedBy || undefined}
           className={inputClass}
