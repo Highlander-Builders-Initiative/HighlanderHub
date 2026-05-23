@@ -7,13 +7,14 @@ const read = (path) => readFileSync(sourceFile(path), "utf8");
 
 test("event browser paginates the list instead of rendering every event at once", () => {
   const browser = read("src/components/events/EventsBrowser.tsx");
+  const loader = read("src/components/events/useInfiniteEventFeedLoader.ts");
   const data = read("src/lib/events.ts");
   const api = read("src/app/api/events/route.ts");
 
   assert.match(data, /EVENTS_PAGE_SIZE/);
   assert.match(data, /\.range\(/);
   assert.match(api, /searchParams/);
-  assert.match(browser, /IntersectionObserver/);
+  assert.match(loader, /IntersectionObserver/);
   assert.match(browser, /loadMoreRef/);
   assert.doesNotMatch(browser, /Load more/);
   assert.match(browser, /hasMore/);
@@ -21,7 +22,7 @@ test("event browser paginates the list instead of rendering every event at once"
 
 test("events page header uses full upcoming event totals", () => {
   const page = read("src/app/events/page.tsx");
-  const browser = read("src/components/events/EventsBrowser.tsx");
+  const feedColumn = read("src/components/events/EventsFeedColumn.tsx");
   const data = read("src/lib/events.ts");
 
   assert.match(data, /getEventsSummary/);
@@ -29,9 +30,9 @@ test("events page header uses full upcoming event totals", () => {
   assert.match(data, /count:/);
   assert.match(page, /getEventsSummary/);
   assert.match(page, /summary=\{summary\}/);
-  assert.match(browser, /summary\.total/);
-  assert.match(browser, /summary\.upcomingThisWeek/);
-  assert.match(browser, /summary\.freeFood/);
+  assert.match(feedColumn, /summary\.total/);
+  assert.match(feedColumn, /summary\.upcomingThisWeek/);
+  assert.match(feedColumn, /summary\.freeFood/);
   assert.doesNotMatch(page, /events\.length/);
 });
 
@@ -105,15 +106,16 @@ test("event back navigation restores from a snapshot before falling back to pagi
   assert.match(browser, /saveEventFeedSnapshot/);
   assert.match(browser, /getSavedEventFeedSnapshotForRestore/);
   assert.match(browser, /restoreSavedSpot/);
-  assert.match(browser, /restoreEventsUntilTarget/);
-  assert.match(browser, /root\.style\.scrollBehavior = "auto"/);
+  assert.match(restore, /restoreSavedEventFeedSpot/);
+  assert.match(restore, /restoreEventsUntilTarget/);
+  assert.match(restore, /root\.style\.scrollBehavior = "auto"/);
   assert.match(restore, /returnScroll\.loadedCount/);
   assert.match(
     restore,
     /const limitToFetch = Math\.max\(0, returnScroll\.loadedCount - current\.length\);/
   );
   assert.match(restore, /fetch\(`\/api\/events\?\$\{params\}`\)/);
-  assert.match(browser, /IntersectionObserver/);
+  assert.match(restore, /restoreToEventCard/);
   assert.match(scroll, /getSavedReturnPath/);
   assert.match(scroll, /highlanderhub\.returnScroll/);
 });
@@ -139,6 +141,7 @@ test("masthead keeps navigation reachable on mobile", () => {
   const siteNav = read("src/lib/site-nav.ts");
   const eventsPage = read("src/app/events/page.tsx");
   const eventsBrowser = read("src/components/events/EventsBrowser.tsx");
+  const feedColumn = read("src/components/events/EventsFeedColumn.tsx");
   const homePage = read("src/app/page.tsx");
 
   assert.match(source, /aria-label="Site"/);
@@ -156,9 +159,9 @@ test("masthead keeps navigation reachable on mobile", () => {
   assert.match(source, /variant = "glass"/);
   assert.match(eventsPage, /<Masthead position="static" variant="solid" hideNavOnDesktop \/>/);
   assert.doesNotMatch(eventsPage, /hideOnScroll/);
-  assert.match(eventsBrowser, /style=\{\{ top: 0 \}\}/);
-  assert.match(eventsBrowser, /bg-white\/55/);
-  assert.match(eventsBrowser, /backdrop-blur-xl/);
+  assert.match(feedColumn, /bg-white\/55/);
+  assert.match(feedColumn, /style=\{\{ top: 0 \}\}/);
+  assert.match(feedColumn, /backdrop-blur-xl/);
   assert.match(homePage, /<Masthead \/>/);
 });
 
