@@ -71,11 +71,16 @@ function validateOptionalUrlFields(form: FormData): FieldErrors {
 export default function SubmitForm() {
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [isImageUrlOpen, setIsImageUrlOpen] = useState(false);
   const startedRef = useRef(false);
 
   useEffect(() => {
     track("submit_page_view", {});
   }, []);
+
+  useEffect(() => {
+    if (fieldErrors.image_url) setIsImageUrlOpen(true);
+  }, [fieldErrors.image_url]);
 
   function onFirstInteract() {
     if (startedRef.current) return;
@@ -159,9 +164,9 @@ export default function SubmitForm() {
 
   if (status.kind === "success") {
     return (
-      <div className="rounded-lg border border-emerald-300 bg-emerald-50 p-6">
-        <h2 className="font-serif text-2xl">Got it.</h2>
-        <p className="mt-2 text-stone-700">
+      <div className="rounded-lg border border-deep-leaf/30 bg-leaf/10 p-6">
+        <h2 className="font-display text-2xl">Got it.</h2>
+        <p className="mt-2 text-ink/80">
           Your event is queued for review. You&apos;ll see it on the bulletin
           once it&apos;s approved, usually within a day.
         </p>
@@ -174,122 +179,188 @@ export default function SubmitForm() {
       onSubmit={onSubmit}
       onFocusCapture={onFirstInteract}
       onChange={onFirstInteract}
-      className="space-y-6"
     >
-      <Field
-        label="Event title"
-        name="title"
-        required
-        maxLength={200}
-        error={fieldErrors.title}
-      />
-      <Field
-        label="Description"
-        name="description"
-        type="textarea"
-        placeholder="A sentence or two: what's happening, who's it for?"
-      />
+      <FormSection first>
+        <FlyerPlaceholder
+          isOpen={isImageUrlOpen}
+          onToggle={() => setIsImageUrlOpen((v) => !v)}
+        />
+        <div id="image-url-field" className={isImageUrlOpen ? "mt-4" : "hidden"}>
+          <Field
+            label="Image URL"
+            name="image_url"
+            type="url"
+            placeholder="https://..."
+            error={fieldErrors.image_url}
+          />
+        </div>
+      </FormSection>
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+      <FormSection eyebrow="the event">
         <Field
-          label="Starts"
-          name="starts_at"
-          type="datetime-local"
+          label="Event title"
+          name="title"
           required
-          error={fieldErrors.starts_at}
+          maxLength={200}
+          error={fieldErrors.title}
         />
         <Field
-          label="Ends (optional)"
-          name="ends_at"
-          type="datetime-local"
-          error={fieldErrors.ends_at}
+          label="Description"
+          name="description"
+          type="textarea"
+          placeholder="A sentence or two: what's happening, who's it for?"
         />
-      </div>
+        <SelectField label="Category" name="category" options={CATEGORIES} />
+        <Field
+          label="Tags (comma-separated)"
+          name="tags"
+          placeholder="cs, networking, free pizza"
+        />
+      </FormSection>
 
-      <Field
-        label="Location"
-        name="location"
-        required
-        placeholder="HUB 302, or 'Bell Tower lawn'"
-        error={fieldErrors.location}
-      />
-      <Field
-        label="Host / organization"
-        name="host"
-        required
-        placeholder="ACM at UCR"
-        error={fieldErrors.host}
-      />
+      <FormSection eyebrow="when and where">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+          <Field
+            label="Starts"
+            name="starts_at"
+            type="datetime-local"
+            required
+            error={fieldErrors.starts_at}
+          />
+          <Field
+            label="Ends (optional)"
+            name="ends_at"
+            type="datetime-local"
+            error={fieldErrors.ends_at}
+          />
+        </div>
+        <Field
+          label="Location"
+          name="location"
+          required
+          placeholder="HUB 302, or 'Bell Tower lawn'"
+          error={fieldErrors.location}
+        />
+        <Field
+          label="Host / organization"
+          name="host"
+          required
+          placeholder="ACM at UCR"
+          error={fieldErrors.host}
+        />
+      </FormSection>
 
-      <SelectField label="Category" name="category" options={CATEGORIES} />
+      <FormSection eyebrow="links and tickets">
+        <Field
+          label="Event page or flyer URL (optional)"
+          name="source_url"
+          type="url"
+          error={fieldErrors.source_url}
+        />
+        <div className="flex gap-6">
+          <Checkbox label="Free to attend" name="is_free" defaultChecked />
+          <Checkbox label="RSVP required" name="rsvp_required" />
+        </div>
+        <Field
+          label="RSVP / ticket URL (if required)"
+          name="rsvp_url"
+          type="url"
+          error={fieldErrors.rsvp_url}
+        />
+      </FormSection>
 
-      <Field
-        label="Tags (comma-separated)"
-        name="tags"
-        placeholder="cs, networking, free pizza"
-      />
-
-      <Field
-        label="Event page or flyer URL (optional)"
-        name="source_url"
-        type="url"
-        error={fieldErrors.source_url}
-      />
-      <Field
-        label="Image URL (optional)"
-        name="image_url"
-        type="url"
-        placeholder="https://..."
-        error={fieldErrors.image_url}
-      />
-
-      <div className="flex gap-6">
-        <Checkbox label="Free to attend" name="is_free" defaultChecked />
-        <Checkbox label="RSVP required" name="rsvp_required" />
-      </div>
-      <Field
-        label="RSVP / ticket URL (if required)"
-        name="rsvp_url"
-        type="url"
-        error={fieldErrors.rsvp_url}
-      />
-
-      <hr className="border-stone-300" />
-
-      <h2 className="font-serif text-xl">Your info</h2>
-      <Field
-        label="Your name"
-        name="submitter_name"
-        required
-        error={fieldErrors.submitter_name}
-      />
-      <Field
-        label="Your email"
-        name="submitter_email"
-        type="email"
-        required
-        error={fieldErrors.submitter_email}
-      />
-      <Field
-        label="Org affiliation (optional)"
-        name="submitter_org"
-        placeholder="ACM at UCR"
-      />
+      <FormSection eyebrow="you">
+        <Field
+          label="Your name"
+          name="submitter_name"
+          required
+          error={fieldErrors.submitter_name}
+        />
+        <Field
+          label="Your email"
+          name="submitter_email"
+          type="email"
+          required
+          error={fieldErrors.submitter_email}
+        />
+        <Field
+          label="Org affiliation (optional)"
+          name="submitter_org"
+          placeholder="ACM at UCR"
+        />
+      </FormSection>
 
       <button
         type="submit"
         disabled={status.kind === "submitting"}
-        className="interactive-focus w-full rounded-lg bg-stone-950 px-6 py-3 font-medium text-white transition-colors hover:bg-stone-800 disabled:cursor-not-allowed disabled:bg-stone-500 disabled:text-white disabled:opacity-100"
+        className="interactive-focus mt-10 w-full rounded-lg bg-ink px-6 py-3 font-medium text-canvas transition-opacity duration-200 hover:opacity-85 disabled:cursor-not-allowed disabled:bg-muted disabled:text-canvas disabled:opacity-100"
       >
         {status.kind === "submitting" ? "Submitting…" : "Submit for review"}
       </button>
 
       {status.kind === "error" && (
-        <p className="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-900">
+        <p className="mt-4 rounded-md border border-deep-coral/30 bg-coral/10 px-4 py-3 text-sm text-deep-coral">
           {status.message}
         </p>
       )}
     </form>
+  );
+}
+
+function FormSection({
+  eyebrow,
+  first = false,
+  children,
+}: {
+  eyebrow?: string;
+  first?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className={first ? "" : "mt-10"}>
+      {!first && <div className="hairline mb-6" />}
+      {eyebrow && (
+        <p className="mb-4 text-[13px] text-muted">{eyebrow}</p>
+      )}
+      <div className="space-y-6">{children}</div>
+    </section>
+  );
+}
+
+function FlyerPlaceholder({
+  isOpen,
+  onToggle,
+}: {
+  isOpen: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-expanded={isOpen}
+      aria-controls="image-url-field"
+      className="interactive-focus group mx-auto flex aspect-[4/5] w-full max-w-sm flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-ink/20 bg-canvas px-6 text-center transition-colors duration-200 hover:border-ink/40"
+    >
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+        className="h-8 w-8 text-muted transition-colors duration-200 group-hover:text-ink/70"
+      >
+        <rect x="3" y="3" width="18" height="18" rx="2" />
+        <path d="M3 16l5-5 4 4 3-3 6 6" />
+        <circle cx="8.5" cy="8.5" r="1.5" />
+      </svg>
+      <span className="font-display text-base text-ink">Add a flyer</span>
+      <span className="text-sm text-muted">
+        {isOpen ? "Hide URL field" : "or paste a URL"}
+      </span>
+    </button>
   );
 }
 
@@ -316,17 +387,17 @@ function Field({
     .filter(Boolean)
     .join(" ");
   const baseClass =
-    "interactive-focus mt-1 w-full rounded-md border border-stone-400 bg-stone-50 px-3 py-2 text-stone-950 placeholder:text-stone-600 focus:border-stone-950";
+    "interactive-focus mt-1 w-full rounded-md border border-ink/15 bg-canvas px-3 py-2 text-ink placeholder:text-muted focus:border-ink";
   const inputClass = error
-    ? `${baseClass} border-red-700 focus:border-red-800`
+    ? `${baseClass} border-deep-coral focus:border-deep-coral`
     : baseClass;
 
   return (
     <label className="block">
-      <span className="flex items-center justify-between gap-3 text-sm font-medium text-stone-700">
+      <span className="flex items-center justify-between gap-3 text-sm font-medium text-ink/80">
         <span>{label}</span>
         {required && (
-          <span id={hintId} className="text-xs font-normal text-stone-500">
+          <span id={hintId} className="text-xs font-normal text-muted">
             Required
           </span>
         )}
@@ -355,7 +426,7 @@ function Field({
         />
       )}
       {error && (
-        <p id={errorId} className="mt-1 text-sm text-red-700">
+        <p id={errorId} className="mt-1 text-sm text-deep-coral">
           {error}
         </p>
       )}
@@ -374,11 +445,11 @@ function SelectField({
 }) {
   return (
     <label className="block">
-      <span className="text-sm font-medium text-stone-700">{label}</span>
+      <span className="text-sm font-medium text-ink/80">{label}</span>
       <select
         name={name}
         defaultValue="club"
-        className="interactive-focus mt-1 w-full rounded-md border border-stone-400 bg-stone-50 px-3 py-2 text-stone-950 focus:border-stone-950"
+        className="interactive-focus mt-1 w-full rounded-md border border-ink/15 bg-canvas px-3 py-2 text-ink focus:border-ink"
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>
@@ -400,12 +471,12 @@ function Checkbox({
   defaultChecked?: boolean;
 }) {
   return (
-    <label className="flex items-center gap-2 text-sm text-stone-700">
+    <label className="flex items-center gap-2 text-sm text-ink/80">
       <input
         type="checkbox"
         name={name}
         defaultChecked={defaultChecked}
-        className="interactive-focus h-4 w-4 rounded border-stone-400 text-stone-950"
+        className="interactive-focus h-4 w-4 rounded border-ink/15 text-ink"
       />
       {label}
     </label>
