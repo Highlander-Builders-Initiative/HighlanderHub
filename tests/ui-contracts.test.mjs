@@ -18,6 +18,17 @@ test("event browser paginates the list instead of rendering every event at once"
   assert.match(eventsApi, /fetch\(`\/api\/events\?\$\{params\}`\)/);
   assert.match(eventsApi, /params\.set\("limit"/);
   assert.match(loader, /IntersectionObserver/);
+  assert.match(loader, /scheduleRetry/);
+  assert.match(loader, /setTimeout/);
+  assert.match(loader, /isWithinLoadMargin/);
+  assert.match(loader, /LOAD_ROOT_MARGIN_PX/);
+  const observedDayHook = read("src/components/events/useObservedDayKey.ts");
+  assert.match(observedDayHook, /addEventListener\("scroll"/);
+  assert.doesNotMatch(observedDayHook, /IntersectionObserver/);
+  const observedDayKey = read("src/lib/events/observed-day-key.ts");
+  assert.match(observedDayKey, /HEADER_CROSSED_BONUS/);
+  assert.match(observedDayKey, /visibleBottom - visibleTop/);
+  assert.match(observedDayKey, /resolveObservedDayKey/);
   assert.match(browser, /loadMoreRef/);
   assert.match(browser, /fetchEventsPage\(nextOffset\)/);
   assert.doesNotMatch(browser, /Load more/);
@@ -65,8 +76,33 @@ test("calendar loads its own month-range events outside feed pagination", () => 
   assert.match(browser, /useCalendarMonthEvents/);
   assert.match(browser, /isCalendarLoading/);
   assert.match(browser, /useEventFeedRestore/);
-  assert.match(browser, /mergeUniqueEventsByStart\(current, eventsForDay\)/);
+  assert.match(browser, /mergeUniqueEventsByStart\(current, eventsToMerge\)/);
+  assert.match(browser, /key > lastLoadedDay && key <= dayKey/);
+  assert.match(browser, /calendarJumpSuppressUntilRef/);
+  assert.match(browser, /calendarJumpEndsAtLoadedBoundary/);
+  assert.match(browser, /hideLoadMoreHint=\{hideLoadMoreHint\}/);
+  assert.match(browser, /pendingLoadAnchorRef/);
+  assert.match(browser, /getBoundingClientRect\(\)\.top/);
+  assert.match(browser, /root\.scrollTop \+= delta/);
+  assert.doesNotMatch(browser, /setHasMore\(false\)[\s\S]*calendarJumpEndsAtLoadedBoundary/);
+  const calendarPagination = read("src/lib/events/calendar-feed-pagination.ts");
+  assert.match(calendarPagination, /calendarEventsInMonth/);
+  assert.match(calendarPagination, /monthKeyFromDayKey\(dayKey\)/);
+  assert.match(calendarPagination, /eventsOnTargetDay/);
+  assert.doesNotMatch(
+    browser,
+    /handleCalendarSelect[\s\S]*setNextOffset\(merged\.length\)/
+  );
+  assert.match(
+    browser,
+    /handleCalendarSelect[\s\S]*setObservedDayKey\(dayKey\)/
+  );
   assert.match(filters, /calendarEvents\?: CampusEvent\[\]/);
+  assert.match(filters, /of \$\{feedTotal\}/);
+  assert.match(
+    read("src/components/events/EventsFeedColumn.tsx"),
+    /upcomingTotal/
+  );
   assert.match(filters, /const calendarGrouped = useMemo/);
   assert.match(filters, /for \(const \[key, evs\] of calendarGrouped\)/);
   assert.match(calendar, /pacificCalendarGridRange/);

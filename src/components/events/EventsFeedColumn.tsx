@@ -11,6 +11,7 @@ import type { EventFeedActiveFilters } from "./useEventFeedFilters";
 
 type Props = {
   summary: { upcomingThisWeek: number };
+  upcomingTotal: number;
   query: string;
   onQueryChange: (next: string) => void;
   onOpenMobileFilters: () => void;
@@ -29,14 +30,17 @@ type Props = {
   loadedCount: number;
   loadMoreRef: RefObject<HTMLDivElement>;
   hasMore: boolean;
+  hideLoadMoreHint?: boolean;
   loadError: string;
   isLoadingMore: boolean;
   onLoadMore: () => void;
   dayHeaderRefs: MutableRefObject<Map<string, HTMLElement>>;
+  daySectionRefs: MutableRefObject<Map<string, HTMLElement>>;
 };
 
 export function EventsFeedColumn({
   summary,
+  upcomingTotal,
   query,
   onQueryChange,
   onOpenMobileFilters,
@@ -55,10 +59,12 @@ export function EventsFeedColumn({
   loadedCount,
   loadMoreRef,
   hasMore,
+  hideLoadMoreHint = false,
   loadError,
   isLoadingMore,
   onLoadMore,
   dayHeaderRefs,
+  daySectionRefs,
 }: Props) {
   const showEmptyState = dayKeys.length === 0;
 
@@ -80,9 +86,9 @@ export function EventsFeedColumn({
             Events
           </h1>
           <p className="mt-2 max-w-[58ch] text-[15px] text-ink/75">
-            {formatPacificDayKey(todayKey)} ·{" "}
-            {summary.upcomingThisWeek}{" "}
-            {summary.upcomingThisWeek === 1 ? "event" : "events"} queued this week
+            {formatPacificDayKey(todayKey)} · {upcomingTotal}{" "}
+            {upcomingTotal === 1 ? "event" : "events"} upcoming ·{" "}
+            {summary.upcomingThisWeek} this week
           </p>
         </div>
         <div className="shrink-0 self-start sm:self-end">
@@ -200,7 +206,14 @@ export function EventsFeedColumn({
       )}
 
       {daySections.map(({ day, dayEvents, isToday }) => (
-        <div key={day} className="mb-10">
+        <div
+          key={day}
+          ref={(el) => {
+            if (el) daySectionRefs.current.set(day, el);
+            else daySectionRefs.current.delete(day);
+          }}
+          className="mb-10"
+        >
           <div
             ref={(el) => {
               if (el) dayHeaderRefs.current.set(day, el);
@@ -246,9 +259,11 @@ export function EventsFeedColumn({
               Retry
             </button>
           ) : (
-            <p className="text-sm text-muted" role="status">
-              {isLoadingMore ? "Loading" : "More below"}
-            </p>
+            (isLoadingMore || (hasMore && !hideLoadMoreHint)) && (
+              <p className="text-sm text-muted" role="status">
+                {isLoadingMore ? "Loading" : "More below"}
+              </p>
+            )
           )}
         </div>
       )}

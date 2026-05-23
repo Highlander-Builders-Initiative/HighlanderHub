@@ -8,7 +8,8 @@ export function mergeUniqueEventsByStart(
   for (const event of incoming) {
     if (!merged.has(event.id)) merged.set(event.id, event);
   }
-  return Array.from(merged.values()).sort(
-    (a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt)
-  );
+  return Array.from(merged.values()).sort((a, b) => {
+    const byStart = Date.parse(a.startsAt) - Date.parse(b.startsAt);
+    return byStart === 0 ? a.id.localeCompare(b.id) : byStart;
+  });
 }

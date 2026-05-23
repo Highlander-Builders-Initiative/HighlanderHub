@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState, type MutableRefObject } from "react";
+import { resolveObservedDayKey } from "@/lib/events/observed-day-key";
 
 type UseObservedDayKeyArgs = {
   dayHeaderRefs: MutableRefObject<Map<string, HTMLElement>>;
+  daySectionRefs?: MutableRefObject<Map<string, HTMLElement>>;
   dayKeys: string[];
   userInitiatedScrollRef: MutableRefObject<number>;
   initialDayKey: string;
@@ -11,6 +13,7 @@ type UseObservedDayKeyArgs = {
 
 export function useObservedDayKey({
   dayHeaderRefs,
+  daySectionRefs,
   dayKeys,
   userInitiatedScrollRef,
   initialDayKey,
@@ -19,34 +22,53 @@ export function useObservedDayKey({
 
   useEffect(() => {
     if (dayKeys.length === 0) return;
-    if (typeof IntersectionObserver === "undefined") return;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (Date.now() - userInitiatedScrollRef.current < 600) return;
+    let rafId = 0;
 
-        const candidates = entries
-          .filter((entry) => entry.isIntersecting)
-          .map((entry) => ({
-            key: (entry.target as HTMLElement).dataset.dayKey ?? "",
-            top: entry.boundingClientRect.top,
-          }))
-          .filter((candidate) => candidate.key)
-          .sort((a, b) => a.top - b.top);
+    const update = () => {
+      if (Date.now() - userInitiatedScrollRef.current < 600) return;
 
-        if (candidates.length === 0) return;
-        const next = candidates[0].key;
+      const headerTopByKey = new Map<string, number>();
+      const sectionBottomByKey = new Map<string, number>();
+
+      for (const key of dayKeys) {
+        const header = dayHeaderRefs.current.get(key);
+        if (header) {
+          headerTopByKey.set(key, header.getBoundingClientRect().top);
+        }
+        const section = daySectionRefs?.current.get(key);
+        if (section) {
+          sectionBottomByKey.set(key, section.getBoundingClientRect().bottom);
+        }
+      }
+
+      const next = resolveObservedDayKey({
+        dayKeys,
+        headerTopByKey,
+        sectionBottomByKey,
+        viewportHeight: window.innerHeight,
+      });
+
+      if (next) {
         setObservedDayKey((prev) => (prev === next ? prev : next));
-      },
-      { rootMargin: "0px 0px -80% 0px", threshold: 0 }
-    );
+      }
+    };
 
-    for (const el of dayHeaderRefs.current.values()) {
-      observer.observe(el);
-    }
+    const onScroll = () => {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(update);
+    };
 
-    return () => observer.disconnect();
-  }, [dayKeys, dayHeaderRefs, userInitiatedScrollRef]);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll, { passive: true });
+    update();
+
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      cancelAnimationFrame(rafId);
+    };
+  }, [dayKeys, dayHeaderRefs, daySectionRefs, userInitiatedScrollRef]);
 
   return { observedDayKey, setObservedDayKey };
 }
