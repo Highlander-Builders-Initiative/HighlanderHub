@@ -74,35 +74,30 @@ export default async function HomePage() {
             <span className="block text-muted">one page.</span>
           </h1>
 
-          <p
-            className="mt-7 max-w-md text-base leading-relaxed text-ink/75 animate-fade-up md:mt-9 md:text-lg"
+          <div
+            className="mt-7 flex flex-col gap-6 animate-fade-up md:mt-9 md:flex-row md:items-end md:justify-between"
             style={{ animationDelay: "180ms" }}
           >
-            <HeroHighlightCopy />
-          </p>
+            <p className="max-w-md text-base leading-relaxed text-ink/75 md:text-lg">
+              <HeroHighlightCopy />
+            </p>
 
-          <div
-            className="mt-6 animate-fade-up md:mt-8"
-            style={{ animationDelay: "260ms" }}
-          >
             <Link
               href="/events"
-              className="interactive-focus group inline-flex items-baseline gap-2 text-base font-medium text-ink"
+              className="interactive-focus group inline-flex min-h-12 items-center gap-2 self-start rounded-lg bg-ink px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-85"
             >
-              <span className="underline underline-offset-[6px] decoration-ink/30 transition-colors duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:decoration-ink">
-                Browse events
-              </span>
+              Browse events
               <svg
                 aria-hidden
-                viewBox="0 0 16 16"
+                viewBox="0 0 20 20"
                 fill="none"
                 stroke="currentColor"
-                strokeWidth="1.5"
+                strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="h-3.5 w-3.5 translate-y-px transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-0.5"
+                className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5"
               >
-                <path d="M3 8h10M9 4l4 4-4 4" />
+                <path d="M4 10h12M11 5l5 5-5 5" />
               </svg>
             </Link>
           </div>
