@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Masthead } from "@/components/layout/Masthead";
 import { Footer } from "@/components/layout/Footer";
-import { Features, FinalCTA } from "@/components/home/LandingSections";
+import { Features } from "@/components/home/LandingSections";
 import { FlyerMarquee } from "@/components/home/FlyerMarquee";
 import { HbiLink } from "@/components/analytics/HbiLink";
 import { getEvents, getEventsSummary } from "@/lib/events";
@@ -136,8 +136,6 @@ export default async function HomePage() {
       <div id="features">
         <Features />
       </div>
-
-      <FinalCTA />
 
       <Footer />
     </main>

@@ -36,6 +36,18 @@ const CATEGORIES: { value: EventCategory | "all"; label: string }[] = [
   { value: "free_food", label: "Free Food" },
 ];
 
+const ACTIVE_CATEGORY_CLASSES: Record<EventCategory | "all", string> = {
+  all: "border-ink bg-ink text-white",
+  club: "border-highlander/30 bg-highlander/15 text-highlander",
+  academic: "border-leaf/30 bg-leaf/15 text-[#1f6f4e]",
+  social: "border-coral/30 bg-coral/15 text-[#b33a30]",
+  career: "border-ink/30 bg-ink/15 text-ink",
+  sports: "border-sky/30 bg-sky/15 text-[#1d5fbf]",
+  arts: "border-coral/30 bg-coral/15 text-[#b33a30]",
+  community: "border-leaf/30 bg-leaf/15 text-[#1f6f4e]",
+  free_food: "border-gold/45 bg-gold/20 text-[#8a6300]",
+};
+
 type EventsBrowserProps = {
   events: CampusEvent[];
   initialHasMore?: boolean;
@@ -422,32 +434,34 @@ export function EventsBrowser({
         </div>
 
         <div
-          className="flex flex-wrap items-center gap-1.5 py-2"
+          className="flex items-center justify-between gap-3 py-2"
           aria-label="Filter events by category"
         >
-          {CATEGORIES.map((c) => {
-            const active = category === c.value;
-            return (
-              <button
-                type="button"
-                key={c.value}
-                onClick={() => handleCategory(c.value)}
-                aria-pressed={active}
-                className={`interactive-focus inline-flex min-h-8 items-center rounded-full border px-3 py-1 text-[13px] transition-colors ${
-                  active
-                    ? "border-ink bg-ink text-white"
-                    : "border-ink/15 bg-white/60 text-ink hover:border-ink hover:bg-white/85"
-                }`}
-              >
-                {c.label}
-              </button>
-            );
-          })}
+          <div className="flex flex-wrap items-center gap-1.5">
+            {CATEGORIES.map((c) => {
+              const active = category === c.value;
+              return (
+                <button
+                  type="button"
+                  key={c.value}
+                  onClick={() => handleCategory(c.value)}
+                  aria-pressed={active}
+                  className={`interactive-focus inline-flex min-h-8 items-center rounded-full border px-3 py-1 text-[13px] transition-colors ${
+                    active
+                      ? ACTIVE_CATEGORY_CLASSES[c.value]
+                      : "border-ink/15 bg-white/60 text-ink hover:border-ink hover:bg-white/85"
+                  }`}
+                >
+                  {c.label}
+                </button>
+              );
+            })}
+          </div>
           {hasActiveFilters && (
             <button
               type="button"
               onClick={clearFilters}
-              className="interactive-focus ml-auto text-[13px] font-medium text-ink underline-offset-4 hover:underline"
+              className="interactive-focus shrink-0 text-[13px] font-medium text-ink underline-offset-4 hover:underline"
             >
               Clear
             </button>
