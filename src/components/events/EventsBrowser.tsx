@@ -49,6 +49,40 @@ type EventsApiPage = {
   nextOffset: number;
 };
 
+type RestoreSnapshot = NonNullable<
+  ReturnType<typeof getSavedEventFeedSnapshotForRestore>
+>;
+type ReturnScroll = NonNullable<ReturnType<typeof getSavedScrollPosition>>;
+
+type RestoreEventSource =
+  | {
+      kind: "snapshot";
+      events: CampusEvent[];
+      hasMore: boolean;
+      nextOffset: number;
+    }
+  | { kind: "current" };
+
+type RestoreStep =
+  | { kind: "apply-snapshot"; snapshot: RestoreSnapshot }
+  | { kind: "wait-for-frame" }
+  | {
+      kind: "load-until-event";
+      source: RestoreEventSource;
+      returnScroll: ReturnScroll;
+    }
+  | { kind: "restore-event-card"; eventId: string; eventTop?: number }
+  | { kind: "restore-scroll"; scrollY: number };
+
+type RestorePlan = {
+  steps: RestoreStep[];
+};
+
+type ActiveFilterState = {
+  hasActiveFilters: boolean;
+  activeFilterCount: number;
+};
+
 function buildEventSearchText(event: CampusEvent) {
   return [event.title, event.description, event.host, event.location, ...event.tags]
     .join(" ")
@@ -68,6 +102,93 @@ function restoreToEventCard(eventId: string, eventTop = 0) {
   const root = document.scrollingElement ?? document.documentElement;
   root.scrollTop = window.scrollY + target.getBoundingClientRect().top - eventTop;
   return true;
+}
+
+function waitForFrame() {
+  return new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+}
+
+function snapshotRestoreSource(snapshot: RestoreSnapshot): RestoreEventSource {
+  return {
+    kind: "snapshot",
+    events: snapshot.events,
+    hasMore: snapshot.hasMore,
+    nextOffset: snapshot.nextOffset,
+  };
+}
+
+function buildRestorePlan(
+  snapshot: RestoreSnapshot | null,
+  returnScroll: ReturnScroll | null,
+  path: string
+): RestorePlan | null {
+  if (!snapshot && !returnScroll) return null;
+  if (snapshot && snapshot.path !== path) return null;
+  if (!snapshot && returnScroll?.path !== path) return null;
+
+  const steps: RestoreStep[] = [];
+
+  if (snapshot) {
+    steps.push({ kind: "apply-snapshot", snapshot });
+  }
+  steps.push({ kind: "wait-for-frame" });
+
+  if (snapshot?.eventId) {
+    if (returnScroll?.eventId === snapshot.eventId) {
+      steps.push({
+        kind: "load-until-event",
+        source: snapshotRestoreSource(snapshot),
+        returnScroll,
+      });
+      steps.push({ kind: "wait-for-frame" });
+      steps.push({
+        kind: "restore-event-card",
+        eventId: returnScroll.eventId,
+        eventTop: returnScroll.eventTop,
+      });
+    } else {
+      steps.push({
+        kind: "restore-event-card",
+        eventId: snapshot.eventId,
+        eventTop: snapshot.eventTop,
+      });
+    }
+  } else if (returnScroll?.eventId) {
+    steps.push({
+      kind: "load-until-event",
+      source: snapshot ? snapshotRestoreSource(snapshot) : { kind: "current" },
+      returnScroll,
+    });
+    steps.push({ kind: "wait-for-frame" });
+    steps.push({
+      kind: "restore-event-card",
+      eventId: returnScroll.eventId,
+      eventTop: returnScroll.eventTop,
+    });
+  } else if (returnScroll) {
+    steps.push({ kind: "restore-scroll", scrollY: returnScroll.scrollY });
+  }
+
+  return steps.length > 0 ? { steps } : null;
+}
+
+function getActiveFilterState(
+  category: CategoryValue,
+  searchQuery: string,
+  dayWindow: DayWindow
+): ActiveFilterState {
+  const hasCategoryFilter = category !== "all";
+  const hasSearchFilter = searchQuery.length > 0;
+  const hasDayWindowFilter = dayWindow !== "all";
+
+  return {
+    hasActiveFilters:
+      hasCategoryFilter || hasSearchFilter || hasDayWindowFilter,
+    activeFilterCount:
+      (hasCategoryFilter ? 1 : 0) +
+      (hasSearchFilter ? 1 : 0) +
+      (hasDayWindowFilter ? 1 : 0),
+  };
 }
 
 async function restoreEventsUntilTarget(
@@ -151,8 +272,11 @@ export function EventsBrowser({
 
   const trimmedQuery = query.trim();
   const normalizedQuery = trimmedQuery.toLowerCase();
-  const hasActiveFilters =
-    category !== "all" || trimmedQuery.length > 0 || dayWindow !== "all";
+  const { hasActiveFilters, activeFilterCount } = getActiveFilterState(
+    category,
+    trimmedQuery,
+    dayWindow
+  );
 
   useEffect(() => {
     setLoadedEvents(events);
@@ -359,14 +483,63 @@ export function EventsBrowser({
     }
   }, [hasMore, isLoadingMore, nextOffset]);
 
+  const executeRestorePlan = useCallback(
+    async (plan: RestorePlan) => {
+      for (const step of plan.steps) {
+        switch (step.kind) {
+          case "apply-snapshot":
+            setCategory(step.snapshot.category);
+            setQuery(step.snapshot.query);
+            setDayWindow(step.snapshot.dayWindow);
+            setLoadedEvents(step.snapshot.events);
+            setHasMore(step.snapshot.hasMore);
+            setNextOffset(step.snapshot.nextOffset);
+            break;
+          case "wait-for-frame":
+            await waitForFrame();
+            break;
+          case "load-until-event": {
+            const source =
+              step.source.kind === "snapshot"
+                ? step.source
+                : { events: loadedEvents, hasMore, nextOffset };
+            const restored = await restoreEventsUntilTarget(
+              source.events,
+              source.nextOffset,
+              source.hasMore,
+              step.returnScroll
+            );
+
+            setLoadedEvents(restored.current);
+            setHasMore(restored.more);
+            setNextOffset(restored.next);
+            break;
+          }
+          case "restore-event-card":
+            if (restoreToEventCard(step.eventId, step.eventTop)) {
+              clearRestorationState();
+            }
+            break;
+          case "restore-scroll": {
+            const rootScroller =
+              document.scrollingElement ?? document.documentElement;
+            rootScroller.scrollTop = step.scrollY;
+            clearRestorationState();
+            break;
+          }
+        }
+      }
+    },
+    [clearRestorationState, hasMore, loadedEvents, nextOffset]
+  );
+
   const restoreSavedSpot = useCallback(async () => {
     const snapshot = restoreTarget.current;
     const returnScroll = returnScrollTarget.current;
-    const path = currentPath();
     if (isRestoringSpot.current) return;
-    if (!snapshot && !returnScroll) return;
-    if (snapshot && snapshot.path !== path) return;
-    if (!snapshot && returnScroll?.path !== path) return;
+
+    const plan = buildRestorePlan(snapshot, returnScroll, currentPath());
+    if (!plan) return;
 
     isRestoringSpot.current = true;
     setIsRestoring(true);
@@ -376,60 +549,7 @@ export function EventsBrowser({
     root.style.scrollBehavior = "auto";
 
     try {
-      if (snapshot) {
-        setCategory(snapshot.category);
-        setQuery(snapshot.query);
-        setDayWindow(snapshot.dayWindow);
-        setLoadedEvents(snapshot.events);
-        setHasMore(snapshot.hasMore);
-        setNextOffset(snapshot.nextOffset);
-      }
-
-      await new Promise((resolve) => requestAnimationFrame(resolve));
-
-      if (snapshot?.eventId && returnScroll?.eventId === snapshot.eventId) {
-        const restored = await restoreEventsUntilTarget(
-          snapshot.events,
-          snapshot.nextOffset,
-          snapshot.hasMore,
-          returnScroll
-        );
-
-        setLoadedEvents(restored.current);
-        setHasMore(restored.more);
-        setNextOffset(restored.next);
-
-        await new Promise((resolve) => requestAnimationFrame(resolve));
-
-        if (restoreToEventCard(returnScroll.eventId, returnScroll.eventTop)) {
-          clearRestorationState();
-        }
-      } else if (snapshot?.eventId) {
-        if (restoreToEventCard(snapshot.eventId, snapshot.eventTop)) {
-          clearRestorationState();
-        }
-      } else if (returnScroll?.eventId) {
-        const restored = await restoreEventsUntilTarget(
-          loadedEvents,
-          nextOffset,
-          hasMore,
-          returnScroll
-        );
-
-        setLoadedEvents(restored.current);
-        setHasMore(restored.more);
-        setNextOffset(restored.next);
-
-        await new Promise((resolve) => requestAnimationFrame(resolve));
-
-        if (restoreToEventCard(returnScroll.eventId, returnScroll.eventTop)) {
-          clearRestorationState();
-        }
-      } else if (returnScroll) {
-        const rootScroller = document.scrollingElement ?? document.documentElement;
-        rootScroller.scrollTop = returnScroll.scrollY;
-        clearRestorationState();
-      }
+      await executeRestorePlan(plan);
     } catch {
       restoreTarget.current = null;
       returnScrollTarget.current = null;
@@ -438,7 +558,7 @@ export function EventsBrowser({
       isRestoringSpot.current = false;
       setIsRestoring(false);
     }
-  }, [clearRestorationState, hasMore, loadedEvents, nextOffset]);
+  }, [executeRestorePlan]);
 
   useLayoutEffect(() => {
     void restoreSavedSpot();
@@ -462,9 +582,6 @@ export function EventsBrowser({
     observer.observe(target);
     return () => observer.disconnect();
   }, [hasMore, loadError, loadMore, isRestoring]);
-
-  const activeFilterCount =
-    (category !== "all" ? 1 : 0) + (dayWindow !== "all" ? 1 : 0);
 
   return (
     <section id="events" className="mx-auto max-w-7xl px-4 pb-20 sm:px-6">
