@@ -54,10 +54,6 @@ export default function SubmitForm() {
     track("submit_page_view", {});
   }, []);
 
-  useEffect(() => {
-    if (fieldErrors.image_url) setIsImageUrlOpen(true);
-  }, [fieldErrors.image_url]);
-
   function onFirstInteract() {
     if (startedRef.current) return;
     startedRef.current = true;
@@ -97,6 +93,7 @@ export default function SubmitForm() {
     }
 
     if (Object.keys(nextFieldErrors).length > 0) {
+      if (nextFieldErrors.image_url) setIsImageUrlOpen(true);
       setFieldErrors(nextFieldErrors);
       setStatus({ kind: "idle" });
       return;
