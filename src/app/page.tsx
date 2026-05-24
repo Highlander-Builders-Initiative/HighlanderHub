@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Masthead } from "@/components/layout/Masthead";
 import { Footer } from "@/components/layout/Footer";
 import { FlyerMarquee } from "@/components/home/FlyerMarquee";
+import { HeroRibbon } from "@/components/home/HeroRibbon";
 import { HeroHighlightCopy } from "@/components/home/hero-highlights";
 import { HbiLink } from "@/components/analytics/HbiLink";
 import { getEvents, getEventsSummary } from "@/lib/events";
@@ -32,7 +33,8 @@ export default async function HomePage() {
 
       {/* Hero: an editorial masthead over the living bulletin wall. */}
       <section className="relative overflow-hidden border-b border-ink/10">
-        <div className="mx-auto max-w-7xl px-4 pt-11 pb-10 sm:px-6 md:pt-16 md:pb-12">
+        <HeroRibbon />
+        <div className="relative mx-auto max-w-7xl px-4 pt-11 pb-10 sm:px-6 md:pt-16 md:pb-12">
           {/* Dateline: a campus-paper colophon. */}
           <div
             className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 animate-fade-up"
