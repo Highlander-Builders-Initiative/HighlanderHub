@@ -4,6 +4,7 @@ import importlib
 import json
 import sys
 import tempfile
+import types
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -86,6 +87,63 @@ class ExtractStoriesTests(unittest.TestCase):
             cache = json.loads((extracted_dir / f"{raw['id']}.json").read_text())
             self.assertEqual("no_text", cache["status"])
             gemini.assert_not_called()
+
+    def test_gemini_extract_uses_vertex_ai_client(self) -> None:
+        calls: dict[str, dict[str, object]] = {}
+
+        class FakeModels:
+            def generate_content(self, **kwargs):
+                calls["generate_content"] = kwargs
+                return types.SimpleNamespace(parsed={"is_event": False})
+
+        class FakeClient:
+            def __init__(self, **kwargs):
+                calls["client"] = kwargs
+                self.models = FakeModels()
+
+        fake_google = types.ModuleType("google")
+        fake_genai = types.ModuleType("google.genai")
+        fake_genai.Client = FakeClient
+        fake_google.genai = fake_genai
+
+        saved_google = sys.modules.get("google")
+        saved_genai = sys.modules.get("google.genai")
+        sys.modules["google"] = fake_google
+        sys.modules["google.genai"] = fake_genai
+        try:
+            with patch.object(self.extract_stories, "GOOGLE_CLOUD_PROJECT", "ucr-cloud"):
+                with patch.object(self.extract_stories, "GOOGLE_CLOUD_LOCATION", "global"):
+                    result = self.extract_stories._gemini_extract(
+                        {
+                            "handle": "cyber_ucr",
+                            "posted_at": "2026-05-12T18:30:00+00:00Z",
+                        },
+                        {"label": "UCR Cybersecurity Club", "category": "club"},
+                        "Security Night Workshop",
+                    )
+        finally:
+            if saved_google is None:
+                sys.modules.pop("google", None)
+            else:
+                sys.modules["google"] = saved_google
+            if saved_genai is None:
+                sys.modules.pop("google.genai", None)
+            else:
+                sys.modules["google.genai"] = saved_genai
+
+        self.assertEqual({"is_event": False}, result)
+        self.assertEqual(
+            {"vertexai": True, "project": "ucr-cloud", "location": "global"},
+            calls["client"],
+        )
+        self.assertEqual(
+            self.extract_stories.GEMINI_MODEL,
+            calls["generate_content"]["model"],
+        )
+        self.assertEqual(
+            "application/json",
+            calls["generate_content"]["config"]["response_mime_type"],
+        )
 
     def test_supabase_cache_hit_writes_local_cache_without_ocr_or_gemini_calls(self) -> None:
         raw = {

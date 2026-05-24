@@ -17,7 +17,8 @@ from urllib.parse import urlsplit
 
 from config import (
     EXTRACTED_DIR,
-    GEMINI_API_KEY,
+    GOOGLE_CLOUD_LOCATION,
+    GOOGLE_CLOUD_PROJECT,
     GOOGLE_VISION_API_KEY,
     RAW_DIR,
     ensure_dirs,
@@ -273,9 +274,6 @@ def _gemini_extract(
     meta: dict[str, Any],
     ocr_text: str,
 ) -> dict[str, Any]:
-    if not GEMINI_API_KEY:
-        raise RuntimeError("GEMINI_API_KEY is required for Gemini extraction")
-
     try:
         from google import genai
     except ModuleNotFoundError as exc:
@@ -286,7 +284,11 @@ def _gemini_extract(
             "`pip install -r pipeline/requirements.txt`."
         ) from exc
 
-    client = genai.Client(api_key=GEMINI_API_KEY)
+    client = genai.Client(
+        vertexai=True,
+        project=GOOGLE_CLOUD_PROJECT or None,
+        location=GOOGLE_CLOUD_LOCATION or "global",
+    )
     response = client.models.generate_content(
         model=GEMINI_MODEL,
         contents=_build_gemini_prompt(raw, meta, ocr_text),

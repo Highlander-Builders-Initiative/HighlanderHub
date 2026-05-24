@@ -69,13 +69,15 @@ about flagging accounts that look like scrapers — expect occasional
 checkpoints / temporary blocks, and add jitter / lower the cadence if you
 get throttled. `scrape.py` already sleeps 2–5s between accounts.
 
-Supabase writes and story extraction also need API keys in `pipeline/.env`:
+Supabase writes and story extraction also need credentials in `pipeline/.env`:
 
 ```bash
 SUPABASE_URL=...
 SUPABASE_SERVICE_KEY=...
 GOOGLE_VISION_API_KEY=...
-GEMINI_API_KEY=...
+GOOGLE_CLOUD_PROJECT=...
+GOOGLE_CLOUD_LOCATION=global
+GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json
 ```
 
 ## Run it
@@ -182,8 +184,11 @@ Localist events without a frontend change.
    as `{"status": "image_expired"}`.
 5. Sends image bytes to Google Cloud Vision OCR using `GOOGLE_VISION_API_KEY`.
 6. If OCR text is empty, caches `{"status": "no_text"}` and skips Gemini.
-7. Sends OCR text plus story/account metadata to Gemini 2.5 Flash Lite using
-   `GEMINI_API_KEY` and a JSON response schema.
+7. Sends OCR text plus story/account metadata to Gemini 2.5 Flash Lite on
+   Vertex AI using Application Default Credentials, `GOOGLE_CLOUD_PROJECT`,
+   `GOOGLE_CLOUD_LOCATION=global`, and a JSON response schema. The global
+   Vertex endpoint uses `aiplatform.googleapis.com` and bills the configured
+   Google Cloud project.
 8. Caches terminal extraction results in both
    `data/extracted/<story_id>.json` and Supabase `story_extractions`.
 9. Upserts cached `status == "ok"` event results into Supabase `events`.
