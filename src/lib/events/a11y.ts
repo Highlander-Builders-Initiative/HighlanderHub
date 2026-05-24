@@ -1,4 +1,5 @@
 import type { CampusEvent } from "@/types/event";
+import { EVENT_CATEGORY_LABELS } from "@/types/event";
 import { formatTime, relativeDay } from "@/lib/dates";
 
 /** Link name for mosaic / marquee tiles (title + day, no time). */
@@ -11,9 +12,14 @@ export function eventFlyerAlt(event: CampusEvent): string {
   return `${eventTileLinkLabel(event)} flyer`;
 }
 
-/** Link name for list / calendar rows (title + day + time). */
+/**
+ * Link name for list / calendar rows. Leads with category because the visible
+ * card carries category only as a color tint on the time column, which is
+ * invisible to AT.
+ */
 export function eventListLinkLabel(event: CampusEvent): string {
-  return `${event.title}, ${relativeDay(event.startsAt)} at ${formatTime(
+  const category = EVENT_CATEGORY_LABELS[event.category].split(" / ")[0];
+  return `${category}: ${event.title}, ${relativeDay(event.startsAt)} at ${formatTime(
     event.startsAt
   )}`;
 }
