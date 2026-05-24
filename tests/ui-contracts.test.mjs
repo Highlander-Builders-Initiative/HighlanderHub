@@ -25,6 +25,7 @@ test("event browser paginates the list instead of rendering every event at once"
   const observedDayHook = read("src/components/events/useObservedDayKey.ts");
   assert.match(observedDayHook, /addEventListener\("scroll"/);
   assert.doesNotMatch(observedDayHook, /IntersectionObserver/);
+  assert.match(observedDayHook, /dayKeys\[0\]\s*\?\?\s*initialDayKey/);
   const observedDayKey = read("src/lib/events/observed-day-key.ts");
   assert.match(observedDayKey, /HEADER_CROSSED_BONUS/);
   assert.match(observedDayKey, /visibleBottom - visibleTop/);
