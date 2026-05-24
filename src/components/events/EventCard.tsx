@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { memo, type MouseEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { EVENT_CATEGORY_LABELS, type CampusEvent } from "@/types/event";
+import { type CampusEvent } from "@/types/event";
 import { formatTimeParts } from "@/lib/dates";
 import { eventFlyerAlt, eventListLinkLabel } from "@/lib/events/a11y";
 import { track } from "@/lib/analytics";
@@ -16,10 +16,6 @@ type EventCardProps = {
   compact?: boolean;
   loadedCount?: number;
 };
-
-function shortCategory(category: CampusEvent["category"]): string {
-  return EVENT_CATEGORY_LABELS[category].split(" / ")[0];
-}
 
 /**
  * Editorial listing row. Time at the left as a typographic anchor, optional
@@ -115,21 +111,16 @@ function EventCardComponent({
           </h3>
         </div>
 
-        <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-[13px] text-muted">
-          <span className="min-w-0 truncate">{event.location}</span>
-          <span aria-hidden className="shrink-0 text-ink/20">·</span>
-          <span className="min-w-0 max-w-full truncate">{event.host}</span>
-          {!compact && (
+        <div className="flex min-w-0 items-center gap-x-1.5 text-[13px] text-muted">
+          {event.isFree && !compact && (
             <>
+              <span className="shrink-0 font-medium text-deep-leaf">Free</span>
               <span aria-hidden className="shrink-0 text-ink/20">·</span>
-              <span className="shrink-0">{shortCategory(event.category)}</span>
             </>
           )}
-          {event.isFree && !compact && (
-            <span className="ml-0.5 inline-flex items-center rounded-full bg-leaf/10 px-2 py-0.5 text-[11px] font-medium text-deep-leaf">
-              Free
-            </span>
-          )}
+          <span className="min-w-0 flex-1 truncate">{event.host}</span>
+          <span aria-hidden className="shrink-0 text-ink/20">·</span>
+          <span className="min-w-0 flex-1 truncate">{event.location}</span>
         </div>
       </div>
     </Link>
