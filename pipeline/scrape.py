@@ -88,30 +88,29 @@ def _write_item(item_dict: dict[str, Any], handle: str) -> bool:
     return True
 
 
-# Hardcoded User ID mapping to completely bypass Instagram GraphQL lookups for known accounts.
-# These IDs are permanent and will never change, ensuring high speed and reliability.
-KNOWN_USER_IDS = {
-    "cyber_ucr": 38460809748,
-    "acm_ucr": 10839758322,
-    "ucrvsa": 241289265,
-    "hbi.ucr": 77775310353,
-}
-
-
-def _resolve_profile(L: instaloader.Instaloader, handle: str) -> instaloader.Profile:
+def _resolve_profile(
+    L: instaloader.Instaloader,
+    handle: str,
+    *,
+    instagram_user_id: int | None = None,
+) -> instaloader.Profile:
     """Resolve a username to an instaloader Profile object using a hybrid approach.
 
-    1. If the handle has a hardcoded ID, instantiate Profile directly using the ID (0 network requests).
+    1. If accounts.json has instagram_user_id, instantiate Profile directly (0 network requests).
     2. Fallback to Instagram search (TopSearchResults GET query) which is unaffected by GraphQL bugs.
     3. Final fallback to instaloader's default from_username (GraphQL).
     """
     normalized_handle = handle.lower()
 
-    # 1. Use hardcoded static IDs (Workaround B)
-    if normalized_handle in KNOWN_USER_IDS:
-        userid = KNOWN_USER_IDS[normalized_handle]
-        log.info("%s: Resolved handle using static KNOWN_USER_IDS mapping (ID: %s)", handle, userid)
-        return instaloader.Profile(L.context, {"username": handle, "id": str(userid)})
+    if instagram_user_id is not None:
+        log.info(
+            "%s: Resolved handle using accounts.json instagram_user_id (%s)",
+            handle,
+            instagram_user_id,
+        )
+        return instaloader.Profile(
+            L.context, {"username": handle, "id": str(instagram_user_id)}
+        )
 
     # 2. Fallback to Search GET request (completely unaffected by issue #2695)
     try:
@@ -262,9 +261,12 @@ def _get_stories_via_rest(L: instaloader.Instaloader, userids: list[int], userna
     return stories_list
 
 
-def scrape_account(L: instaloader.Instaloader, handle: str) -> tuple[int, int]:
+def scrape_account(L: instaloader.Instaloader, acct: dict[str, Any]) -> tuple[int, int]:
     """Fetch stories for one account. Returns (seen, new)."""
-    profile = _resolve_profile(L, handle)
+    handle = acct["handle"]
+    raw_id = acct.get("instagram_user_id")
+    instagram_user_id = int(raw_id) if raw_id is not None else None
+    profile = _resolve_profile(L, handle, instagram_user_id=instagram_user_id)
     seen = new = 0
     
     # Use our robust, private mobile REST API fallback helper to bypass the broken
@@ -304,7 +306,7 @@ def main() -> None:
         handle = acct["handle"]
         totals["accounts"] += 1
         try:
-            seen, new = scrape_account(L, handle)
+            seen, new = scrape_account(L, acct)
             totals["seen"] += seen
             totals["new"] += new
             log.info("%s: %d items, %d new", handle, seen, new)

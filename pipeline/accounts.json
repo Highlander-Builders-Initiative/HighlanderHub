@@ -1,11 +1,289 @@
 {
   "accounts": [
-    { "handle": "ucrvsa", "label": "UCR VSA", "category": "club" },
-    { "handle": "cyber_ucr", "label": "Cyber @ UCR", "category": "club" },
-    { "handle": "acm_ucr", "label": "ACM @ UCR", "category": "club" },
-    { "handle": "hbi.ucr", "label": "HBI @ UCR", "category": "club" },
-    { "handle": "ucr_resed", "label": "ucr residential education", "category": "club" },
-    { "handle": "swe.ucr", "label": "SWE @ UCR", "category": "club" },
-    { "handle": "ucrwrc", "label": "Women's Resource Center @ UCR", "category": "club" }
+    {
+      "handle": "acm_ucr",
+      "label": "ACM @ UCR",
+      "category": "club",
+      "instagram_user_id": 10839758322
+    },
+    {
+      "handle": "asucr",
+      "label": "asucr",
+      "category": "club",
+      "instagram_user_id": 449388329
+    },
+    {
+      "handle": "climbucr",
+      "label": "climbucr",
+      "category": "club",
+      "instagram_user_id": 51886513518
+    },
+    {
+      "handle": "cyber_ucr",
+      "label": "Cyber @ UCR",
+      "category": "club",
+      "instagram_user_id": 38460809748
+    },
+    {
+      "handle": "deltachiucr",
+      "label": "deltachiucr",
+      "category": "club",
+      "instagram_user_id": 271351471
+    },
+    {
+      "handle": "designatucr",
+      "label": "designatucr",
+      "category": "club",
+      "instagram_user_id": 45874984735
+    },
+    {
+      "handle": "f1_ucr",
+      "label": "f1 ucr",
+      "category": "club",
+      "instagram_user_id": 74939757467
+    },
+    {
+      "handle": "fit.ucr",
+      "label": "fit ucr",
+      "category": "club",
+      "instagram_user_id": 77448754500
+    },
+    {
+      "handle": "gammaphibeta_ucr",
+      "label": "gammaphibeta ucr",
+      "category": "club",
+      "instagram_user_id": 211340585
+    },
+    {
+      "handle": "hbi.ucr",
+      "label": "HBI @ UCR",
+      "category": "club",
+      "instagram_user_id": 77775310353
+    },
+    {
+      "handle": "hbsucr",
+      "label": "hbsucr",
+      "category": "club",
+      "instagram_user_id": 50054887393
+    },
+    {
+      "handle": "heressentialsucr",
+      "label": "heressentialsucr",
+      "category": "club",
+      "instagram_user_id": 69526589570
+    },
+    {
+      "handle": "hfgucr",
+      "label": "hfgucr",
+      "category": "club",
+      "instagram_user_id": 39866702660
+    },
+    {
+      "handle": "highlandergloves",
+      "label": "highlandergloves",
+      "category": "club",
+      "instagram_user_id": 4008470120
+    },
+    {
+      "handle": "highlanderracing",
+      "label": "highlanderracing",
+      "category": "club",
+      "instagram_user_id": 6099631600
+    },
+    {
+      "handle": "hspucr",
+      "label": "hspucr",
+      "category": "club",
+      "instagram_user_id": 58896999086
+    },
+    {
+      "handle": "lablinkucr",
+      "label": "lablinkucr",
+      "category": "club",
+      "instagram_user_id": 69417052070
+    },
+    {
+      "handle": "nsbe_ucr",
+      "label": "nsbe ucr",
+      "category": "club",
+      "instagram_user_id": 1535605578
+    },
+    {
+      "handle": "period.ucr",
+      "label": "period ucr",
+      "category": "club",
+      "instagram_user_id": 6249445918
+    },
+    {
+      "handle": "pickleballclubatucr",
+      "label": "pickleballclubatucr",
+      "category": "club",
+      "instagram_user_id": 62329001999
+    },
+    {
+      "handle": "ridesucr",
+      "label": "ridesucr",
+      "category": "club",
+      "instagram_user_id": 49561238200
+    },
+    {
+      "handle": "riversidedaikoku",
+      "label": "riversidedaikoku",
+      "category": "club",
+      "instagram_user_id": 80276544262
+    },
+    {
+      "handle": "runningclubatucr",
+      "label": "runningclubatucr",
+      "category": "club",
+      "instagram_user_id": 1063625722
+    },
+    {
+      "handle": "skateclubucr",
+      "label": "skateclubucr",
+      "category": "club",
+      "instagram_user_id": 53161097663
+    },
+    {
+      "handle": "smthnsweet.ucr",
+      "label": "smthnsweet ucr",
+      "category": "club",
+      "instagram_user_id": 77689103764
+    },
+    {
+      "handle": "swe.ucr",
+      "label": "SWE @ UCR",
+      "category": "club"
+    },
+    {
+      "handle": "thetatauucr",
+      "label": "thetatauucr",
+      "category": "club",
+      "instagram_user_id": 261167692
+    },
+    {
+      "handle": "thewomensnetwork_ucr",
+      "label": "thewomensnetwork ucr",
+      "category": "club",
+      "instagram_user_id": 44297150814
+    },
+    {
+      "handle": "ubaucr",
+      "label": "ubaucr",
+      "category": "club",
+      "instagram_user_id": 349188505
+    },
+    {
+      "handle": "ucr_mcvb",
+      "label": "ucr mcvb",
+      "category": "club",
+      "instagram_user_id": 53716759548
+    },
+    {
+      "handle": "ucr_resed",
+      "label": "ucr residential education",
+      "category": "club"
+    },
+    {
+      "handle": "ucr_table_tennis",
+      "label": "ucr table tennis",
+      "category": "club",
+      "instagram_user_id": 63640110062
+    },
+    {
+      "handle": "ucr_tag",
+      "label": "ucr tag",
+      "category": "club",
+      "instagram_user_id": 62539073670
+    },
+    {
+      "handle": "ucrcsa",
+      "label": "ucrcsa",
+      "category": "club",
+      "instagram_user_id": 1615969864
+    },
+    {
+      "handle": "ucrdragclub",
+      "label": "ucrdragclub",
+      "category": "club",
+      "instagram_user_id": 29640157498
+    },
+    {
+      "handle": "ucrfurries",
+      "label": "ucrfurries",
+      "category": "club",
+      "instagram_user_id": 66784623427
+    },
+    {
+      "handle": "ucrgirlgains",
+      "label": "ucrgirlgains",
+      "category": "club",
+      "instagram_user_id": 55148341319
+    },
+    {
+      "handle": "ucrhcg",
+      "label": "ucrhcg",
+      "category": "club",
+      "instagram_user_id": 55005045886
+    },
+    {
+      "handle": "ucrhksa",
+      "label": "ucrhksa",
+      "category": "club",
+      "instagram_user_id": 38098166631
+    },
+    {
+      "handle": "ucrkasa",
+      "label": "ucrkasa",
+      "category": "club",
+      "instagram_user_id": 11137893764
+    },
+    {
+      "handle": "ucrlibrary",
+      "label": "ucrlibrary",
+      "category": "club",
+      "instagram_user_id": 321894409
+    },
+    {
+      "handle": "ucrmcbb",
+      "label": "ucrmcbb",
+      "category": "club",
+      "instagram_user_id": 50696028633
+    },
+    {
+      "handle": "ucrmuaythai",
+      "label": "ucrmuaythai",
+      "category": "club",
+      "instagram_user_id": 55532477462
+    },
+    {
+      "handle": "ucrstudentlife",
+      "label": "ucrstudentlife",
+      "category": "club",
+      "instagram_user_id": 796208340
+    },
+    {
+      "handle": "ucrthriftclub",
+      "label": "ucrthriftclub",
+      "category": "club",
+      "instagram_user_id": 55876794071
+    },
+    {
+      "handle": "ucrvsa",
+      "label": "UCR VSA",
+      "category": "club",
+      "instagram_user_id": 241289265
+    },
+    {
+      "handle": "ucrwrc",
+      "label": "Women's Resource Center @ UCR",
+      "category": "club"
+    },
+    {
+      "handle": "wincucr",
+      "label": "wincucr",
+      "category": "club",
+      "instagram_user_id": 7373831525
+    }
   ]
 }
