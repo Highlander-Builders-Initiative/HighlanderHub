@@ -9,7 +9,7 @@ import { formatTimeParts } from "@/lib/dates";
 import { eventFlyerAlt, eventListLinkLabel } from "@/lib/events/a11y";
 import { track } from "@/lib/analytics";
 import { saveEventFeedReturn } from "@/lib/events/feed-session";
-import { CATEGORY_RAIL } from "@/lib/category-colors";
+import { CATEGORY_TIME_TINT } from "@/lib/category-colors";
 
 type EventCardProps = {
   event: CampusEvent;
@@ -18,9 +18,9 @@ type EventCardProps = {
 };
 
 /**
- * Editorial listing row. Time at the left as a typographic anchor, optional
- * flyer thumbnail, then content. A 6px category dot leads the title, matching
- * the mini-calendar and chip-bar palette.
+ * Editorial listing row. Time at the left as a typographic anchor (tinted by
+ * category, so the feed reads as a color rhythm), optional flyer thumbnail,
+ * then content.
  */
 function EventCardComponent({
   event,
@@ -57,9 +57,9 @@ function EventCardComponent({
         compact ? "" : "min-h-[6rem]"
       }`}
     >
-      {/* Time column: typographic anchor at the left edge. */}
+      {/* Time column: typographic anchor at the left edge, tinted by category. */}
       <div
-        className={`flex shrink-0 flex-col items-center justify-center border-r border-ink/10 px-2 ${
+        className={`flex shrink-0 flex-col items-center justify-center border-r border-ink/10 px-2 ${CATEGORY_TIME_TINT[event.category]} ${
           compact ? "w-[52px]" : "w-16 sm:w-[68px]"
         }`}
       >
@@ -101,15 +101,9 @@ function EventCardComponent({
           compact ? "py-2.5" : "py-3 sm:py-3.5"
         }`}
       >
-        <div className="flex min-w-0 items-start gap-1.5">
-          <span
-            aria-hidden
-            className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${CATEGORY_RAIL[event.category]}`}
-          />
-          <h3 className="font-display text-[17px] font-semibold leading-[1.25] tracking-[-0.015em] text-ink line-clamp-2 break-words group-hover:underline group-hover:decoration-ink/40 group-hover:underline-offset-4">
-            {event.title}
-          </h3>
-        </div>
+        <h3 className="font-display text-[17px] font-semibold leading-[1.25] tracking-[-0.015em] text-ink line-clamp-2 break-words group-hover:underline group-hover:decoration-ink/40 group-hover:underline-offset-4">
+          {event.title}
+        </h3>
 
         <div className="flex min-w-0 items-center gap-x-1.5 text-[13px] text-muted">
           {event.isFree && !compact && (
