@@ -276,7 +276,15 @@ def _gemini_extract(
     if not GEMINI_API_KEY:
         raise RuntimeError("GEMINI_API_KEY is required for Gemini extraction")
 
-    from google import genai
+    try:
+        from google import genai
+    except ModuleNotFoundError as exc:
+        raise RuntimeError(
+            "google-genai is required for Gemini extraction. Run this script "
+            "with the pipeline virtualenv (`pipeline/.venv/bin/python "
+            "pipeline/extract_stories.py`) or install dependencies with "
+            "`pip install -r pipeline/requirements.txt`."
+        ) from exc
 
     client = genai.Client(api_key=GEMINI_API_KEY)
     response = client.models.generate_content(
