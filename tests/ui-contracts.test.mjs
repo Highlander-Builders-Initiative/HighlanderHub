@@ -58,6 +58,7 @@ test("calendar loads its own month-range events outside feed pagination", () => 
   const calendarHook = read("src/components/events/useCalendarMonthEvents.ts");
   const restoreHook = read("src/components/events/useEventFeedRestore.ts");
   const filters = read("src/components/events/useEventFeedFilters.ts");
+  const feedColumn = read("src/components/events/EventsFeedColumn.tsx");
   const calendar = read("src/components/events/EventsMiniCalendar.tsx");
   const data = read("src/lib/events/index.ts");
   const eventsApi = read("src/lib/events/api.ts");
@@ -97,12 +98,10 @@ test("calendar loads its own month-range events outside feed pagination", () => 
     browser,
     /handleCalendarSelect[\s\S]*setObservedDayKey\(dayKey\)/
   );
+  assert.match(feedColumn, /scroll-mt-16/);
   assert.match(filters, /calendarEvents\?: CampusEvent\[\]/);
   assert.match(filters, /of \$\{feedTotal\}/);
-  assert.match(
-    read("src/components/events/EventsFeedColumn.tsx"),
-    /upcomingTotal/
-  );
+  assert.match(feedColumn, /upcomingTotal/);
   assert.match(filters, /const calendarGrouped = useMemo/);
   assert.match(filters, /for \(const \[key, evs\] of calendarGrouped\)/);
   assert.match(calendar, /pacificCalendarGridRange/);
