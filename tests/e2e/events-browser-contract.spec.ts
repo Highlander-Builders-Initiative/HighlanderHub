@@ -63,3 +63,31 @@ test("calendar shows loading state while month events refresh", async ({
   releaseCalendarResponse();
   await expect(calendarGrid).toHaveAttribute("aria-busy", "false");
 });
+
+test("calendar jumps leave the selected day below the sticky search bar", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto("/events");
+
+  const dayKey = "2026-05-20";
+  const dayButton = page.getByRole("button", { name: `Jump to ${dayKey}` });
+  const dayHeader = page.locator(`[data-day-key="${dayKey}"]`);
+  const search = page.getByLabel("Search events");
+
+  await dayButton.click();
+
+  await expect.poll(async () => {
+    const box = await dayHeader.boundingBox();
+    return box?.y ?? 0;
+  }).toBeGreaterThan(48);
+
+  const searchBox = await search.boundingBox();
+  const headerBox = await dayHeader.boundingBox();
+
+  expect(searchBox).not.toBeNull();
+  expect(headerBox).not.toBeNull();
+  if (!searchBox || !headerBox) return;
+
+  expect(headerBox.y).toBeGreaterThan(searchBox.y + searchBox.height + 8);
+});

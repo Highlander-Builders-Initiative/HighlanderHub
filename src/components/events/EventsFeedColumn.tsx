@@ -220,7 +220,7 @@ export function EventsFeedColumn({
               else dayHeaderRefs.current.delete(day);
             }}
             data-day-key={day}
-            className="mb-3 flex items-baseline justify-between gap-4 border-b border-ink/10 pb-2"
+            className="mb-3 scroll-mt-16 flex items-baseline justify-between gap-4 border-b border-ink/10 pb-2"
           >
             <h3 className="flex items-baseline gap-2.5 font-display text-xl font-semibold tracking-[-0.02em] text-ink sm:text-2xl">
               {formatPacificDayKey(day)}
