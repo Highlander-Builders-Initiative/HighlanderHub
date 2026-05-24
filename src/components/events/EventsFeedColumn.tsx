@@ -87,7 +87,8 @@ export function EventsFeedColumn({
           </h1>
           <p className="mt-2 max-w-[58ch] text-[15px] text-ink/75">
             {formatPacificDayKey(todayKey)} · {upcomingTotal}{" "}
-            {upcomingTotal === 1 ? "event" : "events"} queued this week
+            {upcomingTotal === 1 ? "event" : "events"} upcoming ·{" "}
+            {summary.upcomingThisWeek} this week
           </p>
         </div>
         <div className="shrink-0 self-start sm:self-end">
