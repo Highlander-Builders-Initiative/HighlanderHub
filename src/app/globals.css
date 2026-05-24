@@ -158,33 +158,25 @@ body {
 }
 
 /* ----- Hero ribbon (right-column decorative graphic) -----
-   Each band drifts on a long, offset cycle so the composition keeps
-   reshuffling without ever feeling synchronized or loopy. */
+   Isolated to its own paint + compositor layer so its animation
+   can't drag the FlyerMarquee that scrolls beneath. */
 .ribbon-root {
-  contain: paint;
-  mask-image: linear-gradient(
-    to right,
-    transparent 0%,
-    rgba(0, 0, 0, 0.6) 22%,
-    #000 55%
-  );
-  -webkit-mask-image: linear-gradient(
-    to right,
-    transparent 0%,
-    rgba(0, 0, 0, 0.6) 22%,
-    #000 55%
-  );
+  contain: strict;
+  isolation: isolate;
+  transform: translateZ(0);
 }
 
 .ribbon-fade {
   background: linear-gradient(
     to right,
     #ffffff 0%,
-    rgba(255, 255, 255, 0.6) 55%,
+    rgba(255, 255, 255, 0.55) 55%,
     rgba(255, 255, 255, 0) 100%
   );
 }
 
+/* Each band gets its own <g> transform so the animation is a single
+   matrix update per frame — no layout, no paint, GPU-composited. */
 .ribbon-band {
   transform-box: fill-box;
   transform-origin: 60% 50%;
@@ -192,40 +184,31 @@ body {
 }
 
 @keyframes ribbon-drift-1 {
-  0%   { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
-  50%  { transform: translate3d(-14px, 10px, 0) rotate(-1.4deg) scale(1.03); }
-  100% { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
+  0%   { transform: translate3d(0, 0, 0) rotate(0deg); }
+  50%  { transform: translate3d(-18px, 12px, 0) rotate(-1.6deg); }
+  100% { transform: translate3d(0, 0, 0) rotate(0deg); }
 }
 @keyframes ribbon-drift-2 {
-  0%   { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
-  50%  { transform: translate3d(18px, -12px, 0) rotate(1.6deg) scale(1.04); }
-  100% { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
+  0%   { transform: translate3d(0, 0, 0) rotate(0deg); }
+  50%  { transform: translate3d(22px, -14px, 0) rotate(1.8deg); }
+  100% { transform: translate3d(0, 0, 0) rotate(0deg); }
 }
 @keyframes ribbon-drift-3 {
-  0%   { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
-  50%  { transform: translate3d(-20px, -8px, 0) rotate(2deg) scale(1.05); }
-  100% { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
-}
-@keyframes ribbon-drift-4 {
-  0%   { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
-  50%  { transform: translate3d(12px, 14px, 0) rotate(-1.8deg) scale(1.02); }
-  100% { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
+  0%   { transform: translate3d(0, 0, 0) rotate(0deg); }
+  50%  { transform: translate3d(-24px, -10px, 0) rotate(2.2deg); }
+  100% { transform: translate3d(0, 0, 0) rotate(0deg); }
 }
 
 .ribbon-band-1 {
-  animation: ribbon-drift-1 22s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  animation: ribbon-drift-1 26s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
 }
 .ribbon-band-2 {
-  animation: ribbon-drift-2 28s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
-  animation-delay: -6s;
+  animation: ribbon-drift-2 32s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  animation-delay: -8s;
 }
 .ribbon-band-3 {
-  animation: ribbon-drift-3 34s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
-  animation-delay: -12s;
-}
-.ribbon-band-4 {
-  animation: ribbon-drift-4 26s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
-  animation-delay: -3s;
+  animation: ribbon-drift-3 38s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  animation-delay: -15s;
 }
 
 @media (prefers-reduced-motion: reduce) {
