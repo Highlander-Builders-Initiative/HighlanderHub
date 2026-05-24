@@ -212,6 +212,18 @@ test("home flyer mosaic tiles expose flyer alt text and keyboard focus", () => {
   assert.doesNotMatch(source, /alt=""/);
 });
 
+test("home flyer marquee animates with wrapped transforms", () => {
+  const source = read("src/components/home/FlyerMarquee.tsx");
+
+  assert.match(source, /useMotionValue/);
+  assert.match(source, /useAnimationFrame/);
+  assert.match(source, /ResizeObserver/);
+  assert.match(source, /wrapX\(x\.get\(\)/);
+  assert.match(source, /drag="x"/);
+  assert.match(source, /decorative/);
+  assert.doesNotMatch(source, /scrollLeft/);
+});
+
 test("event detail page exposes RSVP / calendar / share actions", () => {
   const source = read("src/app/events/[id]/page.tsx");
 
