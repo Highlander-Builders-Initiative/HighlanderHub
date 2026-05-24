@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import importlib
 import sys
-import types
 import unittest
+import types
+from datetime import datetime
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -102,62 +103,41 @@ class ScrapeMainTests(unittest.TestCase):
                                 ):
                                     self.scrape.main()
 
-    def test_rest_story_item_serialization(self) -> None:
-        item_dict = {
-            "pk": 12345678,
-            "media_type": 2,
-            "taken_at": 1716192000,
-            "expiring_at": 1716278400,
-            "image_versions2": {
-                "candidates": [{"url": "https://ig.com/flyer.jpg"}]
-            },
-            "video_versions": [{"url": "https://ig.com/flyer.mp4"}],
-            "caption": {"text": "Come to our ACM meeting! @member1 @member2"},
-            "story_link_stickers": [
-                {"story_link": {"url": "https://linktr.ee/acm_ucr"}}
-            ]
-        }
-        item = self.scrape.RestStoryItem(item_dict, 10839758322, "acm_ucr")
-
-        self.assertEqual(12345678, item.mediaid)
-        self.assertEqual(10839758322, item.owner_profile.userid)
-        self.assertEqual("acm_ucr", item.owner_profile.username)
-        self.assertEqual("StoryVideo", item.typename)
-        self.assertTrue(item.is_video)
-        self.assertEqual("2024-05-20T08:00:00", item.date_utc.isoformat())
-        self.assertEqual("2024-05-21T08:00:00", item.expiring_utc.isoformat())
-        self.assertEqual("https://ig.com/flyer.jpg", item.url)
-        self.assertEqual("https://ig.com/flyer.mp4", item.video_url)
-        self.assertEqual("Come to our ACM meeting! @member1 @member2", item.caption)
-        self.assertEqual(["member1", "member2"], item.caption_mentions)
-        self.assertEqual("https://linktr.ee/acm_ucr", item.story_cta_url)
-
-    def test_get_stories_via_rest_success(self) -> None:
+    def test_scrape_account_uses_instaloader_stories_api(self) -> None:
         loader = Mock()
-        loader.context.get_iphone_json.return_value = {
-            "reels": {
-                "10839758322": {
-                    "items": [
-                        {
-                            "pk": 987654,
-                            "media_type": 1,
-                            "taken_at": 1716192000,
-                            "image_versions2": {
-                                "candidates": [{"url": "https://ig.com/flyer.jpg"}]
-                            }
-                        }
-                    ]
-                }
-            }
-        }
+        profile = Mock(userid=10839758322)
+        owner = Mock(userid=10839758322, username="acm_ucr")
+        item = Mock(
+            mediaid=987654,
+            owner_profile=owner,
+            typename="StoryImage",
+            is_video=False,
+            date_utc=datetime(2024, 5, 20, 8, 0, 0),
+            expiring_utc=datetime(2024, 5, 21, 8, 0, 0),
+            url="https://ig.com/flyer.jpg",
+            caption="Come to our ACM meeting! @member1 @member2",
+            caption_mentions=["member1", "member2"],
+            story_cta_url="https://linktr.ee/acm_ucr",
+        )
+        story = Mock()
+        story.get_items.return_value = [item]
+        loader.get_stories.return_value = [story]
 
-        stories = self.scrape._get_stories_via_rest(loader, [10839758322], "acm_ucr")
-        self.assertEqual(1, len(stories))
-        items = list(stories[0].get_items())
-        self.assertEqual(1, len(items))
-        self.assertEqual(987654, items[0].mediaid)
-        self.assertFalse(items[0].is_video)
-        self.assertEqual("https://ig.com/flyer.jpg", items[0].url)
+        with patch.object(self.scrape, "_resolve_profile", return_value=profile):
+            with patch.object(self.scrape, "_write_item", return_value=True) as write_item:
+                seen, new = self.scrape.scrape_account(
+                    loader,
+                    {"handle": "acm_ucr", "instagram_user_id": 10839758322},
+                )
+
+        loader.get_stories.assert_called_once_with(userids=[10839758322])
+        self.assertEqual((1, 1), (seen, new))
+        write_item.assert_called_once()
+        payload, handle = write_item.call_args.args
+        self.assertEqual("acm_ucr", handle)
+        self.assertEqual("987654", payload["id"])
+        self.assertEqual("https://ig.com/flyer.jpg", payload["image_url"])
+        self.assertEqual("https://linktr.ee/acm_ucr", payload["story_cta_url"])
 
 
 if __name__ == "__main__":
