@@ -6,10 +6,10 @@ we log and keep going.
 Stages:
   1. **Scrape** – fetch raw data from each source (Instagram stories,
      UCR Events) and write it to disk.
-  2. **Extract** – run OCR + Gemini-powered structured extraction on
+  2. **Extract** – run OCR + Vertex AI Gemini structured extraction on
      Instagram story images, upsert results into Supabase, and cache
      per-story outputs to avoid redundant API calls.  Note: this stage
-     makes external API calls (Google Vision, Gemini) and incurs cost.
+     makes external API calls (Google Vision, Vertex AI Gemini) and incurs cost.
   3. **Normalize** – convert raw on-disk archives into canonical event
      rows and upsert them into Supabase.  Normalization runs regardless
      of whether scraping succeeded, because the on-disk archive is the

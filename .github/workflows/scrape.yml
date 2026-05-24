@@ -12,7 +12,9 @@ name: Scrape sources
 #                            (`instaloader -l <user>` then
 #                             `base64 -i ~/.config/instaloader/session-<user>`)
 #   GOOGLE_VISION_API_KEY  - OCR
-#   GEMINI_API_KEY         - story->event extraction
+#   GOOGLE_CLOUD_PROJECT   - billed GCP project with Vertex AI API enabled
+#   GOOGLE_APPLICATION_CREDENTIALS_B64
+#                          - base64 service-account JSON with Vertex AI access
 #
 # When the IG session expires or Instagram starts rejecting account fetches,
 # the Instagram step now exits nonzero after the source finishes and GitHub
@@ -66,12 +68,25 @@ jobs:
           printf '%s' "$IG_SESSION_FILE_B64" | base64 -d > "$RUNNER_TEMP/ig/session"
           echo "IG_SESSION_FILE=$RUNNER_TEMP/ig/session" >> "$GITHUB_ENV"
 
+      - name: Decode Google Cloud credentials
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS_B64: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_B64 }}
+        run: |
+          if [ -z "$GOOGLE_APPLICATION_CREDENTIALS_B64" ]; then
+            echo "GOOGLE_APPLICATION_CREDENTIALS_B64 is required" >&2
+            exit 1
+          fi
+          mkdir -p "$RUNNER_TEMP/gcp"
+          printf '%s' "$GOOGLE_APPLICATION_CREDENTIALS_B64" | base64 -d > "$RUNNER_TEMP/gcp/application_default_credentials.json"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/gcp/application_default_credentials.json" >> "$GITHUB_ENV"
+
       - name: Run pipeline
         working-directory: pipeline
         env:
           IG_USERNAME: ${{ secrets.IG_USERNAME }}
           GOOGLE_VISION_API_KEY: ${{ secrets.GOOGLE_VISION_API_KEY }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_CLOUD_PROJECT: ${{ secrets.GOOGLE_CLOUD_PROJECT }}
+          GOOGLE_CLOUD_LOCATION: global
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         run: python run.py
