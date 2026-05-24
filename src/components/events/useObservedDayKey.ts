@@ -18,7 +18,9 @@ export function useObservedDayKey({
   userInitiatedScrollRef,
   initialDayKey,
 }: UseObservedDayKeyArgs) {
-  const [observedDayKey, setObservedDayKey] = useState(initialDayKey);
+  const [observedDayKey, setObservedDayKey] = useState(
+    () => dayKeys[0] ?? initialDayKey
+  );
 
   useEffect(() => {
     if (dayKeys.length === 0) return;

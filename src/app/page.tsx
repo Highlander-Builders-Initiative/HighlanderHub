@@ -58,7 +58,7 @@ export default async function HomePage() {
                 className="h-5 w-5 shrink-0 transition-transform"
               />
               <span className="text-[13px] text-muted transition-colors group-hover:text-ink">
-                Edited daily by{" "}
+                Built by{" "}
                 <span className="font-medium text-ink">
                   Highlander Builders Initiative
                 </span>
@@ -74,17 +74,20 @@ export default async function HomePage() {
             <span className="block text-muted">one page.</span>
           </h1>
 
-          <div
-            className="mt-7 flex flex-col gap-6 animate-fade-up md:mt-9 md:flex-row md:items-end md:justify-between"
+          <p
+            className="mt-7 max-w-md text-base leading-relaxed text-ink/75 animate-fade-up md:mt-9 md:text-lg"
             style={{ animationDelay: "180ms" }}
           >
-            <p className="max-w-md text-base leading-relaxed text-ink/75 md:text-lg">
-              <HeroHighlightCopy />
-            </p>
+            <HeroHighlightCopy />
+          </p>
 
+          <div
+            className="mt-6 animate-fade-up md:mt-8"
+            style={{ animationDelay: "260ms" }}
+          >
             <Link
               href="/events"
-              className="interactive-focus group inline-flex min-h-12 items-center gap-2 self-start rounded-lg bg-ink px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-85"
+              className="interactive-focus group inline-flex min-h-12 items-center gap-2 rounded-lg bg-ink px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-85"
             >
               Browse events
               <svg

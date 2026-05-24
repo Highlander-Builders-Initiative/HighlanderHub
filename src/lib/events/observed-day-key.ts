@@ -24,6 +24,12 @@ export function resolveObservedDayKey({
 }: ResolveObservedDayKeyArgs): string | null {
   if (dayKeys.length === 0) return null;
 
+  const firstDay = dayKeys[0];
+  const firstTop = headerTopByKey.get(firstDay);
+  if (firstTop === undefined || firstTop > SCROLL_SPY_OFFSET_PX) {
+    return firstDay;
+  }
+
   let active = dayKeys[0];
   let bestScore = -1;
 
