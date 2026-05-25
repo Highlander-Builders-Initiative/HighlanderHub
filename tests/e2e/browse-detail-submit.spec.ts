@@ -5,7 +5,9 @@ test("browses events, opens detail, and submits an event for review", async ({
 }) => {
   await page.goto("/events");
 
-  await expect(page.getByRole("heading", { name: "Events" })).toBeVisible();
+  await expect(
+    page.getByPlaceholder("Search title, host, location")
+  ).toBeVisible();
 
   await page
     .getByRole("link", {

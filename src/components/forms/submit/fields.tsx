@@ -12,10 +12,9 @@ export function FormSection({
   children: ReactNode;
 }) {
   return (
-    <section className={first ? "" : "mt-10"}>
-      {!first && <div className="hairline mb-6" />}
-      {eyebrow && <p className="mb-4 text-[13px] text-muted">{eyebrow}</p>}
-      <div className="space-y-6">{children}</div>
+    <section className={first ? "" : "mt-8"}>
+      {eyebrow && <p className="mb-3 text-[13px] text-muted">{eyebrow}</p>}
+      <div className="space-y-5">{children}</div>
     </section>
   );
 }

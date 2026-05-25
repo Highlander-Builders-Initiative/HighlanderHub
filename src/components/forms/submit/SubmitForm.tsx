@@ -304,7 +304,7 @@ export default function SubmitForm() {
       <button
         type="submit"
         disabled={status.kind === "submitting"}
-        className="interactive-focus mt-10 w-full rounded-lg bg-ink px-6 py-3 font-medium text-canvas transition-opacity duration-200 hover:opacity-85 disabled:cursor-not-allowed disabled:bg-muted disabled:text-canvas disabled:opacity-100 sm:w-auto sm:min-w-[220px]"
+        className="interactive-focus mt-8 w-full rounded-lg bg-ink px-6 py-3 font-medium text-canvas transition-opacity duration-200 hover:opacity-85 disabled:cursor-not-allowed disabled:bg-muted disabled:text-canvas disabled:opacity-100 sm:w-auto sm:min-w-[220px]"
       >
         {status.kind === "submitting" ? "Submitting…" : "Submit for review"}
       </button>
