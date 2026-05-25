@@ -9,7 +9,7 @@ import { formatTimeParts } from "@/lib/dates";
 import { eventFlyerAlt, eventListLinkLabel } from "@/lib/events/a11y";
 import { track } from "@/lib/analytics";
 import { saveEventFeedReturn } from "@/lib/events/feed-session";
-import { CATEGORY_TIME_TINT } from "@/lib/category-colors";
+import { CATEGORY_RAIL } from "@/lib/category-colors";
 
 type EventCardProps = {
   event: CampusEvent;
@@ -53,16 +53,23 @@ function EventCardComponent({
       onFocus={prefetch}
       aria-label={eventListLinkLabel(event)}
       data-event-id={event.id}
-      className={`interactive-focus card-hover group relative flex w-full min-w-0 overflow-hidden rounded-xl border border-ink/15 bg-canvas ${
+      className={`interactive-focus card-hover group relative isolate flex w-full min-w-0 overflow-hidden rounded-xl border border-ink/10 bg-canvas transition-[border-color,box-shadow,transform] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-ink/30 hover:shadow-card ${
         compact ? "" : "min-h-[6rem]"
       }`}
     >
-      {/* Time column: typographic anchor at the left edge, tinted by category. */}
+      {/* Time column: typographic anchor at the left edge. The right edge is
+         a 2px category-colored rail — magazine column-spine, full-height,
+         clipped by the card's rounded corners. Carries the category signal
+         without washing the column in tint. */}
       <div
-        className={`flex shrink-0 flex-col items-center justify-center border-r border-ink/10 px-2 ${CATEGORY_TIME_TINT[event.category]} ${
+        className={`relative flex shrink-0 flex-col items-center justify-center px-2 ${
           compact ? "w-[52px]" : "w-16 sm:w-[68px]"
         }`}
       >
+        <span
+          aria-hidden
+          className={`pointer-events-none absolute bottom-0 right-0 top-0 w-[2px] ${CATEGORY_RAIL[event.category]}`}
+        />
         <span
           className={`font-mono font-medium leading-none text-ink tabular-nums ${
             compact ? "text-base" : "text-[22px]"
@@ -72,8 +79,8 @@ function EventCardComponent({
         </span>
         {period && (
           <span
-            className={`mt-1 font-mono font-medium text-muted ${
-              compact ? "text-[10px]" : "text-[12px]"
+            className={`mt-1.5 font-mono font-medium uppercase text-muted ${
+              compact ? "text-[9px] tracking-[0.1em]" : "text-[10px] tracking-[0.14em]"
             }`}
           >
             {period}
@@ -81,34 +88,45 @@ function EventCardComponent({
         )}
       </div>
 
-      {/* Portrait flyer thumbnail, when the event has a usable image. */}
+      {/* Portrait flyer thumbnail framed into the row: a small inset frame
+         with a hairline ring + top-edge highlight gives it haptic depth at
+         this size without the over-stated double-bezel a hero card would use. */}
       {showImage && (
-        <div className="relative w-[88px] shrink-0 overflow-hidden border-r border-ink/10 bg-surface">
-          <Image
-            src={event.imageUrl!}
-            alt={eventFlyerAlt(event)}
-            fill
-            sizes="88px"
-            className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-            onError={() => setImageBroken(true)}
-          />
+        <div className="relative shrink-0 self-stretch py-2 pl-2">
+          <div className="relative h-full w-[80px] overflow-hidden rounded-md bg-surface">
+            <Image
+              src={event.imageUrl!}
+              alt={eventFlyerAlt(event)}
+              fill
+              sizes="80px"
+              className="object-cover transition-transform duration-[600ms] ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-[1.04]"
+              onError={() => setImageBroken(true)}
+            />
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-0 rounded-md ring-1 ring-inset ring-ink/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]"
+            />
+          </div>
         </div>
       )}
 
-      {/* Text block. */}
+      {/* Text block. Right-padding is widened in list mode to reserve room for
+         the magnetic chevron without clipping the meta line. */}
       <div
-        className={`flex min-w-0 flex-1 flex-col justify-center gap-1 px-4 sm:px-5 ${
-          compact ? "py-2.5" : "py-3 sm:py-3.5"
+        className={`flex min-w-0 flex-1 flex-col justify-center gap-1 pl-4 sm:pl-5 ${
+          compact ? "pr-4 py-2.5" : "pr-10 py-3 sm:py-3.5"
         }`}
       >
-        <h3 className="font-display text-[17px] font-semibold leading-[1.25] tracking-[-0.015em] text-ink line-clamp-2 break-words group-hover:underline group-hover:decoration-ink/40 group-hover:underline-offset-4">
+        <h3 className="font-display text-[17px] font-semibold leading-[1.25] tracking-[-0.015em] text-ink line-clamp-2 break-words group-hover:underline group-hover:decoration-ink/30 group-hover:underline-offset-[5px] group-hover:decoration-[1.5px]">
           {event.title}
         </h3>
 
         <div className="flex min-w-0 items-center gap-x-1.5 text-[13px] text-muted">
           {event.isFree && !compact && (
             <>
-              <span className="shrink-0 font-medium text-deep-leaf">Free</span>
+              <span className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-deep-leaf">
+                Free
+              </span>
               <span aria-hidden className="shrink-0 text-ink/20">·</span>
             </>
           )}
@@ -117,6 +135,29 @@ function EventCardComponent({
           <span className="min-w-0 flex-1 truncate">{event.location}</span>
         </div>
       </div>
+
+      {/* Magnetic hover affordance: a feather-light chevron that fades in from
+         the right with a small diagonal translate. Reads as "openable" without
+         the heaviness of a button. List surface only. */}
+      {!compact && (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute right-3.5 top-1/2 -translate-x-1 -translate-y-1/2 text-ink/40 opacity-0 transition-[opacity,transform,color] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-0 group-hover:text-ink group-hover:opacity-100"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="h-3.5 w-3.5"
+          >
+            <path d="M7 17 17 7" />
+            <path d="M9 7h8v8" />
+          </svg>
+        </span>
+      )}
     </Link>
   );
 }
