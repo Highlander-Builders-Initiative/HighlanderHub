@@ -7,6 +7,7 @@ import type { EmptyFeedCopy } from "@/lib/events/empty-feed-copy";
 import { EventCard } from "./EventCard";
 import { SubmitEventCta } from "./SubmitEventCta";
 import { ActiveFilterChips } from "./ActiveFilterChips";
+import { EventSearchBox } from "./EventSearchBox";
 import type { EventFeedActiveFilters } from "./useEventFeedFilters";
 
 type Props = {
@@ -130,33 +131,7 @@ export function EventsFeedColumn({
             )}
           </button>
 
-          <div className="relative min-w-0 flex-1">
-            <label htmlFor="event-search" className="sr-only">
-              Search events
-            </label>
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="pointer-events-none absolute left-0 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
-            >
-              <circle cx="11" cy="11" r="7" />
-              <path d="m20 20-3.5-3.5" />
-            </svg>
-            <input
-              id="event-search"
-              type="search"
-              value={query}
-              onChange={(e) => onQueryChange(e.target.value)}
-              placeholder="Search title, host, location"
-              aria-describedby="event-filter-summary"
-              className="interactive-focus w-full border-b border-ink/15 bg-transparent py-1.5 pl-7 text-sm placeholder:text-muted focus:border-ink"
-            />
-          </div>
+          <EventSearchBox query={query} onQueryChange={onQueryChange} />
         </div>
       </div>
 
@@ -220,7 +195,7 @@ export function EventsFeedColumn({
               else dayHeaderRefs.current.delete(day);
             }}
             data-day-key={day}
-            className="mb-3 scroll-mt-16 flex items-baseline justify-between gap-4 border-b border-ink/10 pb-2"
+            className="mb-3 scroll-mt-24 flex items-baseline justify-between gap-4 border-b border-ink/10 pb-2"
           >
             <h3 className="flex items-baseline gap-2.5 font-display text-xl font-semibold tracking-[-0.02em] text-ink sm:text-2xl">
               {formatPacificDayKey(day)}

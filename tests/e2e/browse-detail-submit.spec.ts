@@ -5,9 +5,7 @@ test("browses events, opens detail, and submits an event for review", async ({
 }) => {
   await page.goto("/events");
 
-  await expect(
-    page.getByPlaceholder("Search title, host, location")
-  ).toBeVisible();
+  await expect(page.getByLabel(/Search events/i)).toBeVisible();
 
   await page
     .getByRole("link", {
@@ -36,7 +34,13 @@ test("browses events, opens detail, and submits an event for review", async ({
     .getByLabel("Description")
     .fill("Submitted by Playwright to verify the review flow.");
   await page.getByRole("button", { name: "Tomorrow" }).click();
-  await page.getByLabel("Time").fill("18:30");
+  const startTime = page.getByRole("group", { name: "Start time" });
+  await startTime.getByLabel("Hours").fill("06");
+  await startTime.getByLabel("Minutes").fill("30");
+  const periodToggle = startTime.getByRole("button", { name: /Period:/ });
+  if ((await periodToggle.textContent())?.includes("AM")) {
+    await periodToggle.click();
+  }
   await page.getByLabel("Location").fill("HUB 302");
   await page.getByLabel("Hosted by").fill("Highlander Hub QA");
   await page.getByLabel("Your name").fill("Test Submitter");

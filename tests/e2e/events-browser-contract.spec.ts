@@ -78,16 +78,9 @@ test("calendar jumps leave the selected day below the sticky search bar", async 
   await dayButton.click();
 
   await expect.poll(async () => {
-    const box = await dayHeader.boundingBox();
-    return box?.y ?? 0;
-  }).toBeGreaterThan(48);
-
-  const searchBox = await search.boundingBox();
-  const headerBox = await dayHeader.boundingBox();
-
-  expect(searchBox).not.toBeNull();
-  expect(headerBox).not.toBeNull();
-  if (!searchBox || !headerBox) return;
-
-  expect(headerBox.y).toBeGreaterThan(searchBox.y + searchBox.height + 8);
+    const searchBox = await search.boundingBox();
+    const headerBox = await dayHeader.boundingBox();
+    if (!searchBox || !headerBox) return -1;
+    return headerBox.y - (searchBox.y + searchBox.height + 8);
+  }).toBeGreaterThan(0);
 });
