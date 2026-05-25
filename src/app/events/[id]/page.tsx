@@ -5,7 +5,12 @@ import { Masthead } from "@/components/layout/Masthead";
 import { Footer } from "@/components/layout/Footer";
 import { CategoryBadge } from "@/components/ui/CategoryBadge";
 import { getEventById } from "@/lib/events";
-import { formatDay, formatTimeRange, relativeDay } from "@/lib/dates";
+import {
+  formatDateStamp,
+  formatDay,
+  formatTimeRange,
+  relativeDay,
+} from "@/lib/dates";
 import { calendarHref } from "@/lib/events/actions";
 import { ShareButton } from "@/components/events/ShareButton";
 import { EventBackButton } from "@/components/events/EventBackButton";
@@ -78,139 +83,226 @@ export default async function EventDetailPage({
   const safeSourceUrl = normalizeHttpUrl(event.sourceUrl);
   const primaryUrl = safeRsvpUrl ?? safeSourceUrl;
   const primaryKind = safeRsvpUrl ? "rsvp" : "view_source";
+  const stamp = formatDateStamp(event.startsAt);
+  const sourceLabel = SOURCE_LABELS[event.source];
+  const hasImage = Boolean(event.imageUrl);
 
   return (
     <main className="relative min-h-screen bg-canvas pb-28 md:pb-0">
       <Masthead />
 
       {/* Atmospheric backdrop: the flyer's mood color bleeds in, blurred low,
-          then fades into canvas. Makes low-quality flyers feel intentional. */}
+          then fades into canvas. Reduced height so it accents the two-column
+          layout instead of dominating it. */}
       {event.imageUrl && (
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 h-[58vh] overflow-hidden sm:h-[52vh]"
+          className="pointer-events-none absolute inset-x-0 top-0 h-[40vh] overflow-hidden sm:h-[36vh]"
         >
           <Image
             src={event.imageUrl}
             alt=""
             fill
             sizes="100vw"
-            className="scale-125 object-cover opacity-55 blur-3xl"
+            className="scale-125 object-cover opacity-45 blur-3xl"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-canvas/30 via-canvas/65 to-canvas" />
+          <div className="absolute inset-0 bg-gradient-to-b from-canvas/40 via-canvas/75 to-canvas" />
         </div>
       )}
 
-      <div className="relative mx-auto max-w-3xl px-4 pb-16 pt-6 sm:px-6">
+      <div className="relative mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6">
         <EventBackButton />
 
-        <article className="mt-8">
-          {event.imageUrl && (
-            <div className="mb-10 w-full max-w-[18rem]">
-              <div className="relative aspect-[4/5] w-full overflow-hidden rounded-xl border border-white/50 bg-surface shadow-cardHover">
-                <Image
-                  src={event.imageUrl}
-                  alt={`Flyer for ${event.title}`}
-                  fill
-                  sizes="(max-width: 640px) 70vw, 18rem"
-                  className="object-cover"
-                  priority
-                />
-              </div>
+        <article className="mt-7 md:mt-10">
+          {/* Header: pills + title sit full-bleed across both columns for
+              editorial impact, regardless of whether the flyer rail renders. */}
+          <header>
+            <div className="flex flex-wrap items-center gap-2">
+              <CategoryBadge category={event.category} />
+              {event.isFree && (
+                <span className="inline-flex items-center rounded-full bg-leaf/10 px-2.5 py-0.5 text-[12px] font-medium text-deep-leaf">
+                  Free
+                </span>
+              )}
+              {event.rsvpRequired && (
+                <span className="inline-flex items-center rounded-full border border-ink/15 px-2.5 py-0.5 text-[12px] font-medium text-muted">
+                  RSVP required
+                </span>
+              )}
             </div>
-          )}
 
-          <div className="flex flex-wrap items-center gap-2">
-            <CategoryBadge category={event.category} />
-            {event.isFree && (
-              <span className="inline-flex items-center rounded-full bg-leaf/10 px-2.5 py-0.5 text-[12px] font-medium text-[#1f6f4e]">
-                Free
-              </span>
+            <h1 className="mt-5 max-w-3xl font-display text-[34px] font-semibold leading-[1.05] tracking-[-0.025em] text-ink sm:text-[44px]">
+              {event.title}
+            </h1>
+          </header>
+
+          <div
+            className={
+              hasImage
+                ? "mt-8 grid grid-cols-1 gap-10 md:mt-10 md:grid-cols-[minmax(0,18rem)_minmax(0,1fr)] md:gap-12 lg:grid-cols-[minmax(0,21rem)_minmax(0,1fr)] lg:gap-14"
+                : "mt-8 max-w-3xl"
+            }
+          >
+            {hasImage && (
+              <aside className="order-2 space-y-6 md:order-1 md:sticky md:top-24 md:self-start">
+                <div className="relative mx-auto w-full max-w-[18rem] overflow-hidden rounded-xl border border-ink/10 bg-surface shadow-card md:mx-0 md:max-w-none">
+                  <div className="relative aspect-[4/5] w-full">
+                    <Image
+                      src={event.imageUrl!}
+                      alt={`Flyer for ${event.title}`}
+                      fill
+                      sizes="(max-width: 768px) 80vw, (max-width: 1024px) 18rem, 21rem"
+                      className="object-cover"
+                      priority
+                    />
+                  </div>
+                </div>
+
+                <dl className="space-y-4 text-[14px]">
+                  <div>
+                    <dt className="text-[12px] text-muted">Hosted by</dt>
+                    <dd className="mt-1 font-medium text-ink">
+                      {event.host}
+                      {event.hostHandle && (
+                        <span className="mt-0.5 block text-[13px] font-normal text-muted">
+                          {event.hostHandle}
+                        </span>
+                      )}
+                    </dd>
+                  </div>
+                  <div className="hairline" />
+                  <div>
+                    <dt className="text-[12px] text-muted">Source</dt>
+                    <dd className="mt-1 text-ink">{sourceLabel}</dd>
+                  </div>
+                </dl>
+              </aside>
             )}
-            {event.rsvpRequired && (
-              <span className="inline-flex items-center rounded-full border border-ink/15 px-2.5 py-0.5 text-[12px] font-medium text-muted">
-                RSVP req.
-              </span>
-            )}
-            <span className="ml-auto text-[13px] text-muted">
-              {SOURCE_LABELS[event.source]}
-            </span>
-          </div>
 
-          <h1 className="mt-5 font-display text-[32px] font-semibold leading-[1.08] tracking-[-0.025em] text-ink sm:text-[44px]">
-            {event.title}
-          </h1>
+            <div className="order-1 min-w-0 md:order-2">
+              <section aria-label="When and where" className="space-y-3">
+                <div className="flex items-center gap-4">
+                  <div
+                    aria-hidden
+                    className="flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-lg border border-ink/15 bg-canvas"
+                  >
+                    <span className="text-[11px] text-muted">{stamp.month}</span>
+                    <span className="mt-0.5 font-mono text-[20px] font-semibold leading-none tabular-nums text-ink">
+                      {stamp.day}
+                    </span>
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-display text-[17px] font-semibold text-ink">
+                      {formatDay(event.startsAt)}
+                    </div>
+                    <div className="mt-0.5 text-[14px] text-muted">
+                      <span className="font-mono tabular-nums text-ink/85">
+                        {formatTimeRange(event.startsAt, event.endsAt)}
+                      </span>
+                      <span aria-hidden className="mx-2 text-ink/25">
+                        ·
+                      </span>
+                      <span>{relativeDay(event.startsAt)}</span>
+                    </div>
+                  </div>
+                </div>
 
-          <p className="mt-4 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <span className="font-display text-xl font-semibold text-ink">
-              {formatDay(event.startsAt)}
-            </span>
-            <span className="text-[13px] text-muted">
-              {relativeDay(event.startsAt)}
-            </span>
-            <span className="text-ink/30">·</span>
-            <span className="text-ink">
-              {formatTimeRange(event.startsAt, event.endsAt)}
-            </span>
-          </p>
+                <div className="flex items-center gap-4">
+                  <div
+                    aria-hidden
+                    className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border border-ink/15 bg-canvas"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.75"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="h-[18px] w-[18px] text-muted"
+                    >
+                      <path d="M12 21s-7-7.5-7-12a7 7 0 1 1 14 0c0 4.5-7 12-7 12Z" />
+                      <circle cx="12" cy="9" r="2.5" />
+                    </svg>
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[15px] text-ink">{event.location}</div>
+                  </div>
+                </div>
+              </section>
 
-          <div className="mt-10 h-px w-full bg-ink/10" />
-
-          <p className="mt-10 max-w-prose whitespace-pre-line text-[16px] leading-relaxed text-ink/80">
-            {event.description}
-          </p>
-
-          <dl className="mt-12 grid grid-cols-1 gap-y-6 gap-x-12 sm:grid-cols-2">
-            <div>
-              <dt className="text-[13px] text-muted">Where</dt>
-              <dd className="mt-1 text-ink">{event.location}</dd>
-            </div>
-            <div>
-              <dt className="text-[13px] text-muted">Host</dt>
-              <dd className="mt-1 text-ink">
-                {event.host}
-                {event.hostHandle && (
-                  <span className="block text-xs text-muted">
-                    {event.hostHandle}
-                  </span>
-                )}
-              </dd>
-            </div>
-          </dl>
-
-          {event.tags.length > 0 && (
-            <div className="mt-8 flex flex-wrap gap-x-3 gap-y-1 text-[13px] text-muted">
-              {event.tags.map((t) => (
-                <span key={t}>#{t.replace(/\s+/g, "")}</span>
-              ))}
-            </div>
-          )}
-
-          {/* Desktop CTAs */}
-          <div className="mt-12 hidden flex-wrap items-center gap-x-5 gap-y-3 border-t border-ink/10 pt-8 md:flex">
-            {primaryUrl && (
-              <TrackedAnchor
-                event="primary"
-                ctaKind={primaryKind}
-                eventId={event.id}
-                surface="desktop"
-                href={primaryUrl}
-                className="interactive-focus inline-flex min-h-12 items-center gap-2 rounded-lg bg-ink px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-85"
+              {/* Registration card — desktop only; mobile is served by the
+                  sticky bottom action bar. Hairline border, no fill, so it
+                  groups the actions without nesting card-on-card. */}
+              <section
+                aria-label="Registration"
+                className="mt-8 hidden rounded-xl border border-ink/15 bg-canvas p-5 md:block"
               >
-                {safeRsvpUrl ? "RSVP" : "View source"}
-                <span aria-hidden>↗</span>
-              </TrackedAnchor>
-            )}
-            <TrackedAnchor
-              event="calendar"
-              eventId={event.id}
-              surface="desktop"
-              href={calendarHref(event)}
-              className="interactive-focus text-sm font-medium text-ink underline-offset-4 hover:underline"
-            >
-              Add to calendar
-            </TrackedAnchor>
-            <ShareButton event={event} variant="text" />
+                <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                  <div className="text-[13px] text-muted">
+                    {primaryUrl
+                      ? safeRsvpUrl
+                        ? "Registration"
+                        : "Event details"
+                      : "Event details"}
+                  </div>
+                  {primaryUrl && (
+                    <div className="text-[13px] text-muted">
+                      via {sourceLabel}
+                    </div>
+                  )}
+                </div>
+                {!primaryUrl && (
+                  <p className="mt-2 text-[14px] text-ink/75">
+                    No external link is on file. Check with the host for the
+                    latest info.
+                  </p>
+                )}
+                <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-3">
+                  {primaryUrl && (
+                    <TrackedAnchor
+                      event="primary"
+                      ctaKind={primaryKind}
+                      eventId={event.id}
+                      surface="desktop"
+                      href={primaryUrl}
+                      className="interactive-focus inline-flex min-h-12 items-center gap-2 rounded-lg bg-ink px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-85"
+                    >
+                      {safeRsvpUrl ? "RSVP" : "View source"}
+                      <span aria-hidden>↗</span>
+                    </TrackedAnchor>
+                  )}
+                  <TrackedAnchor
+                    event="calendar"
+                    eventId={event.id}
+                    surface="desktop"
+                    href={calendarHref(event)}
+                    className="interactive-focus text-sm font-medium text-ink underline-offset-4 hover:underline"
+                  >
+                    Add to calendar
+                  </TrackedAnchor>
+                  <ShareButton event={event} variant="text" />
+                </div>
+              </section>
+
+              <section aria-label="About" className="mt-10">
+                <div className="hairline" />
+                <h2 className="mt-7 font-display text-[20px] font-semibold tracking-[-0.015em] text-ink">
+                  About
+                </h2>
+                <p className="mt-4 max-w-prose whitespace-pre-line text-[16px] leading-relaxed text-ink/80">
+                  {event.description}
+                </p>
+
+                {event.tags.length > 0 && (
+                  <div className="mt-6 flex flex-wrap gap-x-3 gap-y-1 text-[13px] text-muted">
+                    {event.tags.map((t) => (
+                      <span key={t}>#{t.replace(/\s+/g, "")}</span>
+                    ))}
+                  </div>
+                )}
+              </section>
+            </div>
           </div>
         </article>
       </div>
