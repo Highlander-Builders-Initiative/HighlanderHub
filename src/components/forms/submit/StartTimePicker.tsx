@@ -9,6 +9,7 @@ import {
   submitUpcomingFridayDateInput,
 } from "@/lib/submit-datetime";
 import { Chip } from "./fields";
+import { SegmentedTimeInput } from "./SegmentedTimeInput";
 
 export function StartTimePicker({
   dateValue,
@@ -86,20 +87,16 @@ export function StartTimePicker({
         </label>
       )}
 
-      <label className="mt-4 block">
-        <span className="text-sm font-medium text-ink/80">Time</span>
-        <input
-          type="time"
+      <div className="mt-4">
+        <span className="block text-sm font-medium text-ink/80">Time</span>
+        <SegmentedTimeInput
           value={timeValue}
-          onChange={(e) => {
-            onInteract();
-            onChangeTime(e.target.value);
-          }}
-          className={`interactive-focus mt-1 block w-full rounded-md border bg-canvas px-3 py-2 text-ink focus:border-ink sm:w-auto ${
-            error ? "border-deep-coral" : "border-ink/15"
-          }`}
+          onChange={onChangeTime}
+          onInteract={onInteract}
+          error={Boolean(error)}
+          ariaLabel="Start time"
         />
-      </label>
+      </div>
 
       {previewLocal && !error && (
         <p className="mt-3 text-xs text-muted">
