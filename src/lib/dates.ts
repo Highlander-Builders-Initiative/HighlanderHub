@@ -27,6 +27,14 @@ const monthDayFmt = new Intl.DateTimeFormat("en-US", {
   month: "short",
   day: "numeric",
 });
+const monthAbbrFmt = new Intl.DateTimeFormat("en-US", {
+  timeZone: CAMPUS_TZ,
+  month: "short",
+});
+const dayNumFmt = new Intl.DateTimeFormat("en-US", {
+  timeZone: CAMPUS_TZ,
+  day: "numeric",
+});
 const monthYearFmt = new Intl.DateTimeFormat("en-US", {
   timeZone: CAMPUS_TZ,
   month: "long",
@@ -241,6 +249,11 @@ export function startOfPacificToday(): Date {
 
 export function formatDay(iso: string): string {
   return fullDayFmt.format(new Date(iso));
+}
+
+export function formatDateStamp(iso: string): { month: string; day: string } {
+  const date = new Date(iso);
+  return { month: monthAbbrFmt.format(date), day: dayNumFmt.format(date) };
 }
 
 export function formatDayShort(iso: string): string {
