@@ -80,13 +80,13 @@ export function EventsFeedColumn({
 
   return (
     <div className="min-w-0 lg:py-8">
-      <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
+      <header className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
         <div className="min-w-0">
-          <h1 className="font-display text-3xl font-semibold leading-[1.05] tracking-[-0.03em] text-ink sm:text-4xl">
-            Events
+          <h1 className="font-display text-[28px] font-semibold leading-[1.05] tracking-[-0.025em] text-ink sm:text-[34px]">
+            {formatPacificDayKey(todayKey)}
           </h1>
-          <p className="mt-2 max-w-[58ch] text-[15px] text-ink/75">
-            {formatPacificDayKey(todayKey)} · {upcomingTotal}{" "}
+          <p className="mt-2 max-w-[58ch] text-[14px] text-muted">
+            {upcomingTotal}{" "}
             {upcomingTotal === 1 ? "event" : "events"} upcoming ·{" "}
             {summary.upcomingThisWeek} this week
           </p>

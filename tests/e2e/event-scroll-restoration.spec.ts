@@ -82,7 +82,9 @@ test("event detail returns to the prior scroll position", async ({ page }) => {
   ).toBeVisible();
 
   await Promise.all([page.waitForURL("**/events"), page.goBack()]);
-  await expect(page.getByRole("heading", { name: "Events" })).toBeVisible();
+  await expect(
+    page.getByPlaceholder("Search title, host, location")
+  ).toBeVisible();
   await waitForNoLoadError(page);
   await waitForEventsBrowserHydration(page);
   await waitForEventTop(page, firstSavedTop);
@@ -104,7 +106,9 @@ test("event detail returns to the prior scroll position", async ({ page }) => {
     page.waitForURL("**/events"),
     page.getByRole("button", { name: /Back/i }).click(),
   ]);
-  await expect(page.getByRole("heading", { name: "Events" })).toBeVisible();
+  await expect(
+    page.getByPlaceholder("Search title, host, location")
+  ).toBeVisible();
   await waitForNoLoadError(page);
   await waitForEventTop(page, secondSavedTop);
 });
