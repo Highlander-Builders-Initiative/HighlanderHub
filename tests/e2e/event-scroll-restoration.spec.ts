@@ -83,7 +83,7 @@ test("event detail returns to the prior scroll position", async ({ page }) => {
 
   await Promise.all([page.waitForURL("**/events"), page.goBack()]);
   await expect(
-    page.getByPlaceholder("Search title, host, location")
+    page.getByLabel(/Search events/i)
   ).toBeVisible();
   await waitForNoLoadError(page);
   await waitForEventsBrowserHydration(page);
@@ -107,7 +107,7 @@ test("event detail returns to the prior scroll position", async ({ page }) => {
     page.getByRole("button", { name: /Back/i }).click(),
   ]);
   await expect(
-    page.getByPlaceholder("Search title, host, location")
+    page.getByLabel(/Search events/i)
   ).toBeVisible();
   await waitForNoLoadError(page);
   await waitForEventTop(page, secondSavedTop);
