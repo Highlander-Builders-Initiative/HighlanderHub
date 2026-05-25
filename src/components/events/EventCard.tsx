@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { memo, type MouseEvent, useState } from "react";
+import { memo, type MouseEvent, useLayoutEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { type CampusEvent } from "@/types/event";
 import { formatTimeParts } from "@/lib/dates";
@@ -30,6 +30,21 @@ function EventCardComponent({
   const router = useRouter();
   const [imageBroken, setImageBroken] = useState(false);
   const showImage = !compact && !!event.imageUrl && !imageBroken;
+  const descRef = useRef<HTMLParagraphElement>(null);
+  const [isDescTruncated, setIsDescTruncated] = useState(false);
+  const showDescription = !compact && !!event.description?.trim();
+
+  useLayoutEffect(() => {
+    if (!showDescription) return;
+    const el = descRef.current;
+    if (!el) return;
+    const measure = () =>
+      setIsDescTruncated(el.scrollHeight - el.clientHeight > 1);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [showDescription, event.description]);
   const href = `/events/${event.id}`;
   const surface = compact ? "calendar_card" : "list_card";
   const { time, period } = formatTimeParts(event.startsAt);
@@ -130,10 +145,50 @@ function EventCardComponent({
               <span aria-hidden className="shrink-0 text-ink/20">·</span>
             </>
           )}
-          <span className="min-w-0 flex-1 truncate">{event.host}</span>
-          <span aria-hidden className="shrink-0 text-ink/20">·</span>
-          <span className="min-w-0 flex-1 truncate">{event.location}</span>
+          <span className="min-w-0 truncate">{event.host}</span>
         </div>
+
+        <div className="flex min-w-0 items-center gap-x-1 text-[13px] text-muted">
+          <svg
+            aria-hidden
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="h-3.5 w-3.5 shrink-0 text-ink/40"
+          >
+            <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+            <circle cx="12" cy="10" r="3" />
+          </svg>
+          <span className="min-w-0 truncate">{event.location}</span>
+        </div>
+
+        {showDescription && (
+          <div className="relative mt-0.5">
+            <p
+              ref={descRef}
+              className="line-clamp-2 text-[13px] leading-snug text-ink/70"
+            >
+              {event.description}
+            </p>
+            {isDescTruncated && (
+              <span
+                aria-hidden
+                className="pointer-events-none absolute bottom-0 right-0 bg-canvas pl-6 text-[13px] leading-snug text-ink/70"
+                style={{
+                  maskImage:
+                    "linear-gradient(to right, transparent 0, black 18px)",
+                  WebkitMaskImage:
+                    "linear-gradient(to right, transparent 0, black 18px)",
+                }}
+              >
+                … <span className="text-ink underline decoration-ink/30 underline-offset-[3px]">see more</span>
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Magnetic hover affordance: a feather-light chevron that fades in from
