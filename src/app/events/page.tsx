@@ -71,6 +71,23 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
         initialFilters={initialFilters}
       />
 
+      {/* Page-edge softener: a fade plus soft backdrop-blur masks the bottom
+          of the viewport so the long-scroll feed never ends on a hard line.
+          A page-edge structural treatment, not decorative chrome; scoped to
+          /events where the long scroll warrants it. */}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-x-0 bottom-0 z-10 h-16 bg-gradient-to-t from-canvas via-canvas/55 to-transparent sm:h-20"
+        style={{
+          backdropFilter: "blur(3px)",
+          WebkitBackdropFilter: "blur(3px)",
+          maskImage:
+            "linear-gradient(to top, black 55%, transparent 100%)",
+          WebkitMaskImage:
+            "linear-gradient(to top, black 55%, transparent 100%)",
+        }}
+      />
+
       <Footer />
     </main>
   );
