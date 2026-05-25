@@ -80,8 +80,8 @@ export default function AboutPage() {
       <Masthead />
 
       {/* About opener + principles */}
-      <section className="border-b border-ink/10">
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 md:py-24">
+      <section>
+        <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 md:py-20">
           <div className="grid gap-10 md:grid-cols-12 md:items-start">
             <Reveal className="md:col-span-5">
               <p className="text-[13px] text-muted">About</p>
@@ -124,8 +124,8 @@ export default function AboutPage() {
       </section>
 
       {/* Where events come from */}
-      <section className="border-b border-ink/10 bg-surface">
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 md:py-24">
+      <section className="bg-surface">
+        <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 md:py-20">
           <div className="md:grid md:grid-cols-12 md:gap-10">
             <Reveal className="md:col-span-4 md:pt-1">
               <h2 className="font-display text-3xl font-semibold leading-[1.1] tracking-[-0.03em] text-ink md:text-4xl">
@@ -143,11 +143,11 @@ export default function AboutPage() {
               </p>
             </Reveal>
 
-            <ul className="mt-10 divide-y divide-ink/10 border-y border-ink/10 md:col-span-8 md:mt-0">
+            <ul className="mt-8 divide-y divide-ink/10 md:col-span-8 md:mt-0">
               {SOURCES.map((s) => (
                 <li
                   key={s.label}
-                  className="flex items-start gap-4 py-6 sm:gap-6 sm:py-7"
+                  className="flex items-start gap-4 py-5 sm:gap-6 sm:py-6"
                 >
                   <span
                     aria-hidden
@@ -169,8 +169,8 @@ export default function AboutPage() {
       </section>
 
       {/* Who built it */}
-      <section className="border-b border-ink/10">
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 md:py-24">
+      <section>
+        <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 md:py-20">
           <Reveal
             as="article"
             className="grid gap-6 md:grid-cols-[auto_1fr] md:items-center md:gap-10"
@@ -226,8 +226,8 @@ export default function AboutPage() {
       </section>
 
       {/* Get involved */}
-      <section className="border-b border-ink/10">
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 md:py-24">
+      <section>
+        <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 md:py-20">
           <h2 className="font-display text-3xl font-semibold leading-[1.1] tracking-[-0.03em] text-ink md:text-4xl">
             Get involved
           </h2>
@@ -235,7 +235,7 @@ export default function AboutPage() {
           <Reveal
             delay={80}
             as="div"
-            className="mt-10 flex flex-col gap-6 border-y border-ink/10 py-8 sm:flex-row sm:items-center sm:justify-between sm:gap-10"
+            className="mt-8 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between sm:gap-10"
           >
             <div className="max-w-xl">
               <p className="font-display text-xl font-semibold tracking-[-0.02em] text-ink md:text-2xl">
@@ -249,8 +249,8 @@ export default function AboutPage() {
             <SubmitEventCta surface="about_page" />
           </Reveal>
 
-          <ul className="divide-y divide-ink/10">
-            <Reveal delay={120} as="li" className="py-7">
+          <ul className="mt-2 divide-y divide-ink/10">
+            <Reveal delay={120} as="li" className="pb-6 pt-7">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
                 <div className="max-w-xl">
                   <p className="font-display text-lg font-semibold tracking-[-0.02em] text-ink">
@@ -279,7 +279,7 @@ export default function AboutPage() {
                 </HbiLink>
               </div>
             </Reveal>
-            <Reveal delay={180} as="li" className="py-7">
+            <Reveal delay={180} as="li" className="py-6">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
                 <div className="max-w-xl">
                   <p className="font-display text-lg font-semibold tracking-[-0.02em] text-ink">
@@ -307,7 +307,7 @@ export default function AboutPage() {
 
       {/* FAQ */}
       <section id="faq">
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 md:pb-28 md:pt-20">
+        <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 md:pb-24 md:pt-16">
           <Reveal className="max-w-2xl">
             <h2 className="font-display text-3xl font-semibold leading-[1.1] tracking-[-0.03em] text-ink md:text-4xl">
               Common questions

@@ -60,7 +60,7 @@ export default async function HomePage() {
                 className="h-5 w-5 shrink-0 transition-transform"
               />
               <span className="text-[13px] text-muted transition-colors group-hover:text-ink">
-                Built with ❤️ by{" "}
+                Built by{" "}
                 <span className="font-medium text-ink">
                   Highlander Builders Initiative
                 </span>

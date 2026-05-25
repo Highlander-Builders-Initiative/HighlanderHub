@@ -15,7 +15,7 @@ export type AboutFaqItem = {
 
 export function AboutFaq({ items }: { items: readonly AboutFaqItem[] }) {
   return (
-    <Accordion className="mt-10 flex w-full flex-col divide-y divide-ink/10 border-y border-ink/10">
+    <Accordion className="mt-8 flex w-full flex-col divide-y divide-ink/10">
       {items.map((f) => (
         <AccordionItem key={f.id} value={f.id}>
           <AccordionTrigger className="interactive-focus flex w-full items-center justify-between gap-6 py-5 text-left">
