@@ -71,6 +71,7 @@ function toEventFilterCountSource(r: EventRow): EventFilterCountSource {
     startsAt: r.starts_at,
     location: r.location,
     host: r.host,
+    hostHandle: r.host_handle ?? undefined,
     category: r.category,
     tags: r.tags,
   };
@@ -248,7 +249,7 @@ export async function getEventFilterCountSource(): Promise<
       const { data } = await withDbRetry("event filter counts", () =>
         supabase
           .from("events")
-          .select("id,title,description,starts_at,location,host,category,tags")
+          .select("id,title,description,starts_at,location,host,host_handle,category,tags")
           .or(activeEventFilter(nowIso))
           .order("starts_at", { ascending: true })
           .order("id", { ascending: true })
