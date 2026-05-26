@@ -57,6 +57,32 @@ export IG_USERNAME=your_ig_username
 export IG_SESSION_FILE=$HOME/.config/instaloader/session-your_ig_username
 ```
 
+Or, if `instaloader -l` hits 401 / rate limits, log into Instagram in **Safari**,
+grant Terminal **Full Disk Access**, then:
+
+```bash
+# edits username in import_safari_session.py, writes ~/.config/instaloader/session-<user>
+.venv/bin/python import_safari_session.py
+```
+
+Put the **file path** (not base64) in `pipeline/.env`:
+
+```bash
+IG_USERNAME=rhino.5172250
+IG_SESSION_FILE=$HOME/.config/instaloader/session-rhino.5172250
+```
+
+(`base64 -i …` is only for the GitHub Actions secret `IG_SESSION_FILE_B64`.)
+
+If login succeeds but scrape dies on `get_followees` / `400 invalid request`, the
+session is fine for per-account story fetch — the follow-list GraphQL call is
+what failed. The scraper falls back to `data/followed_accounts.json`, then
+`accounts.json`. To skip the follow-list call entirely:
+
+```bash
+PIPELINE_ACCOUNT_SOURCE=accounts_json
+```
+
 **Option B — username + password env vars (interactive 2FA):**
 
 ```bash
