@@ -1,5 +1,7 @@
 data/raw/
 data/extracted/
+data/followed_accounts.json
+data/followed_accounts.tmp
 output/
 .instaloader-session*
 session-*

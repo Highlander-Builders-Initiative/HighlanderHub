@@ -4,3 +4,4 @@ supabase>=2.0
 python-dotenv>=1.0
 google-genai>=2.0
 beautifulsoup4>=4.12
+browser-cookie3>=0.19  # import_safari_session.py only

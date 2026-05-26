@@ -18,7 +18,9 @@ from config import ROOT
 load_dotenv(ROOT / ".env")
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
-SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY")
+SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY") or os.environ.get(
+    "SUPABASE_SERVICE_ROLE_KEY"
+)
 
 log = logging.getLogger("pipeline.db")
 

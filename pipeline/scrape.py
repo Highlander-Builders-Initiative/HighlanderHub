@@ -19,15 +19,20 @@ from instaloader.exceptions import (
     ConnectionException,
     LoginRequiredException,
     ProfileNotExistsException,
+    QueryReturnedBadRequestException,
 )
 
 from config import (
+    ACCOUNT_SOURCE,
+    FOLLOWED_ACCOUNTS_FILE,
     IG_PASSWORD,
     IG_USERNAME,
     RAW_DIR,
     SESSION_FILE,
     ensure_dirs,
-    load_accounts,
+    load_curated_accounts,
+    load_followed_accounts_cache,
+    write_followed_accounts_cache,
 )
 
 log = logging.getLogger("pipeline.scrape")
@@ -95,7 +100,7 @@ def _resolve_profile(
 ) -> instaloader.Profile:
     """Resolve a username to an instaloader Profile object using a hybrid approach.
 
-    1. If accounts.json has instagram_user_id, instantiate Profile directly (0 network requests).
+    1. If account metadata has instagram_user_id, instantiate Profile directly (0 network requests).
     2. Fallback to Instagram search (TopSearchResults GET query) which is unaffected by GraphQL bugs.
     3. Final fallback to instaloader's default from_username (GraphQL).
     """
@@ -103,7 +108,7 @@ def _resolve_profile(
 
     if instagram_user_id is not None:
         log.info(
-            "%s: Resolved handle using accounts.json instagram_user_id (%s)",
+            "%s: Resolved handle using cached instagram_user_id (%s)",
             handle,
             instagram_user_id,
         )
@@ -123,6 +128,115 @@ def _resolve_profile(
 
     # 3. Final fallback to instaloader's default from_username
     return instaloader.Profile.from_username(L.context, handle)
+
+
+def _uses_followed_accounts() -> bool:
+    return ACCOUNT_SOURCE in {"followed", "following", "followees"}
+
+
+def _profile_username(profile: instaloader.Profile) -> str:
+    return str(getattr(profile, "username", "") or "").strip()
+
+
+def _account_from_followed_profile(
+    profile: instaloader.Profile,
+    curated_by_handle: dict[str, dict[str, Any]],
+) -> tuple[dict[str, Any], bool]:
+    handle = _profile_username(profile)
+    existing = curated_by_handle.get(handle.lower(), {})
+    account = dict(existing)
+    account["handle"] = handle
+
+    if not account.get("label"):
+        account["label"] = str(getattr(profile, "full_name", "") or handle)
+
+    user_id = getattr(profile, "userid", None)
+    if user_id is not None:
+        try:
+            account["instagram_user_id"] = int(user_id)
+        except (TypeError, ValueError):
+            log.warning("%s: followed profile had invalid userid: %r", handle, user_id)
+
+    account["account_source"] = "instagram_followed"
+    return account, bool(existing)
+
+
+def _load_followed_accounts(
+    L: instaloader.Instaloader,
+    curated_accounts: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], int]:
+    username = IG_USERNAME or str(getattr(L.context, "username", "") or "")
+    if not username:
+        raise RuntimeError(
+            "IG_USERNAME is required when PIPELINE_ACCOUNT_SOURCE=followed so "
+            "the scraper can enumerate the logged-in account's follow list."
+        )
+
+    viewer = instaloader.Profile.from_username(L.context, username)
+    curated_by_handle = {
+        str(account.get("handle", "")).lower(): account
+        for account in curated_accounts
+        if account.get("handle")
+    }
+    by_handle: dict[str, dict[str, Any]] = {}
+    matched_curated = 0
+
+    for profile in viewer.get_followees():
+        handle = _profile_username(profile)
+        if not handle:
+            continue
+        account, matched = _account_from_followed_profile(profile, curated_by_handle)
+        by_handle[handle.lower()] = account
+        if matched:
+            matched_curated += 1
+
+    accounts = sorted(by_handle.values(), key=lambda account: account["handle"].lower())
+    return accounts, matched_curated
+
+
+def _load_scrape_accounts(L: instaloader.Instaloader) -> list[dict[str, Any]]:
+    curated_accounts = load_curated_accounts()
+    if not _uses_followed_accounts():
+        log.info("Account source: accounts.json (%d accounts)", len(curated_accounts))
+        return curated_accounts
+
+    try:
+        accounts, matched_curated = _load_followed_accounts(L, curated_accounts)
+    except (QueryReturnedBadRequestException, ConnectionException) as e:
+        log.warning(
+            "Could not fetch Instagram follow list (%s). Imported/Safari sessions "
+            "often fail this GraphQL call; using follow cache or accounts.json.",
+            e,
+        )
+        cached = load_followed_accounts_cache()
+        if cached:
+            log.info(
+                "Account source: followed-account cache (%d accounts) from %s",
+                len(cached),
+                FOLLOWED_ACCOUNTS_FILE,
+            )
+            return cached
+        log.warning(
+            "No followed-account cache; falling back to accounts.json (%d accounts)",
+            len(curated_accounts),
+        )
+        return curated_accounts
+
+    if not accounts:
+        raise RuntimeError(
+            "Instagram returned zero followed accounts; refusing to replace the "
+            "runtime account cache. Check the scraper account's follow list and "
+            "session health."
+        )
+    write_followed_accounts_cache(accounts)
+    log.info(
+        "Account source: followed accounts (%d accounts; %d matched accounts.json "
+        "metadata; cache=%s)",
+        len(accounts),
+        matched_curated,
+        FOLLOWED_ACCOUNTS_FILE,
+    )
+    return accounts
 
 
 def scrape_account(L: instaloader.Instaloader, acct: dict[str, Any]) -> tuple[int, int]:
@@ -148,7 +262,6 @@ def main() -> None:
         level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
     )
     ensure_dirs()
-    accounts = load_accounts()
 
     L = instaloader.Instaloader(
         download_pictures=False,
@@ -161,6 +274,7 @@ def main() -> None:
         quiet=True,
     )
     _login(L)
+    accounts = _load_scrape_accounts(L)
 
     totals = {"accounts": 0, "seen": 0, "new": 0, "errors": 0, "missing_profiles": 0}
     for acct in accounts:
