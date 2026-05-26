@@ -473,6 +473,8 @@ class ExtractStoriesTests(unittest.TestCase):
         self.assertIsNone(normalize("javascript:alert(1)"))
         self.assertIsNone(normalize("mailto:club@example.com"))
         self.assertIsNone(normalize("ftp://example.com/file"))
+        self.assertIsNone(normalize("https://link in bio"))
+        self.assertIsNone(normalize("link in bio"))
 
 
 if __name__ == "__main__":

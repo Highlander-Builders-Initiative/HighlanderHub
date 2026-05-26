@@ -423,6 +423,8 @@ def _bool_or_default(value: Any, default: bool) -> bool:
 
 
 _URL_SCHEME_RE = re.compile(r"^[a-z][a-z0-9+\-.]*:", re.IGNORECASE)
+# Matches supabase events_rsvp_url_http / events_source_url guardrails.
+_HTTP_URL_RE = re.compile(r"^https?://\S+$", re.IGNORECASE)
 
 
 def _normalize_url(value: Any) -> str | None:
@@ -440,6 +442,8 @@ def _normalize_url(value: Any) -> str | None:
     if parsed.scheme.lower() not in {"http", "https"}:
         return None
     if not parsed.netloc:
+        return None
+    if not _HTTP_URL_RE.match(text):
         return None
     return text
 
