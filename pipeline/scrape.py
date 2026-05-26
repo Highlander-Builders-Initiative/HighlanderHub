@@ -249,7 +249,13 @@ def scrape_account(L: instaloader.Instaloader, acct: dict[str, Any]) -> tuple[in
 
     stories = L.get_stories(userids=[profile.userid])
     for story in stories:
-        for item in story.get_items():
+        try:
+            items = list(story.get_items())
+        except KeyError:
+            # Instaloader raises when the reels API omits this user (no active stories).
+            log.info("%s: no active stories in API response", handle)
+            continue
+        for item in items:
             seen += 1
             payload = _serialize_item(item, handle)
             if _write_item(payload, handle):

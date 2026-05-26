@@ -143,6 +143,26 @@ class ScrapeMainTests(unittest.TestCase):
         self.assertEqual("https://ig.com/flyer.jpg", payload["image_url"])
         self.assertEqual("https://linktr.ee/acm_ucr", payload["story_cta_url"])
 
+    def test_scrape_account_treats_missing_reels_entry_as_no_stories(self) -> None:
+        loader = Mock()
+        profile = Mock(userid=449388329)
+        story = Mock()
+
+        def missing_reels_items():
+            raise KeyError("449388329")
+            yield
+
+        story.get_items.return_value = missing_reels_items()
+        loader.get_stories.return_value = [story]
+
+        with patch.object(self.scrape, "_resolve_profile", return_value=profile):
+            seen, new = self.scrape.scrape_account(
+                loader,
+                {"handle": "asucr", "instagram_user_id": 449388329},
+            )
+
+        self.assertEqual((0, 0), (seen, new))
+
     def test_followed_accounts_merge_curated_metadata(self) -> None:
         loader = Mock()
         loader.context = Mock(username="scraper_from_context")
