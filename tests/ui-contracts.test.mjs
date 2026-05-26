@@ -99,7 +99,7 @@ test("calendar loads its own month-range events outside feed pagination", () => 
     browser,
     /handleCalendarSelect[\s\S]*setObservedDayKey\(dayKey\)/
   );
-  assert.match(feedColumn, /scroll-mt-16/);
+  assert.match(feedColumn, /scroll-mt-24/);
   assert.match(filters, /calendarEvents\?: CampusEvent\[\]/);
   assert.match(filters, /of \$\{feedTotal\}/);
   assert.match(feedColumn, /upcomingTotal/);
