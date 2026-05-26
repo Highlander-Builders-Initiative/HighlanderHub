@@ -153,7 +153,8 @@
     {
       "handle": "swe.ucr",
       "label": "SWE @ UCR",
-      "category": "club"
+      "category": "club",
+      "instagram_user_id": 1517079735
     },
     {
       "handle": "thetatauucr",
@@ -182,7 +183,8 @@
     {
       "handle": "ucr_resed",
       "label": "ucr residential education",
-      "category": "club"
+      "category": "club",
+      "instagram_user_id": 5992300951
     },
     {
       "handle": "ucr_table_tennis",
@@ -277,7 +279,8 @@
     {
       "handle": "ucrwrc",
       "label": "Women's Resource Center @ UCR",
-      "category": "club"
+      "category": "club",
+      "instagram_user_id": 3909601186
     },
     {
       "handle": "wincucr",
