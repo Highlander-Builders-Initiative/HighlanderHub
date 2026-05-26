@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, extname, join, relative } from "node:path";
@@ -39,16 +40,17 @@ function resolveSourceUrl(url) {
 
 function compileTsModule(sourceUrl) {
   const sourcePath = fileURLToPath(sourceUrl);
-  const cached = moduleCache.get(sourcePath);
+  const source = readFileSync(sourceUrl, "utf8");
+  const sourceHash = createHash("sha256").update(source).digest("hex").slice(0, 12);
+  const cacheKey = `${sourcePath}:${sourceHash}`;
+  const cached = moduleCache.get(cacheKey);
   if (cached) return cached;
 
   const outPath = join(
     outRoot,
-    relative(projectRootPath, sourcePath).replace(/\.[^.]+$/, ".mjs")
+    relative(projectRootPath, sourcePath).replace(/\.[^.]+$/, `.${sourceHash}.mjs`)
   );
   const outUrl = pathToFileURL(outPath).href;
-
-  const source = readFileSync(sourceUrl, "utf8");
   const compiled = ts.transpileModule(source, {
     compilerOptions: {
       target: ts.ScriptTarget.ES2020,
@@ -76,7 +78,7 @@ function compileTsModule(sourceUrl) {
 
   mkdirSync(dirname(outPath), { recursive: true });
   ts.sys.writeFile(outPath, rewritten);
-  moduleCache.set(sourcePath, outUrl);
+  moduleCache.set(cacheKey, outUrl);
   return outUrl;
 }
 
