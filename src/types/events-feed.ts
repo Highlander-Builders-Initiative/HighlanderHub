@@ -17,6 +17,7 @@ export type EventFilterCountSource = Pick<
   | "startsAt"
   | "location"
   | "host"
+  | "hostHandle"
   | "category"
   | "tags"
 >;

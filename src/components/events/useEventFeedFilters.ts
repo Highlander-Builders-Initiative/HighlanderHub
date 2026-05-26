@@ -14,7 +14,14 @@ import {
 } from "./events-filters";
 
 function buildEventSearchText(event: EventFilterCountSource) {
-  return [event.title, event.description, event.host, event.location, ...event.tags]
+  return [
+    event.title,
+    event.description,
+    event.host,
+    event.hostHandle ?? "",
+    event.location,
+    ...event.tags,
+  ]
     .join(" ")
     .toLowerCase();
 }
