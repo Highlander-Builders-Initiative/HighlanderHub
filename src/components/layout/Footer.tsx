@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { FaDiscord, FaInstagram, FaLinkedin } from "react-icons/fa";
 import { HbiLink } from "@/components/analytics/HbiLink";
+import { HBI_ABOUT_URL } from "@/lib/hbi";
 
 const socialLinks = [
   {
@@ -87,12 +88,14 @@ export function Footer() {
           </div>
           <p className="mt-4 text-sm text-muted">
             Built by{" "}
-            <Link
-              href="/about"
+            <a
+              href={HBI_ABOUT_URL}
+              target="_blank"
+              rel="noopener noreferrer"
               className="interactive-focus font-medium text-ink underline-offset-4 hover:underline"
             >
               Highlander Builders Initiative
-            </Link>
+            </a>
             .
           </p>
         </div>
