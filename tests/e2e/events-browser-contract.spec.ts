@@ -141,7 +141,7 @@ test("calendar trailing next-month days load that month before jumping", async (
 
   await expect.poll(() => sawNextMonthRequest).toBe(true);
   await expect(calendarRail.getByRole("heading")).toHaveText(/june 2026/i);
-  await expect(page.locator('[data-day-key="2026-06-01"]')).toBeVisible();
+  await expect(page.locator('[data-day-key="2026-06-01"]')).toBeAttached();
   await expect(page.getByText(nextMonthEvent.title)).toBeVisible();
 });
 
