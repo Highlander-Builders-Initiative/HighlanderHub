@@ -31,6 +31,28 @@ test("event filters expose accessible state and recovery actions", async ({
   await expect(summary).toHaveText("1 event loaded");
 });
 
+test("club suggestion highlight survives narrowed search results", async ({
+  page,
+}) => {
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+
+  await page.goto("/events");
+
+  const search = page.getByLabel("Search events");
+  await search.fill("ucr");
+  await expect(page.getByRole("listbox", { name: "Clubs" })).toBeVisible();
+
+  for (let i = 0; i < 6; i += 1) {
+    await search.press("ArrowDown");
+  }
+
+  await search.fill("mcvb");
+
+  await expect(page.getByRole("option", { name: /ucr mcvb/i })).toBeVisible();
+  expect(pageErrors).toEqual([]);
+});
+
 test("calendar shows loading state while month events refresh", async ({
   page,
 }) => {
