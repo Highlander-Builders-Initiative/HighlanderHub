@@ -6,6 +6,7 @@ import { FlyerMarquee } from "@/components/home/FlyerMarquee";
 import { HeroRibbon } from "@/components/home/HeroRibbon";
 import { HeroHighlightCopy } from "@/components/home/hero-highlights";
 import { HbiLink } from "@/components/analytics/HbiLink";
+import { HBI_ABOUT_URL } from "@/lib/hbi";
 import { getEvents, getEventsSummary } from "@/lib/events";
 import {
   formatPacificDayKey,
@@ -46,9 +47,9 @@ export default async function HomePage() {
             </p>
 
             <HbiLink
-              href="https://www.instagram.com/hbi.ucr"
+              href={HBI_ABOUT_URL}
               location="hero"
-              channel="instagram"
+              channel="website"
               className="interactive-focus group inline-flex items-center gap-2"
             >
               <Image

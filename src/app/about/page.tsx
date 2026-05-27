@@ -8,6 +8,7 @@ import { Reveal } from "@/components/ui/Reveal";
 import { SubmitEventCta } from "@/components/events/SubmitEventCta";
 import { HbiLink } from "@/components/analytics/HbiLink";
 import { AboutFaq } from "@/components/about/AboutFaq";
+import { HBI_ABOUT_URL } from "@/lib/hbi";
 
 export const metadata: Metadata = {
   title: "About · Highlander Hub",
@@ -80,11 +81,11 @@ export default function AboutPage() {
       <Masthead />
 
       {/* About opener + principles */}
-      <section>
+      <section className="bg-canvas border-b border-ink/10">
         <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 md:py-20">
           <div className="grid gap-10 md:grid-cols-12 md:items-start">
             <Reveal className="md:col-span-5">
-              <p className="text-[13px] text-muted">About</p>
+              <p className="text-[13px] text-muted">About The Hub</p>
               <h1 className="mt-4 max-w-xl font-display text-[36px] font-semibold leading-[1.03] tracking-[-0.035em] text-ink sm:text-[46px] md:text-[56px]">
                 Campus events are scattered across ten different feeds.
               </h1>
@@ -124,7 +125,7 @@ export default function AboutPage() {
       </section>
 
       {/* Where events come from */}
-      <section className="bg-surface">
+      <section className="bg-surface border-b border-ink/10">
         <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 md:py-20">
           <div className="md:grid md:grid-cols-12 md:gap-10">
             <Reveal className="md:col-span-4 md:pt-1">
@@ -168,8 +169,8 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Who built it */}
-      <section>
+      {/* Who built it (HBI) */}
+      <section className="bg-surface border-b border-ink/10">
         <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 md:py-20">
           <Reveal
             as="article"
@@ -177,19 +178,27 @@ export default function AboutPage() {
           >
             <Image
               src="/logo_icon.png"
-              alt="Highlander Builders Initiative"
+              alt="Highlander Builders Initiative Logo"
               width={72}
               height={72}
               className="h-16 w-16 md:h-[72px] md:w-[72px]"
             />
             <div>
-              <h2 className="font-display text-3xl font-semibold leading-[1.1] tracking-[-0.03em] text-ink md:text-4xl">
-                Built by Highlander Builders Initiative
+              <p className="text-[13px] font-mono tracking-wider text-muted uppercase">
+                The Builders Behind Highlander Hub
+              </p>
+              <h2 className="mt-2 font-display text-3xl font-semibold leading-[1.1] tracking-[-0.035em] text-ink md:text-4xl">
+                <HbiLink
+                  href={HBI_ABOUT_URL}
+                  location="about_page"
+                  channel="website"
+                  className="interactive-focus hover:text-ink/80"
+                >
+                  Highlander Builders Initiative (HBI)
+                </HbiLink>
               </h2>
-              <p className="mt-3 max-w-2xl text-sm text-ink/70 md:text-base">
-                A product-building org for UCR students who want to ship real
-                tools. Highlander Hub is one of several products we&rsquo;ve
-                shipped; the channels below are how you get involved with HBI.
+              <p className="mt-3 max-w-3xl text-base text-ink/75 leading-relaxed md:text-lg">
+                HBI is a selective student organization at UC Riverside where technically skilled students collaborate on ambitious real-world projects. We bring together engineers and creatives to grow as innovators, while forming lasting relationships through our community.
               </p>
               <div className="mt-5 flex flex-wrap items-center gap-2">
                 <HbiLink
@@ -226,7 +235,7 @@ export default function AboutPage() {
       </section>
 
       {/* Get involved */}
-      <section>
+      <section className="bg-canvas border-b border-ink/10">
         <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 md:py-20">
           <h2 className="font-display text-3xl font-semibold leading-[1.1] tracking-[-0.03em] text-ink md:text-4xl">
             Get involved
@@ -306,7 +315,7 @@ export default function AboutPage() {
       </section>
 
       {/* FAQ */}
-      <section id="faq">
+      <section id="faq" className="bg-surface">
         <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 md:pb-24 md:pt-16">
           <Reveal className="max-w-2xl">
             <h2 className="font-display text-3xl font-semibold leading-[1.1] tracking-[-0.03em] text-ink md:text-4xl">

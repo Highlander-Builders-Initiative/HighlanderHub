@@ -6,6 +6,7 @@ import {
   type EndChoice,
 } from "@/lib/submit-datetime";
 import { Chip } from "./fields";
+import { SegmentedTimeInput } from "./SegmentedTimeInput";
 
 export function EndTimePicker({
   startsAtLocal,
@@ -86,20 +87,15 @@ export function EndTimePicker({
       )}
 
       {!disabled && endChoice === "custom" && (
-        <label className="mt-3 block animate-field-reveal">
-          <span className="sr-only">Custom end time</span>
-          <input
-            type="time"
+        <div className="mt-3 animate-field-reveal">
+          <SegmentedTimeInput
             value={endCustomTime}
-            onChange={(e) => {
-              onInteract();
-              onChangeCustomTime(e.target.value);
-            }}
-            className={`interactive-focus block w-full rounded-md border bg-canvas px-3 py-2 text-ink focus:border-ink sm:w-auto ${
-              error ? "border-deep-coral" : "border-ink/15"
-            }`}
+            onChange={onChangeCustomTime}
+            onInteract={onInteract}
+            error={Boolean(error)}
+            ariaLabel="Custom end time"
           />
-        </label>
+        </div>
       )}
 
       {!disabled && previewLocal && !error && (
