@@ -22,29 +22,39 @@ export function useCalendarMonthEvents({
   initialCalendarEvents,
   calendarRange,
 }: UseCalendarMonthEventsArgs) {
+  const initialCalendarRangeKey = useRef(calendarRangeKey(calendarRange));
   const [calendarEvents, setCalendarEvents] = useState(initialCalendarEvents);
   const [isCalendarLoading, setIsCalendarLoading] = useState(false);
-  const loadedCalendarRangeKey = useRef(calendarRangeKey(calendarRange));
+  const [loadedCalendarRangeKey, setLoadedCalendarRangeKey] = useState(
+    initialCalendarRangeKey.current
+  );
+  const [attemptedCalendarRangeKey, setAttemptedCalendarRangeKey] = useState(
+    initialCalendarRangeKey.current
+  );
+  const currentCalendarRangeKey = calendarRangeKey(calendarRange);
 
   useEffect(() => {
     setCalendarEvents(initialCalendarEvents);
+    setLoadedCalendarRangeKey(initialCalendarRangeKey.current);
+    setAttemptedCalendarRangeKey(initialCalendarRangeKey.current);
     setIsCalendarLoading(false);
   }, [initialCalendarEvents]);
 
   useEffect(() => {
-    const key = calendarRangeKey(calendarRange);
-    if (key === loadedCalendarRangeKey.current) {
+    const key = currentCalendarRangeKey;
+    if (key === loadedCalendarRangeKey) {
       setIsCalendarLoading(false);
       return;
     }
 
     let cancelled = false;
+    setAttemptedCalendarRangeKey(key);
     setIsCalendarLoading(true);
 
     fetchCalendarEvents(calendarRange.start, calendarRange.end)
       .then((nextEvents) => {
         if (cancelled) return;
-        loadedCalendarRangeKey.current = key;
+        setLoadedCalendarRangeKey(key);
         setCalendarEvents(nextEvents);
       })
       .catch(() => {
@@ -58,7 +68,18 @@ export function useCalendarMonthEvents({
     return () => {
       cancelled = true;
     };
-  }, [calendarRange]);
+  }, [
+    calendarRange.end,
+    calendarRange.start,
+    currentCalendarRangeKey,
+    loadedCalendarRangeKey,
+  ]);
 
-  return { calendarEvents, isCalendarLoading };
+  return {
+    calendarEvents,
+    isCalendarLoading:
+      isCalendarLoading ||
+      (currentCalendarRangeKey !== loadedCalendarRangeKey &&
+        currentCalendarRangeKey !== attemptedCalendarRangeKey),
+  };
 }
