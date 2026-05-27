@@ -461,6 +461,7 @@ export function EventsBrowser({
           onClearDayWindow={clearDayWindow}
           onClearQuery={clearQuery}
           todayKey={todayKey}
+          observedDayKey={observedDayKey}
           dayKeys={dayKeys}
           grouped={grouped}
           loadedCount={loadedEvents.length}

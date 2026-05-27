@@ -26,6 +26,7 @@ type Props = {
   onClearDayWindow: () => void;
   onClearQuery: () => void;
   todayKey: string;
+  observedDayKey: string;
   dayKeys: string[];
   grouped: Map<string, CampusEvent[]>;
   loadedCount: number;
@@ -55,6 +56,7 @@ export function EventsFeedColumn({
   onClearDayWindow,
   onClearQuery,
   todayKey,
+  observedDayKey,
   dayKeys,
   grouped,
   loadedCount,
@@ -101,7 +103,7 @@ export function EventsFeedColumn({
         className="sticky z-20 -mx-4 mb-5 border-b border-white/50 bg-white/55 px-4 py-2 shadow-[0_12px_28px_rgba(15,17,21,0.06)] backdrop-blur-xl sm:-mx-6 sm:px-6 lg:-mx-0 lg:px-0 lg:shadow-none"
         style={{ top: 0 }}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 lg:gap-3">
           <button
             type="button"
             onClick={onOpenMobileFilters}
@@ -130,6 +132,26 @@ export function EventsFeedColumn({
               </span>
             )}
           </button>
+
+          {dayKeys.length > 0 && (
+            <>
+              <span
+                aria-live="polite"
+                className="hidden shrink-0 items-baseline gap-2 whitespace-nowrap font-display text-[14px] font-semibold tracking-[-0.005em] text-ink lg:inline-flex"
+              >
+                {formatPacificDayKey(observedDayKey)}
+                {observedDayKey === todayKey && (
+                  <span className="font-body text-[11px] font-medium text-ink/55">
+                    Today
+                  </span>
+                )}
+              </span>
+              <span
+                aria-hidden
+                className="hidden h-4 w-px bg-ink/15 lg:inline-block"
+              />
+            </>
+          )}
 
           <EventSearchBox query={query} onQueryChange={onQueryChange} />
         </div>
@@ -189,26 +211,26 @@ export function EventsFeedColumn({
           }}
           className="mb-10"
         >
-          <div
+          <h3
             ref={(el) => {
               if (el) dayHeaderRefs.current.set(day, el);
               else dayHeaderRefs.current.delete(day);
             }}
             data-day-key={day}
-            className="mb-3 scroll-mt-24 flex items-baseline justify-between gap-4 border-b border-ink/10 pb-2"
+            className="sticky z-10 -mx-4 mb-3 flex scroll-mt-24 items-baseline gap-2.5 bg-gradient-to-b from-canvas via-canvas/55 to-transparent px-4 py-2 font-display text-xl font-semibold tracking-[-0.02em] text-ink sm:-mx-6 sm:px-6 lg:static lg:invisible lg:m-0 lg:h-0 lg:overflow-hidden lg:bg-none lg:p-0"
+            style={{
+              top: 53,
+              backdropFilter: "blur(8px)",
+              WebkitBackdropFilter: "blur(8px)",
+            }}
           >
-            <h3 className="flex items-baseline gap-2.5 font-display text-xl font-semibold tracking-[-0.02em] text-ink sm:text-2xl">
-              {formatPacificDayKey(day)}
-              {isToday && (
-                <span className="font-body text-[12px] font-medium text-ink/55">
-                  Today
-                </span>
-              )}
-            </h3>
-            <span className="text-[13px] text-muted">
-              {dayEvents.length} {dayEvents.length === 1 ? "event" : "events"}
-            </span>
-          </div>
+            {formatPacificDayKey(day)}
+            {isToday && (
+              <span className="font-body text-[12px] font-medium text-ink/55">
+                Today
+              </span>
+            )}
+          </h3>
           <div className="flex flex-col gap-5 sm:gap-2.5">
             {dayEvents.map((ev) => (
               <EventCard key={ev.id} event={ev} loadedCount={loadedCount} />
