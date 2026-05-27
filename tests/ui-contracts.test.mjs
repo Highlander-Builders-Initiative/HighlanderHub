@@ -62,6 +62,7 @@ test("calendar loads its own month-range events outside feed pagination", () => 
   const feedColumn = read("src/components/events/EventsFeedColumn.tsx");
   const calendar = read("src/components/events/EventsMiniCalendar.tsx");
   const data = read("src/lib/events/index.ts");
+  const supabase = read("src/lib/supabase.ts");
   const eventsApi = read("src/lib/events/api.ts");
   const calendarApi = read("src/app/api/events/calendar/route.ts");
 
@@ -70,6 +71,8 @@ test("calendar loads its own month-range events outside feed pagination", () => 
   assert.match(data, /\.lt\("starts_at", endIso\)/);
   assert.match(data, /parsePacificDateTimeInput\(`\$\{startDayKey\}T00:00`\)/);
   assert.doesNotMatch(data, /calendar events"[\s\S]*activeEventFilter/);
+  assert.match(supabase, /cache: "no-store"/);
+  assert.match(supabase, /global: \{ fetch: uncachedFetch \}/);
   assert.match(page, /getCalendarEvents/);
   assert.match(page, /calendarEvents=\{calendarEvents\}/);
   assert.match(calendarApi, /getCalendarEvents/);
