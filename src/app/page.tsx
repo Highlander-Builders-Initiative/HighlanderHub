@@ -74,7 +74,7 @@ export default async function HomePage() {
             style={{ animationDelay: "80ms" }}
           >
             Every UCR event,
-            <span className="block text-muted">one page.</span>
+            <span className="block text-ink">one page.</span>
           </h1>
 
           <p
