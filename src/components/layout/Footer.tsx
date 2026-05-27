@@ -100,7 +100,23 @@ export function Footer() {
 
       <div className="border-t border-ink/10">
         <div className="mx-auto flex max-w-7xl flex-col items-start gap-2 px-4 py-5 text-xs text-muted sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <p>© {new Date().getFullYear()} Highlander Hub</p>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+            <p>© {new Date().getFullYear()} Highlander Hub</p>
+            <span className="hidden sm:inline text-ink/20" aria-hidden="true">·</span>
+            <Link
+              href="/privacy"
+              className="interactive-focus font-medium hover:text-ink transition-colors hover:underline underline-offset-4"
+            >
+              Privacy Policy
+            </Link>
+            <span className="hidden sm:inline text-ink/20" aria-hidden="true">·</span>
+            <Link
+              href="/terms"
+              className="interactive-focus font-medium hover:text-ink transition-colors hover:underline underline-offset-4"
+            >
+              Terms of Service
+            </Link>
+          </div>
           <p>Not affiliated with UC Riverside.</p>
         </div>
       </div>
