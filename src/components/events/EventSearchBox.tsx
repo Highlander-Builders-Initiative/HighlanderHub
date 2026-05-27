@@ -97,10 +97,10 @@ export function EventSearchBox({ query, onQueryChange }: Props) {
   );
 
   const showDropdown = open && clubs.length > 0;
+  const activeClub =
+    showDropdown && activeIndex >= 0 ? clubs[activeIndex] : undefined;
   const activeOptionId =
-    showDropdown && activeIndex >= 0
-      ? `${listboxId}-opt-${clubs[activeIndex].handle}`
-      : undefined;
+    activeClub ? `${listboxId}-opt-${activeClub.handle}` : undefined;
 
   return (
     <div ref={containerRef} className="relative min-w-0 flex-1">
