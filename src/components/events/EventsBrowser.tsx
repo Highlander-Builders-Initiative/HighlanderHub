@@ -271,13 +271,8 @@ export function EventsBrowser({
     initialDayKey: todayKey,
   });
 
-  const handleCalendarSelect = useCallback(
+  const mergeCalendarEventsForDay = useCallback(
     (dayKey: string) => {
-      pendingCalendarScrollRef.current = dayKey;
-      calendarJumpSuppressUntilRef.current = Date.now() + 1200;
-      setObservedDayKey(dayKey);
-      setCalendarCursor(startOfPacificMonthKey(dayKey));
-
       const lastLoadedDay = dayKeys.at(-1) ?? "";
       const eventsToMerge =
         dayKey > lastLoadedDay
@@ -288,16 +283,34 @@ export function EventsBrowser({
           : calendarEvents.filter(
               (event) => pacificDayKey(event.startsAt) === dayKey
             );
+      const loadedIds = new Set(loadedEvents.map((event) => event.id));
+      const hasNewEvents = eventsToMerge.some(
+        (event) => !loadedIds.has(event.id)
+      );
 
-      if (eventsToMerge.length > 0) {
-        setLoadedEvents((current) =>
-          mergeUniqueEventsByStart(current, eventsToMerge)
-        );
-      }
+      if (!hasNewEvents) return false;
+
+      setLoadedEvents((current) =>
+        mergeUniqueEventsByStart(current, eventsToMerge)
+      );
+      return true;
+    },
+    [calendarEvents, dayKeys, loadedEvents]
+  );
+
+  const handleCalendarSelect = useCallback(
+    (dayKey: string) => {
+      const now = Date.now();
+      pendingCalendarScrollRef.current = dayKey;
+      calendarJumpSuppressUntilRef.current = now + 1200;
+      userInitiatedScrollRef.current = now;
+      setObservedDayKey(dayKey);
+      setCalendarCursor(startOfPacificMonthKey(dayKey));
+      mergeCalendarEventsForDay(dayKey);
 
       track("events_calendar_jump", { day: dayKey });
     },
-    [calendarEvents, setObservedDayKey, dayKeys]
+    [mergeCalendarEventsForDay, setObservedDayKey]
   );
 
   useLayoutEffect(() => {
@@ -306,6 +319,9 @@ export function EventsBrowser({
 
     const el = dayHeaderRefs.current.get(pending);
     if (!el) {
+      if (mergeCalendarEventsForDay(pending) || isCalendarLoading) {
+        return;
+      }
       if (!dayKeys.includes(pending)) {
         pendingCalendarScrollRef.current = null;
       }
@@ -313,6 +329,7 @@ export function EventsBrowser({
     }
 
     userInitiatedScrollRef.current = Date.now();
+    setObservedDayKey(pending);
     el.scrollIntoView({ behavior: "smooth", block: "start" });
 
     const dayKey = pending;
@@ -323,7 +340,13 @@ export function EventsBrowser({
     }, 1200);
 
     return () => window.clearTimeout(timeoutId);
-  }, [loadedEvents, dayKeys, isLoadingMore]);
+  }, [
+    dayKeys,
+    isCalendarLoading,
+    isLoadingMore,
+    mergeCalendarEventsForDay,
+    setObservedDayKey,
+  ]);
 
   useLayoutEffect(() => {
     const anchor = pendingLoadAnchorRef.current;
@@ -342,6 +365,7 @@ export function EventsBrowser({
   }, [loadedEvents]);
 
   useEffect(() => {
+    if (pendingCalendarScrollRef.current) return;
     setCalendarCursor((prev) => {
       const next = startOfPacificMonthKey(observedDayKey);
       return prev === next ? prev : next;
