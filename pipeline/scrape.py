@@ -38,6 +38,10 @@ from config import (
 log = logging.getLogger("pipeline.scrape")
 
 
+class InstagramStoriesBadRequest(RuntimeError):
+    """Fatal Instagram stories API failure that should stop account iteration."""
+
+
 def _login(L: instaloader.Instaloader) -> None:
     if SESSION_FILE:
         # Session file produced by `instaloader -l <user>`; safer for unattended runs.
@@ -247,19 +251,27 @@ def scrape_account(L: instaloader.Instaloader, acct: dict[str, Any]) -> tuple[in
     profile = _resolve_profile(L, handle, instagram_user_id=instagram_user_id)
     seen = new = 0
 
-    stories = L.get_stories(userids=[profile.userid])
-    for story in stories:
-        try:
-            items = list(story.get_items())
-        except KeyError:
-            # Instaloader raises when the reels API omits this user (no active stories).
-            log.info("%s: no active stories in API response", handle)
-            continue
-        for item in items:
-            seen += 1
-            payload = _serialize_item(item, handle)
-            if _write_item(payload, handle):
-                new += 1
+    try:
+        stories = L.get_stories(userids=[profile.userid])
+        for story in stories:
+            try:
+                items = list(story.get_items())
+            except KeyError:
+                # Instaloader raises when the reels API omits this user (no active stories).
+                log.info("%s: no active stories in API response", handle)
+                continue
+            for item in items:
+                seen += 1
+                payload = _serialize_item(item, handle)
+                if _write_item(payload, handle):
+                    new += 1
+    except QueryReturnedBadRequestException as e:
+        raise InstagramStoriesBadRequest(
+            f"{handle}: Instagram stories GraphQL request failed with bad request: {e}. "
+            "Stopping the Instagram scrape now because this usually repeats for every "
+            "configured account until the session, rate limit, or Instaloader query "
+            "compatibility recovers."
+        ) from e
     return seen, new
 
 
@@ -308,6 +320,10 @@ def main() -> None:
                 e,
                 exc_info=True,
             )
+        except InstagramStoriesBadRequest as e:
+            totals["errors"] += 1
+            log.error("%s", e)
+            raise RuntimeError(str(e)) from None
         except Exception as e:  # noqa: BLE001 — keep run alive across per-account failures
             totals["errors"] += 1
             log.warning("%s: %s: %s", handle, type(e).__name__, e, exc_info=True)
