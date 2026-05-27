@@ -145,6 +145,20 @@ class ExtractStoriesTests(unittest.TestCase):
             calls["generate_content"]["config"]["response_mime_type"],
         )
 
+    def test_gemini_prompt_requires_pacific_wall_time(self) -> None:
+        prompt = self.extract_stories._build_gemini_prompt(
+            {
+                "handle": "ucrwrc",
+                "posted_at": "2026-05-26T15:37:33Z",
+            },
+            {"label": "Women's Resource Center @ UCR", "category": "community"},
+            "SUNDAY, MAY 31ST\n11:00 AM 2:00 PM",
+        )
+
+        self.assertIn("America/Los_Angeles", prompt)
+        self.assertIn("Do not change an explicit OCR date", prompt)
+        self.assertIn("11:00 AM as starts_at and 2:00 PM as ends_at", prompt)
+
     def test_supabase_cache_hit_writes_local_cache_without_ocr_or_gemini_calls(self) -> None:
         raw = {
             "id": "3894795737410658772",
@@ -395,6 +409,78 @@ class ExtractStoriesTests(unittest.TestCase):
         assert row is not None
         self.assertEqual("2026-05-16T02:00:00+00:00", row["starts_at"])
         self.assertEqual("2026-05-16T04:00:00+00:00", row["ends_at"])
+
+    def test_event_row_uses_unambiguous_ocr_date_over_gemini_date(self) -> None:
+        raw = {
+            "id": "3905650594048735498",
+            "handle": "ucrwrc",
+            "posted_at": "2026-05-26T15:37:33Z",
+        }
+        cached = {
+            "status": "ok",
+            "ocr_text": (
+                "THIS SUNDAY!\n"
+                "MATCHA CRAWL\n"
+                "SUNDAY, MAY 31ST\n"
+                "11:00 AM 2:00 PM\n"
+                "Bring your R'Card and a reusable cup"
+            ),
+            "result": {
+                "is_event": True,
+                "title": "UCR Matcha Crawl",
+                "starts_at": "2026-06-01T11:00:00-07:00",
+                "ends_at": "2026-06-01T14:00:00-07:00",
+            },
+        }
+
+        row = self.extract_stories._to_event_row(
+            raw,
+            cached,
+            {"label": "Women's Resource Center @ UCR", "category": "community"},
+            "2026-05-26T21:04:04+00:00",
+        )
+
+        self.assertIsNotNone(row)
+        assert row is not None
+        self.assertEqual("ig_ucrwrc_20260531T1800Z", row["id"])
+        self.assertEqual("2026-05-31T18:00:00+00:00", row["starts_at"])
+        self.assertEqual("2026-05-31T21:00:00+00:00", row["ends_at"])
+
+    def test_event_row_uses_pacific_zone_over_gemini_offset(self) -> None:
+        raw = {
+            "id": "3904501726242275192",
+            "handle": "ucrwrc",
+            "posted_at": "2026-05-25T01:34:57Z",
+        }
+        cached = {
+            "status": "ok",
+            "ocr_text": (
+                "NEXT SUNDAY!\n"
+                "MATCHA CRAWL\n"
+                "SUNDAY, MAY 31ST\n"
+                "11:00 AM 2:00 PM\n"
+                "QAMARIA YEMENI COFFEE CO."
+            ),
+            "result": {
+                "is_event": True,
+                "title": "MATCHA CRAWL",
+                "starts_at": "2026-05-31T11:00:00-08:00",
+                "ends_at": "2026-05-31T14:00:00-08:00",
+            },
+        }
+
+        row = self.extract_stories._to_event_row(
+            raw,
+            cached,
+            {"label": "Women's Resource Center @ UCR", "category": "community"},
+            "2026-05-26T21:04:04+00:00",
+        )
+
+        self.assertIsNotNone(row)
+        assert row is not None
+        self.assertEqual("ig_ucrwrc_20260531T1800Z", row["id"])
+        self.assertEqual("2026-05-31T18:00:00+00:00", row["starts_at"])
+        self.assertEqual("2026-05-31T21:00:00+00:00", row["ends_at"])
 
     def test_event_row_drops_invalid_optional_ends_at(self) -> None:
         raw = {
