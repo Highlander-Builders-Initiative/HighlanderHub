@@ -691,8 +691,23 @@ def _collect_event_rows(
 def _upsert_events(rows: list[dict[str, Any]]) -> int:
     if not rows:
         return 0
+    
+    # Query locked events from Supabase to prevent overwriting manual corrections
+    try:
+        from db import client
+        db_client = client()
+        locked_res = db_client.table("events").select("id").eq("is_locked", True).execute()
+        locked_ids = {row["id"] for row in getattr(locked_res, "data", []) or []}
+        if locked_ids:
+            log.info("Found %d manually locked events in database. Excluding from story crawler run.", len(locked_ids))
+            rows = [r for r in rows if r["id"] not in locked_ids]
+    except Exception as e:
+        log.warning("Could not fetch locked events for story exclusion: %s. Proceeding with all events.", e)
+        
+    if not rows:
+        return 0
+        
     from db import upsert_batched
-
     return upsert_batched("events", rows)
 
 

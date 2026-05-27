@@ -436,6 +436,18 @@ def main() -> None:
     by_id: dict[str, dict[str, Any]] = {r["id"]: r for r in rows}
     deduped = list(by_id.values())
 
+    # Query already locked events from Supabase to prevent overwriting manual edits
+    try:
+        from db import client
+        db_client = client()
+        locked_res = db_client.table("events").select("id").eq("is_locked", True).execute()
+        locked_ids = {row["id"] for row in getattr(locked_res, "data", []) or []}
+        if locked_ids:
+            log.info("Found %d manually locked events in database. Excluding from scraper run.", len(locked_ids))
+            deduped = [r for r in deduped if r["id"] not in locked_ids]
+    except Exception as e:
+        log.warning("Could not fetch locked events for exclusion: %s. Proceeding with all events.", e)
+
     deleted = 0
     for prefix in dict.fromkeys(stale_prefixes):
         deleted += delete_rows_by_prefix("events", prefix)
