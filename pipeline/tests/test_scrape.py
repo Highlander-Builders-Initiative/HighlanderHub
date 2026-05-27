@@ -74,6 +74,32 @@ class ScrapeMainTests(unittest.TestCase):
                                 ):
                                     self.scrape.main()
 
+    def test_stories_bad_request_stops_remaining_accounts(self) -> None:
+        accounts = [{"handle": "acm_ucr"}, {"handle": "asucr"}]
+        loader = Mock()
+
+        with patch.object(self.scrape, "ensure_dirs"):
+            with patch.object(self.scrape, "_load_scrape_accounts", return_value=accounts):
+                with patch.object(self.scrape.instaloader, "Instaloader", return_value=loader):
+                    with patch.object(self.scrape, "_login"):
+                        with patch.object(
+                            self.scrape,
+                            "scrape_account",
+                            side_effect=self.scrape.InstagramStoriesBadRequest(
+                                "acm_ucr: Instagram stories GraphQL request failed "
+                                "with bad request: 400 Bad Request"
+                            ),
+                        ) as scrape_account:
+                            with patch.object(self.scrape.time, "sleep") as sleep:
+                                with self.assertRaisesRegex(
+                                    RuntimeError,
+                                    "Instagram stories GraphQL request failed",
+                                ):
+                                    self.scrape.main()
+
+        scrape_account.assert_called_once_with(loader, accounts[0])
+        sleep.assert_not_called()
+
     def test_session_file_login_loads_without_verification(self) -> None:
         loader = Mock()
 
@@ -162,6 +188,30 @@ class ScrapeMainTests(unittest.TestCase):
             )
 
         self.assertEqual((0, 0), (seen, new))
+
+    def test_scrape_account_wraps_stories_bad_request_as_fatal(self) -> None:
+        loader = Mock()
+        profile = Mock(userid=10839758322)
+
+        def bad_stories():
+            raise self.scrape.QueryReturnedBadRequestException(
+                '400 Bad Request - "fail" status, message "invalid request"'
+            )
+            yield
+
+        loader.get_stories.return_value = bad_stories()
+
+        with patch.object(self.scrape, "_resolve_profile", return_value=profile):
+            with self.assertRaisesRegex(
+                self.scrape.InstagramStoriesBadRequest,
+                "Stopping the Instagram scrape",
+            ):
+                self.scrape.scrape_account(
+                    loader,
+                    {"handle": "acm_ucr", "instagram_user_id": 10839758322},
+                )
+
+        loader.get_stories.assert_called_once_with(userids=[10839758322])
 
     def test_followed_accounts_merge_curated_metadata(self) -> None:
         loader = Mock()
