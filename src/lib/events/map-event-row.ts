@@ -1,9 +1,11 @@
 import type { EventRow } from "@/lib/supabase-rows";
+import { sanitizePublicEventHost } from "@/lib/events/anonymized-hosts";
 import { normalizeHttpUrl } from "@/lib/events/validation";
 import type { CampusEvent } from "@/types/event";
 
 /** DB snake_case row → app `CampusEvent` (shared by feed and admin). */
 export function eventRowToCampusEvent(r: EventRow): CampusEvent {
+  const { host, hostHandle } = sanitizePublicEventHost(r.host, r.host_handle);
   return {
     id: r.id,
     title: r.title,
@@ -11,8 +13,8 @@ export function eventRowToCampusEvent(r: EventRow): CampusEvent {
     startsAt: r.starts_at,
     endsAt: r.ends_at ?? undefined,
     location: r.location,
-    host: r.host,
-    hostHandle: r.host_handle ?? undefined,
+    host,
+    hostHandle,
     category: r.category,
     tags: r.tags,
     source: r.source,

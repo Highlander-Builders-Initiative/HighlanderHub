@@ -86,6 +86,7 @@ export default async function EventDetailPage({
   const stamp = formatDateStamp(event.startsAt);
   const sourceLabel = SOURCE_LABELS[event.source];
   const hasImage = Boolean(event.imageUrl);
+  const showHostedBy = Boolean(event.host || event.hostHandle);
 
   return (
     <main className="relative min-h-screen bg-canvas pb-28 md:pb-0">
@@ -159,18 +160,22 @@ export default async function EventDetailPage({
                 </div>
 
                 <dl className="space-y-4 text-[14px]">
-                  <div>
-                    <dt className="text-[12px] text-muted">Hosted by</dt>
-                    <dd className="mt-1 font-medium text-ink">
-                      {event.host}
-                      {event.hostHandle && (
-                        <span className="mt-0.5 block text-[13px] font-normal text-muted">
-                          {event.hostHandle}
-                        </span>
-                      )}
-                    </dd>
-                  </div>
-                  <div className="hairline" />
+                  {showHostedBy && (
+                    <>
+                      <div>
+                        <dt className="text-[12px] text-muted">Hosted by</dt>
+                        <dd className="mt-1 font-medium text-ink">
+                          {event.host}
+                          {event.hostHandle && (
+                            <span className="mt-0.5 block text-[13px] font-normal text-muted">
+                              {event.hostHandle}
+                            </span>
+                          )}
+                        </dd>
+                      </div>
+                      <div className="hairline" />
+                    </>
+                  )}
                   <div>
                     <dt className="text-[12px] text-muted">Source</dt>
                     <dd className="mt-1 text-ink">{sourceLabel}</dd>
