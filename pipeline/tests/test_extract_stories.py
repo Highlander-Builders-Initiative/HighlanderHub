@@ -352,6 +352,13 @@ class ExtractStoriesTests(unittest.TestCase):
         self.assertEqual("UCR Cybersecurity Club", row["host"])
         self.assertEqual("cyber_ucr", row["host_handle"])
         self.assertEqual("UC Riverside", row["location"])
+        self.assertEqual("career", row["category"])
+        self.assertEqual(["security", "101"], row["tags"])
+        self.assertEqual("instagram", row["source"])
+        self.assertEqual(raw["permalink"], row["source_url"])
+        self.assertEqual(raw["image_url"], row["image_url"])
+        self.assertEqual(raw["story_cta_url"], row["rsvp_url"])
+        self.assertTrue(row["rsvp_required"])
 
     def test_cached_event_blanks_host_for_anonymized_handle(self) -> None:
         raw = {
@@ -379,13 +386,6 @@ class ExtractStoriesTests(unittest.TestCase):
         assert row is not None
         self.assertEqual("", row["host"])
         self.assertIsNone(row["host_handle"])
-        self.assertEqual("career", row["category"])
-        self.assertEqual(["security", "101"], row["tags"])
-        self.assertEqual("instagram", row["source"])
-        self.assertEqual(raw["permalink"], row["source_url"])
-        self.assertEqual(raw["image_url"], row["image_url"])
-        self.assertEqual(raw["story_cta_url"], row["rsvp_url"])
-        self.assertTrue(row["rsvp_required"])
 
     def test_event_row_rejects_non_iso_starts_at(self) -> None:
         raw = {

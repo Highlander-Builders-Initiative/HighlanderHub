@@ -65,7 +65,7 @@ function EventCardComponent({
       onFocus={prefetch}
       aria-label={eventListLinkLabel(event)}
       data-event-id={event.id}
-      className={`interactive-focus group relative isolate flex w-full min-w-0 overflow-hidden rounded-xl border border-ink/10 bg-canvas transition-[border-color,box-shadow] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-ink/30 hover:shadow-card ${
+      className={`interactive-focus card-hover group relative isolate flex w-full min-w-0 overflow-hidden rounded-xl border border-ink/10 bg-canvas transition-[border-color,box-shadow] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-ink/30 hover:shadow-card ${
         compact ? "" : "min-h-[6rem]"
       }`}
     >
