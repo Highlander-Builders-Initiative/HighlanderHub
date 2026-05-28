@@ -82,7 +82,7 @@ export function EventsFeedColumn({
   );
 
   return (
-    <div className="min-w-0 lg:py-8">
+    <div className="min-w-0 pt-6 sm:pt-8 lg:py-8">
       <header className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
         <div className="min-w-0">
           <h1 className="font-display text-[28px] font-semibold leading-[1.05] tracking-[-0.025em] text-ink sm:text-[34px]">
