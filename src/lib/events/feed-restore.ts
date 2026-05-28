@@ -78,7 +78,7 @@ export async function restoreEventsUntilTarget(
   return { current: restored, next: restoredNext, more: restoredMore };
 }
 
-type RestoreIntent =
+export type RestoreIntent =
   | {
       kind: "card";
       eventId: string;
@@ -91,8 +91,8 @@ type RestoreIntent =
   | { kind: "scrollY"; scrollY: number }
   | { kind: "none" };
 
-function deriveRestoreIntent(
-  snapshot: RestoreSavedEventFeedSpotArgs["snapshot"],
+export function deriveRestoreIntent(
+  snapshot: RestoreSnapshot | null,
   returnScroll: SavedScrollPosition | null,
   currentEvents: CampusEvent[],
   currentHasMore: boolean,
@@ -134,7 +134,7 @@ function deriveRestoreIntent(
   return { kind: "none" };
 }
 
-type RestoreSnapshot = Omit<SavedEventFeedSnapshot, "savedAt" | "scrollY">;
+export type RestoreSnapshot = Omit<SavedEventFeedSnapshot, "savedAt" | "scrollY">;
 
 type RestoreSavedEventFeedSpotArgs = {
   snapshot: RestoreSnapshot | null;
