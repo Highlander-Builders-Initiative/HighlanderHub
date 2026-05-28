@@ -352,6 +352,33 @@ class ExtractStoriesTests(unittest.TestCase):
         self.assertEqual("UCR Cybersecurity Club", row["host"])
         self.assertEqual("cyber_ucr", row["host_handle"])
         self.assertEqual("UC Riverside", row["location"])
+
+    def test_cached_event_blanks_host_for_anonymized_handle(self) -> None:
+        raw = {
+            "id": "3894795737410658769",
+            "handle": "highlander_opps",
+            "permalink": "https://www.instagram.com/stories/highlander_opps/3894795737410658769/",
+        }
+        cached = {
+            "status": "ok",
+            "result": {
+                "is_event": True,
+                "title": "Opportunity Fair",
+                "starts_at": "2026-05-15T19:00:00-07:00",
+            },
+        }
+
+        row = self.extract_stories._to_event_row(
+            raw,
+            cached,
+            {"label": "highlander_opps", "category": "club"},
+            "2026-05-14T12:00:00+00:00",
+        )
+
+        self.assertIsNotNone(row)
+        assert row is not None
+        self.assertEqual("", row["host"])
+        self.assertIsNone(row["host_handle"])
         self.assertEqual("career", row["category"])
         self.assertEqual(["security", "101"], row["tags"])
         self.assertEqual("instagram", row["source"])

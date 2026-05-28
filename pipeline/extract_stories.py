@@ -42,6 +42,8 @@ EVENT_CATEGORIES = (
     "free_food",
 )
 REMOTE_CACHE_TERMINAL_STATUSES = {"ok", "not_event", "no_text", "image_expired"}
+# Instagram handles that must not appear as the public "hosted by" name on listings.
+_ANONYMIZED_HOST_HANDLES = frozenset({"highlander_opps"})
 PACIFIC_TZ = ZoneInfo("America/Los_Angeles")
 _MONTHS = {
     "jan": 1,
@@ -635,6 +637,14 @@ def _to_event_row(
     handle = str(raw.get("handle") or "")
     rsvp_url = _normalize_url(llm.get("rsvp_url") or raw.get("story_cta_url"))
 
+    # Accounts that asked not to be named publicly on scraped listings.
+    if handle in _ANONYMIZED_HOST_HANDLES:
+        host = ""
+        host_handle = None
+    else:
+        host = account_meta.get("label") or handle
+        host_handle = handle
+
     # Derive the event ID from (handle, starts_at) so multiple stories about
     # the same event (announcement flyer + "happening now" reminder) collapse
     # into one row via upsert instead of becoming separate events.
@@ -647,8 +657,8 @@ def _to_event_row(
         "starts_at": starts_at,
         "ends_at": ends_at,
         "location": str(llm.get("location") or "").strip() or "UC Riverside",
-        "host": account_meta.get("label") or handle,
-        "host_handle": handle,
+        "host": host,
+        "host_handle": host_handle,
         "category": _category(llm.get("category")),
         "tags": _clean_tags(llm.get("tags")),
         "source": "instagram",

@@ -121,7 +121,9 @@ function EventCardComponent({
               <span aria-hidden className="shrink-0 text-ink/20">·</span>
             </>
           )}
-          <span className="min-w-0 truncate">{event.host}</span>
+          {event.host ? (
+            <span className="min-w-0 truncate">{event.host}</span>
+          ) : null}
         </div>
 
         <div className="flex min-w-0 items-center gap-x-1 text-[13px] text-muted">
