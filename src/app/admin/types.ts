@@ -2,7 +2,11 @@ import type { EventCategory, EventRow } from "@/lib/supabase-rows";
 
 export type SubmissionStatus = "pending" | "approved" | "rejected";
 
-/** Pending row from `submissions` (admin moderation queue). */
+/**
+ * Pending row from `submissions` (admin moderation queue).
+ * Columns mirror `supabase/migrations/*_init_schema.sql` — add
+ * `schemas/submissions.*.json` + `npm run generate:rows` when pipeline needs it.
+ */
 export interface SubmissionRow {
   id: string;
   title: string;

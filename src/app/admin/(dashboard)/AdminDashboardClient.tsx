@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useTransition, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import {
   logoutAdmin,
   approveSubmission,
@@ -17,11 +17,20 @@ import { AdminLiveEventRow } from "../AdminLiveEventRow";
 import { AdminEventEditDrawer } from "../AdminEventEditDrawer";
 import { useAdminEventEdit } from "../useAdminEventEdit";
 import {
+  type AdminPendingAction,
+  isEventActionPending,
+  isEventUpdatePending,
+  isRejectDialogPending,
+  isSubmissionActionPending,
+} from "../pending-action";
+import {
   type SubmissionRow,
   type AdminEventRow,
   sortEventsByFeedOrder,
   matchesAdminSearch,
 } from "../types";
+
+type AdminTab = "submissions" | "events";
 
 interface AdminDashboardClientProps {
   initialSubmissions: SubmissionRow[];
@@ -43,19 +52,34 @@ export default function AdminDashboardClient({
 }: AdminDashboardClientProps) {
   const router = useRouter();
   const pendingCount = initialSubmissions.length;
-  const [activeTab, setActiveTab] = useState<"submissions" | "events">(
+  const [activeTab, setActiveTab] = useState<AdminTab>(
     pendingCount > 0 ? "submissions" : "events"
   );
-  const [searchQuery, setSearchQuery] = useState("");
-  const [submissionSearch, setSubmissionSearch] = useState("");
+  const [searchByTab, setSearchByTab] = useState<Record<AdminTab, string>>({
+    submissions: "",
+    events: "",
+  });
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [expandedSubmissionIds, setExpandedSubmissionIds] = useState<Set<string>>(
     () => new Set()
   );
-  const [isPending, startTransition] = useTransition();
+  const [pendingAction, setPendingAction] = useState<AdminPendingAction | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+
+  const runAction = useCallback(
+    async (action: AdminPendingAction, fn: () => Promise<void>) => {
+      setPendingAction(action);
+      setActionError(null);
+      try {
+        await fn();
+      } finally {
+        setPendingAction(null);
+      }
+    },
+    []
+  );
 
   const editingEvent = useMemo(
     () => initialEvents.find((e) => e.id === editingEventId) ?? null,
@@ -64,7 +88,7 @@ export default function AdminDashboardClient({
   const { form, setField, buildUpdatePayload } = useAdminEventEdit(editingEvent);
 
   const handleLogout = () => {
-    startTransition(async () => {
+    void runAction({ type: "logout" }, async () => {
       await logoutAdmin();
       router.push("/admin/login");
       router.refresh();
@@ -78,8 +102,7 @@ export default function AdminDashboardClient({
       )
     )
       return;
-    setActionError(null);
-    startTransition(async () => {
+    void runAction({ type: "approve", id }, async () => {
       const res = await approveSubmission(id);
       if (res.success) {
         router.refresh();
@@ -102,9 +125,9 @@ export default function AdminDashboardClient({
 
   const handleRejectConfirm = () => {
     if (!rejectingId) return;
-    setActionError(null);
-    startTransition(async () => {
-      const res = await rejectSubmission(rejectingId, rejectReason.trim());
+    const id = rejectingId;
+    void runAction({ type: "reject", id }, async () => {
+      const res = await rejectSubmission(id, rejectReason.trim());
       if (res.success) {
         closeRejectModal();
         router.refresh();
@@ -131,9 +154,15 @@ export default function AdminDashboardClient({
     e.preventDefault();
     if (!editingEventId) return;
 
-    setActionError(null);
-    startTransition(async () => {
-      const res = await updateEvent(editingEventId, buildUpdatePayload());
+    const built = buildUpdatePayload();
+    if (!built.ok) {
+      setActionError(built.error);
+      return;
+    }
+
+    const eventId = editingEventId;
+    void runAction({ type: "update", id: eventId }, async () => {
+      const res = await updateEvent(eventId, built.payload);
       if (res.success) {
         setEditingEventId(null);
         router.refresh();
@@ -150,8 +179,7 @@ export default function AdminDashboardClient({
       )
     )
       return;
-    setActionError(null);
-    startTransition(async () => {
+    void runAction({ type: "delete", id }, async () => {
       const res = await deleteEvent(id);
       if (res.success) {
         router.refresh();
@@ -161,9 +189,11 @@ export default function AdminDashboardClient({
     });
   };
 
+  const activeSearch = searchByTab[activeTab];
+
   const filteredSubmissions = initialSubmissions.filter((sub) =>
     matchesAdminSearch(
-      submissionSearch,
+      searchByTab.submissions,
       sub.title,
       sub.host,
       sub.location,
@@ -179,7 +209,13 @@ export default function AdminDashboardClient({
   );
 
   const filteredEvents = eventsInFeedOrder.filter((e) =>
-    matchesAdminSearch(searchQuery, e.title, e.host, e.location, e.description)
+    matchesAdminSearch(
+      searchByTab.events,
+      e.title,
+      e.host,
+      e.location,
+      e.description
+    )
   );
 
   const rejectingSubmission = rejectingId
@@ -215,8 +251,8 @@ export default function AdminDashboardClient({
             </Link>
             <button
               onClick={handleLogout}
-              disabled={isPending}
-              className="flex items-center gap-1.5 text-xs text-muted hover:text-ink transition-colors font-sans py-2 px-2.5 sm:px-3 hover:bg-surface border border-transparent hover:border-ink/5 rounded-md outline-none interactive-focus"
+              disabled={pendingAction?.type === "logout"}
+              className="flex items-center gap-1.5 text-xs text-muted hover:text-ink transition-colors font-sans py-2 px-2.5 sm:px-3 hover:bg-surface border border-transparent hover:border-ink/5 rounded-md outline-none interactive-focus disabled:opacity-50"
             >
               <IoLogOut size={15} aria-hidden />
               <span>Sign out</span>
@@ -329,11 +365,9 @@ export default function AdminDashboardClient({
             />
             <input
               type="search"
-              value={activeTab === "submissions" ? submissionSearch : searchQuery}
+              value={activeSearch}
               onChange={(e) =>
-                activeTab === "submissions"
-                  ? setSubmissionSearch(e.target.value)
-                  : setSearchQuery(e.target.value)
+                setSearchByTab((prev) => ({ ...prev, [activeTab]: e.target.value }))
               }
               placeholder={
                 activeTab === "submissions"
@@ -395,7 +429,7 @@ export default function AdminDashboardClient({
                     onToggleDescription={() => toggleSubmissionDescription(sub.id)}
                     onApprove={() => handleApprove(sub.id)}
                     onReject={() => openRejectModal(sub.id)}
-                    disabled={isPending}
+                    disabled={isSubmissionActionPending(pendingAction, sub.id)}
                   />
                 ))}
               </div>
@@ -444,7 +478,7 @@ export default function AdminDashboardClient({
                     event={evt}
                     feedIndex={feedPositionById.get(evt.id) ?? 0}
                     formatDate={formatAdminEventDate}
-                    disabled={isPending}
+                    isActionPending={isEventActionPending(pendingAction, evt.id)}
                     onEdit={() => startEditing(evt)}
                     onDelete={() => handleDelete(evt.id)}
                   />
@@ -461,7 +495,11 @@ export default function AdminDashboardClient({
           setField={setField}
           onClose={() => setEditingEventId(null)}
           onSubmit={handleUpdate}
-          isPending={isPending}
+          isPending={
+            editingEventId
+              ? isEventUpdatePending(pendingAction, editingEventId)
+              : false
+          }
         />
       )}
 
@@ -497,15 +535,15 @@ export default function AdminDashboardClient({
               <button
                 type="button"
                 onClick={closeRejectModal}
-                disabled={isPending}
-                className="flex-1 min-h-10 border border-ink/10 hover:bg-ink/5 text-muted hover:text-ink text-xs font-semibold rounded-md transition-colors outline-none interactive-focus"
+                disabled={isRejectDialogPending(pendingAction, rejectingId)}
+                className="flex-1 min-h-10 border border-ink/10 hover:bg-ink/5 text-muted hover:text-ink text-xs font-semibold rounded-md transition-colors outline-none interactive-focus disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleRejectConfirm}
-                disabled={isPending}
+                disabled={isRejectDialogPending(pendingAction, rejectingId)}
                 className="flex-1 min-h-10 bg-deep-coral hover:bg-deep-coral/90 text-canvas text-xs font-semibold rounded-md transition-colors outline-none interactive-focus disabled:opacity-50"
               >
                 Reject submission
@@ -515,7 +553,7 @@ export default function AdminDashboardClient({
         </div>
       )}
 
-      {isPending && (
+      {pendingAction && (
         <div
           className="fixed bottom-4 right-4 z-[60] bg-ink text-canvas text-xs font-sans px-3 py-2 rounded-md shadow-card flex items-center gap-2"
           role="status"

@@ -104,12 +104,51 @@ test("submission validation requires RSVP URL from form data", () => {
   assert.equal(parsed.row.rsvp_required, true);
 });
 
+test("submission Discord alert avoids submitter contact details", () => {
+  const result = spawnSync(
+    process.execPath,
+    [
+      "--input-type=module",
+      "--eval",
+      `
+        import { importTsModule } from "./tests/helpers/import-ts-module.mjs";
+        const discord = await importTsModule("src/lib/discord.ts");
+        const message = discord.buildSubmissionDiscordMessage({
+          title: "Club night",
+          starts_at: "2026-05-21T01:00:00.000Z",
+          location: "HUB 302",
+          host: "ACM at UCR",
+          submitter_name: "Private Person",
+          submitter_email: "private@example.com"
+        });
+        console.log(JSON.stringify({ message }));
+      `,
+    ],
+    {
+      cwd: process.cwd(),
+      env: { ...process.env, TZ: "UTC" },
+      encoding: "utf8",
+    }
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const { message } = JSON.parse(result.stdout.trim());
+  assert.match(message, /New Highlander Hub submission needs review/);
+  assert.match(message, /Club night/);
+  assert.match(message, /Hosted by ACM at UCR/);
+  assert.match(message, /Review: \/admin/);
+  assert.doesNotMatch(message, /Private Person/);
+  assert.doesNotMatch(message, /private@example\.com/);
+});
+
 test("submission and detail surfaces use shared URL and time guards", () => {
   const form = read("src/components/forms/submit/SubmitForm.tsx");
   const validation = read("src/components/forms/submit/submit-validation.ts");
   const detail = read("src/app/events/[id]/page.tsx");
   const actions = read("src/lib/events/actions.ts");
   const events = read("src/lib/events/index.ts");
+  const mapRow = read("src/lib/events/map-event-row.ts");
+  const adminEdit = read("src/app/admin/useAdminEventEdit.ts");
 
   assert.match(validation, /normalizeHttpUrl/);
   assert.match(validation, /buildSubmissionRow/);
@@ -120,9 +159,28 @@ test("submission and detail surfaces use shared URL and time guards", () => {
   assert.match(detail, /safeSourceUrl/);
   assert.match(actions, /normalizeHttpUrl\(event\.rsvpUrl\)/);
   assert.match(actions, /normalizeHttpUrl\(event\.sourceUrl\)/);
-  assert.match(events, /normalizeHttpUrl\(r\.source_url\)/);
-  assert.match(events, /normalizeHttpUrl\(r\.image_url\)/);
-  assert.match(events, /normalizeHttpUrl\(r\.rsvp_url\)/);
+  assert.match(mapRow, /normalizeHttpUrl\(r\.source_url\)/);
+  assert.match(mapRow, /normalizeHttpUrl\(r\.image_url\)/);
+  assert.match(mapRow, /normalizeHttpUrl\(r\.rsvp_url\)/);
+  assert.match(events, /eventRowToCampusEvent/);
+  assert.match(adminEdit, /validateEventTimes/);
+  assert.match(adminEdit, /formatPacificDateTimeInput/);
+});
+
+test("database migration adds Discord notification ledger for free food", () => {
+  const migrationsDir = sourceFile("supabase/migrations");
+  const migrationName = readdirSync(migrationsDir).find((name) =>
+    name.includes("discord_notifications")
+  );
+
+  assert.ok(migrationName, "missing Discord notification ledger migration");
+  const migration = read(`supabase/migrations/${migrationName}`);
+
+  assert.match(migration, /create table if not exists discord_notifications/i);
+  assert.match(migration, /primary key \(event_id, kind\)/i);
+  assert.match(migration, /kind in \('free_food'\)/i);
+  assert.match(migration, /enable row level security/i);
+  assert.match(migration, /where category = 'free_food'/i);
 });
 
 test("event detail lookup is request-level cached", () => {
@@ -142,6 +200,35 @@ test("e2e fixtures stay outside the main event reader", () => {
   assert.match(events, /from "\.\/fixtures"/);
   assert.doesNotMatch(events, /HIGHLANDERHUB_E2E_FIXTURES/);
   assert.doesNotMatch(events, /E2E Test: Highlander Hub Showcase/);
+});
+
+test("Pacific datetime-local values round-trip regardless of runtime TZ", () => {
+  const result = spawnSync(
+    process.execPath,
+    [
+      "--input-type=module",
+      "--eval",
+      `
+        import { importTsModule } from "./tests/helpers/import-ts-module.mjs";
+        const dates = await importTsModule("src/lib/dates.ts");
+        const local = "2026-05-20T23:30";
+        const iso = dates.parsePacificDateTimeInput(local);
+        const back = dates.formatPacificDateTimeInput(iso);
+        console.log(JSON.stringify({ iso, back }));
+      `,
+    ],
+    {
+      cwd: process.cwd(),
+      env: { ...process.env, TZ: "Asia/Tokyo" },
+      encoding: "utf8",
+    }
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout.trim()), {
+    iso: "2026-05-21T06:30:00.000Z",
+    back: "2026-05-20T23:30",
+  });
 });
 
 test("database migration adds URL scheme and end-time guardrails", () => {

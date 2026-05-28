@@ -189,6 +189,27 @@ function sameParts(
   );
 }
 
+/** `datetime-local` value in campus Pacific time (inverse of `parsePacificDateTimeInput`). */
+export function formatPacificDateTimeInput(iso: string | null | undefined): string {
+  if (!iso) return "";
+  try {
+    const parts = pacificParts(new Date(iso));
+    if (
+      !Number.isFinite(parts.year) ||
+      !Number.isFinite(parts.month) ||
+      !Number.isFinite(parts.day) ||
+      !Number.isFinite(parts.hour) ||
+      !Number.isFinite(parts.minute)
+    ) {
+      return "";
+    }
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${parts.year}-${pad(parts.month)}-${pad(parts.day)}T${pad(parts.hour)}:${pad(parts.minute)}`;
+  } catch {
+    return "";
+  }
+}
+
 export function parsePacificDateTimeInput(value: unknown): string | null {
   if (typeof value !== "string") return null;
 
