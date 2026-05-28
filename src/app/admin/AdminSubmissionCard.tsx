@@ -82,6 +82,9 @@ export function AdminSubmissionCard({
 
           {sub.image_url && (
             <div className="relative border border-ink/10 rounded-lg overflow-hidden max-h-[220px] bg-surface flex justify-center group select-none">
+              {/* Pending submission flyer at an arbitrary submitter-
+                  supplied URL; next/image's host allowlist would block it. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={sub.image_url}
                 alt="Flyer image"
