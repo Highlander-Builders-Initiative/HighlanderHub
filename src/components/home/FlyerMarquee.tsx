@@ -62,6 +62,10 @@ export function FlyerMarquee({ events }: { events: CampusEvent[] }) {
   const focalTargetRef = useRef(-1);
   const speedRef = useRef(1);
   const speedTargetRef = useRef(1);
+  // Spotlight intensity. Only the hover/focus pointer earns a focal
+  // lift — at rest the row reads flat and consistent.
+  const intensityRef = useRef(0);
+  const intensityTargetRef = useRef(0);
   const [setWidth, setSetWidth] = useState(0);
   const x = useMotionValue(0);
   const shouldReduceMotion = useReducedMotion();
@@ -159,6 +163,8 @@ export function FlyerMarquee({ events }: { events: CampusEvent[] }) {
     }
     const sT = 1 - Math.exp(-SPEED_LERP_PER_SEC * dt);
     speedRef.current += (speedTargetRef.current - speedRef.current) * sT;
+    intensityRef.current +=
+      (intensityTargetRef.current - intensityRef.current) * sT;
 
     if (!pausedRef.current) {
       x.set(wrapX(x.get() - SPEED_PX_PER_SEC * dt * speedRef.current, width));
@@ -166,13 +172,14 @@ export function FlyerMarquee({ events }: { events: CampusEvent[] }) {
 
     const trackX = x.get();
     const focalX = focalRef.current;
+    const intensity = intensityRef.current;
     const tiles = tileGeomRef.current;
     for (let i = 0; i < tiles.length; i++) {
       const { el, centerInTrack } = tiles[i];
       const tileCenter = centerInTrack + trackX;
       const dist = Math.abs(tileCenter - focalX);
       const linear = Math.max(0, 1 - dist / FOCAL_RADIUS_PX);
-      const eased = linear * linear * (3 - 2 * linear);
+      const eased = linear * linear * (3 - 2 * linear) * intensity;
       el.style.setProperty("--focal", eased.toFixed(3));
       el.style.zIndex = eased > 0.05 ? "2" : "1";
     }
@@ -269,7 +276,13 @@ export function FlyerMarquee({ events }: { events: CampusEvent[] }) {
       onPointerEnter={(event) => {
         hoveringRef.current = true;
         const fx = focalFromClientX(event.clientX);
-        if (fx !== null) focalTargetRef.current = fx;
+        if (fx !== null) {
+          focalTargetRef.current = fx;
+          // Snap focal to pointer on enter so the lift originates under
+          // the cursor instead of sweeping in from the previous position.
+          focalRef.current = fx;
+        }
+        intensityTargetRef.current = 1;
         recomputeSpeedTarget();
       }}
       onPointerMove={(event) => {
@@ -279,8 +292,7 @@ export function FlyerMarquee({ events }: { events: CampusEvent[] }) {
       }}
       onPointerLeave={() => {
         hoveringRef.current = false;
-        const rect = viewportRef.current?.getBoundingClientRect();
-        if (rect) focalTargetRef.current = rect.width / 2;
+        intensityTargetRef.current = 0;
         recomputeSpeedTarget();
       }}
       onFocusCapture={(event) => {
