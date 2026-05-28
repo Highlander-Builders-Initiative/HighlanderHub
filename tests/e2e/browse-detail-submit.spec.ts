@@ -21,11 +21,11 @@ test("browses events, opens detail, and submits an event for review", async ({
   await expect(page.getByRole("button", { name: /Share/i })).toBeVisible();
 
   await page.goto("/submit");
-  await page.route("**/rest/v1/submissions**", async (route) => {
+  await page.route("**/api/submissions", async (route) => {
     await route.fulfill({
-      status: 201,
+      status: 200,
       contentType: "application/json",
-      body: "[]",
+      body: JSON.stringify({ ok: true }),
     });
   });
 
