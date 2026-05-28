@@ -371,8 +371,8 @@ test("submission Discord webhook is owned by server route", () => {
   assert.match(form, /fetch\("\/api\/submissions"/);
   assert.doesNotMatch(form, /DISCORD_WEBHOOK_URL/);
   assert.doesNotMatch(form, /supabase\.from\("submissions"\)/);
-  assert.match(route, /supabase\.from\("submissions"\)\.insert\(body\)/);
-  assert.match(route, /notifyNewSubmission\(body\)/);
+  assert.match(route, /supabase\.from\("submissions"\)\.insert\(row\)/);
+  assert.match(route, /notifyNewSubmission\(row\)/);
   assert.match(discord, /DISCORD_WEBHOOK_URL/);
   assert.match(discord, /allowed_mentions/);
 });

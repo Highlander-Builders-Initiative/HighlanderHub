@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { notifyNewSubmission } from "@/lib/discord";
+import { pickSubmissionFields } from "@/lib/submissions";
 import { supabase } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
@@ -24,7 +25,8 @@ export async function POST(request: Request) {
     );
   }
 
-  const { error } = await supabase.from("submissions").insert(body);
+  const row = pickSubmissionFields(body);
+  const { error } = await supabase.from("submissions").insert(row);
 
   if (error) {
     return NextResponse.json(
@@ -33,7 +35,7 @@ export async function POST(request: Request) {
     );
   }
 
-  await notifyNewSubmission(body);
+  await notifyNewSubmission(row);
 
   return NextResponse.json({ ok: true });
 }
