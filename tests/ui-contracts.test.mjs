@@ -371,6 +371,7 @@ test("submission Discord webhook is owned by server route", () => {
   assert.match(form, /fetch\("\/api\/submissions"/);
   assert.doesNotMatch(form, /DISCORD_WEBHOOK_URL/);
   assert.doesNotMatch(form, /supabase\.from\("submissions"\)/);
+  assert.match(route, /parseSubmissionInsert\(body\)/);
   assert.match(route, /supabase\.from\("submissions"\)\.insert\(row\)/);
   assert.match(route, /notifyNewSubmission\(row\)/);
   assert.match(discord, /DISCORD_WEBHOOK_URL/);
@@ -379,6 +380,7 @@ test("submission Discord webhook is owned by server route", () => {
 
 test("submit form validation and upload helpers live in focused modules", () => {
   const validation = read("src/components/forms/submit/submit-validation.ts");
+  const submissions = read("src/lib/submissions.ts");
   const datetime = read("src/lib/submit-datetime.ts");
   const flyer = read("src/lib/submission-flyer.ts");
   const upload = read("src/components/forms/submit/use-flyer-upload.ts");
@@ -386,7 +388,8 @@ test("submit form validation and upload helpers live in focused modules", () => 
   const deleteRoute = read("src/app/api/submission-flyers/delete/route.ts");
 
   assert.match(validation, /validateSubmissionFields/);
-  assert.match(validation, /buildSubmissionRow/);
+  assert.match(submissions, /buildSubmissionRow/);
+  assert.match(submissions, /parseSubmissionInsert/);
   assert.match(datetime, /computeSubmitEndsAtLocal/);
   assert.match(datetime, /submitUpcomingFridayDateInput/);
   assert.match(datetime, /pacificTodayKey/);

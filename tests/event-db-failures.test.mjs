@@ -18,7 +18,8 @@ test("event queries do not turn Supabase errors into empty UI states", () => {
 });
 
 test("missing detail rows still use the not-found path", () => {
-  assert.match(source, /if \(!data\) return null;/);
+  assert.match(source, /const row = data\?\.\[0\];/);
+  assert.match(source, /if \(!row\) return null;/);
 });
 
 test("missing event details render the app-level not-found page", () => {

@@ -68,6 +68,7 @@ test("submission validation requires RSVP URL from form data", () => {
       `
         import { importTsModule } from "./tests/helpers/import-ts-module.mjs";
         const submission = await importTsModule("src/components/forms/submit/submit-validation.ts");
+        const submissions = await importTsModule("src/lib/submissions.ts");
         const form = new FormData();
         form.set("title", "Club night");
         form.set("starts_at", "2026-05-20T18:00");
@@ -85,7 +86,7 @@ test("submission validation requires RSVP URL from form data", () => {
           missing,
           valid,
           invalid,
-          row: submission.buildSubmissionRow(form, "2026-05-21T01:00:00.000Z", null, null)
+          row: submissions.buildSubmissionRow(form, "2026-05-21T01:00:00.000Z", null, null)
         }));
       `,
     ],
@@ -144,6 +145,7 @@ test("submission Discord alert avoids submitter contact details", () => {
 test("submission and detail surfaces use shared URL and time guards", () => {
   const form = read("src/components/forms/submit/SubmitForm.tsx");
   const validation = read("src/components/forms/submit/submit-validation.ts");
+  const submissions = read("src/lib/submissions.ts");
   const detail = read("src/app/events/[id]/page.tsx");
   const actions = read("src/lib/events/actions.ts");
   const events = read("src/lib/events/index.ts");
@@ -151,7 +153,8 @@ test("submission and detail surfaces use shared URL and time guards", () => {
   const adminEdit = read("src/app/admin/useAdminEventEdit.ts");
 
   assert.match(validation, /normalizeHttpUrl/);
-  assert.match(validation, /buildSubmissionRow/);
+  assert.match(submissions, /buildSubmissionRow/);
+  assert.match(submissions, /parseSubmissionInsert/);
   assert.match(form, /validateEventTimes/);
   assert.match(form, /fieldErrors\.ends_at/);
   assert.match(validation, /Use an http\(s\) URL\./);
