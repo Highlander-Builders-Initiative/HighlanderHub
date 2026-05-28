@@ -41,6 +41,9 @@ export function AdminLiveEventRow({
         {showImage ? (
           <div className="relative shrink-0 self-stretch py-2 pl-2">
             <div className="relative h-full w-[80px] min-h-[4.5rem] overflow-hidden rounded-md bg-surface">
+              {/* Admin thumbnail of an arbitrary submitter-supplied URL;
+                  next/image's host allowlist would block these. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={campusEvent.imageUrl!}
                 alt={`${campusEvent.title} flyer`}
