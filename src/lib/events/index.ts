@@ -2,6 +2,7 @@ import { cache } from "react";
 import type { CampusEvent } from "@/types/event";
 import type { EventFilterCountSource } from "@/types/events-feed";
 import type { EventRow } from "@/lib/supabase-rows";
+import { sanitizePublicEventHost } from "@/lib/events/anonymized-hosts";
 import { eventRowToCampusEvent } from "@/lib/events/map-event-row";
 import { supabase } from "@/lib/supabase";
 import {
@@ -27,6 +28,19 @@ type CalendarEventsOptions = {
   limit?: number;
 };
 
+type EventFilterCountRow = Pick<
+  EventRow,
+  | "id"
+  | "title"
+  | "description"
+  | "starts_at"
+  | "location"
+  | "host"
+  | "host_handle"
+  | "category"
+  | "tags"
+>;
+
 export type EventsPageResult = {
   events: CampusEvent[];
   hasMore: boolean;
@@ -39,26 +53,21 @@ export type EventsSummary = {
   freeFood: number;
 };
 
-function toEventFilterCountSource(r: EventRow): EventFilterCountSource {
+function toEventFilterCountSource(
+  r: EventFilterCountRow
+): EventFilterCountSource {
+  const { host, hostHandle } = sanitizePublicEventHost(r.host, r.host_handle);
   return {
     id: r.id,
     title: r.title,
     description: r.description,
     startsAt: r.starts_at,
     location: r.location,
-    host: r.host,
-    hostHandle: r.host_handle ?? undefined,
+    host,
+    hostHandle,
     category: r.category,
     tags: r.tags,
   };
-}
-
-function toEventRows(data: unknown): EventRow[] {
-  return (data ?? []) as EventRow[];
-}
-
-function toEventRow(data: unknown): EventRow {
-  return data as EventRow;
 }
 
 function describeSupabaseError(error: unknown): string {
@@ -201,9 +210,10 @@ export async function getEventsPage({
           .order("starts_at", { ascending: true })
           .order("id", { ascending: true })
           .range(from, to)
+          .overrideTypes<EventRow[], { merge: false }>()
       );
 
-      const rows = toEventRows(data);
+      const rows = data ?? [];
       const events = rows.slice(0, pageSize).map(eventRowToCampusEvent);
 
       return {
@@ -237,9 +247,10 @@ export async function getEventFilterCountSource(): Promise<
           .or(activeEventFilter(nowIso))
           .order("starts_at", { ascending: true })
           .order("id", { ascending: true })
+          .overrideTypes<EventFilterCountRow[], { merge: false }>()
       );
 
-      return toEventRows(data).map(toEventFilterCountSource);
+      return (data ?? []).map(toEventFilterCountSource);
     }
   );
 }
@@ -274,9 +285,10 @@ export async function getCalendarEvents({
           .order("starts_at", { ascending: true })
           .order("id", { ascending: true })
           .limit(Math.max(1, Math.min(limit, EVENTS_CALENDAR_RANGE_LIMIT)))
+          .overrideTypes<EventRow[], { merge: false }>()
       );
 
-      return toEventRows(data).map(eventRowToCampusEvent);
+      return (data ?? []).map(eventRowToCampusEvent);
     }
   );
 }
@@ -294,12 +306,14 @@ export const getEventById = cache(async function getEventById(
             .from("events")
             .select("*")
             .eq("id", id)
-            .maybeSingle(),
+            .limit(1)
+            .overrideTypes<EventRow[], { merge: false }>(),
         { id }
       );
 
-      if (!data) return null;
-      return eventRowToCampusEvent(toEventRow(data));
+      const row = data?.[0];
+      if (!row) return null;
+      return eventRowToCampusEvent(row);
     }
   );
 });

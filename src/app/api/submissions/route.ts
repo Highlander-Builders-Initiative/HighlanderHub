@@ -1,14 +1,10 @@
 import { NextResponse } from "next/server";
 import { notifyNewSubmission } from "@/lib/discord";
-import { pickSubmissionFields } from "@/lib/submissions";
+import { parseSubmissionInsert } from "@/lib/submissions";
 import { supabase } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
-
-function isObjectPayload(value: unknown): value is Record<string, unknown> {
-  return Boolean(value && typeof value === "object" && !Array.isArray(value));
-}
 
 export async function POST(request: Request) {
   let body: unknown;
@@ -18,14 +14,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
   }
 
-  if (!isObjectPayload(body)) {
-    return NextResponse.json(
-      { error: "Invalid submission payload." },
-      { status: 400 }
-    );
+  const parsed = parseSubmissionInsert(body);
+  if (!parsed.ok) {
+    return NextResponse.json({ error: parsed.error }, { status: 400 });
   }
 
-  const row = pickSubmissionFields(body);
+  const row = parsed.row;
   const { error } = await supabase.from("submissions").insert(row);
 
   if (error) {

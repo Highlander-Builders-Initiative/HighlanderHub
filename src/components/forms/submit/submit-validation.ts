@@ -1,5 +1,4 @@
 import { normalizeHttpUrl } from "@/lib/events/validation";
-import type { EventCategory } from "@/types/event";
 
 export type FieldName =
   | "title"
@@ -49,35 +48,4 @@ export function validateSubmissionFields(form: FormData): FieldErrors {
   }
 
   return errors;
-}
-
-export function buildSubmissionRow(
-  form: FormData,
-  startsAt: string,
-  endsAt: string | null,
-  imageUrl: string | null
-) {
-  const tagsRaw = String(form.get("tags") ?? "");
-
-  return {
-    title: String(form.get("title") ?? ""),
-    description: String(form.get("description") ?? ""),
-    starts_at: startsAt,
-    ends_at: endsAt,
-    location: String(form.get("location") ?? ""),
-    host: String(form.get("host") ?? ""),
-    category: form.get("category") as EventCategory,
-    tags: tagsRaw
-      .split(",")
-      .map((t) => t.trim())
-      .filter(Boolean),
-    source_url: normalizeHttpUrl(form.get("source_url")),
-    image_url: imageUrl ?? normalizeHttpUrl(form.get("image_url")),
-    is_free: form.get("is_free") === "on",
-    rsvp_required: form.get("rsvp_required") === "on",
-    rsvp_url: normalizeHttpUrl(form.get("rsvp_url")),
-    submitter_name: String(form.get("submitter_name") ?? ""),
-    submitter_email: String(form.get("submitter_email") ?? ""),
-    submitter_org: String(form.get("submitter_org") ?? "") || null,
-  };
 }

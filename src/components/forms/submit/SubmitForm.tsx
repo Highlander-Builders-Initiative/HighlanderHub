@@ -9,17 +9,14 @@ import {
 } from "react";
 import { track } from "@/lib/analytics";
 import { validateEventTimes } from "@/lib/events/validation";
+import { buildSubmissionRow } from "@/lib/submissions";
 import { computeSubmitEndsAtLocal, type EndChoice } from "@/lib/submit-datetime";
 import { SUBMIT_EVENT_CATEGORIES } from "@/types/event";
 import { Checkbox, Field, FormSection, SelectField } from "./fields";
 import { FlyerUpload } from "./FlyerUpload";
 import { EndTimePicker } from "./EndTimePicker";
 import { StartTimePicker } from "./StartTimePicker";
-import {
-  buildSubmissionRow,
-  validateSubmissionFields,
-  type FieldErrors,
-} from "./submit-validation";
+import { validateSubmissionFields, type FieldErrors } from "./submit-validation";
 import { useFlyerUpload } from "./use-flyer-upload";
 
 type Status =
