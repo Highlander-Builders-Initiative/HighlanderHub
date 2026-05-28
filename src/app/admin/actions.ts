@@ -2,7 +2,9 @@
 
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
-import { signSession, verifySession, getAdminSupabase } from "@/lib/admin";
+import { signSession, verifySession, getAdminSupabase, getAdminPassword } from "@/lib/admin";
+import { parseAdminEventUpdate } from "./validate-event-update";
+import type { AdminEventUpdatePayload } from "./types";
 
 /**
  * Verifies if the current requester is authorized as an admin.
@@ -20,7 +22,13 @@ function requireAdmin() {
  * Sets an HTTP-only cookie containing the cryptographically signed session.
  */
 export async function loginAdmin(password: string) {
-  const expectedPassword = process.env.ADMIN_PASSWORD || "ucrboulders";
+  const expectedPassword = getAdminPassword();
+  if (!expectedPassword) {
+    return {
+      success: false,
+      error: "Admin login is not configured. Set ADMIN_PASSWORD in the environment.",
+    };
+  }
 
   if (password !== expectedPassword) {
     return { success: false, error: "Incorrect administrator password." };
@@ -124,9 +132,18 @@ export async function approveSubmission(submissionId: string) {
     .eq("id", submissionId);
 
   if (subErr) {
+    const { error: rollbackErr } = await supabase
+      .from("events")
+      .delete()
+      .eq("id", eventId);
+
+    const rollbackNote = rollbackErr
+      ? ` Rollback delete also failed: ${rollbackErr.message}`
+      : " The event was removed to avoid a half-approved state.";
+
     return {
       success: false,
-      error: `Event was created, but failed to update submission status: ${subErr.message}`,
+      error: `Failed to update submission status: ${subErr.message}.${rollbackNote}`,
     };
   }
 
@@ -168,14 +185,22 @@ export async function rejectSubmission(submissionId: string, notes?: string) {
  * Crucially, set `is_locked = true` so that subsequent scraping runs
  * respect and do NOT overwrite these manual modifications.
  */
-export async function updateEvent(eventId: string, updatedFields: any) {
+export async function updateEvent(eventId: string, updatedFields: unknown) {
   requireAdmin();
+
+  const parsed = parseAdminEventUpdate(updatedFields);
+  if (!parsed.ok) {
+    return { success: false, error: parsed.error };
+  }
 
   const supabase = getAdminSupabase();
 
-  // Set is_locked to true to protect these corrections from pipeline runs
-  const payload = {
-    ...updatedFields,
+  // Only allowlisted columns; is_locked always forced server-side.
+  const payload: AdminEventUpdatePayload & {
+    is_locked: true;
+    updated_at: string;
+  } = {
+    ...parsed.payload,
     is_locked: true,
     updated_at: new Date().toISOString(),
   };

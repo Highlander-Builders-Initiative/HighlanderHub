@@ -3,7 +3,19 @@ import crypto from "crypto";
 
 const URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "change-me-in-production";
+
+const DEV_ADMIN_PASSWORD = "dev-admin-only";
+
+/**
+ * Single source of truth for admin auth (login + session HMAC).
+ * Production fails closed when ADMIN_PASSWORD is unset.
+ */
+export function getAdminPassword(): string | null {
+  const fromEnv = process.env.ADMIN_PASSWORD;
+  if (fromEnv) return fromEnv;
+  if (process.env.NODE_ENV === "production") return null;
+  return DEV_ADMIN_PASSWORD;
+}
 
 /**
  * Creates a server-side Supabase client using the service role key.
@@ -30,9 +42,13 @@ export function getAdminSupabase(): SupabaseClient {
  * Returns a string formatted as "expiresAt.signature".
  */
 export function signSession(expiresAt: number): string {
+  const password = getAdminPassword();
+  if (!password) {
+    throw new Error("ADMIN_PASSWORD is not configured.");
+  }
   const data = expiresAt.toString();
   const signature = crypto
-    .createHmac("sha256", ADMIN_PASSWORD)
+    .createHmac("sha256", password)
     .update(data)
     .digest("hex");
   return `${data}.${signature}`;
@@ -43,6 +59,9 @@ export function signSession(expiresAt: number): string {
  */
 export function verifySession(sessionStr: string | undefined): boolean {
   if (!sessionStr) return false;
+
+  const password = getAdminPassword();
+  if (!password) return false;
 
   const parts = sessionStr.split(".");
   if (parts.length !== 2) return false;
@@ -56,7 +75,7 @@ export function verifySession(sessionStr: string | undefined): boolean {
 
   // Generate the expected signature
   const expectedSignature = crypto
-    .createHmac("sha256", ADMIN_PASSWORD)
+    .createHmac("sha256", password)
     .update(expiresAtStr)
     .digest("hex");
 
