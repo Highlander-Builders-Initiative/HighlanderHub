@@ -5,13 +5,13 @@ const CATEGORY_STYLES: Record<
   { label: string; cls: string }
 > = {
   club: { label: "Club", cls: "bg-highlander/10 text-highlander" },
-  academic: { label: "Academic", cls: "bg-leaf/10 text-[#1f6f4e]" },
-  social: { label: "Social", cls: "bg-coral/10 text-[#b33a30]" },
+  academic: { label: "Academic", cls: "bg-leaf/12 text-deep-leaf" },
+  social: { label: "Social", cls: "bg-coral/12 text-deep-coral" },
   career: { label: "Career", cls: "bg-ink/10 text-ink" },
-  sports: { label: "Sports", cls: "bg-sky/10 text-[#1d5fbf]" },
-  arts: { label: "Arts", cls: "bg-coral/10 text-[#b33a30]" },
-  community: { label: "Community", cls: "bg-leaf/10 text-[#1f6f4e]" },
-  free_food: { label: "Free Food", cls: "bg-gold/15 text-[#8a6300]" },
+  sports: { label: "Sports", cls: "bg-sky/12 text-deep-sky" },
+  arts: { label: "Arts", cls: "bg-plum/12 text-deep-plum" },
+  community: { label: "Community", cls: "bg-sage/15 text-deep-sage" },
+  free_food: { label: "Free Food", cls: "bg-gold/15 text-deep-gold" },
 };
 
 export function CategoryBadge({

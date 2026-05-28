@@ -1,6 +1,12 @@
 "use client";
 
-import { useMemo, type MutableRefObject, type RefObject } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type MutableRefObject,
+  type RefObject,
+} from "react";
 import type { CampusEvent } from "@/types/event";
 import { formatPacificDayKey } from "@/lib/dates";
 import type { EmptyFeedCopy } from "@/lib/events/empty-feed-copy";
@@ -70,6 +76,19 @@ export function EventsFeedColumn({
   daySectionRefs,
 }: Props) {
   const showEmptyState = dayKeys.length === 0;
+  const [showBackToTop, setShowBackToTop] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setShowBackToTop(window.scrollY > 480);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" });
+  };
 
   const daySections = useMemo(
     () =>
@@ -83,6 +102,36 @@ export function EventsFeedColumn({
 
   return (
     <div className="min-w-0 pt-6 sm:pt-8 lg:py-8">
+      {/* Back-to-top: sticky top-right of this column, fades in past the
+          fold. Sticky inside the column means it never crosses into the
+          right rail. */}
+      <div
+        aria-hidden={!showBackToTop}
+        className="pointer-events-none sticky top-4 z-30 -mb-10 flex justify-end"
+      >
+        <button
+          type="button"
+          onClick={scrollToTop}
+          aria-label="Back to top"
+          tabIndex={showBackToTop ? 0 : -1}
+          className={`interactive-focus inline-flex h-10 w-10 items-center justify-center rounded-full border border-ink/15 bg-canvas/90 text-ink shadow-card backdrop-blur transition-opacity duration-200 hover:border-ink/40 ${
+            showBackToTop ? "pointer-events-auto opacity-100" : "opacity-0"
+          }`}
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="h-4 w-4"
+          >
+            <path d="M12 19V5M5 12l7-7 7 7" />
+          </svg>
+        </button>
+      </div>
+
       <header className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
         <div className="min-w-0">
           <h1 className="font-display text-[28px] font-semibold leading-[1.05] tracking-[-0.025em] text-ink sm:text-[34px]">
