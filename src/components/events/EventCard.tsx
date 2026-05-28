@@ -5,11 +5,10 @@ import Link from "next/link";
 import { memo, type MouseEvent, useLayoutEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { type CampusEvent } from "@/types/event";
-import { formatTimeParts } from "@/lib/dates";
 import { eventFlyerAlt, eventListLinkLabel } from "@/lib/events/a11y";
 import { track } from "@/lib/analytics";
 import { saveEventFeedReturn } from "@/lib/events/feed-session";
-import { CATEGORY_RAIL } from "@/lib/category-colors";
+import { EventListRowTimeColumn } from "@/components/events/EventListRowTimeColumn";
 
 type EventCardProps = {
   event: CampusEvent;
@@ -47,8 +46,6 @@ function EventCardComponent({
   }, [showDescription, event.description]);
   const href = `/events/${event.id}`;
   const surface = compact ? "calendar_card" : "list_card";
-  const { time, period } = formatTimeParts(event.startsAt);
-
   const onOpen = (clickEvent: MouseEvent<HTMLAnchorElement>) => {
     saveEventFeedReturn(href, {
       eventId: event.id,
@@ -76,32 +73,11 @@ function EventCardComponent({
          a 2px category-colored rail — magazine column-spine, full-height,
          clipped by the card's rounded corners. Carries the category signal
          without washing the column in tint. */}
-      <div
-        className={`relative flex shrink-0 flex-col items-center justify-center px-2 ${
-          compact ? "w-[52px]" : "w-16 sm:w-[68px]"
-        }`}
-      >
-        <span
-          aria-hidden
-          className={`pointer-events-none absolute bottom-0 right-0 top-0 w-[2px] ${CATEGORY_RAIL[event.category]}`}
-        />
-        <span
-          className={`font-mono font-medium leading-none text-ink tabular-nums ${
-            compact ? "text-base" : "text-[22px]"
-          }`}
-        >
-          {time}
-        </span>
-        {period && (
-          <span
-            className={`mt-1.5 font-mono font-medium uppercase text-muted ${
-              compact ? "text-[9px] tracking-[0.1em]" : "text-[10px] tracking-[0.14em]"
-            }`}
-          >
-            {period}
-          </span>
-        )}
-      </div>
+      <EventListRowTimeColumn
+        startsAt={event.startsAt}
+        category={event.category}
+        compact={compact}
+      />
 
       {/* Portrait flyer thumbnail framed into the row: a small inset frame
          with a hairline ring + top-edge highlight gives it haptic depth at

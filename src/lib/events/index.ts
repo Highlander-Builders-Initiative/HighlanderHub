@@ -2,6 +2,7 @@ import { cache } from "react";
 import type { CampusEvent } from "@/types/event";
 import type { EventFilterCountSource } from "@/types/events-feed";
 import type { EventRow } from "@/lib/supabase-rows";
+import { eventRowToCampusEvent } from "@/lib/events/map-event-row";
 import { supabase } from "@/lib/supabase";
 import {
   addPacificDays,
@@ -9,7 +10,6 @@ import {
   parsePacificDateTimeInput,
   startOfPacificToday,
 } from "@/lib/dates";
-import { normalizeHttpUrl } from "@/lib/events/validation";
 import { E2E_FIXTURE_EVENT, e2eFixturesEnabled } from "./fixtures";
 
 const DB_RETRY_ATTEMPTS = 2;
@@ -38,30 +38,6 @@ export type EventsSummary = {
   upcomingThisWeek: number;
   freeFood: number;
 };
-
-// DB columns are snake_case (Postgres convention); the app uses camelCase
-// CampusEvent. EventRow is generated from schemas/events.upsert.schema.json.
-function toCampusEvent(r: EventRow): CampusEvent {
-  return {
-    id: r.id,
-    title: r.title,
-    description: r.description,
-    startsAt: r.starts_at,
-    endsAt: r.ends_at ?? undefined,
-    location: r.location,
-    host: r.host,
-    hostHandle: r.host_handle ?? undefined,
-    category: r.category,
-    tags: r.tags,
-    source: r.source,
-    sourceUrl: normalizeHttpUrl(r.source_url) ?? undefined,
-    imageUrl: normalizeHttpUrl(r.image_url) ?? undefined,
-    isFree: r.is_free,
-    rsvpRequired: r.rsvp_required,
-    rsvpUrl: normalizeHttpUrl(r.rsvp_url) ?? undefined,
-    scrapedAt: r.scraped_at,
-  };
-}
 
 function toEventFilterCountSource(r: EventRow): EventFilterCountSource {
   return {
@@ -220,7 +196,7 @@ export async function getEventsPage({
       );
 
       const rows = data as EventRow[];
-      const events = rows.slice(0, pageSize).map(toCampusEvent);
+      const events = rows.slice(0, pageSize).map(eventRowToCampusEvent);
 
       return {
         events,
@@ -292,7 +268,7 @@ export async function getCalendarEvents({
           .limit(Math.max(1, Math.min(limit, EVENTS_CALENDAR_RANGE_LIMIT)))
       );
 
-      return (data as EventRow[]).map(toCampusEvent);
+      return (data as EventRow[]).map(eventRowToCampusEvent);
     }
   );
 }
@@ -315,7 +291,7 @@ export const getEventById = cache(async function getEventById(
       );
 
       if (!data) return null;
-      return toCampusEvent(data as EventRow);
+      return eventRowToCampusEvent(data as EventRow);
     }
   );
 });

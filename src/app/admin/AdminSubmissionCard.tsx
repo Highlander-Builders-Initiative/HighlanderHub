@@ -12,6 +12,7 @@ import {
   IoChevronDown,
   IoChevronUp,
 } from "react-icons/io5";
+import { CategoryDot } from "@/components/events/CategoryDot";
 import type { SubmissionRow } from "./types";
 
 export function AdminSubmissionCard({
@@ -64,19 +65,7 @@ export function AdminSubmissionCard({
         <div className="space-y-4">
           <div>
             <div className="flex items-center gap-1.5 mb-1 select-none">
-              <span
-                className={`h-1.5 w-1.5 rounded-full ${
-                  sub.category === "club"
-                    ? "bg-highlander"
-                    : sub.category === "academic" || sub.category === "community"
-                      ? "bg-leaf"
-                      : sub.category === "social" || sub.category === "arts"
-                        ? "bg-coral"
-                        : sub.category === "free_food"
-                          ? "bg-gold"
-                          : "bg-ink"
-                }`}
-              />
+              <CategoryDot category={sub.category} />
               <span className="text-[10px] font-mono uppercase tracking-wider text-muted">
                 {sub.category.replace("_", " ")}
               </span>
