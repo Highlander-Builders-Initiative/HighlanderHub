@@ -4,17 +4,12 @@ import crypto from "crypto";
 const URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-const DEV_ADMIN_PASSWORD = "dev-admin-only";
-
 /**
  * Single source of truth for admin auth (login + session HMAC).
- * Production fails closed when ADMIN_PASSWORD is unset.
+ * Fails closed when ADMIN_PASSWORD is unset.
  */
 export function getAdminPassword(): string | null {
-  const fromEnv = process.env.ADMIN_PASSWORD;
-  if (fromEnv) return fromEnv;
-  if (process.env.NODE_ENV === "production") return null;
-  return DEV_ADMIN_PASSWORD;
+  return process.env.ADMIN_PASSWORD || null;
 }
 
 /**
