@@ -39,6 +39,11 @@ const nextConfig = {
         protocol: "https",
         hostname: "localist-images.azureedge.net",
       },
+      {
+        protocol: "https",
+        hostname: "qyxlojftdtjasxhzyqil.supabase.co",
+        pathname: "/storage/v1/object/public/submission-flyers/**",
+      },
     ],
   },
 };
