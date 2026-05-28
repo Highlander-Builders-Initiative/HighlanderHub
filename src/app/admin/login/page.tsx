@@ -54,7 +54,7 @@ export default function AdminLoginPage() {
             Highlander Hub
           </h1>
           <p className="text-xs text-muted mt-1.5 font-sans leading-relaxed">
-            Moderator Control Deck. Enter your security credential below to edit listings and review community submissions.
+            Sign in to review community event submissions and manage what appears on the public calendar.
           </p>
         </header>
 
@@ -64,7 +64,7 @@ export default function AdminLoginPage() {
               htmlFor="password"
               className="block text-[13px] font-sans text-muted"
             >
-              Moderator Password
+              Admin password
             </label>
             <input
               id="password"
@@ -116,7 +116,7 @@ export default function AdminLoginPage() {
                 Verifying...
               </span>
             ) : (
-              "Access Control Deck"
+              "Sign in"
             )}
           </button>
         </form>

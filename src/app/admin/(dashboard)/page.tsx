@@ -28,7 +28,9 @@ export default async function AdminDashboardPage() {
     .from("events")
     .select("*")
     .or(activeEventFilter(nowIso))
-    .order("starts_at", { ascending: false });
+    // Match public /events feed: soonest first, id tie-breaker for stable pages.
+    .order("starts_at", { ascending: true })
+    .order("id", { ascending: true });
 
   if (eventErr) {
     console.error("Error fetching events for admin deck:", eventErr);
