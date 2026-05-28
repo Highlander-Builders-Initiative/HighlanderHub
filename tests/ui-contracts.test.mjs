@@ -7,6 +7,7 @@ const read = (path) => readFileSync(sourceFile(path), "utf8");
 
 test("event browser paginates the list instead of rendering every event at once", () => {
   const browser = read("src/components/events/EventsBrowser.tsx");
+  const navigation = read("src/components/events/useEventFeedNavigation.ts");
   const loader = read("src/components/events/useInfiniteEventFeedLoader.ts");
   const data = read("src/lib/events/index.ts");
   const eventsApi = read("src/lib/events/api.ts");
@@ -30,8 +31,9 @@ test("event browser paginates the list instead of rendering every event at once"
   assert.match(observedDayKey, /HEADER_CROSSED_BONUS/);
   assert.match(observedDayKey, /visibleBottom - visibleTop/);
   assert.match(observedDayKey, /resolveObservedDayKey/);
-  assert.match(browser, /loadMoreRef/);
-  assert.match(browser, /fetchEventsPage\(nextOffset\)/);
+  assert.match(browser, /useEventFeedNavigation/);
+  assert.match(navigation, /loadMoreRef/);
+  assert.match(navigation, /fetchEventsPage\(nextOffset\)/);
   assert.doesNotMatch(browser, /Load more/);
   assert.match(browser, /hasMore/);
 });
@@ -56,6 +58,7 @@ test("events page header uses full upcoming event totals", () => {
 test("calendar loads its own month-range events outside feed pagination", () => {
   const page = read("src/app/events/page.tsx");
   const browser = read("src/components/events/EventsBrowser.tsx");
+  const navigation = read("src/components/events/useEventFeedNavigation.ts");
   const calendarHook = read("src/components/events/useCalendarMonthEvents.ts");
   const restoreHook = read("src/components/events/useEventFeedRestore.ts");
   const filters = read("src/components/events/useEventFeedFilters.ts");
@@ -81,25 +84,26 @@ test("calendar loads its own month-range events outside feed pagination", () => 
   assert.match(browser, /useCalendarMonthEvents/);
   assert.match(browser, /isCalendarLoading/);
   assert.match(browser, /useEventFeedRestore/);
-  assert.match(browser, /mergeUniqueEventsByStart\(current, eventsToMerge\)/);
-  assert.match(browser, /key > lastLoadedDay && key <= dayKey/);
-  assert.match(browser, /calendarJumpSuppressUntilRef/);
-  assert.match(browser, /calendarJumpEndsAtLoadedBoundary/);
+  assert.match(browser, /useEventFeedNavigation/);
+  assert.match(navigation, /mergeUniqueEventsByStart\(current, eventsToMerge\)/);
+  assert.match(navigation, /key > lastLoadedDay && key <= dayKey/);
+  assert.match(navigation, /calendarJumpSuppressUntilRef/);
+  assert.match(navigation, /calendarJumpEndsAtLoadedBoundary/);
   assert.match(browser, /hideLoadMoreHint=\{hideLoadMoreHint\}/);
-  assert.match(browser, /pendingLoadAnchorRef/);
-  assert.match(browser, /getBoundingClientRect\(\)\.top/);
-  assert.match(browser, /root\.scrollTop \+= delta/);
-  assert.doesNotMatch(browser, /setHasMore\(false\)[\s\S]*calendarJumpEndsAtLoadedBoundary/);
+  assert.match(navigation, /pendingLoadAnchorRef/);
+  assert.match(navigation, /getBoundingClientRect\(\)\.top/);
+  assert.match(navigation, /root\.scrollTop \+= delta/);
+  assert.doesNotMatch(navigation, /setHasMore\(false\)[\s\S]*calendarJumpEndsAtLoadedBoundary/);
   const calendarPagination = read("src/lib/events/calendar-feed-pagination.ts");
   assert.match(calendarPagination, /calendarEventsInMonth/);
   assert.match(calendarPagination, /monthKeyFromDayKey\(dayKey\)/);
   assert.match(calendarPagination, /eventsOnTargetDay/);
   assert.doesNotMatch(
-    browser,
+    navigation,
     /handleCalendarSelect[\s\S]*setNextOffset\(merged\.length\)/
   );
   assert.match(
-    browser,
+    navigation,
     /handleCalendarSelect[\s\S]*setObservedDayKey\(dayKey\)/
   );
   assert.match(feedColumn, /scroll-mt-24/);

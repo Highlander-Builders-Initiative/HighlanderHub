@@ -53,6 +53,14 @@ function toEventFilterCountSource(r: EventRow): EventFilterCountSource {
   };
 }
 
+function toEventRows(data: unknown): EventRow[] {
+  return (data ?? []) as EventRow[];
+}
+
+function toEventRow(data: unknown): EventRow {
+  return data as EventRow;
+}
+
 function describeSupabaseError(error: unknown): string {
   if (error && typeof error === "object" && "message" in error) {
     const message = error.message;
@@ -195,7 +203,7 @@ export async function getEventsPage({
           .range(from, to)
       );
 
-      const rows = data as EventRow[];
+      const rows = toEventRows(data);
       const events = rows.slice(0, pageSize).map(eventRowToCampusEvent);
 
       return {
@@ -231,7 +239,7 @@ export async function getEventFilterCountSource(): Promise<
           .order("id", { ascending: true })
       );
 
-      return (data as EventRow[]).map(toEventFilterCountSource);
+      return toEventRows(data).map(toEventFilterCountSource);
     }
   );
 }
@@ -268,7 +276,7 @@ export async function getCalendarEvents({
           .limit(Math.max(1, Math.min(limit, EVENTS_CALENDAR_RANGE_LIMIT)))
       );
 
-      return (data as EventRow[]).map(eventRowToCampusEvent);
+      return toEventRows(data).map(eventRowToCampusEvent);
     }
   );
 }
@@ -291,7 +299,7 @@ export const getEventById = cache(async function getEventById(
       );
 
       if (!data) return null;
-      return eventRowToCampusEvent(data as EventRow);
+      return eventRowToCampusEvent(toEventRow(data));
     }
   );
 });
