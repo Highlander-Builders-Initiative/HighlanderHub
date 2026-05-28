@@ -19,25 +19,25 @@ export function HeroRibbon() {
           {/* UCR palette only — highlander navy → deep-gold → gold.
               Faded at both ends so each band reads as a brushstroke. */}
           <linearGradient id="ribbon-a" x1="0%" y1="20%" x2="100%" y2="80%">
-            <stop offset="0%" stopColor="#1e3a8a" stopOpacity="0" />
-            <stop offset="22%" stopColor="#1e3a8a" stopOpacity="0.95" />
-            <stop offset="55%" stopColor="#8a6300" stopOpacity="0.9" />
-            <stop offset="82%" stopColor="#f5b400" stopOpacity="0.9" />
-            <stop offset="100%" stopColor="#f5b400" stopOpacity="0" />
+            <stop offset="0%" stopColor="#2a3680" stopOpacity="0" />
+            <stop offset="22%" stopColor="#2a3680" stopOpacity="0.95" />
+            <stop offset="55%" stopColor="#6e4612" stopOpacity="0.9" />
+            <stop offset="82%" stopColor="#c98429" stopOpacity="0.9" />
+            <stop offset="100%" stopColor="#c98429" stopOpacity="0" />
           </linearGradient>
           {/* Warm secondary band — pure gold sweep. */}
           <linearGradient id="ribbon-b" x1="0%" y1="0%" x2="100%" y2="60%">
-            <stop offset="0%" stopColor="#f5b400" stopOpacity="0" />
-            <stop offset="30%" stopColor="#f5b400" stopOpacity="0.85" />
-            <stop offset="65%" stopColor="#8a6300" stopOpacity="0.7" />
-            <stop offset="100%" stopColor="#f5b400" stopOpacity="0" />
+            <stop offset="0%" stopColor="#c98429" stopOpacity="0" />
+            <stop offset="30%" stopColor="#c98429" stopOpacity="0.85" />
+            <stop offset="65%" stopColor="#6e4612" stopOpacity="0.7" />
+            <stop offset="100%" stopColor="#c98429" stopOpacity="0" />
           </linearGradient>
           {/* Cool counter-band — navy arcing the other direction. */}
           <linearGradient id="ribbon-c" x1="0%" y1="80%" x2="100%" y2="10%">
-            <stop offset="0%" stopColor="#1e3a8a" stopOpacity="0" />
-            <stop offset="35%" stopColor="#1e3a8a" stopOpacity="0.9" />
-            <stop offset="75%" stopColor="#1e3a8a" stopOpacity="0.7" />
-            <stop offset="100%" stopColor="#1e3a8a" stopOpacity="0" />
+            <stop offset="0%" stopColor="#2a3680" stopOpacity="0" />
+            <stop offset="35%" stopColor="#2a3680" stopOpacity="0.9" />
+            <stop offset="75%" stopColor="#2a3680" stopOpacity="0.7" />
+            <stop offset="100%" stopColor="#2a3680" stopOpacity="0" />
           </linearGradient>
           {/* Thin inner highlight — pale band laid on top of the main
               stroke for a hint of brush striation without a real

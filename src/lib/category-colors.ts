@@ -6,7 +6,7 @@ export const CATEGORY_RAIL: Record<CampusEvent["category"], string> = {
   social: "bg-coral",
   career: "bg-ink",
   sports: "bg-sky",
-  arts: "bg-coral",
-  community: "bg-leaf",
+  arts: "bg-plum",
+  community: "bg-sage",
   free_food: "bg-gold",
 };
