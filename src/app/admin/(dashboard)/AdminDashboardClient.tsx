@@ -10,6 +10,7 @@ import {
 } from "../actions";
 import { useRouter } from "next/navigation";
 import { IoCheckmark, IoClose, IoPencil, IoTrash, IoLogOut, IoCalendar, IoLocation, IoPerson, IoLink, IoImage } from "react-icons/io5";
+import { formatDayShort, formatTimeParts } from "@/lib/dates";
 
 interface SubmissionRow {
   id: string;
@@ -85,17 +86,11 @@ export default function AdminDashboardClient({
   const [editIsFree, setEditIsFree] = useState(true);
   const [editRsvpRequired, setEditRsvpRequired] = useState(false);
 
-  // Formats timestamps nicely
+  // Pacific campus time; composed from shared Intl formatters so SSR and browser match.
   const formatDate = (isoStr: string) => {
     try {
-      const date = new Date(isoStr);
-      return date.toLocaleDateString("en-US", {
-        weekday: "short",
-        month: "short",
-        day: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-      });
+      const { time, period } = formatTimeParts(isoStr);
+      return `${formatDayShort(isoStr)}, ${time} ${period}`.trim();
     } catch {
       return isoStr;
     }
