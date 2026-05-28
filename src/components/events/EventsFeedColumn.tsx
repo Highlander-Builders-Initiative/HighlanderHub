@@ -258,7 +258,7 @@ export function EventsFeedColumn({
             if (el) daySectionRefs.current.set(day, el);
             else daySectionRefs.current.delete(day);
           }}
-          className="mb-10"
+          className="mb-10 lg:border-t lg:border-ink/15 lg:pt-7 lg:first:border-t-0 lg:first:pt-0"
         >
           <h3
             ref={(el) => {
@@ -266,12 +266,8 @@ export function EventsFeedColumn({
               else dayHeaderRefs.current.delete(day);
             }}
             data-day-key={day}
-            className="sticky z-10 -mx-4 mb-3 flex scroll-mt-24 items-baseline gap-2.5 bg-gradient-to-b from-canvas via-canvas/55 to-transparent px-4 py-2 font-display text-xl font-semibold tracking-[-0.02em] text-ink sm:-mx-6 sm:px-6 lg:static lg:invisible lg:m-0 lg:h-0 lg:overflow-hidden lg:bg-none lg:p-0"
-            style={{
-              top: 53,
-              backdropFilter: "blur(8px)",
-              WebkitBackdropFilter: "blur(8px)",
-            }}
+            className="sticky z-10 -mx-4 mb-3 flex scroll-mt-24 items-baseline gap-2.5 bg-gradient-to-b from-canvas via-canvas/55 to-transparent px-4 py-2 font-display text-xl font-semibold tracking-[-0.02em] text-ink backdrop-blur sm:-mx-6 sm:px-6 lg:static lg:mx-0 lg:mb-4 lg:bg-none lg:px-0 lg:py-0 lg:text-lg lg:backdrop-blur-none"
+            style={{ top: 53 }}
           >
             {formatPacificDayKey(day)}
             {isToday && (
