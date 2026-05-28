@@ -100,6 +100,7 @@ Supabase writes and story extraction also need credentials in `pipeline/.env`:
 ```bash
 SUPABASE_URL=...
 SUPABASE_SERVICE_KEY=...
+DISCORD_WEBHOOK_URL=...
 GOOGLE_VISION_API_KEY=...
 GOOGLE_CLOUD_PROJECT=...
 GOOGLE_CLOUD_LOCATION=global
@@ -197,6 +198,11 @@ The Next.js app reads upcoming events from the Supabase `events` table via
 `src/lib/events/index.ts`. `extract_stories.py` writes Instagram flyers into that
 same table with `source='instagram'`, so extracted IG events appear alongside
 Localist events without a frontend change.
+
+If `DISCORD_WEBHOOK_URL` is set, the pipeline posts newly discovered
+`category='free_food'` events to Discord after Supabase upsert. The
+`discord_notifications` table records successful sends so reruns do not repost
+the same event.
 
 ## Instagram story extraction
 

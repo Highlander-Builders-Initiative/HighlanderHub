@@ -23,6 +23,7 @@ from urllib.parse import urlsplit
 
 from config import RAW_DIR, ensure_dirs
 from db import delete_rows_by_prefix, upsert_batched
+from discord_notify import notify_free_food_events
 
 log = logging.getLogger("pipeline.normalize_events")
 
@@ -456,6 +457,9 @@ def main() -> None:
 
     written = upsert_batched("events", deduped)
     log.info("Wrote %d events to Supabase", written)
+    notified = notify_free_food_events(deduped)
+    if notified:
+        log.info("Sent %d free food Discord notifications", notified)
 
 
 if __name__ == "__main__":
