@@ -2,7 +2,7 @@
 
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
-import { signSession, verifySession, getAdminSupabase, getAdminPassword } from "@/lib/admin";
+import { signSession, verifySession, getAdminSupabase, getAdminPassword, verifyPassword } from "@/lib/admin";
 import { parseAdminEventUpdate } from "./validate-event-update";
 import type { AdminEventUpdatePayload } from "./types";
 
@@ -22,15 +22,14 @@ function requireAdmin() {
  * Sets an HTTP-only cookie containing the cryptographically signed session.
  */
 export async function loginAdmin(password: string) {
-  const expectedPassword = getAdminPassword();
-  if (!expectedPassword) {
+  if (!getAdminPassword()) {
     return {
       success: false,
       error: "Admin login is not configured. Set ADMIN_PASSWORD in the environment.",
     };
   }
 
-  if (password !== expectedPassword) {
+  if (!verifyPassword(password)) {
     return { success: false, error: "Incorrect administrator password." };
   }
 
