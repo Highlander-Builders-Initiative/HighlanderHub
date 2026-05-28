@@ -65,7 +65,7 @@ function EventCardComponent({
       onFocus={prefetch}
       aria-label={eventListLinkLabel(event)}
       data-event-id={event.id}
-      className={`interactive-focus card-hover group relative isolate flex w-full min-w-0 overflow-hidden rounded-xl border border-ink/10 bg-canvas transition-[border-color,box-shadow,transform] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-ink/30 hover:shadow-card ${
+      className={`interactive-focus group relative isolate flex w-full min-w-0 overflow-hidden rounded-xl border border-ink/10 bg-canvas transition-[border-color,box-shadow] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-ink/30 hover:shadow-card ${
         compact ? "" : "min-h-[6rem]"
       }`}
     >
@@ -90,7 +90,7 @@ function EventCardComponent({
               alt={eventFlyerAlt(event)}
               fill
               sizes="80px"
-              className="object-cover transition-transform duration-[600ms] ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-[1.04]"
+              className="object-cover"
               onError={() => setImageBroken(true)}
             />
             <span
