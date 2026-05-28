@@ -85,7 +85,7 @@ function describeSupabaseError(error: unknown): string {
   return "Unknown Supabase error";
 }
 
-function activeEventFilter(nowIso: string): string {
+export function activeEventFilter(nowIso: string): string {
   return `ends_at.gte.${nowIso},and(ends_at.is.null,starts_at.gte.${nowIso})`;
 }
 

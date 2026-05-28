@@ -30,8 +30,14 @@ test("missing event details render the app-level not-found page", () => {
   assert.match(notFound, /href="\/events"/);
 });
 
+test("admin dashboard lists active events with the same filter as the feed", () => {
+  const adminPage = read("src/app/admin/(dashboard)/page.tsx");
+  assert.doesNotMatch(adminPage, /sevenDaysAgo/);
+  assert.match(adminPage, /\.or\(activeEventFilter\(nowIso\)\)/);
+});
+
 test("event queries keep events visible until their end time", () => {
-  assert.match(source, /function activeEventFilter\(nowIso: string/);
+  assert.match(source, /export function activeEventFilter\(nowIso: string/);
   assert.match(
     source,
     /withDbRetry\("event count", \(\) =>[\s\S]*?\.or\(activeEventFilter\(nowIso\)\)/
