@@ -1,5 +1,6 @@
 import React from "react";
 import { getAdminSupabase } from "@/lib/admin";
+import { activeEventFilter } from "@/lib/events";
 import AdminDashboardClient from "./AdminDashboardClient";
 
 // Opt out of Next.js static rendering/caching for this route
@@ -20,17 +21,13 @@ export default async function AdminDashboardPage() {
     console.error("Error fetching submissions for admin deck:", subErr);
   }
 
-  // 2. Fetch live events.
-  // We fetch events starting from 7 days ago onwards to keep the dashboard
-  // fast, responsive, and relevant. Older events don't require active editing.
-  const sevenDaysAgo = new Date(
-    Date.now() - 7 * 24 * 60 * 60 * 1000
-  ).toISOString();
+  // 2. Fetch active events (same visibility rule as the public /events feed).
+  const nowIso = new Date().toISOString();
 
   const { data: events, error: eventErr } = await supabase
     .from("events")
     .select("*")
-    .gte("starts_at", sevenDaysAgo)
+    .or(activeEventFilter(nowIso))
     .order("starts_at", { ascending: false });
 
   if (eventErr) {
