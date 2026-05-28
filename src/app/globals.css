@@ -211,6 +211,27 @@ body {
   animation-delay: -15s;
 }
 
+/* ----- Flyer marquee focal spotlight -----
+   Each tile carries a JS-written --focal (0..1) that intensifies as it
+   approaches the marquee's focal point — viewport center at rest,
+   pointer-x while hovering. The variable drives a small lift + scale
+   and a tonal ink-tinted lift shadow (Hairline-Plus-Lift, Quiet-Shadow,
+   no color wash). Blur radii stay constant; only the rgba alpha is
+   interpolated, so the compositor fades the shadow without re-rastering
+   per frame. */
+[data-marquee-tile] {
+  --focal: 0;
+  position: relative;
+  z-index: 1;
+  border-radius: 0.75rem;
+  transform: translate3d(0, calc(var(--focal) * -7px), 0)
+    scale(calc(1 + var(--focal) * 0.05));
+  box-shadow:
+    0 2px 6px -2px rgba(15, 17, 21, calc(var(--focal) * 0.18)),
+    0 16px 36px -10px rgba(15, 17, 21, calc(var(--focal) * 0.22));
+  will-change: transform;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -229,5 +250,10 @@ body {
   .reveal {
     opacity: 1;
     transform: none;
+  }
+
+  [data-marquee-tile] {
+    transform: none !important;
+    box-shadow: none !important;
   }
 }
