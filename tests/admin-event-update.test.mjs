@@ -24,6 +24,10 @@ const validateTs = readFileSync(
 
 test("admin password uses getAdminPassword single source", () => {
   assert.match(adminTs, /export function getAdminPassword/);
+  assert.match(adminTs, /process\.env\.ADMIN_PASSWORD/);
+  assert.doesNotMatch(adminTs, /DEV_ADMIN_PASSWORD/);
+  assert.doesNotMatch(adminTs, /dev-admin-only/);
+  assert.doesNotMatch(adminTs, /NODE_ENV\s*===\s*["']production["']/);
   assert.doesNotMatch(adminTs, /ucrboulders/);
   assert.doesNotMatch(adminTs, /change-me-in-production/);
   assert.match(actionsTs, /getAdminPassword\(\)/);
