@@ -13,6 +13,20 @@ export function getAdminPassword(): string | null {
 }
 
 /**
+ * Constant-time comparison of a candidate password against ADMIN_PASSWORD.
+ * Both sides are hashed to fixed-length digests first so that differing
+ * lengths neither leak via timing nor throw from timingSafeEqual.
+ */
+export function verifyPassword(candidate: string): boolean {
+  const password = getAdminPassword();
+  if (!password) return false;
+
+  const candidateHash = crypto.createHash("sha256").update(candidate).digest();
+  const expectedHash = crypto.createHash("sha256").update(password).digest();
+  return crypto.timingSafeEqual(candidateHash, expectedHash);
+}
+
+/**
  * Creates a server-side Supabase client using the service role key.
  * This client bypasses Row Level Security (RLS) policies and must NEVER
  * be exported to or used in client-side code.
