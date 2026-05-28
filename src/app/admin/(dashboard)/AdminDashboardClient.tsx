@@ -9,8 +9,26 @@ import {
   deleteEvent,
 } from "../actions";
 import { useRouter } from "next/navigation";
-import { IoCheckmark, IoClose, IoPencil, IoTrash, IoLogOut, IoCalendar, IoLocation, IoPerson, IoLink, IoImage } from "react-icons/io5";
+import {
+  IoCheckmark,
+  IoClose,
+  IoPencil,
+  IoTrash,
+  IoLogOut,
+  IoCalendar,
+  IoLocation,
+  IoPerson,
+  IoLink,
+  IoSearch,
+  IoMailOutline,
+  IoOpenOutline,
+  IoChevronDown,
+  IoChevronUp,
+} from "react-icons/io5";
+import Link from "next/link";
 import { formatDayShort, formatTimeParts } from "@/lib/dates";
+import { CATEGORY_RAIL } from "@/lib/category-colors";
+import type { CampusEvent } from "@/types/event";
 
 interface SubmissionRow {
   id: string;
@@ -61,14 +79,144 @@ interface AdminDashboardClientProps {
   initialEvents: EventRow[];
 }
 
+/** Same ordering as `getEventsPage` on the public /events feed. */
+function sortEventsByFeedOrder(events: EventRow[]): EventRow[] {
+  return [...events].sort((a, b) => {
+    const byStart = a.starts_at.localeCompare(b.starts_at);
+    if (byStart !== 0) return byStart;
+    return a.id.localeCompare(b.id);
+  });
+}
+
+function AdminLiveEventRow({
+  event,
+  feedIndex,
+  formatDate,
+  onEdit,
+  onDelete,
+  disabled,
+}: {
+  event: EventRow;
+  feedIndex: number;
+  formatDate: (iso: string) => string;
+  onEdit: () => void;
+  onDelete: () => void;
+  disabled: boolean;
+}) {
+  const [imageBroken, setImageBroken] = useState(false);
+  const showImage = Boolean(event.image_url) && !imageBroken;
+  const { time, period } = formatTimeParts(event.starts_at);
+  const rail =
+    CATEGORY_RAIL[event.category as CampusEvent["category"]] ?? "bg-ink";
+
+  return (
+    <article className="bg-canvas border border-ink/10 rounded-xl shadow-card hover:border-ink/25 transition-all overflow-hidden flex flex-col sm:flex-row sm:items-stretch">
+      <div className="flex flex-1 min-w-0 min-h-[6rem]">
+        <div className="relative flex shrink-0 flex-col items-center justify-center w-16 sm:w-[68px] px-2">
+          <span
+            aria-hidden
+            className={`pointer-events-none absolute bottom-0 right-0 top-0 w-[2px] ${rail}`}
+          />
+          <span className="font-mono text-[10px] text-muted tabular-nums">#{feedIndex + 1}</span>
+          <span className="font-mono font-medium leading-none text-ink tabular-nums text-[22px] mt-1">
+            {time}
+          </span>
+          {period && (
+            <span className="mt-1.5 font-mono font-medium uppercase text-muted text-[10px] tracking-[0.14em]">
+              {period}
+            </span>
+          )}
+        </div>
+
+        {showImage ? (
+          <div className="relative shrink-0 self-stretch py-2 pl-2">
+            <div className="relative h-full w-[80px] min-h-[4.5rem] overflow-hidden rounded-md bg-surface">
+              <img
+                src={event.image_url!}
+                alt={`${event.title} flyer`}
+                className="absolute inset-0 h-full w-full object-cover"
+                onError={() => setImageBroken(true)}
+              />
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-0 rounded-md ring-1 ring-inset ring-ink/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]"
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="relative shrink-0 self-stretch py-2 pl-2">
+            <div
+              className="flex h-full w-[80px] min-h-[4.5rem] items-center justify-center rounded-md border border-dashed border-ink/15 bg-surface text-[9px] font-sans text-muted text-center px-1 leading-tight"
+              aria-label="No flyer image"
+            >
+              No flyer
+            </div>
+          </div>
+        )}
+
+        <div className="min-w-0 flex-1 py-3 pr-3 pl-3 sm:pl-4">
+          <div className="flex flex-wrap items-center gap-2 mb-1">
+            <span className="bg-ink/5 border border-ink/10 text-muted font-mono text-[9px] px-1 py-0.5 rounded font-semibold uppercase">
+              {event.source}
+            </span>
+            <span className="font-mono text-[10px] text-muted">{formatDate(event.starts_at)}</span>
+            {event.is_locked && (
+              <span className="bg-gold/10 border border-gold/20 text-deep-gold font-mono text-[9px] px-1 py-0.5 rounded font-semibold tracking-wider">
+                Locked
+              </span>
+            )}
+          </div>
+          <h4 className="font-display text-sm font-semibold text-ink leading-snug">{event.title}</h4>
+          <p className="text-xs text-muted font-sans mt-1 line-clamp-2">
+            {event.location} · {event.host}
+          </p>
+          {event.description && (
+            <p className="text-xs text-muted/80 font-sans mt-1 line-clamp-1">{event.description}</p>
+          )}
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2 border-t sm:border-t-0 sm:border-l border-ink/10 p-3 sm:p-4 sm:flex-col sm:justify-center shrink-0">
+        <button
+          type="button"
+          onClick={onEdit}
+          disabled={disabled}
+          className="flex-1 sm:flex-none min-h-9 px-3 border border-ink/10 hover:bg-ink/5 text-muted hover:text-ink rounded-md transition-all outline-none interactive-focus flex items-center justify-center gap-1.5 text-xs font-semibold disabled:opacity-50"
+        >
+          <IoPencil size={14} aria-hidden />
+          <span>Edit</span>
+        </button>
+        <button
+          type="button"
+          onClick={onDelete}
+          disabled={disabled}
+          className="flex-1 sm:flex-none min-h-9 px-3 border border-coral/20 hover:bg-coral/5 text-muted hover:text-deep-coral rounded-md transition-all outline-none interactive-focus flex items-center justify-center gap-1.5 text-xs font-semibold disabled:opacity-50"
+        >
+          <IoTrash size={14} aria-hidden />
+          <span>Delete</span>
+        </button>
+      </div>
+    </article>
+  );
+}
+
 export default function AdminDashboardClient({
   initialSubmissions,
   initialEvents,
 }: AdminDashboardClientProps) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"submissions" | "events">("submissions");
+  const pendingCount = initialSubmissions.length;
+  const [activeTab, setActiveTab] = useState<"submissions" | "events">(
+    pendingCount > 0 ? "submissions" : "events"
+  );
   const [searchQuery, setSearchQuery] = useState("");
+  const [submissionSearch, setSubmissionSearch] = useState("");
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+  const [expandedSubmissionIds, setExpandedSubmissionIds] = useState<Set<string>>(
+    () => new Set()
+  );
   const [isPending, startTransition] = useTransition();
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -126,7 +274,12 @@ export default function AdminDashboardClient({
   };
 
   const handleApprove = (id: string) => {
-    if (!confirm("Are you sure you want to approve this submission? It will go live immediately on the event feed.")) return;
+    if (
+      !confirm(
+        "Approve this submission? It will appear on the public events calendar immediately."
+      )
+    )
+      return;
     setActionError(null);
     startTransition(async () => {
       const res = await approveSubmission(id);
@@ -138,17 +291,37 @@ export default function AdminDashboardClient({
     });
   };
 
-  const handleReject = (id: string) => {
-    const reason = prompt("Enter optional rejection note/reason:");
-    if (reason === null) return; // cancelled prompt
+  const openRejectModal = (id: string) => {
+    setRejectingId(id);
+    setRejectReason("");
+    setActionError(null);
+  };
+
+  const closeRejectModal = () => {
+    setRejectingId(null);
+    setRejectReason("");
+  };
+
+  const handleRejectConfirm = () => {
+    if (!rejectingId) return;
     setActionError(null);
     startTransition(async () => {
-      const res = await rejectSubmission(id, reason);
+      const res = await rejectSubmission(rejectingId, rejectReason.trim());
       if (res.success) {
+        closeRejectModal();
         router.refresh();
       } else {
         setActionError(res.error || "Failed to reject submission.");
       }
+    });
+  };
+
+  const toggleSubmissionDescription = (id: string) => {
+    setExpandedSubmissionIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
     });
   };
 
@@ -200,7 +373,12 @@ export default function AdminDashboardClient({
   };
 
   const handleDelete = (id: string) => {
-    if (!confirm("Are you sure you want to delete this event? This action is permanent and cannot be undone.")) return;
+    if (
+      !confirm(
+        "Delete this event from the public calendar? This cannot be undone."
+      )
+    )
+      return;
     setActionError(null);
     startTransition(async () => {
       const res = await deleteEvent(id);
@@ -212,122 +390,270 @@ export default function AdminDashboardClient({
     });
   };
 
-  // Filter events based on search query
-  const filteredEvents = initialEvents.filter(
-    (e) =>
-      e.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      e.host.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      e.location.toLowerCase().includes(searchQuery.toLowerCase())
+  const matchesQuery = (query: string, ...fields: (string | null | undefined)[]) => {
+    const q = query.trim().toLowerCase();
+    if (!q) return true;
+    return fields.some((f) => f?.toLowerCase().includes(q));
+  };
+
+  const filteredSubmissions = initialSubmissions.filter((sub) =>
+    matchesQuery(
+      submissionSearch,
+      sub.title,
+      sub.host,
+      sub.location,
+      sub.submitter_name,
+      sub.submitter_email,
+      sub.submitter_org
+    )
   );
+
+  const eventsInFeedOrder = sortEventsByFeedOrder(initialEvents);
+  const feedPositionById = new Map(
+    eventsInFeedOrder.map((event, index) => [event.id, index])
+  );
+
+  const filteredEvents = eventsInFeedOrder.filter((e) =>
+    matchesQuery(searchQuery, e.title, e.host, e.location, e.description)
+  );
+
+  const rejectingSubmission = rejectingId
+    ? initialSubmissions.find((s) => s.id === rejectingId)
+    : null;
 
   return (
     <div className="min-h-screen bg-surface flex flex-col font-sans text-ink">
-      {/* Top Header Deck */}
-      <header className="sticky top-0 bg-canvas border-b border-ink/10 h-14 px-4 sm:px-6 flex items-center justify-between z-40 select-none">
-        <div className="flex items-center gap-3">
-          <h1 className="font-display text-lg font-semibold tracking-tight text-ink">
-            Highlander Hub
-          </h1>
-          <span className="bg-ink/5 border border-ink/10 text-muted font-mono text-[9px] px-1.5 py-0.5 rounded tracking-widest uppercase">
-            MODERATOR
-          </span>
-        </div>
+      <header className="sticky top-0 bg-canvas border-b border-ink/10 z-40">
+        <div className="h-14 px-4 sm:px-6 flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="font-display text-lg font-semibold tracking-tight text-ink">
+                Admin
+              </h1>
+              <span className="text-muted text-sm font-sans hidden sm:inline">
+                · Highlander Hub
+              </span>
+            </div>
+            <p className="text-[11px] text-muted font-sans truncate sm:max-w-none">
+              Review submissions and manage live events
+            </p>
+          </div>
 
-        <button
-          onClick={handleLogout}
-          disabled={isPending}
-          className="flex items-center gap-1.5 text-xs text-muted hover:text-ink transition-colors font-sans py-2 px-3 hover:bg-surface border border-transparent hover:border-ink/5 rounded-md outline-none interactive-focus"
-        >
-          <IoLogOut size={15} />
-          <span>Exit Deck</span>
-        </button>
+          <div className="flex items-center gap-1 shrink-0">
+            <Link
+              href="/events"
+              target="_blank"
+              className="flex items-center gap-1.5 text-xs text-muted hover:text-ink transition-colors font-sans py-2 px-2.5 sm:px-3 hover:bg-surface border border-transparent hover:border-ink/5 rounded-md outline-none interactive-focus"
+            >
+              <IoOpenOutline size={15} aria-hidden />
+              <span className="hidden sm:inline">View site</span>
+            </Link>
+            <button
+              onClick={handleLogout}
+              disabled={isPending}
+              className="flex items-center gap-1.5 text-xs text-muted hover:text-ink transition-colors font-sans py-2 px-2.5 sm:px-3 hover:bg-surface border border-transparent hover:border-ink/5 rounded-md outline-none interactive-focus"
+            >
+              <IoLogOut size={15} aria-hidden />
+              <span>Sign out</span>
+            </button>
+          </div>
+        </div>
       </header>
 
       {/* Main Admin Content Area */}
       <main className="flex-1 w-full max-w-6xl mx-auto p-4 sm:p-6 space-y-6">
         {actionError && (
-          <div className="p-4 bg-coral/10 border border-deep-coral/20 text-deep-coral rounded-md text-sm font-sans flex items-start gap-2 animate-field-reveal">
-            <span>⚠️</span>
+          <div
+            role="alert"
+            className="p-4 bg-coral/10 border border-deep-coral/20 text-deep-coral rounded-md text-sm font-sans flex items-start gap-2 animate-field-reveal"
+          >
+            <span aria-hidden>⚠️</span>
             <p className="flex-1 font-sans">{actionError}</p>
-            <button onClick={() => setActionError(null)} className="text-deep-coral hover:text-ink transition-colors outline-none font-bold">
+            <button
+              type="button"
+              onClick={() => setActionError(null)}
+              className="text-deep-coral hover:text-ink transition-colors outline-none font-bold"
+              aria-label="Dismiss error"
+            >
               ×
             </button>
           </div>
         )}
 
-        {/* Custom Tab Switcher */}
-        <div className="flex border-b border-ink/10 select-none items-center justify-between">
-          <nav className="flex gap-6" role="tablist">
+        {/* Overview */}
+        <section className="grid grid-cols-2 gap-3" aria-label="Admin overview">
+          <button
+            type="button"
+            onClick={() => setActiveTab("submissions")}
+            className={`text-left rounded-xl border p-4 transition-all outline-none interactive-focus ${
+              activeTab === "submissions"
+                ? "border-deep-coral/30 bg-coral/5 shadow-card"
+                : "border-ink/10 bg-canvas hover:border-ink/20"
+            }`}
+          >
+            <p className="text-[11px] font-sans text-muted">Awaiting review</p>
+            <p className="font-display text-2xl font-semibold text-ink mt-1 tabular-nums">
+              {pendingCount}
+            </p>
+            <p className="text-[11px] text-muted font-sans mt-1">
+              {pendingCount === 1 ? "submission" : "submissions"} to approve
+            </p>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("events")}
+            className={`text-left rounded-xl border p-4 transition-all outline-none interactive-focus ${
+              activeTab === "events"
+                ? "border-ink/25 bg-ink/[0.03] shadow-card"
+                : "border-ink/10 bg-canvas hover:border-ink/20"
+            }`}
+          >
+            <p className="text-[11px] font-sans text-muted">On public calendar</p>
+            <p className="font-display text-2xl font-semibold text-ink mt-1 tabular-nums">
+              {initialEvents.length}
+            </p>
+            <p className="text-[11px] text-muted font-sans mt-1">live events</p>
+          </button>
+        </section>
+
+        {pendingCount > 0 && activeTab === "submissions" && (
+          <div className="rounded-lg border border-deep-coral/15 bg-coral/5 px-4 py-3 text-sm font-sans text-ink">
+            <strong className="font-semibold">{pendingCount}</strong>{" "}
+            {pendingCount === 1 ? "submission needs" : "submissions need"} your review.
+            Approve to publish on the public feed, or reject with an optional note for your records.
+          </div>
+        )}
+
+        {/* Tabs + search */}
+        <div className="space-y-3 border-b border-ink/10 pb-3">
+          <nav className="flex gap-4 sm:gap-6 overflow-x-auto" role="tablist" aria-label="Admin sections">
             <button
+              type="button"
               role="tab"
+              id="tab-submissions"
+              aria-controls="panel-submissions"
               onClick={() => setActiveTab("submissions")}
               aria-selected={activeTab === "submissions"}
-              className="tab"
+              className="tab whitespace-nowrap shrink-0"
             >
-              Pending Submissions
-              {initialSubmissions.length > 0 && (
+              Review queue
+              {pendingCount > 0 && (
                 <span className="ml-2 font-mono text-[10px] bg-coral/10 text-deep-coral px-1.5 py-0.5 rounded-full font-semibold border border-deep-coral/10">
-                  {initialSubmissions.length}
+                  {pendingCount}
                 </span>
               )}
             </button>
             <button
+              type="button"
               role="tab"
+              id="tab-events"
+              aria-controls="panel-events"
               onClick={() => setActiveTab("events")}
               aria-selected={activeTab === "events"}
-              className="tab"
+              className="tab whitespace-nowrap shrink-0"
             >
-              Live Event Bulletin
+              Live events
               <span className="ml-2 font-mono text-[10px] bg-ink/5 text-muted px-1.5 py-0.5 rounded-full border border-ink/10">
                 {initialEvents.length}
               </span>
             </button>
           </nav>
 
-          {activeTab === "events" && (
-            <div className="mb-2">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search live events..."
-                className="bg-canvas border border-ink/15 rounded-md px-3 py-1.5 text-xs placeholder:text-muted/40 transition-colors focus:border-ink outline-none interactive-focus w-48 sm:w-64"
-              />
-            </div>
-          )}
+          <div className="relative max-w-md">
+            <IoSearch
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted/50 pointer-events-none"
+              size={14}
+              aria-hidden
+            />
+            <input
+              type="search"
+              value={activeTab === "submissions" ? submissionSearch : searchQuery}
+              onChange={(e) =>
+                activeTab === "submissions"
+                  ? setSubmissionSearch(e.target.value)
+                  : setSearchQuery(e.target.value)
+              }
+              placeholder={
+                activeTab === "submissions"
+                  ? "Search by title, host, or submitter…"
+                  : "Search by title, host, or location…"
+              }
+              className="w-full bg-canvas border border-ink/15 rounded-md pl-9 pr-3 py-2 text-sm placeholder:text-muted/40 transition-colors focus:border-ink outline-none interactive-focus"
+            />
+          </div>
         </div>
 
         {/* Tab content 1: Submissions */}
         {activeTab === "submissions" && (
-          <div className="space-y-6 animate-fade-up">
-            {initialSubmissions.length === 0 ? (
-              <div className="border border-ink/10 border-dashed rounded-xl p-12 text-center bg-canvas select-none">
-                <span className="text-2xl">🌱</span>
+          <div
+            id="panel-submissions"
+            role="tabpanel"
+            aria-labelledby="tab-submissions"
+            className="space-y-6 animate-fade-up"
+          >
+            {pendingCount === 0 ? (
+              <div className="border border-ink/10 border-dashed rounded-xl p-12 text-center bg-canvas">
+                <span className="text-2xl" aria-hidden>
+                  ✓
+                </span>
                 <h3 className="font-display text-base font-semibold mt-2 text-ink">
-                  Inboxes Cleared!
+                  Review queue is empty
                 </h3>
-                <p className="text-xs text-muted mt-1 max-w-[280px] mx-auto font-sans">
-                  There are no pending submissions awaiting review right now. All manual uploads have been handled.
+                <p className="text-xs text-muted mt-1 max-w-sm mx-auto font-sans">
+                  No community submissions are waiting. Switch to Live events to edit or remove
+                  published listings.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("events")}
+                  className="mt-4 text-xs font-semibold text-ink underline underline-offset-2 hover:no-underline outline-none interactive-focus"
+                >
+                  Go to live events
+                </button>
+              </div>
+            ) : filteredSubmissions.length === 0 ? (
+              <div className="border border-ink/10 border-dashed rounded-xl p-12 text-center bg-canvas">
+                <span className="text-2xl" aria-hidden>
+                  🔍
+                </span>
+                <h3 className="font-display text-base font-semibold mt-2 text-ink">
+                  No matching submissions
+                </h3>
+                <p className="text-xs text-muted mt-1 font-sans">
+                  Try a different search term or clear the search box.
                 </p>
               </div>
             ) : (
               <div className="grid gap-6 md:grid-cols-2">
-                {initialSubmissions.map((sub) => (
+                {filteredSubmissions.map((sub) => (
                   <div
                     key={sub.id}
                     className="bg-canvas border border-ink/10 rounded-xl p-5 shadow-card hover:border-ink/20 transition-all flex flex-col justify-between"
                   >
                     <div>
-                      {/* Submitter Box */}
-                      <div className="flex items-center justify-between border-b border-ink/5 pb-3 mb-4 select-none">
-                        <div className="text-[11px] font-mono tracking-wide text-muted leading-tight">
-                          <span>SUBMITTED BY: </span>
-                          <strong className="text-ink font-semibold">{sub.submitter_name}</strong>
-                          {sub.submitter_org && ` (${sub.submitter_org})`}
+                      <div className="flex items-start justify-between gap-3 border-b border-ink/5 pb-3 mb-4">
+                        <div className="min-w-0 space-y-1">
+                          <p className="text-[11px] font-sans text-muted">
+                            Submitted by{" "}
+                            <strong className="text-ink font-semibold">{sub.submitter_name}</strong>
+                            {sub.submitter_org && (
+                              <span className="text-muted"> · {sub.submitter_org}</span>
+                            )}
+                          </p>
+                          <a
+                            href={`mailto:${sub.submitter_email}`}
+                            className="inline-flex items-center gap-1 text-[11px] text-muted hover:text-ink font-sans truncate max-w-full"
+                          >
+                            <IoMailOutline size={12} aria-hidden />
+                            {sub.submitter_email}
+                          </a>
                         </div>
-                        <span className="font-mono text-[9px] text-muted">
+                        <time
+                          dateTime={sub.created_at}
+                          className="font-mono text-[9px] text-muted shrink-0 text-right"
+                        >
                           {formatDate(sub.created_at)}
-                        </span>
+                        </time>
                       </div>
 
                       {/* Event details */}
@@ -376,9 +702,32 @@ export default function AdminDashboardClient({
                           </div>
                         )}
 
-                        <p className="text-xs text-muted font-sans leading-relaxed whitespace-pre-line line-clamp-4 hover:line-clamp-none transition-all cursor-pointer">
-                          {sub.description}
-                        </p>
+                        <div>
+                          <p
+                            className={`text-xs text-muted font-sans leading-relaxed whitespace-pre-line ${
+                              expandedSubmissionIds.has(sub.id) ? "" : "line-clamp-4"
+                            }`}
+                          >
+                            {sub.description}
+                          </p>
+                          {sub.description.length > 200 && (
+                            <button
+                              type="button"
+                              onClick={() => toggleSubmissionDescription(sub.id)}
+                              className="mt-1.5 inline-flex items-center gap-0.5 text-[11px] font-semibold text-ink hover:underline outline-none interactive-focus"
+                            >
+                              {expandedSubmissionIds.has(sub.id) ? (
+                                <>
+                                  Show less <IoChevronUp size={12} aria-hidden />
+                                </>
+                              ) : (
+                                <>
+                                  Show full description <IoChevronDown size={12} aria-hidden />
+                                </>
+                              )}
+                            </button>
+                          )}
+                        </div>
 
                         <div className="grid gap-2 border-t border-ink/5 pt-3 select-none">
                           <div className="flex items-center gap-2 text-[11px] text-muted font-sans">
@@ -413,22 +762,23 @@ export default function AdminDashboardClient({
                       </div>
                     </div>
 
-                    {/* Approve / Reject buttons */}
-                    <div className="flex items-center gap-3 border-t border-ink/10 pt-4 mt-4 select-none">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 border-t border-ink/10 pt-4 mt-4">
                       <button
+                        type="button"
                         onClick={() => handleApprove(sub.id)}
                         disabled={isPending}
-                        className="flex-1 min-h-10 bg-ink hover:bg-ink/90 active:scale-[0.99] text-canvas text-xs font-semibold rounded-md flex items-center justify-center gap-1.5 transition-all outline-none interactive-focus"
+                        className="flex-1 min-h-10 bg-ink hover:bg-ink/90 active:scale-[0.99] text-canvas text-xs font-semibold rounded-md flex items-center justify-center gap-1.5 transition-all outline-none interactive-focus disabled:opacity-50"
                       >
-                        <IoCheckmark size={15} />
-                        <span>Approve Submission</span>
+                        <IoCheckmark size={15} aria-hidden />
+                        <span>Approve & publish</span>
                       </button>
                       <button
-                        onClick={() => handleReject(sub.id)}
+                        type="button"
+                        onClick={() => openRejectModal(sub.id)}
                         disabled={isPending}
-                        className="min-h-10 px-4 border border-coral/30 hover:bg-coral/5 text-deep-coral text-xs font-semibold rounded-md flex items-center justify-center gap-1.5 transition-all outline-none interactive-focus"
+                        className="min-h-10 px-4 border border-coral/30 hover:bg-coral/5 text-deep-coral text-xs font-semibold rounded-md flex items-center justify-center gap-1.5 transition-all outline-none interactive-focus disabled:opacity-50"
                       >
-                        <IoClose size={15} />
+                        <IoClose size={15} aria-hidden />
                         <span>Reject</span>
                       </button>
                     </div>
@@ -441,84 +791,50 @@ export default function AdminDashboardClient({
 
         {/* Tab content 2: Live Events */}
         {activeTab === "events" && (
-          <div className="space-y-4 animate-fade-up">
-            {/* Event list rows */}
-            {filteredEvents.length === 0 ? (
-              <div className="border border-ink/10 border-dashed rounded-xl p-12 text-center bg-canvas select-none">
-                <span className="text-2xl">🔍</span>
-                <h3 className="font-display text-base font-semibold mt-2 text-ink">
-                  No matches found
+          <div
+            id="panel-events"
+            role="tabpanel"
+            aria-labelledby="tab-events"
+            className="space-y-4 animate-fade-up"
+          >
+            <p className="text-xs text-muted font-sans">
+              Same order as the public events page (soonest first). Flyer thumbnails match what
+              students see — use the # labels to find a row on /events. Edit locks the listing;
+              delete removes it from the site.
+            </p>
+            {initialEvents.length === 0 ? (
+              <div className="border border-ink/10 border-dashed rounded-xl p-12 text-center bg-canvas">
+                <h3 className="font-display text-base font-semibold text-ink">
+                  No live events right now
                 </h3>
                 <p className="text-xs text-muted mt-1 font-sans">
-                  We couldn&apos;t find any live events matching your search terms.
+                  Approved submissions and synced sources will appear here when active.
+                </p>
+              </div>
+            ) : filteredEvents.length === 0 ? (
+              <div className="border border-ink/10 border-dashed rounded-xl p-12 text-center bg-canvas">
+                <span className="text-2xl" aria-hidden>
+                  🔍
+                </span>
+                <h3 className="font-display text-base font-semibold mt-2 text-ink">
+                  No matching events
+                </h3>
+                <p className="text-xs text-muted mt-1 font-sans">
+                  Try a different search term or clear the search box.
                 </p>
               </div>
             ) : (
               <div className="space-y-3">
                 {filteredEvents.map((evt) => (
-                  <div
+                  <AdminLiveEventRow
                     key={evt.id}
-                    className="bg-canvas border border-ink/10 rounded-xl p-4 shadow-card hover:border-ink/25 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4"
-                  >
-                    {/* Event Description Column */}
-                    <div className="flex items-start gap-3 flex-1 min-w-0">
-                      {/* Tonal category block */}
-                      <div
-                        className={`h-2.5 w-2.5 rounded-full mt-1.5 flex-shrink-0 ${
-                          evt.category === "club"
-                            ? "bg-highlander"
-                            : evt.category === "academic" || evt.category === "community"
-                            ? "bg-leaf"
-                            : evt.category === "social" || evt.category === "arts"
-                            ? "bg-coral"
-                            : evt.category === "free_food"
-                            ? "bg-gold"
-                            : "bg-ink"
-                        }`}
-                      />
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2 mb-1 select-none">
-                          <span className="bg-ink/5 border border-ink/10 text-muted font-mono text-[9px] px-1 py-0.2 rounded font-semibold uppercase">
-                            {evt.source}
-                          </span>
-                          <span className="font-mono text-[10px] text-muted">
-                            {formatDate(evt.starts_at)}
-                          </span>
-                          {evt.is_locked && (
-                            <span className="bg-gold/10 border border-gold/20 text-deep-gold font-mono text-[9px] px-1 py-0.2 rounded font-semibold tracking-wider">
-                              LOCKED (MANUAL EDIT)
-                            </span>
-                          )}
-                        </div>
-                        <h4 className="font-display text-sm font-semibold text-ink leading-tight truncate">
-                          {evt.title}
-                        </h4>
-                        <p className="text-xs text-muted font-sans mt-0.5 truncate max-w-2xl">
-                          {evt.location} · Host: {evt.host} · {evt.description}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Inline edit forms trigger and options */}
-                    <div className="flex items-center gap-2 select-none self-end md:self-auto">
-                      <button
-                        onClick={() => startEditing(evt)}
-                        disabled={isPending}
-                        className="p-2 border border-ink/10 hover:bg-ink/5 text-muted hover:text-ink rounded-md transition-all outline-none interactive-focus"
-                        title="Edit event details (automatically locks event)"
-                      >
-                        <IoPencil size={15} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(evt.id)}
-                        disabled={isPending}
-                        className="p-2 border border-coral/20 hover:bg-coral/5 text-muted hover:text-deep-coral rounded-md transition-all outline-none interactive-focus"
-                        title="Delete event from live site"
-                      >
-                        <IoTrash size={15} />
-                      </button>
-                    </div>
-                  </div>
+                    event={evt}
+                    feedIndex={feedPositionById.get(evt.id) ?? 0}
+                    formatDate={formatDate}
+                    disabled={isPending}
+                    onEdit={() => startEditing(evt)}
+                    onDelete={() => handleDelete(evt.id)}
+                  />
                 ))}
               </div>
             )}
@@ -535,10 +851,11 @@ export default function AdminDashboardClient({
                 <header className="flex items-center justify-between border-b border-ink/10 pb-4 mb-6 select-none">
                   <div>
                     <h3 className="font-display text-lg font-semibold text-ink leading-tight">
-                      Edit Live Event
+                      Edit event
                     </h3>
                     <p className="text-[11px] font-sans text-muted mt-1 leading-normal">
-                      Saving updates will automatically lock this event (`is_locked = true`) to protect it from automated overrides.
+                      Saving locks this listing so automated imports won&apos;t overwrite your
+                      changes.
                     </p>
                   </div>
                   <button
@@ -705,7 +1022,7 @@ export default function AdminDashboardClient({
                   disabled={isPending}
                   className="flex-1 min-h-11 bg-ink hover:bg-ink/90 text-canvas text-xs font-semibold rounded-md transition-colors outline-none interactive-focus"
                 >
-                  Save Corrections
+                  Save changes
                 </button>
                 <button
                   type="button"
@@ -717,6 +1034,82 @@ export default function AdminDashboardClient({
               </div>
             </form>
           </div>
+        </div>
+      )}
+
+      {/* Reject submission modal */}
+      {rejectingId && rejectingSubmission && (
+        <div
+          className="fixed inset-0 bg-ink/35 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="reject-dialog-title"
+        >
+          <div className="bg-canvas w-full max-w-md rounded-xl border border-ink/10 p-6 shadow-card animate-scale-in">
+            <header className="mb-4">
+              <h3 id="reject-dialog-title" className="font-display text-lg font-semibold text-ink">
+                Reject submission?
+              </h3>
+              <p className="text-xs text-muted font-sans mt-1">
+                &ldquo;{rejectingSubmission.title}&rdquo; will not be published. You can add an
+                internal note below (optional).
+              </p>
+            </header>
+            <label className="block text-[12px] font-sans text-muted mb-1.5" htmlFor="reject-reason">
+              Note (optional)
+            </label>
+            <textarea
+              id="reject-reason"
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              rows={3}
+              placeholder="e.g. duplicate event, missing details…"
+              className="w-full bg-canvas text-ink border border-ink/15 rounded-md py-2 px-3 text-sm focus:border-ink outline-none interactive-focus transition-colors resize-y font-sans leading-relaxed mb-4"
+            />
+            <div className="flex flex-col-reverse sm:flex-row gap-2">
+              <button
+                type="button"
+                onClick={closeRejectModal}
+                disabled={isPending}
+                className="flex-1 min-h-10 border border-ink/10 hover:bg-ink/5 text-muted hover:text-ink text-xs font-semibold rounded-md transition-colors outline-none interactive-focus"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleRejectConfirm}
+                disabled={isPending}
+                className="flex-1 min-h-10 bg-deep-coral hover:bg-deep-coral/90 text-canvas text-xs font-semibold rounded-md transition-colors outline-none interactive-focus disabled:opacity-50"
+              >
+                Reject submission
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isPending && (
+        <div
+          className="fixed bottom-4 right-4 z-[60] bg-ink text-canvas text-xs font-sans px-3 py-2 rounded-md shadow-card flex items-center gap-2"
+          role="status"
+          aria-live="polite"
+        >
+          <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" aria-hidden>
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            />
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            />
+          </svg>
+          Saving…
         </div>
       )}
     </div>
