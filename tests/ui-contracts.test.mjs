@@ -359,6 +359,20 @@ test("submit form tracks page-view to completion funnel events", () => {
   assert.match(form, /track\("submission_complete", \{\}\)/);
 });
 
+test("submission Discord webhook is owned by server route", () => {
+  const form = read("src/components/forms/submit/SubmitForm.tsx");
+  const route = read("src/app/api/submissions/route.ts");
+  const discord = read("src/lib/discord.ts");
+
+  assert.match(form, /fetch\("\/api\/submissions"/);
+  assert.doesNotMatch(form, /DISCORD_WEBHOOK_URL/);
+  assert.doesNotMatch(form, /supabase\.from\("submissions"\)/);
+  assert.match(route, /supabase\.from\("submissions"\)\.insert\(body\)/);
+  assert.match(route, /notifyNewSubmission\(body\)/);
+  assert.match(discord, /DISCORD_WEBHOOK_URL/);
+  assert.match(discord, /allowed_mentions/);
+});
+
 test("submit form validation and upload helpers live in focused modules", () => {
   const validation = read("src/components/forms/submit/submit-validation.ts");
   const datetime = read("src/lib/submit-datetime.ts");

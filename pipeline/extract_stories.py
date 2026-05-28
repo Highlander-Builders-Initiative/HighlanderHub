@@ -25,6 +25,7 @@ from config import (
     ensure_dirs,
     load_accounts,
 )
+from discord_notify import notify_free_food_events
 
 log = logging.getLogger("pipeline.extract_stories")
 
@@ -688,10 +689,10 @@ def _collect_event_rows(
     return rows
 
 
-def _upsert_events(rows: list[dict[str, Any]]) -> int:
+def _filter_locked_events(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     if not rows:
-        return 0
-    
+        return []
+
     # Query locked events from Supabase to prevent overwriting manual corrections
     try:
         from db import client
@@ -703,10 +704,14 @@ def _upsert_events(rows: list[dict[str, Any]]) -> int:
             rows = [r for r in rows if r["id"] not in locked_ids]
     except Exception as e:
         log.warning("Could not fetch locked events for story exclusion: %s. Proceeding with all events.", e)
-        
+
+    return rows
+
+
+def _upsert_events(rows: list[dict[str, Any]]) -> int:
     if not rows:
         return 0
-        
+
     from db import upsert_batched
     return upsert_batched("events", rows)
 
@@ -733,8 +738,12 @@ def main() -> None:
             existing.get("description") or ""
         ):
             by_id[row["id"]] = row
-    written = _upsert_events(list(by_id.values()))
+    event_rows = _filter_locked_events(list(by_id.values()))
+    written = _upsert_events(event_rows)
     log.info("Wrote %d events to Supabase", written)
+    notified = notify_free_food_events(event_rows)
+    if notified:
+        log.info("Sent %d free food Discord notifications", notified)
 
 
 if __name__ == "__main__":

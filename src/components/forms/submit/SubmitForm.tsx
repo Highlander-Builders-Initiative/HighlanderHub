@@ -10,7 +10,6 @@ import {
 import { track } from "@/lib/analytics";
 import { validateEventTimes } from "@/lib/events/validation";
 import { computeSubmitEndsAtLocal, type EndChoice } from "@/lib/submit-datetime";
-import { supabase } from "@/lib/supabase";
 import { SUBMIT_EVENT_CATEGORIES } from "@/types/event";
 import { Checkbox, Field, FormSection, SelectField } from "./fields";
 import { FlyerUpload } from "./FlyerUpload";
@@ -115,10 +114,20 @@ export default function SubmitForm() {
       uploadStatus.kind === "uploaded" ? uploadStatus.url : null
     );
 
-    const { error } = await supabase.from("submissions").insert(row);
+    try {
+      const response = await fetch("/api/submissions", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(row),
+      });
 
-    if (error) {
-      track("submission_error", { message: error.message });
+      if (!response.ok) {
+        throw new Error(`submission_save_failed:${response.status}`);
+      }
+    } catch (error) {
+      track("submission_error", {
+        message: error instanceof Error ? error.message : "submission_failed",
+      });
       setStatus({
         kind: "error",
         message:

@@ -22,9 +22,11 @@ flowchart LR
     EV[(events)]
     ST[(stories)]
     SM[(submissions)]
+    DN[(discord_notifications)]
   end
 
   subgraph app [src/]
+    SUBAPI["/api/submissions"]
     API["/api/events"]
     UI["App Router pages"]
   end
@@ -33,7 +35,8 @@ flowchart LR
   UCR --> NORM --> EV
   HL --> NORM --> EV
   SCR --> ST
-  SUB --> SM
+  SUB --> SUBAPI --> SM
+  EV --> DN
 
   EV --> API --> UI
   EV --> UI
@@ -41,7 +44,7 @@ flowchart LR
 
 1. **Pipeline** (`pipeline/run.py`, scheduled in `.github/workflows/scrape.yml`) scrapes external sources, normalizes rows, and upserts into Postgres. Raw JSON lives under `pipeline/data/` (gitignored).
 2. **Schemas** (`schemas/*.upsert.schema.json`) define the row shape both Python mappers and TypeScript must honor. Run `npm run generate:rows` after schema edits.
-3. **App** reads `events` via `src/lib/events/` (server) and client fetch helpers in `src/lib/events/api.ts`. Manual submissions land in `submissions` for review.
+3. **App** reads `events` via `src/lib/events/` (server) and client fetch helpers in `src/lib/events/api.ts`. Manual submissions post to `/api/submissions`, then land in `submissions` for review.
 
 ## Repository layout
 
@@ -70,7 +73,9 @@ flowchart LR
 
 ### Submit `/submit`
 
-- Client uploads optional flyer, validates Pacific wall-clock times, inserts into `submissions` via Supabase client.
+- Client uploads optional flyer, validates Pacific wall-clock times, then posts the submission row to `/api/submissions`.
+- The server route inserts into `submissions` and sends a Discord webhook alert when `DISCORD_WEBHOOK_URL` is configured.
+- Pipeline-discovered `free_food` events are announced once through the same webhook; `discord_notifications` prevents reposts across reruns.
 
 ## Testing
 
