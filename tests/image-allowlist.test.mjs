@@ -35,4 +35,10 @@ test("next/image remote patterns allow scraper-produced image hosts", () => {
     ),
     true
   );
+  assert.equal(
+    allows(
+      "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/submission-flyers/829c3a3b-93fc-47b4-9c16-ee00fa356710.jpg"
+    ),
+    true
+  );
 });
