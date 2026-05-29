@@ -25,6 +25,11 @@ const imageRemotePatterns = [
     hostname: supabaseUrl.hostname,
     pathname: "/storage/v1/object/public/submission-flyers/**",
   },
+  {
+    protocol: "https",
+    hostname: supabaseUrl.hostname,
+    pathname: "/storage/v1/object/public/event-flyers/**",
+  },
 ];
 
 const csp = [

@@ -23,6 +23,7 @@ const cases = [
   "https://se-images.campuslabs.com/other/flyer.jpg",
   "https://localist-images.azureedge.net/photos/123/original.jpg",
   "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/submission-flyers/abc.jpg",
+  "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/acm_ucr/389.jpg",
   "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/other/abc.jpg",
   "https://evil.example/flyer.jpg",
 ];

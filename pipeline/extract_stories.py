@@ -42,6 +42,7 @@ EVENT_CATEGORIES = (
     "free_food",
 )
 REMOTE_CACHE_TERMINAL_STATUSES = {"ok", "not_event", "no_text", "image_expired"}
+DURABLE_FLYER_BUCKET = "event-flyers"
 # Instagram handles that must not appear as the public "hosted by" name on listings.
 _ANONYMIZED_HOST_HANDLES = frozenset({"highlander_opps"})
 PACIFIC_TZ = ZoneInfo("America/Los_Angeles")
@@ -157,6 +158,8 @@ def _remote_cache_row_to_payload(row: dict[str, Any]) -> dict[str, Any] | None:
     }
     if row.get("ocr_text") is not None:
         payload["ocr_text"] = row.get("ocr_text")
+    if row.get("image_url") is not None:
+        payload["image_url"] = row.get("image_url")
     if row.get("result") is not None:
         payload["result"] = row.get("result")
     return payload
@@ -169,7 +172,7 @@ def _load_remote_cache(story_id: str) -> dict[str, Any] | None:
         response = (
             client()
             .table("story_extractions")
-            .select("story_id,handle,status,ocr_text,result,extracted_at")
+            .select("story_id,handle,status,ocr_text,image_url,result,extracted_at")
             .eq("story_id", story_id)
             .maybe_single()
             .execute()
@@ -194,6 +197,7 @@ def _write_remote_cache(payload: dict[str, Any]) -> None:
         "handle": payload.get("handle"),
         "status": status,
         "ocr_text": payload.get("ocr_text"),
+        "image_url": payload.get("image_url"),
         "result": payload.get("result"),
         "extracted_at": payload.get("extracted_at") or _utc_now(),
     }
@@ -246,6 +250,40 @@ def _download_image(url: str | None) -> bytes:
         raise ImageExpired(f"image URL returned HTTP {resp.status_code}")
     resp.raise_for_status()
     return resp.content
+
+
+def _storage_object_path(raw: dict[str, Any]) -> str | None:
+    story_id = str(raw.get("id") or "")
+    handle = str(raw.get("handle") or "")
+    safe_story_id = re.sub(r"[^A-Za-z0-9_-]+", "", story_id)
+    safe_handle = re.sub(r"[^A-Za-z0-9_.-]+", "_", handle).strip("._-")
+    if not safe_story_id or not safe_handle:
+        return None
+    return f"instagram/{safe_handle}/{safe_story_id}.jpg"
+
+
+def _upload_story_flyer(raw: dict[str, Any], image_bytes: bytes) -> str | None:
+    path = _storage_object_path(raw)
+    if path is None:
+        return None
+
+    try:
+        from db import client
+
+        bucket = client().storage.from_(DURABLE_FLYER_BUCKET)
+        bucket.upload(
+            path,
+            image_bytes,
+            {
+                "content-type": "image/jpeg",
+                "cache-control": "31536000",
+                "upsert": "true",
+            },
+        )
+        return bucket.get_public_url(path)
+    except (Exception, SystemExit) as exc:  # noqa: BLE001 - extraction can still proceed.
+        log.warning("event flyer upload failed for %s: %s", path, exc)
+        return None
 
 
 def _vision_ocr(image_bytes: bytes) -> str:
@@ -425,6 +463,7 @@ def _process_story(raw: dict[str, Any], meta: dict[str, Any]) -> dict[str, Any]:
         return {"status": "error", "error": str(exc)}
 
     status = "ok" if result.get("is_event") else "not_event"
+    durable_image_url = _upload_story_flyer(raw, image) if status == "ok" else None
     payload = {
         "status": status,
         "story_id": story_id,
@@ -433,6 +472,8 @@ def _process_story(raw: dict[str, Any], meta: dict[str, Any]) -> dict[str, Any]:
         "result": result,
         "extracted_at": _utc_now(),
     }
+    if durable_image_url:
+        payload["image_url"] = durable_image_url
     log.info("extract %s: %s", label, status)
     return _persist_terminal_cache(story_id, payload)
 
@@ -663,7 +704,7 @@ def _to_event_row(
         "tags": _clean_tags(llm.get("tags")),
         "source": "instagram",
         "source_url": _normalize_url(raw.get("permalink")),
-        "image_url": _normalize_url(raw.get("image_url")),
+        "image_url": _normalize_url(cached.get("image_url") or raw.get("image_url")),
         "is_free": _bool_or_default(llm.get("is_free"), True),
         "rsvp_required": _bool_or_default(llm.get("rsvp_required"), False),
         "rsvp_url": rsvp_url,
