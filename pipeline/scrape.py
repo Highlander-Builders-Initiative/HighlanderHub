@@ -291,6 +291,11 @@ def main() -> None:
         compress_json=False,
         quiet=True,
     )
+    L.context.user_agent = (
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+        "AppleWebKit/605.1.15 (KHTML, like Gecko) "
+        "Version/17.0 Safari/605.1.15"
+    )
     _login(L)
     accounts = _load_scrape_accounts(L)
 
