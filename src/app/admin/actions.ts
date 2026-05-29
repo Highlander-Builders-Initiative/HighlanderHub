@@ -1,7 +1,8 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { EVENTS_CACHE_TAG } from "@/lib/events";
 import { signSession, verifySession, getAdminSupabase, getAdminPassword, verifyPassword } from "@/lib/admin";
 import { parseAdminEventUpdate } from "./validate-event-update";
 import type { AdminEventUpdatePayload } from "./types";
@@ -147,6 +148,7 @@ export async function approveSubmission(submissionId: string) {
   }
 
   // Revalidate both /events feed and admin dashboard path
+  revalidateTag(EVENTS_CACHE_TAG);
   revalidatePath("/events");
   revalidatePath("/admin");
 
@@ -213,6 +215,7 @@ export async function updateEvent(eventId: string, updatedFields: unknown) {
     return { success: false, error: `Failed to update event: ${error.message}` };
   }
 
+  revalidateTag(EVENTS_CACHE_TAG);
   revalidatePath("/events");
   revalidatePath("/admin");
 
@@ -247,6 +250,7 @@ export async function deleteEvent(eventId: string) {
     return { success: false, error: `Failed to delete event: ${error.message}` };
   }
 
+  revalidateTag(EVENTS_CACHE_TAG);
   revalidatePath("/events");
   revalidatePath("/admin");
 

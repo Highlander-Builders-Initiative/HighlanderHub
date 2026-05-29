@@ -103,7 +103,7 @@ test("event category badges use a full-feed count source outside pagination", ()
   const filters = read("src/components/events/useEventFeedFilters.ts");
   const data = read("src/lib/events/index.ts");
 
-  assert.match(data, /export async function getEventFilterCountSource/);
+  assert.match(data, /export const getEventFilterCountSource = unstable_cache\(/);
   assert.match(
     data,
     /\.select\("id,title,description,starts_at,location,host,host_handle,category,tags"\)/

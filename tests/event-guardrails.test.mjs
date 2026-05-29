@@ -190,7 +190,35 @@ test("event detail lookup is request-level cached", () => {
   const source = read("src/lib/events/index.ts");
 
   assert.match(source, /import \{ cache \} from "react"/);
-  assert.match(source, /export const getEventById = cache\(/);
+  assert.match(source, /const getEventByIdUncached = cache\(/);
+});
+
+test("public event reads are Data-Cached and busted on admin writes", () => {
+  const data = read("src/lib/events/index.ts");
+  const adminActions = read("src/app/admin/actions.ts");
+
+  // The Supabase client is hardwired to no-store, so the reads are wrapped in
+  // the Data Cache to spare repeat visits the round-trips. (Static/edge ISR is
+  // not possible here: no-store bars prerender, so the routes stay dynamic.)
+  assert.match(data, /import \{ unstable_cache \} from "next\/cache"/);
+  assert.match(data, /export const EVENTS_CACHE_TAG = "events"/);
+  for (const name of [
+    "getEventsSummary",
+    "getEventsPage",
+    "getEventFilterCountSource",
+    "getCalendarEvents",
+    "getEventById",
+  ]) {
+    assert.match(
+      data,
+      new RegExp(`export const ${name} = unstable_cache\\(`),
+      `${name} must read through the Data Cache`
+    );
+  }
+
+  // Admin mutations bust the cache immediately rather than waiting for TTL.
+  assert.match(adminActions, /import \{ EVENTS_CACHE_TAG \} from "@\/lib\/events"/);
+  assert.match(adminActions, /revalidateTag\(EVENTS_CACHE_TAG\)/);
 });
 
 test("e2e fixtures stay outside the main event reader", () => {

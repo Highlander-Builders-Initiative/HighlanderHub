@@ -14,6 +14,10 @@ import {
   pacificTodayKey,
 } from "@/lib/dates";
 
+// Rendered per request: the Supabase client is hardwired to `cache: "no-store"`
+// (see lib/supabase.ts), which bars static prerendering. The expensive reads are
+// served from the Data Cache instead (see lib/events), so a visit avoids the
+// Supabase round-trips; admin mutations bust it via revalidateTag("events").
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
