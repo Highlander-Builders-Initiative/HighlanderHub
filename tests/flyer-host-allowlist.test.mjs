@@ -10,6 +10,10 @@ const { isOptimizableFlyerHost } = await importTsModule(
 
 const remotePatterns = nextConfig.images?.remotePatterns ?? [];
 const optimizerAllows = (url) => hasMatch([], remotePatterns, new URL(url));
+const supabaseOrigin = new URL(
+  process.env.NEXT_PUBLIC_SUPABASE_URL ??
+    "https://qyxlojftdtjasxhzyqil.supabase.co"
+).origin;
 
 // The client-side helper must agree with the server-side optimizer allowlist:
 // if it says "optimizable" for a host next/image actually rejects, the
@@ -22,9 +26,9 @@ const cases = [
   "https://se-images.campuslabs.com/clink/images/flyer.jpg",
   "https://se-images.campuslabs.com/other/flyer.jpg",
   "https://localist-images.azureedge.net/photos/123/original.jpg",
-  "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/submission-flyers/abc.jpg",
-  "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/acm_ucr/389.jpg",
-  "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/other/abc.jpg",
+  `${supabaseOrigin}/storage/v1/object/public/submission-flyers/abc.jpg`,
+  `${supabaseOrigin}/storage/v1/object/public/event-flyers/instagram/acm_ucr/389.jpg`,
+  `${supabaseOrigin}/storage/v1/object/public/other/abc.jpg`,
   "https://evil.example/flyer.jpg",
 ];
 
