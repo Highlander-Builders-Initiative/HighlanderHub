@@ -71,9 +71,8 @@ export function useEventFeedRestore({
     return () => {
       cancelled = true;
     };
-    // bootstrap is captured once via useState's lazy initializer, so its
-    // identity is stable; including it satisfies the exhaustive-deps rule
-    // without re-running the effect.
+    // `bootstrap` is a one-time snapshot (useState initializer, no setter) so it
+    // is referentially stable; listing it satisfies the linter without re-runs.
   }, [applyRestore, bootstrap]);
 
   return isRestoring;

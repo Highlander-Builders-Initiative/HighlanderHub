@@ -1,4 +1,46 @@
+const isDev = process.env.NODE_ENV !== "production";
+
+// Origins the browser legitimately talks to:
+// - Supabase: direct flyer uploads + storage public URLs (qyxlojftdtjasxhzyqil)
+// - Image CDNs mirror next.config images.remotePatterns
+// - Vercel: analytics script + web-vitals beacon
+const SUPABASE_ORIGIN = "https://qyxlojftdtjasxhzyqil.supabase.co";
+const IMG_HOSTS = [
+  "https://*.cdninstagram.com",
+  "https://se-images.campuslabs.com",
+  "https://localist-images.azureedge.net",
+  SUPABASE_ORIGIN,
+];
+
+const csp = [
+  `default-src 'self'`,
+  `base-uri 'self'`,
+  `object-src 'none'`,
+  `frame-ancestors 'none'`,
+  `form-action 'self'`,
+  `font-src 'self'`,
+  `style-src 'self' 'unsafe-inline'`,
+  `img-src 'self' data: blob: ${IMG_HOSTS.join(" ")}`,
+  // 'unsafe-eval' is only needed by the dev/HMR runtime.
+  `script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com${
+    isDev ? " 'unsafe-eval'" : ""
+  }`,
+  `connect-src 'self' ${SUPABASE_ORIGIN} https://vitals.vercel-insights.com${
+    isDev ? " ws:" : ""
+  }`,
+  // Don't force https upgrades on http://localhost during development.
+  ...(isDev ? [] : ["upgrade-insecure-requests"]),
+].join("; ");
+
 const securityHeaders = [
+  {
+    key: "Content-Security-Policy",
+    value: csp,
+  },
+  {
+    key: "Strict-Transport-Security",
+    value: "max-age=63072000; includeSubDomains; preload",
+  },
   {
     key: "X-Frame-Options",
     value: "DENY",
@@ -10,6 +52,10 @@ const securityHeaders = [
   {
     key: "Referrer-Policy",
     value: "strict-origin-when-cross-origin",
+  },
+  {
+    key: "Permissions-Policy",
+    value: "camera=(), microphone=(), geolocation=(), interest-cohort=()",
   },
 ];
 
