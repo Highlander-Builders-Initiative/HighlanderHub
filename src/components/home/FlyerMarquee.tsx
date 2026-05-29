@@ -340,7 +340,7 @@ export function FlyerMarquee({ events }: { events: CampusEvent[] }) {
           }
         }}
         style={{ x, gap: TILE_GAP_PX }}
-        className="relative flex w-max cursor-grab active:cursor-grabbing [&:has(a:hover)_a:not(:hover)]:opacity-65 [&:has(a:hover)_a:not(:hover)]:grayscale [&:has(a:focus-visible)_a:not(:focus-visible)]:opacity-65 [&:has(a:focus-visible)_a:not(:focus-visible)]:grayscale"
+        className="relative flex w-max cursor-grab active:cursor-grabbing [@media(hover:hover)]:[&:has(a:hover)_a:not(:hover)]:opacity-65 [@media(hover:hover)]:[&:has(a:hover)_a:not(:hover)]:grayscale [&:has(a:focus-visible)_a:not(:focus-visible)]:opacity-65 [&:has(a:focus-visible)_a:not(:focus-visible)]:grayscale"
       >
         <FlyerTileSet events={base} setRef={setRef} />
         <FlyerTileSet events={base} decorative />
