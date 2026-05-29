@@ -5,6 +5,10 @@ import { hasMatch } from "next/dist/shared/lib/match-remote-pattern.js";
 
 const remotePatterns = nextConfig.images?.remotePatterns ?? [];
 const allows = (url) => hasMatch([], remotePatterns, new URL(url));
+const supabaseOrigin = new URL(
+  process.env.NEXT_PUBLIC_SUPABASE_URL ??
+    "https://qyxlojftdtjasxhzyqil.supabase.co"
+).origin;
 
 test("next/image remote patterns do not allow arbitrary HTTPS hosts", () => {
   assert.ok(remotePatterns.length > 0);
@@ -37,13 +41,13 @@ test("next/image remote patterns allow scraper-produced image hosts", () => {
   );
   assert.equal(
     allows(
-      "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/submission-flyers/829c3a3b-93fc-47b4-9c16-ee00fa356710.jpg"
+      `${supabaseOrigin}/storage/v1/object/public/submission-flyers/829c3a3b-93fc-47b4-9c16-ee00fa356710.jpg`
     ),
     true
   );
   assert.equal(
     allows(
-      "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/acm_ucr/3894795737410658767.jpg"
+      `${supabaseOrigin}/storage/v1/object/public/event-flyers/instagram/acm_ucr/3894795737410658767.jpg`
     ),
     true
   );

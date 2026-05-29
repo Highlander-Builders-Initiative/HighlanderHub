@@ -42,6 +42,57 @@ class InstagramStoriesBadRequest(RuntimeError):
     """Fatal Instagram stories API failure that should stop account iteration."""
 
 
+# Response headers Instagram sets when it throttles or challenges a request.
+# A plain 400 "invalid request" (malformed/expired query), a 429 rate limit, and
+# a checkpoint/challenge all surface to instaloader as similar-looking errors —
+# the distinguishing signal lives in these headers and the raw body, both of
+# which the exception message discards.
+_DIAGNOSTIC_HEADERS = (
+    "retry-after",
+    "x-ratelimit-remaining",
+    "x-fb-rlafr",
+    "www-authenticate",
+    "x-ig-set-www-claim",
+    "content-type",
+)
+
+
+def _log_http_errors(resp: Any, *args: Any, **kwargs: Any) -> Any:
+    """requests response hook: dump the real status code, the headers that
+    reveal throttling/challenge state, and the response body for any 4xx/5xx
+    Instagram returns. This makes a 400 diagnosable (malformed query vs. rate
+    limit vs. checkpoint) instead of guessing from the generic 'bad request'.
+    """
+    if resp.status_code < 400:
+        return resp
+    headers = {
+        k: v for k, v in resp.headers.items() if k.lower() in _DIAGNOSTIC_HEADERS
+    }
+    body = resp.text[:1000]
+    truncated = "… (truncated)" if len(resp.text) > 1000 else ""
+    log.warning(
+        "Instagram HTTP %s %s on %s\n  diagnostic headers: %s\n  body: %s%s",
+        resp.status_code,
+        resp.reason,
+        resp.url,
+        headers,
+        body,
+        truncated,
+    )
+    return resp
+
+
+def _attach_http_error_logger(L: instaloader.Instaloader) -> None:
+    session = getattr(getattr(L, "context", None), "_session", None)
+    hooks = getattr(session, "hooks", None)
+    if not isinstance(hooks, dict):
+        return
+
+    response_hooks = hooks.setdefault("response", [])
+    if hasattr(response_hooks, "append") and _log_http_errors not in response_hooks:
+        response_hooks.append(_log_http_errors)
+
+
 def _login(L: instaloader.Instaloader) -> None:
     if SESSION_FILE:
         # Session file produced by `instaloader -l <user>`; safer for unattended runs.
@@ -291,7 +342,15 @@ def main() -> None:
         compress_json=False,
         quiet=True,
     )
+    L.context.user_agent = (
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+        "AppleWebKit/605.1.15 (KHTML, like Gecko) "
+        "Version/17.0 Safari/605.1.15"
+    )
     _login(L)
+    # Register after _login: load_session_from_file replaces L.context._session,
+    # which would drop a hook attached earlier.
+    _attach_http_error_logger(L)
     accounts = _load_scrape_accounts(L)
 
     totals = {"accounts": 0, "seen": 0, "new": 0, "errors": 0, "missing_profiles": 0}
