@@ -23,6 +23,7 @@ class NormalizeEventsTests(unittest.TestCase):
         fake_db = types.SimpleNamespace(
             upsert_batched=Mock(return_value=0),
             delete_rows_by_prefix=Mock(return_value=0),
+            get_deleted_event_ids=Mock(return_value=set()),
         )
         self.fake_db = fake_db
         self.module_patch = patch.dict(
@@ -164,6 +165,23 @@ class NormalizeEventsTests(unittest.TestCase):
             self.fake_db.delete_rows_by_prefix.assert_called_once_with(
                 "events", "ucr_events_52310591390648"
             )
+
+    def test_normalizer_suppresses_admin_deleted_events(self) -> None:
+        raw = {
+            "id": 123,
+            "title": "Security Night Workshop",
+            "first_date": "2026-05-15T19:00:00-07:00",
+        }
+        self.fake_db.get_deleted_event_ids.return_value = {"ucr_events_123"}
+
+        with patch.object(
+            self.normalize_events,
+            "_collect_raw",
+            side_effect=[[raw], []],
+        ):
+            self.normalize_events.main()
+
+        self.fake_db.upsert_batched.assert_called_once_with("events", [])
 
 
 if __name__ == "__main__":

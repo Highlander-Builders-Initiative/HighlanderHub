@@ -565,6 +565,20 @@ class ExtractStoriesTests(unittest.TestCase):
         self.assertIsNone(row["image_url"])
         self.assertIsNone(row["rsvp_url"])
 
+    def test_filter_deleted_events_suppresses_admin_deleted_ids(self) -> None:
+        rows = [
+            {"id": "ig_cyber_ucr_20260515T1900Z"},
+            {"id": "ig_ucrwrc_20260531T1800Z"},
+        ]
+        fake_db = types.SimpleNamespace(
+            get_deleted_event_ids=lambda: {"ig_cyber_ucr_20260515T1900Z"}
+        )
+
+        with patch.dict(sys.modules, {"db": fake_db}):
+            filtered = self.extract_stories._filter_deleted_events(rows)
+
+        self.assertEqual([row["id"] for row in filtered], ["ig_ucrwrc_20260531T1800Z"])
+
     def test_bool_or_default_parses_common_llm_boolean_forms(self) -> None:
         parse = self.extract_stories._bool_or_default
 

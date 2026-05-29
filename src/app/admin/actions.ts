@@ -227,6 +227,17 @@ export async function deleteEvent(eventId: string) {
 
   const supabase = getAdminSupabase();
 
+  const { error: tombstoneError } = await supabase
+    .from("deleted_events")
+    .upsert({ event_id: eventId, deleted_at: new Date().toISOString() });
+
+  if (tombstoneError) {
+    return {
+      success: false,
+      error: `Failed to mark event as deleted: ${tombstoneError.message}`,
+    };
+  }
+
   const { error } = await supabase
     .from("events")
     .delete()

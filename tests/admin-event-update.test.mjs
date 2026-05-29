@@ -44,3 +44,9 @@ test("approveSubmission rolls back event on submission update failure", () => {
   assert.match(actionsTs, /\.delete\(\)/);
   assert.match(actionsTs, /rollback/i);
 });
+
+test("deleteEvent records tombstone before deleting event row", () => {
+  assert.match(actionsTs, /\.from\("deleted_events"\)/);
+  assert.match(actionsTs, /\.upsert\(\{\s*event_id: eventId,/);
+  assert.match(actionsTs, /\.from\("events"\)\s*\.delete\(\)\s*\.eq\("id", eventId\)/);
+});
