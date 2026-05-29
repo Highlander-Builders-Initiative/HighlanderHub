@@ -47,7 +47,7 @@ class NormalizeEventsTests(unittest.TestCase):
                 "id": 123,
                 "title": "Security Night Workshop",
                 "first_date": "2026-05-15T19:00:00-07:00",
-                "localist_url": "javascript:alert(1)",
+                "localist_url": "link in bio",
                 "photo_url": "ftp://cdn.example/flyer.jpg",
                 "ticket_url": "mailto:club@example.com",
             },

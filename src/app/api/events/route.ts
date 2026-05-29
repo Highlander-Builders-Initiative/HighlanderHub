@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { EVENTS_PAGE_SIZE, getEventsByIds, getEventsPage } from "@/lib/events";
+import { EVENTS_PAGE_SIZE, getEventsPage } from "@/lib/events";
+import {
+  coerceCategoryParam,
+  coerceDayWindowParam,
+} from "@/components/events/events-filters";
 
 export const dynamic = "force-dynamic";
 
@@ -11,20 +15,15 @@ function readPositiveInt(value: string | null, fallback: number): number {
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-
-  // Search backfill: resolve full records for a comma-separated id set. The
-  // client only requests ids it knows match (from the full count source) but
-  // hasn't paged into the feed yet.
-  const idsParam = searchParams.get("ids");
-  if (idsParam !== null) {
-    const ids = idsParam.split(",").map((id) => id.trim()).filter(Boolean);
-    const events = await getEventsByIds(ids);
-    return NextResponse.json({ events, count: events.length });
-  }
-
   const offset = readPositiveInt(searchParams.get("offset"), 0);
   const limit = readPositiveInt(searchParams.get("limit"), EVENTS_PAGE_SIZE);
-  const page = await getEventsPage({ offset, limit });
+  const page = await getEventsPage({
+    offset,
+    limit,
+    query: searchParams.get("q") ?? "",
+    category: coerceCategoryParam(searchParams.get("cat")),
+    dayWindow: coerceDayWindowParam(searchParams.get("when")),
+  });
 
   return NextResponse.json({
     events: page.events,

@@ -202,6 +202,9 @@ test("public event reads are Data-Cached and busted on admin writes", () => {
   // not possible here: no-store bars prerender, so the routes stay dynamic.)
   assert.match(data, /import \{ unstable_cache \} from "next\/cache"/);
   assert.match(data, /export const EVENTS_CACHE_TAG = "events"/);
+  assert.match(data, /function cachePublicRead/);
+  assert.match(data, /unstable_cache\(operation, keyParts, eventsCacheOptions\)/);
+  assert.match(data, /e2eFixturesEnabled\(\) \? operation\(\.\.\.args\) : cached\(\.\.\.args\)/);
   for (const name of [
     "getEventsSummary",
     "getEventsPage",
@@ -211,7 +214,7 @@ test("public event reads are Data-Cached and busted on admin writes", () => {
   ]) {
     assert.match(
       data,
-      new RegExp(`export const ${name} = unstable_cache\\(`),
+      new RegExp(`export const ${name} = cachePublicRead\\(`),
       `${name} must read through the Data Cache`
     );
   }

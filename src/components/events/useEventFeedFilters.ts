@@ -7,9 +7,9 @@ import { getEmptyFeedCopy } from "@/lib/events/empty-feed-copy";
 import { groupByDay } from "@/lib/events/grouping";
 import {
   buildEventSearchText,
-  CATEGORIES,
-  matchesCategory,
-  matchesDayWindow,
+  countEventsByCategory,
+  filterEventSource,
+  normalizeEventQuery,
   type CategoryValue,
   type DayWindow,
 } from "./events-filters";
@@ -44,7 +44,7 @@ export function useEventFeedFilters({
   todayKey,
 }: UseEventFeedFiltersArgs) {
   const trimmedQuery = query.trim();
-  const normalizedQuery = trimmedQuery.toLowerCase();
+  const normalizedQuery = normalizeEventQuery(trimmedQuery);
   const activeFilters = useMemo<EventFeedActiveFilters>(() => {
     const hasQuery = trimmedQuery.length > 0;
     const hasCategory = category !== "all";
@@ -77,72 +77,37 @@ export function useEventFeedFilters({
     () => calendarSourceEvents.map(buildEventSearchText),
     [calendarSourceEvents]
   );
+  const filters = useMemo(
+    () => ({ category, dayWindow, todayKey, normalizedQuery }),
+    [category, dayWindow, todayKey, normalizedQuery]
+  );
 
   const filteredExceptCategory = useMemo(() => {
-    return loadedEvents.filter((ev, index) => {
-      if (normalizedQuery && !eventSearchText[index].includes(normalizedQuery)) {
-        return false;
-      }
-      if (!matchesDayWindow(ev, dayWindow, todayKey)) return false;
-      return true;
+    return filterEventSource(loadedEvents, filters, {
+      includeCategory: false,
+      searchText: eventSearchText,
     });
-  }, [loadedEvents, normalizedQuery, eventSearchText, dayWindow, todayKey]);
+  }, [loadedEvents, filters, eventSearchText]);
 
   const countSourceExceptCategory = useMemo(() => {
-    return filterCountSource.filter((ev, index) => {
-      if (
-        normalizedQuery &&
-        !countSourceSearchText[index].includes(normalizedQuery)
-      ) {
-        return false;
-      }
-      if (!matchesDayWindow(ev, dayWindow, todayKey)) return false;
-      return true;
+    return filterEventSource(filterCountSource, filters, {
+      includeCategory: false,
+      searchText: countSourceSearchText,
     });
-  }, [
-    filterCountSource,
-    normalizedQuery,
-    countSourceSearchText,
-    dayWindow,
-    todayKey,
-  ]);
+  }, [filterCountSource, filters, countSourceSearchText]);
 
   const filteredCalendarEvents = useMemo(() => {
-    return calendarSourceEvents.filter((ev, index) => {
-      if (
-        normalizedQuery &&
-        !calendarSearchText[index].includes(normalizedQuery)
-      ) {
-        return false;
-      }
-      if (!matchesDayWindow(ev, dayWindow, todayKey)) return false;
-      if (!matchesCategory(ev, category)) return false;
-      return true;
+    return filterEventSource(calendarSourceEvents, filters, {
+      searchText: calendarSearchText,
     });
-  }, [
-    calendarSourceEvents,
-    normalizedQuery,
-    calendarSearchText,
-    dayWindow,
-    todayKey,
-    category,
-  ]);
+  }, [calendarSourceEvents, filters, calendarSearchText]);
 
   const filtered = useMemo(() => {
-    return filteredExceptCategory.filter((ev) => matchesCategory(ev, category));
-  }, [filteredExceptCategory, category]);
+    return filterEventSource(filteredExceptCategory, filters);
+  }, [filteredExceptCategory, filters]);
 
   const counts = useMemo(() => {
-    const map = new Map<CategoryValue, number>();
-    map.set("all", countSourceExceptCategory.length);
-    for (const c of CATEGORIES) {
-      if (c.value === "all") continue;
-      map.set(
-        c.value,
-        countSourceExceptCategory.filter((ev) => matchesCategory(ev, c.value)).length
-      );
-    }
-    return map;
+    return countEventsByCategory(countSourceExceptCategory);
   }, [countSourceExceptCategory]);
 
   const grouped = useMemo(() => groupByDay(filtered), [filtered]);
@@ -172,8 +137,9 @@ export function useEventFeedFilters({
 
   const loadedTotal = filtered.length;
   const feedTotal = filterCountSource.length;
+  const matchingTotal = counts.get(category) ?? 0;
   const resultsLabel = hasActiveFilters
-    ? `${filtered.length} matching ${filtered.length === 1 ? "event" : "events"}`
+    ? `${matchingTotal} matching ${matchingTotal === 1 ? "event" : "events"}`
     : loadedTotal === feedTotal
       ? `${loadedTotal} ${loadedTotal === 1 ? "event" : "events"} loaded`
     : `${filtered.length} of ${feedTotal} ${feedTotal === 1 ? "event" : "events"} loaded`;
@@ -189,6 +155,7 @@ export function useEventFeedFilters({
     filteredExceptCategory,
     filtered,
     counts,
+    matchingTotal,
     grouped,
     dayKeys,
     categoriesByDay,

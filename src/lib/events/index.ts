@@ -9,18 +9,23 @@ import { supabase } from "@/lib/supabase";
 import {
   addPacificDays,
   pacificDayKey,
+  pacificTodayKey,
   parsePacificDateTimeInput,
   startOfPacificToday,
 } from "@/lib/dates";
+import {
+  coerceCategoryParam,
+  coerceDayWindowParam,
+  filterEventSource,
+  normalizeEventQuery,
+  type CategoryValue,
+  type DayWindow,
+} from "@/components/events/events-filters";
 import { E2E_FIXTURE_EVENT, e2eFixturesEnabled } from "./fixtures";
 
 const DB_RETRY_ATTEMPTS = 2;
 export const EVENTS_PAGE_SIZE = 24;
 export const EVENTS_CALENDAR_RANGE_LIMIT = 500;
-// Upper bound on ids resolved in one search-backfill fetch. Search matches are
-// already capped client-side; this is the server-side guard against an
-// oversized `?ids=` query.
-export const EVENTS_BY_IDS_LIMIT = 200;
 
 // Cross-request caching for the public read path. The Supabase client is
 // hardwired to `cache: "no-store"` (see lib/supabase.ts), so route-level
@@ -37,6 +42,10 @@ const eventsCacheOptions = {
 type EventsPageOptions = {
   limit?: number;
   offset?: number;
+  query?: string;
+  category?: CategoryValue;
+  dayWindow?: DayWindow;
+  todayKey?: string;
 };
 
 type CalendarEventsOptions = {
@@ -95,6 +104,32 @@ function describeSupabaseError(error: unknown): string {
   return "Unknown Supabase error";
 }
 
+function hasEventPageFilters({
+  query,
+  category = "all",
+  dayWindow = "all",
+}: EventsPageOptions): boolean {
+  return (
+    normalizeEventQuery(query).length > 0 ||
+    coerceCategoryParam(category) !== "all" ||
+    coerceDayWindowParam(dayWindow) !== "all"
+  );
+}
+
+function paginateEvents(
+  events: CampusEvent[],
+  pageSize: number,
+  offset: number
+): EventsPageResult {
+  const rows = events.slice(offset, offset + pageSize + 1);
+  const pageEvents = rows.slice(0, pageSize);
+  return {
+    events: pageEvents,
+    hasMore: rows.length > pageSize,
+    nextOffset: offset + pageEvents.length,
+  };
+}
+
 export function activeEventFilter(nowIso: string): string {
   return `ends_at.gte.${nowIso},and(ends_at.is.null,starts_at.gte.${nowIso})`;
 }
@@ -144,6 +179,15 @@ async function withDbRetry<T extends { error: unknown }>(
   }
 
   reportDbFailure(operation, lastError, context);
+}
+
+function cachePublicRead<Args extends unknown[], Result>(
+  operation: (...args: Args) => Promise<Result>,
+  keyParts: string[]
+): (...args: Args) => Promise<Result> {
+  const cached = unstable_cache(operation, keyParts, eventsCacheOptions);
+  return (...args: Args) =>
+    e2eFixturesEnabled() ? operation(...args) : cached(...args);
 }
 
 async function getEventsSummaryUncached(): Promise<EventsSummary> {
@@ -202,21 +246,55 @@ async function getEventsSummaryUncached(): Promise<EventsSummary> {
 async function getEventsPageUncached({
   limit = EVENTS_PAGE_SIZE,
   offset = 0,
+  query = "",
+  category = "all",
+  dayWindow = "all",
+  todayKey = pacificTodayKey(),
 }: EventsPageOptions = {}): Promise<EventsPageResult> {
+  const pageSize = Math.max(1, Math.min(limit, 60));
+  const from = Math.max(0, offset);
+  const normalizedQuery = normalizeEventQuery(query);
+  const filters = {
+    category: coerceCategoryParam(category),
+    dayWindow: coerceDayWindowParam(dayWindow),
+    todayKey,
+    normalizedQuery,
+  };
+  const hasFilters = hasEventPageFilters({
+    query,
+    category: filters.category,
+    dayWindow: filters.dayWindow,
+  });
+
   return withE2eFixture(
     () => {
-      const events = offset === 0 && limit > 0 ? [E2E_FIXTURE_EVENT] : [];
-      return {
-        events,
-        hasMore: false,
-        nextOffset: events.length,
-      };
+      const source = hasFilters
+        ? filterEventSource([E2E_FIXTURE_EVENT], filters)
+        : [E2E_FIXTURE_EVENT];
+      return paginateEvents(source, pageSize, from);
     },
     async () => {
-      const pageSize = Math.max(1, Math.min(limit, 60));
-      const from = Math.max(0, offset);
-      const to = from + pageSize;
       const nowIso = new Date().toISOString();
+
+      if (hasFilters) {
+        const { data } = await withDbRetry("filtered events", () =>
+          supabase
+            .from("events")
+            .select("*")
+            .or(activeEventFilter(nowIso))
+            .order("starts_at", { ascending: true })
+            .order("id", { ascending: true })
+            .overrideTypes<EventRow[], { merge: false }>()
+        );
+
+        const filtered = filterEventSource(
+          (data ?? []).map(eventRowToCampusEvent),
+          filters
+        );
+        return paginateEvents(filtered, pageSize, from);
+      }
+
+      const to = from + pageSize;
 
       const { data } = await withDbRetry("events", () =>
         supabase
@@ -247,38 +325,6 @@ export async function getEvents(
 ): Promise<CampusEvent[]> {
   const page = await getEventsPage(options);
   return page.events;
-}
-
-// Resolve full event records for a set of ids, applying the same active-event
-// filter as the feed so a stale id can never surface a past or hidden event.
-// Used by search backfill: the client already knows which events match (from
-// the full count source) and fetches the full records it hasn't paged in yet.
-// Not Data-Cached — the id set is request-specific, so a cache key would never
-// be reused.
-export async function getEventsByIds(ids: string[]): Promise<CampusEvent[]> {
-  const unique = Array.from(new Set(ids)).slice(0, EVENTS_BY_IDS_LIMIT);
-  if (unique.length === 0) return [];
-
-  return withE2eFixture(
-    () =>
-      unique.includes(E2E_FIXTURE_EVENT.id) ? [E2E_FIXTURE_EVENT] : [],
-    async () => {
-      const nowIso = new Date().toISOString();
-
-      const { data } = await withDbRetry("events by ids", () =>
-        supabase
-          .from("events")
-          .select("*")
-          .in("id", unique)
-          .or(activeEventFilter(nowIso))
-          .order("starts_at", { ascending: true })
-          .order("id", { ascending: true })
-          .overrideTypes<EventRow[], { merge: false }>()
-      );
-
-      return (data ?? []).map(eventRowToCampusEvent);
-    }
-  );
 }
 
 async function getEventFilterCountSourceUncached(): Promise<
@@ -371,28 +417,23 @@ const getEventByIdUncached = cache(async function getEventById(
 // function's signature (args are folded into the cache key); a successful
 // result is cached for EVENTS_CACHE_TTL_SECONDS and busted by
 // revalidateTag(EVENTS_CACHE_TAG). Thrown errors are not cached.
-export const getEventsSummary = unstable_cache(
+export const getEventsSummary = cachePublicRead(
   getEventsSummaryUncached,
-  ["events-summary"],
-  eventsCacheOptions
+  ["events-summary"]
 );
-export const getEventsPage = unstable_cache(
+export const getEventsPage = cachePublicRead(
   getEventsPageUncached,
-  ["events-page"],
-  eventsCacheOptions
+  ["events-page"]
 );
-export const getEventFilterCountSource = unstable_cache(
+export const getEventFilterCountSource = cachePublicRead(
   getEventFilterCountSourceUncached,
-  ["event-filter-counts"],
-  eventsCacheOptions
+  ["event-filter-counts"]
 );
-export const getCalendarEvents = unstable_cache(
+export const getCalendarEvents = cachePublicRead(
   getCalendarEventsUncached,
-  ["calendar-events"],
-  eventsCacheOptions
+  ["calendar-events"]
 );
-export const getEventById = unstable_cache(
+export const getEventById = cachePublicRead(
   getEventByIdUncached,
-  ["event-by-id"],
-  eventsCacheOptions
+  ["event-by-id"]
 );

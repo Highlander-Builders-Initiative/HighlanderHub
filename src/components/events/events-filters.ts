@@ -121,6 +121,17 @@ type SearchableEvent = Pick<
   "title" | "description" | "host" | "hostHandle" | "location" | "tags"
 >;
 
+type EventFilterable = SearchableEvent &
+  Pick<CampusEvent, "startsAt" | "category" | "tags">;
+
+export type EventFilterCriteria = {
+  category: CategoryValue;
+  dayWindow: DayWindow;
+  todayKey: string;
+  query?: string;
+  normalizedQuery?: string;
+};
+
 /** Flattened, lowercased haystack for substring search across an event's
  * title, description, host, handle, location, and tags. */
 export function buildEventSearchText(event: SearchableEvent): string {
@@ -140,26 +151,54 @@ export function matchesQuery(searchText: string, normalizedQuery: string) {
   return normalizedQuery.length === 0 || searchText.includes(normalizedQuery);
 }
 
-/**
- * Given the full search corpus and an already trimmed+lowercased query, return
- * the ids of matching events that aren't in `loadedIds` — i.e. the events that
- * exist deeper in the feed than infinite scroll has reached. The result is
- * chronologically ordered (the corpus is) and capped at `limit`.
- */
-export function computeMissingSearchIds(
-  source: (SearchableEvent & { id: string })[],
-  normalizedQuery: string,
-  loadedIds: Set<string>,
-  limit: number
-): string[] {
-  if (normalizedQuery.length === 0) return [];
-  const missing: string[] = [];
-  for (const event of source) {
-    if (missing.length >= limit) break;
-    if (loadedIds.has(event.id)) continue;
-    if (matchesQuery(buildEventSearchText(event), normalizedQuery)) {
-      missing.push(event.id);
-    }
+export function normalizeEventQuery(query: string | undefined): string {
+  return (query ?? "").trim().toLowerCase();
+}
+
+export function matchesEventFilters(
+  event: EventFilterable,
+  filters: EventFilterCriteria,
+  options: {
+    includeCategory?: boolean;
+    searchText?: string;
+  } = {}
+): boolean {
+  const normalizedQuery =
+    filters.normalizedQuery ?? normalizeEventQuery(filters.query);
+  const searchText = options.searchText ?? buildEventSearchText(event);
+
+  if (!matchesQuery(searchText, normalizedQuery)) return false;
+  if (!matchesDayWindow(event, filters.dayWindow, filters.todayKey)) return false;
+  if (options.includeCategory !== false && !matchesCategory(event, filters.category)) {
+    return false;
   }
-  return missing;
+  return true;
+}
+
+export function filterEventSource<T extends EventFilterable>(
+  events: T[],
+  filters: EventFilterCriteria,
+  options: {
+    includeCategory?: boolean;
+    searchText?: string[];
+  } = {}
+): T[] {
+  return events.filter((event, index) =>
+    matchesEventFilters(event, filters, {
+      includeCategory: options.includeCategory,
+      searchText: options.searchText?.[index],
+    })
+  );
+}
+
+export function countEventsByCategory<T extends Pick<CampusEvent, "category" | "tags">>(
+  events: T[]
+): Map<CategoryValue, number> {
+  const map = new Map<CategoryValue, number>();
+  map.set("all", events.length);
+  for (const c of CATEGORIES) {
+    if (c.value === "all") continue;
+    map.set(c.value, events.filter((ev) => matchesCategory(ev, c.value)).length);
+  }
+  return map;
 }

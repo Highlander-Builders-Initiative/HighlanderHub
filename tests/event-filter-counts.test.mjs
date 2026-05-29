@@ -103,7 +103,7 @@ test("event category badges use a full-feed count source outside pagination", ()
   const filters = read("src/components/events/useEventFeedFilters.ts");
   const data = read("src/lib/events/index.ts");
 
-  assert.match(data, /export const getEventFilterCountSource = unstable_cache\(/);
+  assert.match(data, /export const getEventFilterCountSource = cachePublicRead\(/);
   assert.match(
     data,
     /\.select\("id,title,description,starts_at,location,host,host_handle,category,tags"\)/
@@ -114,8 +114,8 @@ test("event category badges use a full-feed count source outside pagination", ()
   assert.match(browser, /filterCountSource: EventFilterCountSource\[\]/);
   assert.match(browser, /filterCountSource,/);
   assert.match(filters, /filterCountSource: EventFilterCountSource\[\]/);
-  assert.match(filters, /const countSourceExceptCategory = useMemo/);
-  assert.match(filters, /map\.set\("all", countSourceExceptCategory\.length\)/);
+  assert.match(filters, /filterEventSource\(filterCountSource, filters/);
+  assert.match(filters, /countEventsByCategory\(countSourceExceptCategory\)/);
   assert.doesNotMatch(
     filters,
     /map\.set\("all", filteredExceptCategory\.length\)/
