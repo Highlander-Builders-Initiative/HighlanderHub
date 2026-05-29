@@ -21,6 +21,8 @@ const csp = [
   `font-src 'self'`,
   `style-src 'self' 'unsafe-inline'`,
   `img-src 'self' data: blob: ${IMG_HOSTS.join(" ")}`,
+  // Next's app runtime still emits inline bootstrap scripts here. A nonce-based
+  // CSP would be a larger framework-wide change, so keep this tradeoff explicit.
   // 'unsafe-eval' is only needed by the dev/HMR runtime.
   `script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com${
     isDev ? " 'unsafe-eval'" : ""
@@ -37,14 +39,14 @@ const securityHeaders = [
     key: "Content-Security-Policy",
     value: csp,
   },
-  {
-    key: "Strict-Transport-Security",
-    value: "max-age=63072000; includeSubDomains; preload",
-  },
-  {
-    key: "X-Frame-Options",
-    value: "DENY",
-  },
+  ...(isDev
+    ? []
+    : [
+        {
+          key: "Strict-Transport-Security",
+          value: "max-age=63072000; includeSubDomains; preload",
+        },
+      ]),
   {
     key: "X-Content-Type-Options",
     value: "nosniff",
