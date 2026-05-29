@@ -718,6 +718,22 @@ def _filter_locked_events(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return rows
 
 
+def _filter_deleted_events(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    if not rows:
+        return []
+
+    from db import get_deleted_event_ids
+
+    deleted_ids = get_deleted_event_ids()
+    if deleted_ids:
+        log.info(
+            "Found %d admin-deleted events. Excluding from story crawler run.",
+            len(deleted_ids),
+        )
+        rows = [r for r in rows if r["id"] not in deleted_ids]
+    return rows
+
+
 def _upsert_events(rows: list[dict[str, Any]]) -> int:
     if not rows:
         return 0
@@ -749,6 +765,7 @@ def main() -> None:
         ):
             by_id[row["id"]] = row
     event_rows = _filter_locked_events(list(by_id.values()))
+    event_rows = _filter_deleted_events(event_rows)
     written = _upsert_events(event_rows)
     log.info("Wrote %d events to Supabase", written)
     notified = notify_free_food_events(event_rows)

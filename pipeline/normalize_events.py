@@ -22,7 +22,7 @@ from typing import Any, Iterable
 from urllib.parse import urlsplit
 
 from config import RAW_DIR, ensure_dirs
-from db import delete_rows_by_prefix, upsert_batched
+from db import delete_rows_by_prefix, get_deleted_event_ids, upsert_batched
 from discord_notify import notify_free_food_events
 
 log = logging.getLogger("pipeline.normalize_events")
@@ -416,6 +416,20 @@ def _collect_raw(source_dir: Path) -> Iterable[dict[str, Any]]:
             log.warning("skipping malformed file: %s", path)
 
 
+def _filter_deleted_events(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    if not rows:
+        return []
+
+    deleted_ids = get_deleted_event_ids()
+    if deleted_ids:
+        log.info(
+            "Found %d admin-deleted events. Excluding from structured importer run.",
+            len(deleted_ids),
+        )
+        rows = [r for r in rows if r["id"] not in deleted_ids]
+    return rows
+
+
 def main() -> None:
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
@@ -448,6 +462,8 @@ def main() -> None:
             deduped = [r for r in deduped if r["id"] not in locked_ids]
     except Exception as e:
         log.warning("Could not fetch locked events for exclusion: %s. Proceeding with all events.", e)
+
+    deduped = _filter_deleted_events(deduped)
 
     deleted = 0
     for prefix in dict.fromkeys(stale_prefixes):

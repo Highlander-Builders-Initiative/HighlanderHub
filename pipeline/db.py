@@ -79,3 +79,13 @@ def delete_rows_by_prefix(table: str, prefix: str) -> int:
         c.table(table).delete().like("id", pattern).execute()
         log.info("%s: deleted %d rows with id prefix %s", table, count, prefix)
     return count
+
+
+def get_deleted_event_ids() -> set[str]:
+    """Return admin-deleted event IDs that pipeline imports must not recreate."""
+    res = client().table("deleted_events").select("event_id").execute()
+    return {
+        str(row["event_id"])
+        for row in getattr(res, "data", []) or []
+        if row.get("event_id")
+    }
