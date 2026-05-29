@@ -1,10 +1,34 @@
 {
   "accounts": [
     {
+      "handle": "909dt",
+      "label": "909dt",
+      "category": "club",
+      "instagram_user_id": 325968047
+    },
+    {
       "handle": "acm_ucr",
       "label": "ACM @ UCR",
       "category": "club",
       "instagram_user_id": 10839758322
+    },
+    {
+      "handle": "aisc_riv",
+      "label": "aisc_riv",
+      "category": "club",
+      "instagram_user_id": 61584481276
+    },
+    {
+      "handle": "animedivaclub",
+      "label": "animedivaclub",
+      "category": "club",
+      "instagram_user_id": 77832372254
+    },
+    {
+      "handle": "aspb_ucr",
+      "label": "aspb ucr",
+      "category": "club",
+      "instagram_user_id": 176255893
     },
     {
       "handle": "asucr",
@@ -77,6 +101,12 @@
       "label": "hfgucr",
       "category": "club",
       "instagram_user_id": 39866702660
+    },
+    {
+      "handle": "highlander_opps",
+      "label": "highlander_opps",
+      "category": "club",
+      "instagram_user_id": 61891229261
     },
     {
       "handle": "highlandergloves",
@@ -199,6 +229,12 @@
       "instagram_user_id": 62539073670
     },
     {
+      "handle": "ucrakpsi",
+      "label": "ucrakpsi",
+      "category": "club",
+      "instagram_user_id": 305825871
+    },
+    {
       "handle": "ucrcsa",
       "label": "ucrcsa",
       "category": "club",
@@ -235,10 +271,22 @@
       "instagram_user_id": 38098166631
     },
     {
+      "handle": "ucriversideofficial",
+      "label": "ucriversideofficial",
+      "category": "Organization",
+      "instagram_user_id": 228928590
+    },
+    {
       "handle": "ucrkasa",
       "label": "ucrkasa",
       "category": "club",
       "instagram_user_id": 11137893764
+    },
+    {
+      "handle": "ucrlgbtrc",
+      "label": "ucrlgbtrc",
+      "category": "Organization",
+      "instagram_user_id": 562119282
     },
     {
       "handle": "ucrlibrary",
@@ -287,29 +335,6 @@
       "label": "wincucr",
       "category": "club",
       "instagram_user_id": 7373831525
-    },
-    {
-      "handle": "hbsucr",
-      "label": "hbsucr",
-      "category": "club",
-      "instagram_user_id": 50054887393
-    },
-    {
-      "handle": "ucrakpsi",
-      "label": "ucrakpsi",
-      "category": "club",
-      "instagram_user_id": 305825871
-    },
-    {
-      "handle": "highlander_opps",
-      "label": "highlander_opps",
-      "category": "club",
-      "instagram_user_id": 61891229261
-    },
-    { "handle": "aspb_ucr",
-      "label": "aspb ucr",
-      "category": "club",
-      "instagram_user_id": 176255893
-  }    
+    }
   ]
 }
