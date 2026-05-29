@@ -18,6 +18,8 @@ on conflict (id) do update
       file_size_limit    = excluded.file_size_limit,
       allowed_mime_types = excluded.allowed_mime_types;
 
+drop policy if exists "event_flyers_public_read" on storage.objects;
+
 create policy "event_flyers_public_read"
   on storage.objects for select
   to public
