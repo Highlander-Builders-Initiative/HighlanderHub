@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { unstable_cache } from "next/cache";
 import type { CampusEvent } from "@/types/event";
 import type { EventFilterCountSource } from "@/types/events-feed";
 import type { EventRow } from "@/lib/supabase-rows";
@@ -16,6 +17,18 @@ import { E2E_FIXTURE_EVENT, e2eFixturesEnabled } from "./fixtures";
 const DB_RETRY_ATTEMPTS = 2;
 export const EVENTS_PAGE_SIZE = 24;
 export const EVENTS_CALENDAR_RANGE_LIMIT = 500;
+
+// Cross-request caching for the public read path. The Supabase client is
+// hardwired to `cache: "no-store"` (see lib/supabase.ts), so route-level
+// `revalidate` alone can't cache these reads — they're wrapped in the Data
+// Cache below instead. Admin mutations call `revalidateTag(EVENTS_CACHE_TAG)`
+// to bust every entry; otherwise the stale window is EVENTS_CACHE_TTL_SECONDS.
+export const EVENTS_CACHE_TAG = "events";
+const EVENTS_CACHE_TTL_SECONDS = 300;
+const eventsCacheOptions = {
+  revalidate: EVENTS_CACHE_TTL_SECONDS,
+  tags: [EVENTS_CACHE_TAG],
+};
 
 type EventsPageOptions = {
   limit?: number;
@@ -129,7 +142,7 @@ async function withDbRetry<T extends { error: unknown }>(
   reportDbFailure(operation, lastError, context);
 }
 
-export async function getEventsSummary(): Promise<EventsSummary> {
+async function getEventsSummaryUncached(): Promise<EventsSummary> {
   return withE2eFixture(
     () => ({
       total: 1,
@@ -182,7 +195,7 @@ export async function getEventsSummary(): Promise<EventsSummary> {
  * Events stay visible until their `ends_at` time; if they have no end time,
  * they fall back to `starts_at` so one-off posts still disappear.
  */
-export async function getEventsPage({
+async function getEventsPageUncached({
   limit = EVENTS_PAGE_SIZE,
   offset = 0,
 }: EventsPageOptions = {}): Promise<EventsPageResult> {
@@ -232,7 +245,7 @@ export async function getEvents(
   return page.events;
 }
 
-export async function getEventFilterCountSource(): Promise<
+async function getEventFilterCountSourceUncached(): Promise<
   EventFilterCountSource[]
 > {
   return withE2eFixture(
@@ -255,7 +268,7 @@ export async function getEventFilterCountSource(): Promise<
   );
 }
 
-export async function getCalendarEvents({
+async function getCalendarEventsUncached({
   startDayKey,
   endDayKey,
   limit = EVENTS_CALENDAR_RANGE_LIMIT,
@@ -293,7 +306,7 @@ export async function getCalendarEvents({
   );
 }
 
-export const getEventById = cache(async function getEventById(
+const getEventByIdUncached = cache(async function getEventById(
   id: string
 ): Promise<CampusEvent | null> {
   return withE2eFixture(
@@ -317,3 +330,33 @@ export const getEventById = cache(async function getEventById(
     }
   );
 });
+
+// Data Cache wrappers for the public read path. Each keeps the underlying
+// function's signature (args are folded into the cache key); a successful
+// result is cached for EVENTS_CACHE_TTL_SECONDS and busted by
+// revalidateTag(EVENTS_CACHE_TAG). Thrown errors are not cached.
+export const getEventsSummary = unstable_cache(
+  getEventsSummaryUncached,
+  ["events-summary"],
+  eventsCacheOptions
+);
+export const getEventsPage = unstable_cache(
+  getEventsPageUncached,
+  ["events-page"],
+  eventsCacheOptions
+);
+export const getEventFilterCountSource = unstable_cache(
+  getEventFilterCountSourceUncached,
+  ["event-filter-counts"],
+  eventsCacheOptions
+);
+export const getCalendarEvents = unstable_cache(
+  getCalendarEventsUncached,
+  ["calendar-events"],
+  eventsCacheOptions
+);
+export const getEventById = unstable_cache(
+  getEventByIdUncached,
+  ["event-by-id"],
+  eventsCacheOptions
+);

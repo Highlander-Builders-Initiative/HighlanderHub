@@ -50,6 +50,9 @@ test("event queries keep events visible until their end time", () => {
 });
 
 test("Supabase-backed event routes are request-time rendered", () => {
+  // The Supabase client is hardwired to no-store, which bars static prerender,
+  // so every route that reads it stays force-dynamic. Cross-request caching is
+  // done at the data layer instead (see event-guardrails).
   assert.match(read("src/app/page.tsx"), /export const dynamic = "force-dynamic"/);
   assert.match(read("src/app/events/page.tsx"), /export const dynamic = "force-dynamic"/);
   assert.match(read("src/app/events/[id]/page.tsx"), /export const dynamic = "force-dynamic"/);

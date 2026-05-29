@@ -19,6 +19,9 @@ import { SITE_NAME, SITE_PREVIEW_IMAGE, absoluteUrl } from "@/lib/seo";
 import { normalizeHttpUrl } from "@/lib/events/validation";
 import type { CampusEvent } from "@/types/event";
 
+// Rendered per request: the no-store Supabase client (see lib/supabase.ts) bars
+// static prerendering. getEventById reads through the Data Cache (see lib/events)
+// so repeat views skip the round-trip; admin edits bust it via revalidateTag.
 export const dynamic = "force-dynamic";
 
 const SOURCE_LABELS: Record<CampusEvent["source"], string> = {
