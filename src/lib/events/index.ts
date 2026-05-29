@@ -17,6 +17,10 @@ import { E2E_FIXTURE_EVENT, e2eFixturesEnabled } from "./fixtures";
 const DB_RETRY_ATTEMPTS = 2;
 export const EVENTS_PAGE_SIZE = 24;
 export const EVENTS_CALENDAR_RANGE_LIMIT = 500;
+// Upper bound on ids resolved in one search-backfill fetch. Search matches are
+// already capped client-side; this is the server-side guard against an
+// oversized `?ids=` query.
+export const EVENTS_BY_IDS_LIMIT = 200;
 
 // Cross-request caching for the public read path. The Supabase client is
 // hardwired to `cache: "no-store"` (see lib/supabase.ts), so route-level
@@ -243,6 +247,38 @@ export async function getEvents(
 ): Promise<CampusEvent[]> {
   const page = await getEventsPage(options);
   return page.events;
+}
+
+// Resolve full event records for a set of ids, applying the same active-event
+// filter as the feed so a stale id can never surface a past or hidden event.
+// Used by search backfill: the client already knows which events match (from
+// the full count source) and fetches the full records it hasn't paged in yet.
+// Not Data-Cached — the id set is request-specific, so a cache key would never
+// be reused.
+export async function getEventsByIds(ids: string[]): Promise<CampusEvent[]> {
+  const unique = Array.from(new Set(ids)).slice(0, EVENTS_BY_IDS_LIMIT);
+  if (unique.length === 0) return [];
+
+  return withE2eFixture(
+    () =>
+      unique.includes(E2E_FIXTURE_EVENT.id) ? [E2E_FIXTURE_EVENT] : [],
+    async () => {
+      const nowIso = new Date().toISOString();
+
+      const { data } = await withDbRetry("events by ids", () =>
+        supabase
+          .from("events")
+          .select("*")
+          .in("id", unique)
+          .or(activeEventFilter(nowIso))
+          .order("starts_at", { ascending: true })
+          .order("id", { ascending: true })
+          .overrideTypes<EventRow[], { merge: false }>()
+      );
+
+      return (data ?? []).map(eventRowToCampusEvent);
+    }
+  );
 }
 
 async function getEventFilterCountSourceUncached(): Promise<

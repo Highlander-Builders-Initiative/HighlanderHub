@@ -6,25 +6,13 @@ import type { EventFilterCountSource } from "@/types/events-feed";
 import { getEmptyFeedCopy } from "@/lib/events/empty-feed-copy";
 import { groupByDay } from "@/lib/events/grouping";
 import {
+  buildEventSearchText,
   CATEGORIES,
   matchesCategory,
   matchesDayWindow,
   type CategoryValue,
   type DayWindow,
 } from "./events-filters";
-
-function buildEventSearchText(event: EventFilterCountSource) {
-  return [
-    event.title,
-    event.description,
-    event.host,
-    event.hostHandle ?? "",
-    event.location,
-    ...event.tags,
-  ]
-    .join(" ")
-    .toLowerCase();
-}
 
 type UseEventFeedFiltersArgs = {
   loadedEvents: CampusEvent[];

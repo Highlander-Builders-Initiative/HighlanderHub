@@ -20,6 +20,18 @@ export async function fetchEventsPage(
   return (await response.json()) as EventsApiPage;
 }
 
+export async function fetchEventsByIds(
+  ids: string[]
+): Promise<CampusEvent[]> {
+  if (ids.length === 0) return [];
+
+  const params = new URLSearchParams({ ids: ids.join(",") });
+  const response = await fetch(`/api/events?${params}`);
+  if (!response.ok) throw new Error("Unable to load search results.");
+  const payload = (await response.json()) as { events: CampusEvent[] };
+  return payload.events;
+}
+
 export async function fetchCalendarEvents(
   startDayKey: string,
   endDayKey: string
