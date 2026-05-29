@@ -38,20 +38,22 @@ class ExtractStoriesTests(unittest.TestCase):
                         "_download_image",
                         side_effect=self.extract_stories.ImageExpired("expired"),
                     ) as download:
-                        with patch.object(self.extract_stories, "_vision_ocr") as vision:
-                            with patch.object(self.extract_stories, "_gemini_extract") as gemini:
-                                with patch.object(self.extract_stories, "_write_remote_cache"):
-                                    result = self.extract_stories._process_story(
-                                        raw,
-                                        {
-                                            "label": "UCR Cybersecurity Club",
-                                            "category": "club",
-                                        },
-                                    )
+                        with patch.object(self.extract_stories, "_upload_story_flyer") as upload:
+                            with patch.object(self.extract_stories, "_vision_ocr") as vision:
+                                with patch.object(self.extract_stories, "_gemini_extract") as gemini:
+                                    with patch.object(self.extract_stories, "_write_remote_cache"):
+                                        result = self.extract_stories._process_story(
+                                            raw,
+                                            {
+                                                "label": "UCR Cybersecurity Club",
+                                                "category": "club",
+                                            },
+                                        )
 
             self.assertEqual("image_expired", result["status"])
             self.assertTrue((extracted_dir / f"{raw['id']}.json").exists())
             download.assert_called_once()
+            upload.assert_not_called()
             vision.assert_not_called()
             gemini.assert_not_called()
 
@@ -72,20 +74,23 @@ class ExtractStoriesTests(unittest.TestCase):
             with patch.object(self.extract_stories, "EXTRACTED_DIR", extracted_dir):
                 with patch.object(self.extract_stories, "_load_remote_cache", return_value=None):
                     with patch.object(self.extract_stories, "_download_image", return_value=b"image"):
-                        with patch.object(self.extract_stories, "_vision_ocr", return_value="  \n "):
-                            with patch.object(self.extract_stories, "_gemini_extract") as gemini:
-                                with patch.object(self.extract_stories, "_write_remote_cache"):
-                                    result = self.extract_stories._process_story(
-                                        raw,
-                                        {
-                                            "label": "UCR Cybersecurity Club",
-                                            "category": "club",
-                                        },
-                                    )
+                        with patch.object(self.extract_stories, "_upload_story_flyer") as upload:
+                            with patch.object(self.extract_stories, "_vision_ocr", return_value="  \n "):
+                                with patch.object(self.extract_stories, "_gemini_extract") as gemini:
+                                    with patch.object(self.extract_stories, "_write_remote_cache"):
+                                        result = self.extract_stories._process_story(
+                                            raw,
+                                            {
+                                                "label": "UCR Cybersecurity Club",
+                                                "category": "club",
+                                            },
+                                        )
 
             self.assertEqual("no_text", result["status"])
             cache = json.loads((extracted_dir / f"{raw['id']}.json").read_text())
             self.assertEqual("no_text", cache["status"])
+            self.assertNotIn("image_url", cache)
+            upload.assert_not_called()
             gemini.assert_not_called()
 
     def test_gemini_extract_uses_vertex_ai_client(self) -> None:
@@ -171,6 +176,7 @@ class ExtractStoriesTests(unittest.TestCase):
             "story_id": raw["id"],
             "handle": raw["handle"],
             "ocr_text": "Security Night Workshop",
+            "image_url": "https://cdn.example/durable.jpg",
             "result": {
                 "is_event": True,
                 "title": "Security Night Workshop",
@@ -225,35 +231,47 @@ class ExtractStoriesTests(unittest.TestCase):
             extracted_dir = Path(tmp)
             with patch.object(self.extract_stories, "EXTRACTED_DIR", extracted_dir):
                 with patch.object(self.extract_stories, "_load_remote_cache", return_value=None):
-                    with patch.object(self.extract_stories, "_download_image", return_value=b"image"):
+                    with patch.object(
+                        self.extract_stories,
+                        "_download_image",
+                        return_value=b"image",
+                    ) as download:
                         with patch.object(
                             self.extract_stories,
-                            "_vision_ocr",
-                            return_value="Security Night Workshop",
-                        ):
+                            "_upload_story_flyer",
+                            return_value="https://cdn.example/durable.jpg",
+                        ) as upload:
                             with patch.object(
                                 self.extract_stories,
-                                "_gemini_extract",
-                                return_value=gemini_result,
+                                "_vision_ocr",
+                                return_value="Security Night Workshop",
                             ):
                                 with patch.object(
                                     self.extract_stories,
-                                    "_write_remote_cache",
-                                ) as write_remote:
-                                    result = self.extract_stories._process_story(
-                                        raw,
-                                        {"label": "UCR Cybersecurity Club", "category": "club"},
-                                    )
+                                    "_gemini_extract",
+                                    return_value=gemini_result,
+                                ):
+                                    with patch.object(
+                                        self.extract_stories,
+                                        "_write_remote_cache",
+                                    ) as write_remote:
+                                        result = self.extract_stories._process_story(
+                                            raw,
+                                            {"label": "UCR Cybersecurity Club", "category": "club"},
+                                        )
 
             self.assertEqual("ok", result["status"])
             self.assertEqual(raw["id"], result["story_id"])
             self.assertEqual(raw["handle"], result["handle"])
             self.assertEqual("Security Night Workshop", result["ocr_text"])
+            self.assertEqual("https://cdn.example/durable.jpg", result["image_url"])
             self.assertEqual(gemini_result, result["result"])
             self.assertEqual(
                 result,
                 json.loads((extracted_dir / f"{raw['id']}.json").read_text()),
             )
+            download.assert_called_once_with(raw["image_url"])
+            upload.assert_called_once_with(raw, b"image")
             write_remote.assert_called_once_with(result)
 
     def test_remote_error_cache_is_ignored_so_story_can_retry(self) -> None:
@@ -279,15 +297,17 @@ class ExtractStoriesTests(unittest.TestCase):
                     },
                 ):
                     with patch.object(self.extract_stories, "_download_image", return_value=b"image") as download:
-                        with patch.object(self.extract_stories, "_vision_ocr", return_value="  \n "):
-                            with patch.object(self.extract_stories, "_write_remote_cache"):
-                                result = self.extract_stories._process_story(
-                                    raw,
-                                    {"label": "UCR Cybersecurity Club", "category": "club"},
-                                )
+                        with patch.object(self.extract_stories, "_upload_story_flyer") as upload:
+                            with patch.object(self.extract_stories, "_vision_ocr", return_value="  \n "):
+                                with patch.object(self.extract_stories, "_write_remote_cache"):
+                                    result = self.extract_stories._process_story(
+                                        raw,
+                                        {"label": "UCR Cybersecurity Club", "category": "club"},
+                                    )
 
             self.assertEqual("no_text", result["status"])
             download.assert_called_once()
+            upload.assert_not_called()
 
     def test_missing_remote_cache_configuration_is_treated_as_cache_miss(self) -> None:
         saved_db = sys.modules.get("db")
@@ -312,6 +332,52 @@ class ExtractStoriesTests(unittest.TestCase):
             else:
                 sys.modules["db"] = saved_db
 
+    def test_upload_story_flyer_uses_existing_bytes_and_deterministic_path(self) -> None:
+        calls: dict[str, object] = {}
+
+        class FakeBucket:
+            def upload(self, path, file, file_options):
+                calls["upload"] = (path, file, file_options)
+
+            def get_public_url(self, path):
+                calls["public_url_path"] = path
+                return f"https://cdn.example/storage/{path}"
+
+        class FakeStorage:
+            def from_(self, bucket):
+                calls["bucket"] = bucket
+                return FakeBucket()
+
+        fake_db = types.SimpleNamespace(
+            client=lambda: types.SimpleNamespace(storage=FakeStorage())
+        )
+
+        raw = {"id": "3894795737410658776", "handle": "acm_ucr"}
+        with patch.dict(sys.modules, {"db": fake_db}):
+            url = self.extract_stories._upload_story_flyer(raw, b"image")
+
+        self.assertEqual(
+            "https://cdn.example/storage/instagram/acm_ucr/3894795737410658776.jpg",
+            url,
+        )
+        self.assertEqual(self.extract_stories.DURABLE_FLYER_BUCKET, calls["bucket"])
+        self.assertEqual(
+            (
+                "instagram/acm_ucr/3894795737410658776.jpg",
+                b"image",
+                {
+                    "content-type": "image/jpeg",
+                    "cache-control": "31536000",
+                    "upsert": "true",
+                },
+            ),
+            calls["upload"],
+        )
+        self.assertEqual(
+            "instagram/acm_ucr/3894795737410658776.jpg",
+            calls["public_url_path"],
+        )
+
     def test_cached_event_maps_to_instagram_event_row(self) -> None:
         raw = {
             "id": "3894795737410658767",
@@ -322,6 +388,7 @@ class ExtractStoriesTests(unittest.TestCase):
         }
         cached = {
             "status": "ok",
+            "image_url": "https://cdn.example/durable.jpg",
             "result": {
                 "is_event": True,
                 "title": "Security Night Workshop",
@@ -356,7 +423,7 @@ class ExtractStoriesTests(unittest.TestCase):
         self.assertEqual(["security", "101"], row["tags"])
         self.assertEqual("instagram", row["source"])
         self.assertEqual(raw["permalink"], row["source_url"])
-        self.assertEqual(raw["image_url"], row["image_url"])
+        self.assertEqual(cached["image_url"], row["image_url"])
         self.assertEqual(raw["story_cta_url"], row["rsvp_url"])
         self.assertTrue(row["rsvp_required"])
 

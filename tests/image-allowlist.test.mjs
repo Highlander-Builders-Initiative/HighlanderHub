@@ -41,4 +41,10 @@ test("next/image remote patterns allow scraper-produced image hosts", () => {
     ),
     true
   );
+  assert.equal(
+    allows(
+      "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/acm_ucr/3894795737410658767.jpg"
+    ),
+    true
+  );
 });

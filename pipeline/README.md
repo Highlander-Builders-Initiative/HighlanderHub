@@ -161,7 +161,7 @@ Already in the DB shape that `src/lib/events/index.ts` maps into `CampusEvent`
   "tags": ["security", "workshop"],
   "source": "instagram",
   "source_url": "https://www.instagram.com/stories/cyber_ucr/3894795737410658765/",
-  "image_url": "https://scontent...jpg",
+  "image_url": "https://...supabase.co/storage/v1/object/public/event-flyers/instagram/cyber_ucr/3894795737410658765.jpg",
   "is_free": true,
   "rsvp_required": true,
   "rsvp_url": "https://lu.ma/...",
@@ -221,9 +221,11 @@ the same event.
    `GOOGLE_CLOUD_LOCATION=global`, and a JSON response schema. The global
    Vertex endpoint uses `aiplatform.googleapis.com` and bills the configured
    Google Cloud project.
-8. Caches terminal extraction results in both
+8. If the story is an event, uploads the same downloaded bytes to the public
+   `event-flyers` Supabase Storage bucket and caches that durable `image_url`.
+9. Caches terminal extraction results in both
    `data/extracted/<story_id>.json` and Supabase `story_extractions`.
-9. Upserts cached `status == "ok"` event results into Supabase `events`.
+10. Upserts cached `status == "ok"` event results into Supabase `events`.
 
 Terminal cache statuses (`image_expired`, `no_text`, `not_event`, `ok`) are
 not reprocessed on later runs. Transient download, Vision, Gemini, or remote
