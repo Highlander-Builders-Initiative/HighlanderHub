@@ -1,15 +1,30 @@
 const isDev = process.env.NODE_ENV !== "production";
 
-// Origins the browser legitimately talks to:
-// - Supabase: direct flyer uploads + storage public URLs (qyxlojftdtjasxhzyqil)
-// - Image CDNs mirror next.config images.remotePatterns
-// - Vercel: analytics script + web-vitals beacon
-const SUPABASE_ORIGIN = "https://qyxlojftdtjasxhzyqil.supabase.co";
-const IMG_HOSTS = [
-  "https://*.cdninstagram.com",
-  "https://se-images.campuslabs.com",
-  "https://localist-images.azureedge.net",
-  SUPABASE_ORIGIN,
+// Supabase origin drives connect-src (direct flyer uploads + storage reads) and
+// the storage remotePattern. Derived from the same env the client uses so a
+// staging/preview project can't make CSP lie while the client talks elsewhere.
+const supabaseUrl = new URL(
+  process.env.NEXT_PUBLIC_SUPABASE_URL ?? "https://qyxlojftdtjasxhzyqil.supabase.co"
+);
+const SUPABASE_ORIGIN = supabaseUrl.origin;
+
+// next/image optimizer allowlist. Kept tight on purpose: the optimizer fetches
+// these URLs server-side, so an open list is an SSRF/abuse vector. Flyer policy
+// allows arbitrary HTTPS hosts to *render* (see CSP img-src below); arbitrary
+// hosts are served via plain <img> client-side instead of through the optimizer.
+const imageRemotePatterns = [
+  { protocol: "https", hostname: "*.cdninstagram.com" },
+  {
+    protocol: "https",
+    hostname: "se-images.campuslabs.com",
+    pathname: "/clink/images/**",
+  },
+  { protocol: "https", hostname: "localist-images.azureedge.net" },
+  {
+    protocol: "https",
+    hostname: supabaseUrl.hostname,
+    pathname: "/storage/v1/object/public/submission-flyers/**",
+  },
 ];
 
 const csp = [
@@ -20,7 +35,9 @@ const csp = [
   `form-action 'self'`,
   `font-src 'self'`,
   `style-src 'self' 'unsafe-inline'`,
-  `img-src 'self' data: blob: ${IMG_HOSTS.join(" ")}`,
+  // Flyers come from arbitrary user-supplied hosts; allow any HTTPS image.
+  // Referrer-Policy below limits the referer leak to cross-origin requests.
+  `img-src 'self' data: blob: https:`,
   // Next's app runtime still emits inline bootstrap scripts here. A nonce-based
   // CSP would be a larger framework-wide change, so keep this tradeoff explicit.
   // 'unsafe-eval' is only needed by the dev/HMR runtime.
@@ -73,26 +90,7 @@ const nextConfig = {
     ];
   },
   images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "*.cdninstagram.com",
-      },
-      {
-        protocol: "https",
-        hostname: "se-images.campuslabs.com",
-        pathname: "/clink/images/**",
-      },
-      {
-        protocol: "https",
-        hostname: "localist-images.azureedge.net",
-      },
-      {
-        protocol: "https",
-        hostname: "qyxlojftdtjasxhzyqil.supabase.co",
-        pathname: "/storage/v1/object/public/submission-flyers/**",
-      },
-    ],
+    remotePatterns: imageRemotePatterns,
   },
 };
 

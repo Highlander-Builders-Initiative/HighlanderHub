@@ -1,8 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import type { CampusEvent } from "@/types/event";
+import { EventFlyerImage } from "@/components/events/EventFlyerImage";
 import { relativeDay } from "@/lib/dates";
 import { eventFlyerAlt, eventTileLinkLabel } from "@/lib/events/a11y";
 import { track } from "@/lib/analytics";
@@ -74,7 +74,7 @@ export function FlyerTile({
       className={`interactive-focus card-hover group relative block overflow-hidden rounded-xl border border-ink/15 bg-canvas transition-[filter,opacity,border-color] duration-300 hover:border-ink/30 ${aspectClassName} animate-scale-in ${className}`}
     >
       {showImage ? (
-        <Image
+        <EventFlyerImage
           src={event.imageUrl!}
           alt={eventFlyerAlt(event)}
           fill

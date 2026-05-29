@@ -41,8 +41,9 @@ export function AdminLiveEventRow({
         {showImage ? (
           <div className="relative shrink-0 self-stretch py-2 pl-2">
             <div className="relative h-full w-[80px] min-h-[4.5rem] overflow-hidden rounded-md bg-surface">
-              {/* Event flyers span many sources (incl. manual URLs) outside the
-                  next/image allowlist; a plain img avoids optimizer 500s. */}
+              {/* Plain img bypasses the next/image optimizer for arbitrary hosts;
+                  CSP img-src still governs which hosts load, so blocked/broken
+                  flyers fall back via onError. */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={campusEvent.imageUrl!}
