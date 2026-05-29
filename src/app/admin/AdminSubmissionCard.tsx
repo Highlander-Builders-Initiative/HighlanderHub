@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import {
   IoCheckmark,
   IoClose,
@@ -33,6 +33,8 @@ export function AdminSubmissionCard({
   disabled: boolean;
 }) {
   const sub = submission;
+  const [imageBroken, setImageBroken] = useState(false);
+  const showImage = Boolean(sub.image_url) && !imageBroken;
 
   return (
     <div className="bg-canvas border border-ink/10 rounded-xl p-5 shadow-card hover:border-ink/20 transition-all flex flex-col justify-between">
@@ -80,18 +82,17 @@ export function AdminSubmissionCard({
             </h3>
           </div>
 
-          {sub.image_url && (
+          {showImage && (
             <div className="relative border border-ink/10 rounded-lg overflow-hidden max-h-[220px] bg-surface flex justify-center group select-none">
-              {/* Submission flyers are arbitrary user-supplied URLs not in the
-                  next/image allowlist; a plain img avoids optimizer 500s. */}
+              {/* Plain img bypasses the next/image optimizer for arbitrary hosts;
+                  CSP img-src still governs which hosts load, so blocked/broken
+                  flyers fall back via onError. */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={sub.image_url}
+                src={sub.image_url!}
                 alt="Flyer image"
                 className="object-contain max-h-[220px] hover:scale-[1.02] transition-transform duration-200"
-                onError={(e) => {
-                  (e.target as HTMLElement).style.display = "none";
-                }}
+                onError={() => setImageBroken(true)}
               />
             </div>
           )}

@@ -1,10 +1,10 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { memo, type MouseEvent, useLayoutEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { type CampusEvent } from "@/types/event";
+import { EventFlyerImage } from "@/components/events/EventFlyerImage";
 import { eventFlyerAlt, eventListLinkLabel } from "@/lib/events/a11y";
 import { track } from "@/lib/analytics";
 import { saveEventFeedReturn } from "@/lib/events/feed-session";
@@ -85,7 +85,7 @@ function EventCardComponent({
       {showImage && (
         <div className="relative shrink-0 self-stretch py-2 pl-2">
           <div className="relative h-full w-[80px] overflow-hidden rounded-md bg-surface">
-            <Image
+            <EventFlyerImage
               src={event.imageUrl!}
               alt={eventFlyerAlt(event)}
               fill

@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import { notFound } from "next/navigation";
 import { Masthead } from "@/components/layout/Masthead";
 import { Footer } from "@/components/layout/Footer";
@@ -14,6 +13,7 @@ import {
 import { calendarHref } from "@/lib/events/actions";
 import { ShareButton } from "@/components/events/ShareButton";
 import { EventBackButton } from "@/components/events/EventBackButton";
+import { EventFlyerImage } from "@/components/events/EventFlyerImage";
 import { TrackedAnchor } from "@/components/events/TrackedAnchor";
 import { SITE_NAME, SITE_PREVIEW_IMAGE, absoluteUrl } from "@/lib/seo";
 import { normalizeHttpUrl } from "@/lib/events/validation";
@@ -100,7 +100,7 @@ export default async function EventDetailPage({
           aria-hidden
           className="pointer-events-none absolute inset-x-0 top-0 h-[40vh] overflow-hidden sm:h-[36vh]"
         >
-          <Image
+          <EventFlyerImage
             src={event.imageUrl}
             alt=""
             fill
@@ -148,7 +148,7 @@ export default async function EventDetailPage({
               <aside className="order-2 space-y-6 md:order-1 md:sticky md:top-24 md:self-start">
                 <div className="relative mx-auto w-full max-w-[18rem] overflow-hidden rounded-xl border border-ink/10 bg-surface shadow-card md:mx-0 md:max-w-none">
                   <div className="relative aspect-[4/5] w-full">
-                    <Image
+                    <EventFlyerImage
                       src={event.imageUrl!}
                       alt={`Flyer for ${event.title}`}
                       fill
