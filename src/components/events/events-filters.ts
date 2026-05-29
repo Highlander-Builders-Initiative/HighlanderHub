@@ -115,3 +115,51 @@ export function matchesDayWindow(
   const key = pacificDayKey(ev.startsAt);
   return key >= range.start && key <= range.end;
 }
+
+type SearchableEvent = Pick<
+  CampusEvent,
+  "title" | "description" | "host" | "hostHandle" | "location" | "tags"
+>;
+
+/** Flattened, lowercased haystack for substring search across an event's
+ * title, description, host, handle, location, and tags. */
+export function buildEventSearchText(event: SearchableEvent): string {
+  return [
+    event.title,
+    event.description,
+    event.host,
+    event.hostHandle ?? "",
+    event.location,
+    ...event.tags,
+  ]
+    .join(" ")
+    .toLowerCase();
+}
+
+export function matchesQuery(searchText: string, normalizedQuery: string) {
+  return normalizedQuery.length === 0 || searchText.includes(normalizedQuery);
+}
+
+/**
+ * Given the full search corpus and an already trimmed+lowercased query, return
+ * the ids of matching events that aren't in `loadedIds` — i.e. the events that
+ * exist deeper in the feed than infinite scroll has reached. The result is
+ * chronologically ordered (the corpus is) and capped at `limit`.
+ */
+export function computeMissingSearchIds(
+  source: (SearchableEvent & { id: string })[],
+  normalizedQuery: string,
+  loadedIds: Set<string>,
+  limit: number
+): string[] {
+  if (normalizedQuery.length === 0) return [];
+  const missing: string[] = [];
+  for (const event of source) {
+    if (missing.length >= limit) break;
+    if (loadedIds.has(event.id)) continue;
+    if (matchesQuery(buildEventSearchText(event), normalizedQuery)) {
+      missing.push(event.id);
+    }
+  }
+  return missing;
+}
