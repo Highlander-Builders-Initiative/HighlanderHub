@@ -19,11 +19,11 @@ import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
-from urllib.parse import urlsplit
 
 from config import RAW_DIR, ensure_dirs
 from db import delete_rows_by_prefix, get_deleted_event_ids, upsert_batched
 from discord_notify import notify_free_food_events
+from url_utils import normalize_http_url as _normalize_url
 
 log = logging.getLogger("pipeline.normalize_events")
 
@@ -62,32 +62,12 @@ _FREE_FOOD_PATTERNS = re.compile(
 
 _HTML_TAG = re.compile(r"<[^>]+>")
 _WHITESPACE = re.compile(r"\s+")
-_URL_SCHEME_RE = re.compile(r"^[a-z][a-z0-9+\-.]*:", re.IGNORECASE)
 
 
 def _strip_html(s: str | None) -> str:
     if not s:
         return ""
     return _WHITESPACE.sub(" ", html.unescape(_HTML_TAG.sub(" ", s))).strip()
-
-
-def _normalize_url(value: Any) -> str | None:
-    if not isinstance(value, str):
-        return None
-    text = value.strip()
-    if not text:
-        return None
-    if text.startswith("//"):
-        text = f"https:{text}"
-    elif not _URL_SCHEME_RE.match(text):
-        text = f"https://{text}"
-
-    parsed = urlsplit(text)
-    if parsed.scheme.lower() not in {"http", "https"}:
-        return None
-    if not parsed.netloc:
-        return None
-    return text
 
 
 def _filter_names(raw: dict[str, Any], key: str) -> list[str]:

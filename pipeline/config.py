@@ -1,12 +1,18 @@
 """Shared paths and config for the Instagram stories pipeline."""
 from __future__ import annotations
 
-import json
 import logging
 import os
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+from accounts import (
+    load_followed_accounts_cache as read_followed_accounts_cache,
+    read_accounts,
+    uses_curated_accounts,
+    uses_followed_accounts,
+    write_followed_accounts_cache as write_accounts_cache,
+)
 
 ROOT = Path(__file__).resolve().parent
 log = logging.getLogger("pipeline.config")
@@ -43,8 +49,7 @@ HIGHLANDER_LINK_COOKIE = os.environ.get("HIGHLANDER_LINK_COOKIE")
 
 
 def _read_accounts(path: Path) -> list[dict[str, Any]]:
-    with path.open(encoding="utf-8") as f:
-        return json.load(f).get("accounts", [])
+    return read_accounts(path)
 
 
 def load_curated_accounts() -> list[dict[str, Any]]:
@@ -52,27 +57,15 @@ def load_curated_accounts() -> list[dict[str, Any]]:
 
 
 def load_followed_accounts_cache() -> list[dict[str, Any]]:
-    if not FOLLOWED_ACCOUNTS_FILE.exists():
-        return []
-    return _read_accounts(FOLLOWED_ACCOUNTS_FILE)
+    return read_followed_accounts_cache(FOLLOWED_ACCOUNTS_FILE)
 
 
 def write_followed_accounts_cache(accounts: list[dict[str, Any]]) -> None:
-    FOLLOWED_ACCOUNTS_FILE.parent.mkdir(parents=True, exist_ok=True)
-    payload = {
-        "account_source": "instagram_followed",
-        "generated_at": datetime.now(timezone.utc).isoformat(),
-        "accounts": accounts,
-    }
-    tmp = FOLLOWED_ACCOUNTS_FILE.with_suffix(".tmp")
-    with tmp.open("w", encoding="utf-8") as f:
-        json.dump(payload, f, indent=2, sort_keys=True)
-        f.write("\n")
-    tmp.replace(FOLLOWED_ACCOUNTS_FILE)
+    write_accounts_cache(FOLLOWED_ACCOUNTS_FILE, accounts)
 
 
 def _uses_followed_accounts() -> bool:
-    return ACCOUNT_SOURCE in {"followed", "following", "followees"}
+    return uses_followed_accounts(ACCOUNT_SOURCE)
 
 
 def load_accounts() -> list[dict[str, Any]]:
@@ -94,7 +87,7 @@ def load_accounts() -> list[dict[str, Any]]:
         )
         return curated
 
-    if ACCOUNT_SOURCE in {"accounts_json", "accounts.json", "configured", "curated"}:
+    if uses_curated_accounts(ACCOUNT_SOURCE):
         accounts = load_curated_accounts()
         log.info("Account source: accounts.json (%d accounts)", len(accounts))
         return accounts

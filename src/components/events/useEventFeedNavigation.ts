@@ -18,6 +18,7 @@ import { track } from "@/lib/analytics";
 import { fetchEventsPage } from "@/lib/events/api";
 import { calendarJumpEndsAtLoadedBoundary } from "@/lib/events/calendar-feed-pagination";
 import { mergeUniqueEventsByStart } from "@/lib/events/merge";
+import type { CategoryValue, DayWindow } from "./events-filters";
 import { useInfiniteEventFeedLoader } from "./useInfiniteEventFeedLoader";
 import { useObservedDayKey } from "./useObservedDayKey";
 
@@ -38,6 +39,11 @@ type UseEventFeedNavigationArgs = {
   isRestoring: boolean;
   isCalendarLoading: boolean;
   setCalendarCursor: Dispatch<SetStateAction<string>>;
+  feedFilters: {
+    query: string;
+    category: CategoryValue;
+    dayWindow: DayWindow;
+  };
 };
 
 export function useEventFeedNavigation({
@@ -57,6 +63,7 @@ export function useEventFeedNavigation({
   isRestoring,
   isCalendarLoading,
   setCalendarCursor,
+  feedFilters,
 }: UseEventFeedNavigationArgs) {
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const dayHeaderRefs = useRef<Map<string, HTMLElement>>(new Map());
@@ -201,7 +208,7 @@ export function useEventFeedNavigation({
     setLoadError("");
 
     try {
-      const page = await fetchEventsPage(nextOffset);
+      const page = await fetchEventsPage(nextOffset, undefined, feedFilters);
       const anchorEl = dayHeaderRefs.current.get(observedDayKey);
       if (anchorEl) {
         pendingLoadAnchorRef.current = {
@@ -226,6 +233,7 @@ export function useEventFeedNavigation({
     isRestoring,
     nextOffset,
     observedDayKey,
+    feedFilters,
     setHasMore,
     setIsLoadingMore,
     setLoadError,

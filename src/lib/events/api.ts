@@ -1,4 +1,8 @@
 import type { CampusEvent } from "@/types/event";
+import type {
+  CategoryValue,
+  DayWindow,
+} from "@/components/events/events-filters";
 
 export type EventsApiPage = {
   events: CampusEvent[];
@@ -8,28 +12,26 @@ export type EventsApiPage = {
 
 export async function fetchEventsPage(
   offset: number,
-  limit?: number
+  limit?: number,
+  filters?: {
+    query: string;
+    category: CategoryValue;
+    dayWindow: DayWindow;
+  }
 ): Promise<EventsApiPage> {
   const params = new URLSearchParams({ offset: String(offset) });
   if (typeof limit === "number") {
     params.set("limit", String(limit));
   }
+  if (filters) {
+    if (filters.query.trim()) params.set("q", filters.query.trim());
+    if (filters.category !== "all") params.set("cat", filters.category);
+    if (filters.dayWindow !== "all") params.set("when", filters.dayWindow);
+  }
 
   const response = await fetch(`/api/events?${params}`);
   if (!response.ok) throw new Error("Unable to load more events.");
   return (await response.json()) as EventsApiPage;
-}
-
-export async function fetchEventsByIds(
-  ids: string[]
-): Promise<CampusEvent[]> {
-  if (ids.length === 0) return [];
-
-  const params = new URLSearchParams({ ids: ids.join(",") });
-  const response = await fetch(`/api/events?${params}`);
-  if (!response.ok) throw new Error("Unable to load search results.");
-  const payload = (await response.json()) as { events: CampusEvent[] };
-  return payload.events;
 }
 
 export async function fetchCalendarEvents(

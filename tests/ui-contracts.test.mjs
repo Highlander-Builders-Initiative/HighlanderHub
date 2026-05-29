@@ -33,7 +33,7 @@ test("event browser paginates the list instead of rendering every event at once"
   assert.match(observedDayKey, /resolveObservedDayKey/);
   assert.match(browser, /useEventFeedNavigation/);
   assert.match(navigation, /loadMoreRef/);
-  assert.match(navigation, /fetchEventsPage\(nextOffset\)/);
+  assert.match(navigation, /fetchEventsPage\(nextOffset, undefined, feedFilters\)/);
   assert.doesNotMatch(browser, /Load more/);
   assert.match(browser, /hasMore/);
 });
@@ -69,7 +69,7 @@ test("calendar loads its own month-range events outside feed pagination", () => 
   const eventsApi = read("src/lib/events/api.ts");
   const calendarApi = read("src/app/api/events/calendar/route.ts");
 
-  assert.match(data, /export const getCalendarEvents = unstable_cache\(/);
+  assert.match(data, /export const getCalendarEvents = cachePublicRead\(/);
   assert.match(data, /\.gte\("starts_at", startIso\)/);
   assert.match(data, /\.lt\("starts_at", endIso\)/);
   assert.match(data, /parsePacificDateTimeInput\(`\$\{startDayKey\}T00:00`\)/);

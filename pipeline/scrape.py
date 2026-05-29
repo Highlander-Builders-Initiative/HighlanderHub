@@ -22,6 +22,7 @@ from instaloader.exceptions import (
     QueryReturnedBadRequestException,
 )
 
+from accounts import uses_followed_accounts
 from config import (
     ACCOUNT_SOURCE,
     FOLLOWED_ACCOUNTS_FILE,
@@ -185,10 +186,6 @@ def _resolve_profile(
     return instaloader.Profile.from_username(L.context, handle)
 
 
-def _uses_followed_accounts() -> bool:
-    return ACCOUNT_SOURCE in {"followed", "following", "followees"}
-
-
 def _profile_username(profile: instaloader.Profile) -> str:
     return str(getattr(profile, "username", "") or "").strip()
 
@@ -251,7 +248,7 @@ def _load_followed_accounts(
 
 def _load_scrape_accounts(L: instaloader.Instaloader) -> list[dict[str, Any]]:
     curated_accounts = load_curated_accounts()
-    if not _uses_followed_accounts():
+    if not uses_followed_accounts(ACCOUNT_SOURCE):
         log.info("Account source: accounts.json (%d accounts)", len(curated_accounts))
         return curated_accounts
 

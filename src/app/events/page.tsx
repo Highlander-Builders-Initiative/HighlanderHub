@@ -36,12 +36,17 @@ type EventsPageProps = {
 };
 
 export default async function EventsPage({ searchParams }: EventsPageProps) {
+  const initialFilters = {
+    category: coerceCategoryParam(firstParam(searchParams.cat)),
+    query: firstParam(searchParams.q) ?? "",
+    dayWindow: coerceDayWindowParam(firstParam(searchParams.when)),
+  };
   const calendarRange = pacificCalendarGridRange(
     startOfPacificMonthKey(pacificTodayKey())
   );
   const [initialPage, calendarEvents, summary, filterCountSource] =
     await Promise.all([
-      getEventsPage(),
+      getEventsPage(initialFilters),
       getCalendarEvents({
         startDayKey: calendarRange.start,
         endDayKey: calendarRange.end,
@@ -50,12 +55,6 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
       getEventFilterCountSource(),
     ]);
   const events = initialPage.events;
-
-  const initialFilters = {
-    category: coerceCategoryParam(firstParam(searchParams.cat)),
-    query: firstParam(searchParams.q) ?? "",
-    dayWindow: coerceDayWindowParam(firstParam(searchParams.when)),
-  };
 
   return (
     <main className="min-h-screen bg-canvas">

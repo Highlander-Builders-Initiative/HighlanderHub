@@ -29,8 +29,6 @@ import { useCalendarMonthEvents } from "./useCalendarMonthEvents";
 import { useEventFeedFilters } from "./useEventFeedFilters";
 import { useEventFeedRestore } from "./useEventFeedRestore";
 import { useEventFeedNavigation } from "./useEventFeedNavigation";
-import { useEventSearchBackfill } from "./useEventSearchBackfill";
-import { mergeUniqueEventsByStart } from "@/lib/events/merge";
 import type { EventFeedRestorePatch } from "@/lib/events/feed-restore";
 
 export type EventsBrowserInitialFilters = {
@@ -144,29 +142,13 @@ export function EventsBrowser({
     });
   }, [loadedEvents, hasMore, nextOffset, category, query, dayWindow, isRestoring]);
 
-  // Search runs over loaded events, but the feed paginates — pull in the full
-  // records for matches that haven't been scrolled into view yet so a query
-  // surfaces every upcoming match, not just the ones already loaded.
-  const backfillEvents = useEventSearchBackfill({
-    query,
-    filterCountSource,
-    loadedEvents,
-  });
-  const isSearching = query.trim().length > 0;
-  const searchAugmentedEvents = useMemo(
-    () =>
-      isSearching && backfillEvents.length > 0
-        ? mergeUniqueEventsByStart(loadedEvents, backfillEvents)
-        : loadedEvents,
-    [isSearching, backfillEvents, loadedEvents]
-  );
-
   const {
     trimmedQuery,
     activeFilters,
     emptyCopy,
     filtered,
     counts,
+    matchingTotal,
     grouped,
     dayKeys,
     categoriesByDay,
@@ -174,7 +156,7 @@ export function EventsBrowser({
     resultsLabel,
     activeFilterCount,
   } = useEventFeedFilters({
-    loadedEvents: searchAugmentedEvents,
+    loadedEvents,
     filterCountSource,
     calendarEvents,
     category,
@@ -183,10 +165,10 @@ export function EventsBrowser({
     todayKey,
   });
 
-  // While a query is active the augmented feed already shows every match, so
-  // the infinite-scroll sentinel that pages the base feed is both pointless
-  // and misleading; suppress it until the search clears.
-  const feedHasMore = hasMore && !isSearching;
+  const feedFilters = useMemo(
+    () => ({ category, query: trimmedQuery, dayWindow }),
+    [category, trimmedQuery, dayWindow]
+  );
 
   // Mirror the active filter state to the URL via ?cat=&q=&when=. Uses
   // router.replace so each keystroke / chip click does not push a history
@@ -284,7 +266,7 @@ export function EventsBrowser({
     calendarEvents,
     dayKeys,
     todayKey,
-    hasMore: feedHasMore,
+    hasMore,
     setHasMore,
     nextOffset,
     setNextOffset,
@@ -295,6 +277,7 @@ export function EventsBrowser({
     isRestoring,
     isCalendarLoading,
     setCalendarCursor,
+    feedFilters,
   });
 
   const openMobileFilters = useCallback(() => {
@@ -336,7 +319,7 @@ export function EventsBrowser({
           grouped={grouped}
           loadedCount={loadedEvents.length}
           loadMoreRef={loadMoreRef}
-          hasMore={feedHasMore}
+          hasMore={hasMore}
           hideLoadMoreHint={hideLoadMoreHint}
           loadError={loadError}
           isLoadingMore={isLoadingMore}
@@ -383,7 +366,7 @@ export function EventsBrowser({
         isLoading={isCalendarLoading}
         onClear={clearFilters}
         hasActiveFilters={hasActiveFilters}
-        resultCount={filtered.length}
+        resultCount={matchingTotal}
       />
     </section>
   );
