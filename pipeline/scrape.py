@@ -82,6 +82,17 @@ def _log_http_errors(resp: Any, *args: Any, **kwargs: Any) -> Any:
     return resp
 
 
+def _attach_http_error_logger(L: instaloader.Instaloader) -> None:
+    session = getattr(getattr(L, "context", None), "_session", None)
+    hooks = getattr(session, "hooks", None)
+    if not isinstance(hooks, dict):
+        return
+
+    response_hooks = hooks.setdefault("response", [])
+    if hasattr(response_hooks, "append") and _log_http_errors not in response_hooks:
+        response_hooks.append(_log_http_errors)
+
+
 def _login(L: instaloader.Instaloader) -> None:
     if SESSION_FILE:
         # Session file produced by `instaloader -l <user>`; safer for unattended runs.
@@ -339,7 +350,7 @@ def main() -> None:
     _login(L)
     # Register after _login: load_session_from_file replaces L.context._session,
     # which would drop a hook attached earlier.
-    L.context._session.hooks["response"].append(_log_http_errors)
+    _attach_http_error_logger(L)
     accounts = _load_scrape_accounts(L)
 
     totals = {"accounts": 0, "seen": 0, "new": 0, "errors": 0, "missing_profiles": 0}
