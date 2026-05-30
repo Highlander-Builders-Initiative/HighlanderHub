@@ -1,9 +1,11 @@
 import type { CampusEvent } from "./event";
 
 export const DAY_WINDOWS = [
-  { value: "all", label: "Anytime", phrase: "" },
+  // Short labels so the four windows sit side by side in the narrow rail. The
+  // longer-form sentence copy lives in `phrase`, not `label`.
+  { value: "all", label: "All", phrase: "" },
   { value: "today", label: "Today", phrase: "today" },
-  { value: "week", label: "This week", phrase: "this week" },
+  { value: "week", label: "Week", phrase: "this week" },
   { value: "weekend", label: "Weekend", phrase: "this weekend" },
 ] as const;
 
