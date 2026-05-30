@@ -8,22 +8,45 @@ type EventDayWindowFilterProps = {
   onDayWindowChange: (next: DayWindow) => void;
 };
 
-const BUTTON_SIZE_CLASS = {
-  rail: "min-h-8 px-3",
-  sheet: "min-h-9 px-3.5",
+// Four windows in one pill (All / Today / Week / Weekend). Short labels fit the
+// narrow rail; the sheet uses the same track at a slightly larger text size.
+const SEGMENT_TEXT_CLASS = {
+  rail: "text-[12px]",
+  sheet: "text-[13px]",
 } as const;
 
+/**
+ * Segmented control: a single rounded track with one elevated thumb that
+ * slides to the active window. The buttons sit transparently on top; only the
+ * thumb moves, so switching reads as one continuous control rather than four
+ * separate toggles.
+ */
 export function EventDayWindowFilter({
   layout,
   dayWindow,
   onDayWindowChange,
 }: EventDayWindowFilterProps) {
+  const activeIndex = Math.max(
+    0,
+    DAY_WINDOWS.findIndex((w) => w.value === dayWindow)
+  );
+
   return (
     <div
-      className="flex flex-wrap gap-1.5"
+      className="relative flex w-full rounded-full bg-ink/[0.05] p-1"
       role="group"
       aria-label="Filter events by time window"
     >
+      {/* Sliding thumb: one segment wide, translated by whole segments. */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-y-1 left-1 rounded-full bg-canvas shadow-card transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none"
+        style={{
+          width: `calc((100% - 0.5rem) / ${DAY_WINDOWS.length})`,
+          transform: `translateX(${activeIndex * 100}%)`,
+        }}
+      />
+
       {DAY_WINDOWS.map((w) => {
         const active = dayWindow === w.value;
         return (
@@ -33,11 +56,9 @@ export function EventDayWindowFilter({
             onClick={() => onDayWindowChange(w.value)}
             aria-pressed={active}
             className={[
-              "interactive-focus inline-flex items-center rounded-full border py-1 text-[13px] transition-colors",
-              BUTTON_SIZE_CLASS[layout],
-              active
-                ? "border-ink bg-ink text-canvas"
-                : "border-ink/15 bg-canvas text-ink hover:border-ink",
+              "interactive-focus relative z-10 min-w-0 flex-1 truncate rounded-full px-1.5 py-1.5 text-center font-medium transition-colors duration-200",
+              SEGMENT_TEXT_CLASS[layout],
+              active ? "text-ink" : "text-muted hover:text-ink",
             ].join(" ")}
           >
             {w.label}

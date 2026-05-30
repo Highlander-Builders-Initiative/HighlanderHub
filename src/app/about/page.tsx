@@ -35,22 +35,18 @@ const SOURCES = [
   {
     label: "Club Instagram stories",
     body: "Flyers posted by registered student orgs. We read the image to find the title, time, and place.",
-    dot: "bg-coral",
   },
   {
     label: "events.ucr.edu",
     body: "UCR's official campus events calendar, mirrored so you don't check two places.",
-    dot: "bg-highlander",
   },
   {
     label: "highlanderlink.ucr.edu",
     body: "Public org and campus listings on UCR's Engage platform (HighlanderLink).",
-    dot: "bg-sky",
   },
   {
     label: "Manual submissions",
     body: "Org leads use the submit form when something isn't in the feeds yet.",
-    dot: "bg-leaf",
   },
 ] as const;
 
@@ -146,14 +142,7 @@ export default function AboutPage() {
 
             <ul className="mt-8 divide-y divide-ink/10 md:col-span-8 md:mt-0">
               {SOURCES.map((s) => (
-                <li
-                  key={s.label}
-                  className="flex items-start gap-4 py-5 sm:gap-6 sm:py-6"
-                >
-                  <span
-                    aria-hidden
-                    className={`mt-2 h-2 w-2 shrink-0 rounded-full ${s.dot}`}
-                  />
+                <li key={s.label} className="py-5 sm:py-6">
                   <div className="min-w-0 flex-1">
                     <h3 className="font-display text-lg font-semibold tracking-[-0.02em] text-ink md:text-xl">
                       {s.label}

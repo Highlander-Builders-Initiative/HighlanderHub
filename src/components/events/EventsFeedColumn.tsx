@@ -266,7 +266,7 @@ export function EventsFeedColumn({
               else dayHeaderRefs.current.delete(day);
             }}
             data-day-key={day}
-            className="sticky z-10 -mx-4 mb-3 flex scroll-mt-24 items-baseline gap-2.5 bg-gradient-to-b from-canvas via-canvas/55 to-transparent px-4 py-2 font-display text-xl font-semibold tracking-[-0.02em] text-ink backdrop-blur sm:-mx-6 sm:px-6 lg:static lg:mx-0 lg:mb-4 lg:bg-none lg:px-0 lg:py-0 lg:text-lg lg:backdrop-blur-none"
+            className="sticky z-10 -mx-4 mb-3 flex scroll-mt-24 items-baseline gap-2.5 bg-gradient-to-b from-surface via-surface/55 to-transparent px-4 py-2 font-display text-xl font-semibold tracking-[-0.02em] text-ink backdrop-blur sm:-mx-6 sm:px-6 lg:static lg:mx-0 lg:mb-4 lg:bg-none lg:px-0 lg:py-0 lg:text-lg lg:backdrop-blur-none"
             style={{ top: 53 }}
           >
             {formatPacificDayKey(day)}
