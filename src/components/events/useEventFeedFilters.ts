@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import type { CampusEvent, EventCategory } from "@/types/event";
+import type { CampusEvent } from "@/types/event";
 import type { EventFilterCountSource } from "@/types/events-feed";
 import { getEmptyFeedCopy } from "@/lib/events/empty-feed-copy";
 import { groupByDay } from "@/lib/events/grouping";
@@ -117,18 +117,12 @@ export function useEventFeedFilters({
   );
   const dayKeys = Array.from(grouped.keys());
 
-  const categoriesByDay = useMemo(() => {
-    const map = new Map<string, EventCategory[]>();
+  // Per-day event count drives the calendar heat map. Real counts (not
+  // distinct categories) so a day with five social events reads as busy.
+  const countsByDay = useMemo(() => {
+    const map = new Map<string, number>();
     for (const [key, evs] of calendarGrouped) {
-      const seen = new Set<EventCategory>();
-      const ordered: EventCategory[] = [];
-      for (const ev of evs) {
-        if (!seen.has(ev.category)) {
-          seen.add(ev.category);
-          ordered.push(ev.category);
-        }
-      }
-      map.set(key, ordered);
+      map.set(key, evs.length);
     }
     return map;
   }, [calendarGrouped]);
@@ -158,7 +152,7 @@ export function useEventFeedFilters({
     matchingTotal,
     grouped,
     dayKeys,
-    categoriesByDay,
+    countsByDay,
     hasActiveFilters,
     resultsLabel,
     activeFilterCount,

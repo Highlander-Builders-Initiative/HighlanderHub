@@ -1,6 +1,7 @@
 "use client";
 
 import { EventCategoryFilter } from "./EventCategoryFilter";
+import { GLASS_PANEL_CLASS } from "./glass-panel";
 import type { CategoryValue } from "./events-filters";
 
 type Props = {
@@ -11,8 +12,8 @@ type Props = {
 
 export function EventsLeftRail({ category, onCategoryChange, counts }: Props) {
   return (
-    <div>
-      <p className="px-2.5 pb-2 text-[12px] font-medium text-muted">Browse</p>
+    <div className={GLASS_PANEL_CLASS}>
+      <p className="px-3 pb-2 text-[12px] font-medium text-muted">Browse</p>
 
       <EventCategoryFilter
         layout="rail"

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import type { EventCategory } from "@/types/event";
 import { EventCategoryFilter } from "./EventCategoryFilter";
 import { EventDayWindowFilter } from "./EventDayWindowFilter";
 import { EventsMiniCalendar } from "./EventsMiniCalendar";
@@ -20,7 +19,7 @@ type Props = {
   todayKey: string;
   selectedKey: string;
   onSelect: (dayKey: string) => void;
-  categoriesByDay: Map<string, EventCategory[]>;
+  countsByDay: Map<string, number>;
   isLoading: boolean;
   onClear: () => void;
   hasActiveFilters: boolean;
@@ -49,7 +48,7 @@ export function EventsMobileFilterSheet({
   todayKey,
   selectedKey,
   onSelect,
-  categoriesByDay,
+  countsByDay,
   isLoading,
   onClear,
   hasActiveFilters,
@@ -192,7 +191,7 @@ export function EventsMobileFilterSheet({
               todayKey={todayKey}
               selectedKey={selectedKey}
               onSelect={onSelect}
-              categoriesByDay={categoriesByDay}
+              countsByDay={countsByDay}
               isLoading={isLoading}
             />
           </div>
