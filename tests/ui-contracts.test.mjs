@@ -238,7 +238,7 @@ test("event detail page exposes RSVP / calendar / share actions", () => {
 
   assert.match(source, /Add to calendar|aria-label="Add to calendar"/);
   assert.match(source, /method="ics"/);
-  assert.match(source, /Download \.ics/);
+  assert.doesNotMatch(source, /Download \.ics/);
   assert.match(source, /SaveButton/);
   assert.match(source, /Share|aria-label="Share"/);
   assert.match(source, /RSVP|View source/);
