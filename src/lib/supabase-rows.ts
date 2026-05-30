@@ -11,6 +11,13 @@ export const EVENT_CATEGORIES = [
   "free_food",
 ] as const;
 export type EventCategory = (typeof EVENT_CATEGORIES)[number];
+export const EVENT_CONTENT_KINDS = [
+  "student_event",
+  "student_deadline",
+  "fundraiser",
+  "other",
+] as const;
+export type EventContentKind = (typeof EVENT_CONTENT_KINDS)[number];
 export const EVENT_SOURCES = [
   "instagram",
   "highlander_link",
@@ -31,6 +38,7 @@ export interface EventRow {
   host: string;
   host_handle?: string | null;
   category: "club" | "academic" | "social" | "career" | "sports" | "arts" | "community" | "free_food";
+  content_kind: "student_event" | "student_deadline" | "fundraiser" | "other";
   tags: string[];
   source: "instagram" | "highlander_link" | "campus_website" | "club_website" | "manual";
   source_url?: string | null;

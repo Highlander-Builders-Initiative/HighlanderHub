@@ -43,7 +43,7 @@ export function EventsLeftRail({ category, onCategoryChange, counts }: Props) {
 
       <div className="my-5 h-px bg-ink/10" />
 
-      <p className="px-2.5 pb-2 text-[12px] font-medium text-muted">Browse</p>
+      <p className="px-2.5 pb-2 text-[12px] font-medium text-muted">Topics</p>
 
       <EventCategoryFilter
         layout="rail"

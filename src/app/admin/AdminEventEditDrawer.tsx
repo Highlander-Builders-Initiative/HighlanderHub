@@ -111,6 +111,26 @@ export function AdminEventEditDrawer({
                 </div>
               </div>
 
+              <div className="space-y-1.5">
+                <label className="block text-[12px] font-sans text-muted">
+                  Listing type
+                </label>
+                <select
+                  value={form.contentKind}
+                  onChange={(e) => setField("contentKind", e.target.value)}
+                  className="w-full bg-canvas text-ink border border-ink/15 rounded-md py-2 px-3 text-sm focus:border-ink outline-none interactive-focus transition-colors"
+                >
+                  <option value="student_event">Event</option>
+                  <option value="student_deadline">Deadline</option>
+                  <option value="fundraiser">Fundraiser (hidden from public)</option>
+                  <option value="other">Other (hidden from public)</option>
+                </select>
+                <p className="text-[11px] font-sans text-muted leading-normal">
+                  Only Event and Deadline appear on the public feed. Use
+                  Fundraiser / Other to correct a misclassified import.
+                </p>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="block text-[12px] font-sans text-muted">Category</label>

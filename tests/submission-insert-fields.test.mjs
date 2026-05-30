@@ -13,6 +13,7 @@ const VALID_SUBMISSION = {
   location: "HUB",
   host: "ACM at UCR",
   category: "free_food",
+  content_kind: "student_event",
   tags: [" free food ", ""],
   source_url: " https://events.ucr.edu/taco-night ",
   image_url: null,
@@ -35,6 +36,7 @@ test("submission parser returns a canonical public insert row", () => {
 
   assert.deepEqual(Object.keys(row).sort(), [
     "category",
+    "content_kind",
     "description",
     "ends_at",
     "host",
@@ -58,6 +60,31 @@ test("submission parser returns a canonical public insert row", () => {
   assert.equal(row.submitter_name, "Abe");
   assert.equal(row.submitter_email, "abe@ucr.edu");
   assert.equal(row.submitter_org, null);
+  assert.equal(row.content_kind, "student_event");
+});
+
+test("submission parser accepts the deadline listing type", () => {
+  const row = parseValid({ content_kind: "student_deadline" });
+  assert.equal(row.content_kind, "student_deadline");
+});
+
+test("submission parser rejects non-submittable or missing content_kind", () => {
+  for (const content_kind of ["fundraiser", "other", "nonsense"]) {
+    assert.deepEqual(
+      parseSubmissionInsert({ ...VALID_SUBMISSION, content_kind }),
+      {
+        ok: false,
+        error: "content_kind must be student_event or student_deadline.",
+      }
+    );
+  }
+
+  const { content_kind, ...withoutKind } = VALID_SUBMISSION;
+  void content_kind;
+  assert.deepEqual(parseSubmissionInsert(withoutKind), {
+    ok: false,
+    error: "content_kind must be student_event or student_deadline.",
+  });
 });
 
 test("submission parser rejects moderation and identity columns", () => {

@@ -20,6 +20,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
+from classify import classify_content_kind
 from config import RAW_DIR, ensure_dirs
 from db import delete_events_missing_from_ids, get_deleted_event_ids, upsert_batched
 from discord_notify import notify_free_food_events
@@ -252,11 +253,12 @@ def _to_event_row(
     blob = f"{title}\n{description}"
     category = _infer_category(raw, blob)
 
+    audiences = _filter_names(raw, "event_audience")
     tags = sorted(
         set(
             _filter_names(raw, "event_types")
             + _filter_names(raw, "event_topic")
-            + _filter_names(raw, "event_audience")
+            + audiences
         )
     )
     hashtag = raw.get("hashtag")
@@ -275,6 +277,13 @@ def _to_event_row(
         "location": _build_location(raw),
         "host": _build_host(raw),
         "category": category,
+        "content_kind": classify_content_kind(
+            "localist",
+            title=title,
+            description=description,
+            tags=tags,
+            audiences=audiences,
+        ),
         "tags": tags,
         "source": "campus_website",
         "source_url": _normalize_url(raw.get("localist_url") or raw.get("url")),
@@ -369,6 +378,12 @@ def _to_event_row_hlink(raw: dict[str, Any], scraped_at: str) -> dict[str, Any] 
         "location": location,
         "host": host,
         "category": category,
+        "content_kind": classify_content_kind(
+            "highlander_link",
+            title=title,
+            description=description,
+            tags=tags,
+        ),
         "tags": tags,
         "source": "campus_website",
         "source_url": _normalize_url(_HLINK_EVENT_URL.format(id=eid)),

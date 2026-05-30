@@ -1,4 +1,8 @@
-import type { EventCategory, EventRow } from "@/lib/supabase-rows";
+import type {
+  EventCategory,
+  EventContentKind,
+  EventRow,
+} from "@/lib/supabase-rows";
 
 export type SubmissionStatus = "pending" | "approved" | "rejected";
 
@@ -47,6 +51,7 @@ export const ADMIN_EVENT_UPDATE_KEYS = [
   "host",
   "host_handle",
   "category",
+  "content_kind",
   "image_url",
   "rsvp_url",
   "is_free",
@@ -62,6 +67,7 @@ export type AdminEventUpdatePayload = {
   host: string;
   host_handle: string | null;
   category: EventCategory;
+  content_kind: EventContentKind;
   image_url: string | null;
   rsvp_url: string | null;
   is_free: boolean;

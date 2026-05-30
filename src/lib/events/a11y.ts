@@ -1,5 +1,6 @@
 import type { CampusEvent } from "@/types/event";
 import { EVENT_CATEGORY_LABELS } from "@/types/event";
+import { isDeadlineKind } from "@/lib/events/content-kind";
 import { formatTime, relativeDay } from "@/lib/dates";
 
 /** Link name for mosaic / marquee tiles (title + day, no time). */
@@ -18,6 +19,11 @@ export function eventFlyerAlt(event: CampusEvent): string {
  * invisible to AT.
  */
 export function eventListLinkLabel(event: CampusEvent): string {
+  if (isDeadlineKind(event.contentKind)) {
+    return `Deadline: ${event.title}, due ${relativeDay(event.startsAt)} at ${formatTime(
+      event.startsAt
+    )}`;
+  }
   const category = EVENT_CATEGORY_LABELS[event.category].split(" / ")[0];
   return `${category}: ${event.title}, ${relativeDay(event.startsAt)} at ${formatTime(
     event.startsAt

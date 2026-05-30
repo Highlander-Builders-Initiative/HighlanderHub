@@ -21,7 +21,12 @@ import {
   type CategoryValue,
   type DayWindow,
 } from "@/components/events/events-filters";
-import { E2E_FIXTURE_EVENT, e2eFixturesEnabled } from "./fixtures";
+import { PUBLIC_CONTENT_KINDS } from "@/lib/events/content-kind";
+import {
+  E2E_FIXTURE_EVENTS,
+  E2E_PUBLIC_FIXTURE_EVENTS,
+  e2eFixturesEnabled,
+} from "./fixtures";
 
 const DB_RETRY_ATTEMPTS = 2;
 export const EVENTS_PAGE_SIZE = 24;
@@ -193,8 +198,8 @@ function cachePublicRead<Args extends unknown[], Result>(
 async function getEventsSummaryUncached(): Promise<EventsSummary> {
   return withE2eFixture(
     () => ({
-      total: 1,
-      upcomingThisWeek: 1,
+      total: E2E_PUBLIC_FIXTURE_EVENTS.length,
+      upcomingThisWeek: E2E_PUBLIC_FIXTURE_EVENTS.length,
       freeFood: 0,
     }),
     async () => {
@@ -210,12 +215,14 @@ async function getEventsSummaryUncached(): Promise<EventsSummary> {
             supabase
               .from("events")
               .select("id", { count: "exact", head: true })
+              .in("content_kind", PUBLIC_CONTENT_KINDS)
               .or(activeEventFilter(nowIso))
           ),
           withDbRetry("this-week event count", () =>
             supabase
               .from("events")
               .select("id", { count: "exact", head: true })
+              .in("content_kind", PUBLIC_CONTENT_KINDS)
               .gte("starts_at", todayIso)
               .lte("starts_at", inSevenDaysIso)
               .or(activeEventFilter(nowIso))
@@ -224,6 +231,7 @@ async function getEventsSummaryUncached(): Promise<EventsSummary> {
             supabase
               .from("events")
               .select("id", { count: "exact", head: true })
+              .in("content_kind", PUBLIC_CONTENT_KINDS)
               .gte("starts_at", todayIso)
               .or('category.eq.free_food,tags.cs.{"free food"}')
           ),
@@ -269,8 +277,8 @@ async function getEventsPageUncached({
   return withE2eFixture(
     () => {
       const source = hasFilters
-        ? filterEventSource([E2E_FIXTURE_EVENT], filters)
-        : [E2E_FIXTURE_EVENT];
+        ? filterEventSource(E2E_PUBLIC_FIXTURE_EVENTS, filters)
+        : E2E_PUBLIC_FIXTURE_EVENTS;
       return paginateEvents(source, pageSize, from);
     },
     async () => {
@@ -281,6 +289,7 @@ async function getEventsPageUncached({
           supabase
             .from("events")
             .select("*")
+            .in("content_kind", PUBLIC_CONTENT_KINDS)
             .or(activeEventFilter(nowIso))
             .order("starts_at", { ascending: true })
             .order("id", { ascending: true })
@@ -300,6 +309,7 @@ async function getEventsPageUncached({
         supabase
           .from("events")
           .select("*")
+          .in("content_kind", PUBLIC_CONTENT_KINDS)
           .or(activeEventFilter(nowIso))
           // starts_at is not unique; id keeps offset pages from overlapping.
           .order("starts_at", { ascending: true })
@@ -331,7 +341,7 @@ async function getEventFilterCountSourceUncached(): Promise<
   EventFilterCountSource[]
 > {
   return withE2eFixture(
-    () => [E2E_FIXTURE_EVENT],
+    () => E2E_PUBLIC_FIXTURE_EVENTS,
     async () => {
       const nowIso = new Date().toISOString();
 
@@ -339,6 +349,7 @@ async function getEventFilterCountSourceUncached(): Promise<
         supabase
           .from("events")
           .select("id,title,description,starts_at,location,host,host_handle,category,tags")
+          .in("content_kind", PUBLIC_CONTENT_KINDS)
           .or(activeEventFilter(nowIso))
           .order("starts_at", { ascending: true })
           .order("id", { ascending: true })
@@ -356,12 +367,11 @@ async function getCalendarEventsUncached({
   limit = EVENTS_CALENDAR_RANGE_LIMIT,
 }: CalendarEventsOptions): Promise<CampusEvent[]> {
   return withE2eFixture(
-    () => {
-      const fixtureDay = pacificDayKey(E2E_FIXTURE_EVENT.startsAt);
-      return fixtureDay >= startDayKey && fixtureDay <= endDayKey
-        ? [E2E_FIXTURE_EVENT]
-        : [];
-    },
+    () =>
+      E2E_PUBLIC_FIXTURE_EVENTS.filter((event) => {
+        const fixtureDay = pacificDayKey(event.startsAt);
+        return fixtureDay >= startDayKey && fixtureDay <= endDayKey;
+      }),
     async () => {
       const startIso = parsePacificDateTimeInput(`${startDayKey}T00:00`);
       const endIso = parsePacificDateTimeInput(
@@ -375,6 +385,7 @@ async function getCalendarEventsUncached({
         supabase
           .from("events")
           .select("*")
+          .in("content_kind", PUBLIC_CONTENT_KINDS)
           .gte("starts_at", startIso)
           .lt("starts_at", endIso)
           .order("starts_at", { ascending: true })
@@ -391,8 +402,11 @@ async function getCalendarEventsUncached({
 const getEventByIdUncached = cache(async function getEventById(
   id: string
 ): Promise<CampusEvent | null> {
+  // Detail-by-id is intentionally NOT content-kind filtered: a direct deep
+  // link to any event still resolves (and admins reach all kinds here),
+  // even though fundraiser/other never surface in browse.
   return withE2eFixture(
-    () => (id === E2E_FIXTURE_EVENT.id ? E2E_FIXTURE_EVENT : null),
+    () => E2E_FIXTURE_EVENTS.find((event) => event.id === id) ?? null,
     async () => {
       const { data } = await withDbRetry(
         "event",

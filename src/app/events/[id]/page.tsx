@@ -17,6 +17,7 @@ import { EventFlyerImage } from "@/components/events/EventFlyerImage";
 import { TrackedAnchor } from "@/components/events/TrackedAnchor";
 import { SITE_NAME, SITE_PREVIEW_IMAGE, absoluteUrl } from "@/lib/seo";
 import { normalizeHttpUrl } from "@/lib/events/validation";
+import { isDeadlineKind } from "@/lib/events/content-kind";
 import type { CampusEvent } from "@/types/event";
 
 // Rendered per request: the no-store Supabase client (see lib/supabase.ts) bars
@@ -90,6 +91,8 @@ export default async function EventDetailPage({
   const sourceLabel = SOURCE_LABELS[event.source];
   const hasImage = Boolean(event.imageUrl);
   const showHostedBy = Boolean(event.host || event.hostHandle);
+  const isDeadline = isDeadlineKind(event.contentKind);
+  const calendarLabel = isDeadline ? "Add reminder" : "Add to calendar";
 
   return (
     <main className="relative min-h-screen bg-canvas pb-28 md:pb-0">
@@ -122,8 +125,13 @@ export default async function EventDetailPage({
               editorial impact, regardless of whether the flyer rail renders. */}
           <header>
             <div className="flex flex-wrap items-center gap-2">
+              {isDeadline && (
+                <span className="inline-flex items-center rounded-full bg-coral/12 px-2.5 py-0.5 text-[12px] font-medium text-deep-coral">
+                  Deadline
+                </span>
+              )}
               <CategoryBadge category={event.category} />
-              {event.isFree && (
+              {event.isFree && !isDeadline && (
                 <span className="inline-flex items-center rounded-full bg-leaf/10 px-2.5 py-0.5 text-[12px] font-medium text-deep-leaf">
                   Free
                 </span>
@@ -287,7 +295,7 @@ export default async function EventDetailPage({
                     href={calendarHref(event)}
                     className="interactive-focus text-sm font-medium text-ink underline-offset-4 hover:underline"
                   >
-                    Add to calendar
+                    {calendarLabel}
                   </TrackedAnchor>
                   <ShareButton event={event} variant="text" />
                 </div>
@@ -336,7 +344,7 @@ export default async function EventDetailPage({
             eventId={event.id}
             surface="mobile"
             href={calendarHref(event)}
-            ariaLabel="Add to calendar"
+            ariaLabel={calendarLabel}
             className="interactive-focus inline-flex min-h-12 min-w-12 items-center justify-center rounded-lg border border-ink/15 text-ink"
           >
             <svg

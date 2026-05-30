@@ -14,7 +14,7 @@ test("event filters expose accessible state and recovery actions", async ({
     "event-filter-summary"
   );
   await expect(summary).toHaveAttribute("aria-live", "polite");
-  await expect(summary).toHaveText("1 event loaded");
+  await expect(summary).toHaveText("2 events loaded");
 
   const socialFilter = categoryFilterButton(page, "Social");
   await socialFilter.click();
@@ -28,7 +28,7 @@ test("event filters expose accessible state and recovery actions", async ({
   await expect(page.getByRole("button", { name: "Clear filters" })).toBeVisible();
 
   await page.getByRole("button", { name: "Clear filters" }).click();
-  await expect(summary).toHaveText("1 event loaded");
+  await expect(summary).toHaveText("2 events loaded");
 });
 
 test("club suggestion highlight survives narrowed search results", async ({
