@@ -15,6 +15,7 @@ import { ShareButton } from "@/components/events/ShareButton";
 import { EventBackButton } from "@/components/events/EventBackButton";
 import { EventFlyerImage } from "@/components/events/EventFlyerImage";
 import { TrackedAnchor } from "@/components/events/TrackedAnchor";
+import { SaveButton } from "@/components/events/SaveButton";
 import { SITE_NAME, SITE_PREVIEW_IMAGE, absoluteUrl } from "@/lib/seo";
 import { normalizeHttpUrl } from "@/lib/events/validation";
 import { isDeadlineKind, isPublicContentKind } from "@/lib/events/content-kind";
@@ -367,6 +368,8 @@ export default async function EventDetailPage({
                   >
                     {calendarLabel}
                   </TrackedAnchor>
+
+                  <SaveButton eventId={event.id} surface="detail" variant="label" />
                   <ShareButton event={event} variant="text" />
                 </div>
               </section>
@@ -432,6 +435,7 @@ export default async function EventDetailPage({
               <path d="M16 2v4M8 2v4M3 10h18" />
             </svg>
           </TrackedAnchor>
+          <SaveButton eventId={event.id} surface="detail" variant="icon" />
           <ShareButton event={event} variant="icon" />
         </div>
       </div>
