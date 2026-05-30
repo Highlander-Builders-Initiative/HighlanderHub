@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Masthead } from "@/components/layout/Masthead";
+import { EVENTS_NAV_LINKS } from "@/lib/site-nav";
 import { EventsBrowser } from "@/components/events/EventsBrowser";
 import {
   coerceCategoryParam,
@@ -57,8 +58,8 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
   const events = initialPage.events;
 
   return (
-    <main className="min-h-screen bg-canvas">
-      <Masthead position="static" variant="solid" hideNavOnDesktop />
+    <main className="min-h-screen bg-surface">
+      <Masthead position="static" variant="solid" navLinks={EVENTS_NAV_LINKS} />
 
       <EventsBrowser
         events={events}
@@ -76,7 +77,7 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
           to /events where the long scroll warrants it. */}
       <div
         aria-hidden
-        className="pointer-events-none fixed inset-x-0 bottom-0 z-10 h-10 bg-gradient-to-t from-canvas via-canvas/30 to-transparent sm:h-12"
+        className="pointer-events-none fixed inset-x-0 bottom-0 z-10 h-10 bg-gradient-to-t from-surface via-surface/30 to-transparent sm:h-12"
         style={{
           backdropFilter: "blur(1.25px)",
           WebkitBackdropFilter: "blur(1.25px)",

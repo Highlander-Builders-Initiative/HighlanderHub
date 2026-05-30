@@ -150,7 +150,7 @@ export function EventSearchBox({ query, onQueryChange }: Props) {
           // collapse the list mid-click.
           onMouseDown={(e) => e.preventDefault()}
         >
-          <div className="border-b border-ink/5 px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted">
+          <div className="border-b border-ink/5 px-3 py-1.5 text-[12px] font-medium text-muted">
             Clubs
           </div>
           <ul
