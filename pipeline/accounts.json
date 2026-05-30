@@ -353,6 +353,36 @@
       "label": "wincucr",
       "category": "club",
       "instagram_user_id": 7373831525
+    },
+    {
+      "handle": "aws_ucr",
+      "label": "Autistic Women's Society @ UCR",
+      "category": "club",
+      "instagram_user_id": 39467131173
+    },
+    {
+      "handle": "dss.ucr",
+      "label": "Data Science Society @ UCR",
+      "category": "club",
+      "instagram_user_id": 66845058719
+    },
+    {
+      "handle": "designverseucr",
+      "label": "DesignVerse @ UCR",
+      "category": "club",
+      "instagram_user_id": 61594996435
+    },
+    {
+      "handle": "aisatucr",
+      "label": "Association for Information Systems @ UCR",
+      "category": "club",
+      "instagram_user_id": 42300677675
+    },
+    {
+      "handle": "ucrbcoe",
+      "label": "UCR Bourns College of Engineering",
+      "category": "college",
+      "instagram_user_id": 13267338009
     }
   ]
 }
