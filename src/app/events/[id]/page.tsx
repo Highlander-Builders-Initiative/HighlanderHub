@@ -17,7 +17,7 @@ import { EventFlyerImage } from "@/components/events/EventFlyerImage";
 import { TrackedAnchor } from "@/components/events/TrackedAnchor";
 import { SITE_NAME, SITE_PREVIEW_IMAGE, absoluteUrl } from "@/lib/seo";
 import { normalizeHttpUrl } from "@/lib/events/validation";
-import { isDeadlineKind } from "@/lib/events/content-kind";
+import { isDeadlineKind, isPublicContentKind } from "@/lib/events/content-kind";
 import type { CampusEvent } from "@/types/event";
 
 // Rendered per request: the no-store Supabase client (see lib/supabase.ts) bars
@@ -32,6 +32,66 @@ const SOURCE_LABELS: Record<CampusEvent["source"], string> = {
   club_website: "Club site",
   manual: "Manual",
 };
+
+function jsonLdHtml(data: Record<string, unknown>): string {
+  return JSON.stringify(data).replace(/</g, "\\u003c");
+}
+
+function eventLocationJsonLd(location: string): Record<string, unknown> {
+  const name = location.trim() || "UC Riverside";
+  return {
+    "@type": "Place",
+    name,
+    address: {
+      "@type": "PostalAddress",
+      addressLocality: "Riverside",
+      addressRegion: "CA",
+      addressCountry: "US",
+    },
+  };
+}
+
+function eventJsonLd(
+  event: CampusEvent,
+  registrationUrl: string | null
+): Record<string, unknown> {
+  const url = absoluteUrl(`/events/${event.id}`);
+  const offers =
+    event.isFree || registrationUrl
+      ? {
+          "@type": "Offer",
+          url: registrationUrl ?? url,
+          ...(event.isFree
+            ? {
+                price: "0",
+                priceCurrency: "USD",
+                availability: "https://schema.org/InStock",
+              }
+            : {}),
+        }
+      : undefined;
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "Event",
+    "@id": `${url}#event`,
+    name: event.title,
+    description: event.description.trim() || event.title,
+    url,
+    startDate: event.startsAt,
+    ...(event.endsAt ? { endDate: event.endsAt } : {}),
+    eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+    eventStatus: "https://schema.org/EventScheduled",
+    location: eventLocationJsonLd(event.location),
+    ...(event.imageUrl ? { image: [absoluteUrl(event.imageUrl)] } : {}),
+    organizer: {
+      "@type": "Organization",
+      name: event.host || SITE_NAME,
+      ...(event.sourceUrl ? { url: event.sourceUrl } : {}),
+    },
+    ...(offers ? { offers } : {}),
+  };
+}
 
 export async function generateMetadata({
   params,
@@ -93,9 +153,18 @@ export default async function EventDetailPage({
   const showHostedBy = Boolean(event.host || event.hostHandle);
   const isDeadline = isDeadlineKind(event.contentKind);
   const calendarLabel = isDeadline ? "Add reminder" : "Add to calendar";
+  const structuredData = isPublicContentKind(event.contentKind)
+    ? eventJsonLd(event, primaryUrl)
+    : null;
 
   return (
     <main className="relative min-h-screen bg-canvas pb-28 md:pb-0">
+      {structuredData && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: jsonLdHtml(structuredData) }}
+        />
+      )}
       <Masthead />
 
       {/* Atmospheric backdrop: the flyer's mood color bleeds in, blurred low,
@@ -290,6 +359,7 @@ export default async function EventDetailPage({
                   )}
                   <TrackedAnchor
                     event="calendar"
+                    method="google"
                     eventId={event.id}
                     surface="desktop"
                     href={calendarHref(event)}
@@ -341,6 +411,7 @@ export default async function EventDetailPage({
           ) : null}
           <TrackedAnchor
             event="calendar"
+            method="google"
             eventId={event.id}
             surface="mobile"
             href={calendarHref(event)}
