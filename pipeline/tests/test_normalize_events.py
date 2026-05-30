@@ -22,7 +22,7 @@ class NormalizeEventsTests(unittest.TestCase):
         )
         fake_db = types.SimpleNamespace(
             upsert_batched=Mock(return_value=0),
-            delete_rows_by_prefix=Mock(return_value=0),
+            delete_events_missing_from_ids=Mock(return_value=0),
             get_deleted_event_ids=Mock(return_value=set()),
         )
         self.fake_db = fake_db
@@ -135,36 +135,36 @@ class NormalizeEventsTests(unittest.TestCase):
         self.assertEqual(rows[0]["starts_at"], "2026-05-15T19:00:00-07:00")
         self.assertEqual(rows[0]["ends_at"], "2026-05-15T21:00:00-07:00")
 
-    def test_normalizer_deletes_stale_collapsed_localist_rows(self) -> None:
-        with self.subTest("recurring Localist events replace their canonical row"):
-            raw = {
-                "id": 52310591390648,
-                "title": "Gardening for Butterflies",
-                "recurring": True,
-                "first_date": "2026-05-17T00:00:00-07:00",
-                "last_date": "2026-06-20T17:00:00-07:00",
-                "event_instances": [
-                    {
-                        "event_instance": {
-                            "id": 9002,
-                            "start": "2026-06-07T09:00:00-07:00",
-                            "end": "2026-06-07T12:00:00-07:00",
-                        }
+    def test_normalizer_reconciles_structured_import_ids(self) -> None:
+        raw = {
+            "id": 52310591390648,
+            "title": "Gardening for Butterflies",
+            "recurring": True,
+            "first_date": "2026-05-17T00:00:00-07:00",
+            "last_date": "2026-06-20T17:00:00-07:00",
+            "event_instances": [
+                {
+                    "event_instance": {
+                        "id": 9002,
+                        "start": "2026-06-07T09:00:00-07:00",
+                        "end": "2026-06-07T12:00:00-07:00",
                     }
-                ],
-            }
+                }
+            ],
+        }
 
-            with patch.object(
-                self.normalize_events,
-                "_collect_raw",
-                side_effect=[[raw], []],
-            ):
-                self.normalize_events.main()
+        with patch.object(
+            self.normalize_events,
+            "_collect_raw",
+            side_effect=[[raw], []],
+        ):
+            self.normalize_events.main()
 
-            self.fake_db.upsert_batched.assert_called_once()
-            self.fake_db.delete_rows_by_prefix.assert_called_once_with(
-                "events", "ucr_events_52310591390648"
-            )
+        self.fake_db.upsert_batched.assert_called_once()
+        self.fake_db.delete_events_missing_from_ids.assert_called_once_with(
+            ["ucr_events_", "highlander_link_"],
+            ["ucr_events_52310591390648_9002"],
+        )
 
     def test_normalizer_suppresses_admin_deleted_events(self) -> None:
         raw = {
@@ -182,6 +182,58 @@ class NormalizeEventsTests(unittest.TestCase):
             self.normalize_events.main()
 
         self.fake_db.upsert_batched.assert_called_once_with("events", [])
+
+    def test_normalizer_suppresses_deleted_duplicate_event_group(self) -> None:
+        localist_raw = {
+            "id": 123,
+            "title": "Life After UCR",
+            "first_date": "2026-05-26T14:00:00-07:00",
+        }
+        hlink_raw = {
+            "id": 456,
+            "name": "Life After UCR",
+            "startsOn": "2026-05-26T21:00:00+00:00",
+            "endsOn": "2026-05-26T22:00:00+00:00",
+            "benefitNames": ["Free Food"],
+        }
+        self.fake_db.get_deleted_event_ids.return_value = {"highlander_link_456"}
+
+        with patch.object(
+            self.normalize_events,
+            "_collect_raw",
+            side_effect=[[localist_raw], [hlink_raw]],
+        ):
+            self.normalize_events.main()
+
+        self.fake_db.upsert_batched.assert_called_once_with("events", [])
+
+    def test_normalizer_dedupes_same_title_and_start_across_sources(self) -> None:
+        localist_raw = {
+            "id": 123,
+            "title": "Life After UCR",
+            "description_text": "A planning workshop.",
+            "first_date": "2026-05-26T14:00:00-07:00",
+        }
+        hlink_raw = {
+            "id": 456,
+            "name": "Life After UCR",
+            "description": "<p>A planning workshop.</p>",
+            "startsOn": "2026-05-26T21:00:00+00:00",
+            "endsOn": "2026-05-26T22:00:00+00:00",
+            "benefitNames": ["Free Food"],
+        }
+
+        with patch.object(
+            self.normalize_events,
+            "_collect_raw",
+            side_effect=[[localist_raw], [hlink_raw]],
+        ):
+            self.normalize_events.main()
+
+        rows = self.fake_db.upsert_batched.call_args.args[1]
+        self.assertEqual(1, len(rows))
+        self.assertEqual("highlander_link_456", rows[0]["id"])
+        self.assertEqual("free_food", rows[0]["category"])
 
 
 if __name__ == "__main__":

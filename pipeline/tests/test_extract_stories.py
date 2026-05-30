@@ -646,6 +646,36 @@ class ExtractStoriesTests(unittest.TestCase):
 
         self.assertEqual([row["id"] for row in filtered], ["ig_ucrwrc_20260531T1800Z"])
 
+    def test_filter_deleted_events_suppresses_duplicate_event_group(self) -> None:
+        rows = [
+            {
+                "id": "ig_highlander_opps_20260531T1800Z",
+                "title": "Matcha Crawl",
+                "starts_at": "2026-05-31T18:00:00+00:00",
+            },
+            {
+                "id": "ig_ucrwrc_20260531T1800Z",
+                "title": "Matcha Crawl",
+                "starts_at": "2026-05-31T11:00:00-07:00",
+            },
+            {
+                "id": "ig_ucrlibrary_20260601T0700Z",
+                "title": "Finals Week Stress Relief",
+                "starts_at": "2026-06-01T00:00:00-07:00",
+            },
+        ]
+        fake_db = types.SimpleNamespace(
+            get_deleted_event_ids=lambda: {"ig_highlander_opps_20260531T1800Z"}
+        )
+
+        with patch.dict(sys.modules, {"db": fake_db}):
+            filtered = self.extract_stories._filter_deleted_events(rows)
+
+        self.assertEqual(
+            [row["id"] for row in filtered],
+            ["ig_ucrlibrary_20260601T0700Z"],
+        )
+
     def test_bool_or_default_parses_common_llm_boolean_forms(self) -> None:
         parse = self.extract_stories._bool_or_default
 

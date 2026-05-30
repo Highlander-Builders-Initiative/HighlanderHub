@@ -71,6 +71,20 @@ def _write_event(event: dict[str, Any]) -> bool:
     return is_new
 
 
+def _prune_missing_events(seen_ids: set[str]) -> int:
+    """Remove raw HighlanderLink files absent from a completed source scrape."""
+    if not SOURCE_DIR.exists():
+        return 0
+
+    removed = 0
+    for path in SOURCE_DIR.glob("*.json"):
+        if path.stem in seen_ids:
+            continue
+        path.unlink()
+        removed += 1
+    return removed
+
+
 def fetch_all() -> tuple[int, int]:
     """Walk paginated results. Returns (total_events, new_events)."""
     s = _session()
@@ -82,6 +96,8 @@ def fetch_all() -> tuple[int, int]:
     log.info("HighlanderLink reports %d events across %d page(s)", total, pages)
 
     seen = new = 0
+    seen_ids: set[str] = set()
+    completed = True
 
     def handle_payload(payload: dict[str, Any]) -> None:
         nonlocal seen, new
@@ -89,6 +105,7 @@ def fetch_all() -> tuple[int, int]:
             if not isinstance(ev, dict) or "id" not in ev:
                 continue
             seen += 1
+            seen_ids.add(str(ev["id"]))
             if _write_event(ev):
                 new += 1
 
@@ -99,7 +116,13 @@ def fetch_all() -> tuple[int, int]:
             handle_payload(_fetch_page(s, skip=page * PER_PAGE, ends_after=ends_after))
         except requests.HTTPError as e:
             log.warning("page %d failed: %s — stopping pagination", page, e)
+            completed = False
             break
+
+    if completed:
+        pruned = _prune_missing_events(seen_ids)
+        if pruned:
+            log.info("HighlanderLink events: pruned %d stale raw file(s)", pruned)
 
     return seen, new
 

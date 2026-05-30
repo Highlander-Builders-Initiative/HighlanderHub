@@ -9,13 +9,13 @@ Three sources right now, hand-off to the Next.js app via Supabase tables:
 | highlanderlink.ucr.edu (CampusLabs Engage) | `highlander_link.py` (JSON API) | `data/raw/highlander_link/` | `events` | `src/lib/events/index.ts` |
 
 `run.py` scrapes everything, extracts IG event rows, then normalizes. Failures
-in one source don't kill the others — the raw archive on disk is the source of
-truth, and extraction/normalization run over whatever's there.
+in one source don't kill the others. IG raw files are the durable story archive;
+Localist and HighlanderLink raw files are the latest successful source snapshot.
 
 Stories expire from Instagram after 24 hours, so the IG raw archive is the
 only durable record — keep it. Localist and HighlanderLink events are mutable
-(descriptions get edited), so those scrapers always overwrite; the latest
-fetch wins.
+(descriptions get edited or events disappear), so those scrapers overwrite
+current files and prune files absent from a completed source fetch.
 
 ## Layout
 
@@ -122,7 +122,7 @@ python normalize_events.py   # rebuild events from ucr_events/ + highlander_link
 Re-running is cheap: IG raw files are skipped if present, extracted story
 results are cached first in `data/extracted/` and then in Supabase
 `story_extractions` for stateless CI runs, and Localist + HighlanderLink events
-are overwritten because they are mutable.
+are overwritten/pruned because they are mutable.
 
 ## Schedule
 
