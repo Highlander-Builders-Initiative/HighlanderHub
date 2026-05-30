@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Masthead } from "@/components/layout/Masthead";
+import { EVENTS_NAV_LINKS } from "@/lib/site-nav";
 import { EventsBrowser } from "@/components/events/EventsBrowser";
 import {
   coerceCategoryParam,
@@ -58,7 +59,7 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
 
   return (
     <main className="min-h-screen bg-canvas">
-      <Masthead position="static" variant="solid" hideNavOnDesktop />
+      <Masthead position="static" variant="solid" navLinks={EVENTS_NAV_LINKS} />
 
       <EventsBrowser
         events={events}

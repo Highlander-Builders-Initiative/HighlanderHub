@@ -54,7 +54,7 @@ export default async function HomePage() {
               href={HBI_ABOUT_URL}
               location="hero"
               channel="website"
-              className="interactive-focus group inline-flex items-center gap-2"
+              className="interactive-focus group inline-flex items-center gap-2 md:mr-8 lg:mr-16"
             >
               <Image
                 src="/logo_icon.png"
