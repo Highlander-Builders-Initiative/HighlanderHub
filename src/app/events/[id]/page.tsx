@@ -10,7 +10,7 @@ import {
   formatTimeRange,
   relativeDay,
 } from "@/lib/dates";
-import { calendarHref } from "@/lib/events/actions";
+import { calendarHref, icsHref } from "@/lib/events/actions";
 import { ShareButton } from "@/components/events/ShareButton";
 import { EventBackButton } from "@/components/events/EventBackButton";
 import { EventFlyerImage } from "@/components/events/EventFlyerImage";
@@ -414,10 +414,10 @@ export default async function EventDetailPage({
           ) : null}
           <TrackedAnchor
             event="calendar"
-            method="google"
+            method="ics"
             eventId={event.id}
             surface="mobile"
-            href={calendarHref(event)}
+            href={icsHref(event.id)}
             ariaLabel={calendarLabel}
             className="interactive-focus inline-flex min-h-12 min-w-12 items-center justify-center rounded-lg border border-ink/15 text-ink"
           >

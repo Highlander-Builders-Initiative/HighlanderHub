@@ -13,7 +13,7 @@ type Props = {
 export function EventsLeftRail({ category, onCategoryChange, counts }: Props) {
   return (
     <div className={GLASS_PANEL_CLASS}>
-      <p className="px-3 pb-2 text-[12px] font-medium text-muted">Browse</p>
+      <p className="px-3 pb-2 text-[12px] font-medium text-muted">Topics</p>
 
       <EventCategoryFilter
         layout="rail"

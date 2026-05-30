@@ -5,7 +5,7 @@ type Primitive = string | number | boolean | null;
 type EventMap = {
   event_open: { id: string; category: string; surface: "list_card" | "mosaic_tile" | "calendar_card" };
   event_primary_cta: { id: string; kind: "rsvp" | "view_source"; surface: "desktop" | "mobile" };
-  event_add_to_calendar: { id: string; surface: "desktop" | "mobile" };
+  event_add_to_calendar: { id: string; surface: "desktop" | "mobile"; method: "google" | "ics" };
   event_share: { id: string; method: "native" | "clipboard" | "mailto"; surface: "text" | "icon" };
   event_save: { id: string; action: "save" | "unsave"; surface: "list_card" | "detail" | "saved_page" };
   events_search: { query_length: number };

@@ -114,7 +114,9 @@ test("calendar loads its own month-range events outside feed pagination", () => 
   assert.match(filters, /for \(const \[key, evs\] of calendarGrouped\)/);
   assert.match(calendar, /pacificCalendarGridRange/);
   assert.match(calendar, /aria-busy=\{isLoading\}/);
-  assert.match(calendar, /!isLoading && dots\.length > 0/);
+  assert.match(calendar, /heatClass/);
+  assert.match(calendar, /countsByDay\.get\(key\)/);
+  assert.match(calendar, /!isLoading && inMonth \? heatClass\(count\) : ""/);
   assert.match(calendarHook, /fetchCalendarEvents\(calendarRange\.start, calendarRange\.end\)/);
   assert.match(calendarHook, /isCalendarLoading/);
   assert.match(calendarHook, /finally/);
@@ -235,6 +237,8 @@ test("event detail page exposes RSVP / calendar / share actions", () => {
   const source = read("src/app/events/[id]/page.tsx");
 
   assert.match(source, /Add to calendar|aria-label="Add to calendar"/);
+  assert.match(source, /method="ics"/);
+  assert.match(source, /Download \.ics/);
   assert.match(source, /SaveButton/);
   assert.match(source, /Share|aria-label="Share"/);
   assert.match(source, /RSVP|View source/);

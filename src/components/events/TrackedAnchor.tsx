@@ -14,7 +14,7 @@ type Props = {
   children: ReactNode;
 } & (
   | { event: "primary"; ctaKind: "rsvp" | "view_source" }
-  | { event: "calendar" }
+  | { event: "calendar"; method: "google" | "ics" }
 );
 
 export function TrackedAnchor(props: Props) {
@@ -29,6 +29,7 @@ export function TrackedAnchor(props: Props) {
       track("event_add_to_calendar", {
         id: props.eventId,
         surface: props.surface,
+        method: props.method,
       });
     }
   };
