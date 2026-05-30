@@ -7,6 +7,7 @@ type EventMap = {
   event_primary_cta: { id: string; kind: "rsvp" | "view_source"; surface: "desktop" | "mobile" };
   event_add_to_calendar: { id: string; surface: "desktop" | "mobile" };
   event_share: { id: string; method: "native" | "clipboard" | "mailto"; surface: "text" | "icon" };
+  event_save: { id: string; action: "save" | "unsave"; surface: "list_card" | "detail" | "saved_page" };
   events_search: { query_length: number };
   events_filter: { category: string };
   events_day_window: { window: "all" | "today" | "week" | "weekend" };

@@ -235,8 +235,24 @@ test("event detail page exposes RSVP / calendar / share actions", () => {
   const source = read("src/app/events/[id]/page.tsx");
 
   assert.match(source, /Add to calendar|aria-label="Add to calendar"/);
+  assert.match(source, /SaveButton/);
   assert.match(source, /Share|aria-label="Share"/);
   assert.match(source, /RSVP|View source/);
+});
+
+test("saved events page resolves local saved ids through the batch API", () => {
+  const page = read("src/app/saved/page.tsx");
+  const client = read("src/components/events/SavedEventsClient.tsx");
+  const api = read("src/app/api/events/by-ids/route.ts");
+  const card = read("src/components/events/EventCard.tsx");
+
+  assert.match(page, /robots: \{ index: false \}/);
+  assert.match(client, /useSavedEvents/);
+  assert.match(client, /\/api\/events\/by-ids\?ids=/);
+  assert.match(api, /getEventById/);
+  assert.match(api, /MAX_IDS/);
+  assert.match(client, /saveSurface="saved_page"/);
+  assert.match(card, /saveSurface = "list_card"/);
 });
 
 test("masthead keeps navigation reachable on mobile", () => {
@@ -249,18 +265,20 @@ test("masthead keeps navigation reachable on mobile", () => {
 
   assert.match(source, /aria-label="Site"/);
   assert.doesNotMatch(source, /Mobile navigation/);
-  assert.match(source, /MASTHEAD_NAV_LINKS\.map/);
+  assert.match(source, /navLinks = MASTHEAD_NAV_LINKS/);
+  assert.match(source, /navLinks\.map/);
   assert.match(source, /@\/lib\/site-nav/);
   assert.match(siteNav, /SITE_NAV_LINKS/);
   assert.match(siteNav, /href: "\/"/);
   assert.match(siteNav, /href: "\/events"/);
+  assert.match(siteNav, /href: "\/saved"/);
   assert.match(siteNav, /href: "\/about"/);
   assert.match(siteNav, /href: "\/submit"/);
   assert.match(source, /hideOnScroll/);
   assert.match(source, /position = "sticky"/);
   assert.match(source, /position === "sticky"/);
   assert.match(source, /variant = "glass"/);
-  assert.match(eventsPage, /<Masthead position="static" variant="solid" hideNavOnDesktop \/>/);
+  assert.match(eventsPage, /<Masthead position="static" variant="solid" navLinks=\{EVENTS_NAV_LINKS\} \/>/);
   assert.doesNotMatch(eventsPage, /hideOnScroll/);
   assert.match(feedColumn, /bg-white\/55/);
   assert.match(feedColumn, /style=\{\{ top: 0 \}\}/);
