@@ -37,10 +37,22 @@
       "instagram_user_id": 449388329
     },
     {
+      "handle": "chessclubatucr",
+      "label": "chessclubatucr",
+      "category": "club",
+      "instagram_user_id": 8662756865
+    },
+    {
       "handle": "climbucr",
       "label": "climbucr",
       "category": "club",
       "instagram_user_id": 51886513518
+    },
+    {
+      "handle": "creatorsatucr",
+      "label": "creatorsatucr",
+      "category": "club",
+      "instagram_user_id": 77821851635
     },
     {
       "handle": "cyber_ucr",
@@ -271,9 +283,15 @@
       "instagram_user_id": 38098166631
     },
     {
+      "handle": "ucriversidearc",
+      "label": "ucriversidearc",
+      "category": "organization",
+      "instagram_user_id": 2985103977
+    },
+    {
       "handle": "ucriversideofficial",
       "label": "ucriversideofficial",
-      "category": "Organization",
+      "category": "organization",
       "instagram_user_id": 228928590
     },
     {
@@ -285,7 +303,7 @@
     {
       "handle": "ucrlgbtrc",
       "label": "ucrlgbtrc",
-      "category": "Organization",
+      "category": "organization",
       "instagram_user_id": 562119282
     },
     {
