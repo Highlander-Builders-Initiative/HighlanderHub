@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { MASTHEAD_NAV_LINKS } from "@/lib/site-nav";
+import { MASTHEAD_NAV_LINKS, type SiteNavLink } from "@/lib/site-nav";
 
 const NAV_LINK_CLASS =
   "interactive-focus px-1 py-2 text-ink transition-colors hover:text-ink/70";
@@ -20,6 +20,8 @@ type MastheadProps = {
    * because no rail exists below the lg breakpoint.
    */
   hideNavOnDesktop?: boolean;
+  /** Override the inline nav links (defaults to the site masthead set). */
+  navLinks?: readonly SiteNavLink[];
 };
 
 export function Masthead({
@@ -27,6 +29,7 @@ export function Masthead({
   position = "sticky",
   variant = "glass",
   hideNavOnDesktop = false,
+  navLinks = MASTHEAD_NAV_LINKS,
 }: MastheadProps) {
   const [hidden, setHidden] = useState(false);
   const lastY = useRef(0);
@@ -93,7 +96,7 @@ export function Masthead({
             hideNavOnDesktop ? "flex lg:hidden" : "flex"
           }`}
         >
-          {MASTHEAD_NAV_LINKS.map((link) => (
+          {navLinks.map((link) => (
             <Link key={link.href} href={link.href} className={NAV_LINK_CLASS}>
               {link.label}
             </Link>

@@ -14,9 +14,16 @@ import { DAY_WINDOWS, type DayWindow } from "@/types/events-feed";
 
 export type CategoryValue = EventCategory | "all";
 
+// Free Food leads the browse list (just after "All") since it's the
+// highest-intent filter for students; the rest follow EVENT_CATEGORIES order.
+const RAIL_CATEGORY_ORDER: EventCategory[] = [
+  "free_food",
+  ...EVENT_CATEGORIES.filter((value) => value !== "free_food"),
+];
+
 export const CATEGORIES: { value: CategoryValue; label: string }[] = [
   { value: "all", label: "All" },
-  ...EVENT_CATEGORIES.map((value) => ({
+  ...RAIL_CATEGORY_ORDER.map((value) => ({
     value,
     label:
       value === "club"
