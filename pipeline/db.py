@@ -81,6 +81,32 @@ def delete_rows_by_prefix(table: str, prefix: str) -> int:
     return count
 
 
+def delete_events_missing_from_ids(
+    id_prefixes: Iterable[str],
+    keep_ids: Iterable[str],
+    batch_size: int = 200,
+) -> int:
+    """Delete unlocked imported events under prefixes that are absent this run."""
+    c = client()
+    keep = {str(event_id) for event_id in keep_ids}
+    stale_ids: list[str] = []
+
+    for prefix in dict.fromkeys(id_prefixes):
+        existing = (
+            c.table("events")
+            .select("id,is_locked")
+            .like("id", f"{prefix}%")
+            .execute()
+        )
+        for row in getattr(existing, "data", []) or []:
+            event_id = str(row.get("id") or "")
+            if not event_id or row.get("is_locked") or event_id in keep:
+                continue
+            stale_ids.append(event_id)
+
+    return delete_rows_by_ids("events", stale_ids, batch_size=batch_size)
+
+
 def get_deleted_event_ids() -> set[str]:
     """Return admin-deleted event IDs that pipeline imports must not recreate."""
     res = client().table("deleted_events").select("event_id").execute()

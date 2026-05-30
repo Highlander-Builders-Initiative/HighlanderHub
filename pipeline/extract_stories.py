@@ -25,6 +25,7 @@ from config import (
     load_accounts,
 )
 from discord_notify import notify_free_food_events
+from event_identity import dedupe_event_rows, suppress_tombstoned_event_groups
 from url_utils import normalize_http_url as _normalize_url
 
 log = logging.getLogger("pipeline.extract_stories")
@@ -726,7 +727,7 @@ def _filter_locked_events(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
         locked_ids = {row["id"] for row in getattr(locked_res, "data", []) or []}
         if locked_ids:
             log.info("Found %d manually locked events in database. Excluding from story crawler run.", len(locked_ids))
-            rows = [r for r in rows if r["id"] not in locked_ids]
+            rows = suppress_tombstoned_event_groups(rows, locked_ids)
     except Exception as e:
         log.warning("Could not fetch locked events for story exclusion: %s. Proceeding with all events.", e)
 
@@ -745,7 +746,7 @@ def _filter_deleted_events(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
             "Found %d admin-deleted events. Excluding from story crawler run.",
             len(deleted_ids),
         )
-        rows = [r for r in rows if r["id"] not in deleted_ids]
+        rows = suppress_tombstoned_event_groups(rows, deleted_ids)
     return rows
 
 
@@ -755,6 +756,15 @@ def _upsert_events(rows: list[dict[str, Any]]) -> int:
 
     from db import upsert_batched
     return upsert_batched("events", rows)
+
+
+def _delete_imported_event_ids(ids: set[str]) -> int:
+    if not ids:
+        return 0
+
+    from db import delete_rows_by_ids
+
+    return delete_rows_by_ids("events", sorted(ids))
 
 
 def main() -> None:
@@ -769,18 +779,15 @@ def main() -> None:
 
     scraped_at = _utc_now()
     rows = _collect_event_rows(meta_by_handle, scraped_at)
-    # Same event often appears in several stories; keep the most informative
-    # row per id (the original flyer usually has a longer description than
-    # the follow-up reminder).
-    by_id: dict[str, dict[str, Any]] = {}
-    for row in rows:
-        existing = by_id.get(row["id"])
-        if existing is None or len(row.get("description") or "") > len(
-            existing.get("description") or ""
-        ):
-            by_id[row["id"]] = row
-    event_rows = _filter_locked_events(list(by_id.values()))
+    current_ids = {row["id"] for row in rows}
+    event_rows = _filter_locked_events(rows)
     event_rows = _filter_deleted_events(event_rows)
+    event_rows = dedupe_event_rows(event_rows)
+    deleted = _delete_imported_event_ids(
+        current_ids - {row["id"] for row in event_rows}
+    )
+    if deleted:
+        log.info("Deleted %d stale Instagram event rows from Supabase", deleted)
     written = _upsert_events(event_rows)
     log.info("Wrote %d events to Supabase", written)
     notified = notify_free_food_events(event_rows)

@@ -44,6 +44,7 @@ class SchemaContractTests(unittest.TestCase):
             upsert_batched=lambda *a, **k: 0,
             delete_rows_by_prefix=lambda *a, **k: 0,
             delete_rows_by_ids=lambda *a, **k: 0,
+            delete_events_missing_from_ids=lambda *a, **k: 0,
             get_deleted_event_ids=lambda: set(),
         )
         sys.modules.pop("extract_stories", None)

@@ -21,14 +21,16 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from config import RAW_DIR, ensure_dirs
-from db import delete_rows_by_prefix, get_deleted_event_ids, upsert_batched
+from db import delete_events_missing_from_ids, get_deleted_event_ids, upsert_batched
 from discord_notify import notify_free_food_events
+from event_identity import dedupe_event_rows, suppress_tombstoned_event_groups
 from url_utils import normalize_http_url as _normalize_url
 
 log = logging.getLogger("pipeline.normalize_events")
 
 UCR_EVENTS_RAW = RAW_DIR / "ucr_events"
 HIGHLANDER_LINK_RAW = RAW_DIR / "highlander_link"
+STRUCTURED_EVENT_ID_PREFIXES = ["ucr_events_", "highlander_link_"]
 
 # Engage 'theme' is a single coarse bucket per event; map it onto our category
 # vocabulary. categoryNames are more specific but free-text, so they're fed
@@ -309,13 +311,6 @@ def _to_event_rows(
     return [row] if row is not None else []
 
 
-def _stale_localist_prefixes(raw: dict[str, Any]) -> list[str]:
-    lid = raw.get("id")
-    if lid is None or not _is_recurring_localist_event(raw):
-        return []
-    return [f"ucr_events_{lid}"]
-
-
 _HLINK_IMAGE_BASE = "https://se-images.campuslabs.com/clink/images/"
 _HLINK_EVENT_URL = "https://highlanderlink.ucr.edu/event/{id}"
 
@@ -396,18 +391,34 @@ def _collect_raw(source_dir: Path) -> Iterable[dict[str, Any]]:
             log.warning("skipping malformed file: %s", path)
 
 
-def _filter_deleted_events(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _filter_deleted_events(
+    rows: list[dict[str, Any]],
+    deleted_ids: set[str] | None = None,
+) -> list[dict[str, Any]]:
     if not rows:
         return []
 
-    deleted_ids = get_deleted_event_ids()
+    if deleted_ids is None:
+        deleted_ids = get_deleted_event_ids()
     if deleted_ids:
         log.info(
             "Found %d admin-deleted events. Excluding from structured importer run.",
             len(deleted_ids),
         )
-        rows = [r for r in rows if r["id"] not in deleted_ids]
+        rows = suppress_tombstoned_event_groups(rows, deleted_ids)
     return rows
+
+
+def _locked_event_ids() -> set[str]:
+    try:
+        from db import client
+
+        db_client = client()
+        locked_res = db_client.table("events").select("id").eq("is_locked", True).execute()
+        return {row["id"] for row in getattr(locked_res, "data", []) or []}
+    except Exception as e:
+        log.warning("Could not fetch locked events for exclusion: %s. Proceeding with all events.", e)
+        return set()
 
 
 def main() -> None:
@@ -418,38 +429,26 @@ def main() -> None:
     scraped_at = datetime.now(timezone.utc).isoformat()
 
     rows: list[dict[str, Any]] = []
-    stale_prefixes: list[str] = []
     for raw in _collect_raw(UCR_EVENTS_RAW):
         rows.extend(_to_event_rows(raw, scraped_at))
-        stale_prefixes.extend(_stale_localist_prefixes(raw))
     for raw in _collect_raw(HIGHLANDER_LINK_RAW):
         row = _to_event_row_hlink(raw, scraped_at)
         if row is not None:
             rows.append(row)
 
-    # Dedupe by id (last-write-wins).
-    by_id: dict[str, dict[str, Any]] = {r["id"]: r for r in rows}
-    deduped = list(by_id.values())
+    locked_ids = _locked_event_ids()
+    if locked_ids:
+        log.info("Found %d manually locked events in database. Excluding from scraper run.", len(locked_ids))
+        rows = suppress_tombstoned_event_groups(rows, locked_ids)
 
-    # Query already locked events from Supabase to prevent overwriting manual edits
-    try:
-        from db import client
-        db_client = client()
-        locked_res = db_client.table("events").select("id").eq("is_locked", True).execute()
-        locked_ids = {row["id"] for row in getattr(locked_res, "data", []) or []}
-        if locked_ids:
-            log.info("Found %d manually locked events in database. Excluding from scraper run.", len(locked_ids))
-            deduped = [r for r in deduped if r["id"] not in locked_ids]
-    except Exception as e:
-        log.warning("Could not fetch locked events for exclusion: %s. Proceeding with all events.", e)
+    deduped = dedupe_event_rows(_filter_deleted_events(rows))
 
-    deduped = _filter_deleted_events(deduped)
-
-    deleted = 0
-    for prefix in dict.fromkeys(stale_prefixes):
-        deleted += delete_rows_by_prefix("events", prefix)
+    deleted = delete_events_missing_from_ids(
+        STRUCTURED_EVENT_ID_PREFIXES,
+        sorted(r["id"] for r in deduped),
+    )
     if deleted:
-        log.info("Deleted %d stale Localist event rows from Supabase", deleted)
+        log.info("Deleted %d stale structured event rows from Supabase", deleted)
 
     written = upsert_batched("events", deduped)
     log.info("Wrote %d events to Supabase", written)
