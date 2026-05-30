@@ -1,8 +1,8 @@
 "use client";
 
-import type { EventCategory } from "@/types/event";
 import { EventDayWindowFilter } from "./EventDayWindowFilter";
 import { EventsMiniCalendar } from "./EventsMiniCalendar";
+import { GLASS_PANEL_CLASS } from "./glass-panel";
 import type { DayWindow } from "./events-filters";
 
 type Props = {
@@ -11,7 +11,7 @@ type Props = {
   todayKey: string;
   selectedKey: string;
   onSelect: (dayKey: string) => void;
-  categoriesByDay: Map<string, EventCategory[]>;
+  countsByDay: Map<string, number>;
   isLoading: boolean;
   dayWindow: DayWindow;
   onDayWindowChange: (next: DayWindow) => void;
@@ -23,20 +23,20 @@ export function EventsRightRail({
   todayKey,
   selectedKey,
   onSelect,
-  categoriesByDay,
+  countsByDay,
   isLoading,
   dayWindow,
   onDayWindowChange,
 }: Props) {
   return (
-    <div>
+    <div className={GLASS_PANEL_CLASS}>
       <EventsMiniCalendar
         cursor={cursor}
         onCursorChange={onCursorChange}
         todayKey={todayKey}
         selectedKey={selectedKey}
         onSelect={onSelect}
-        categoriesByDay={categoriesByDay}
+        countsByDay={countsByDay}
         isLoading={isLoading}
       />
 

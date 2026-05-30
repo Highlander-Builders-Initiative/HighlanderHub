@@ -8,11 +8,24 @@ type EventDayWindowFilterProps = {
   onDayWindowChange: (next: DayWindow) => void;
 };
 
-const BUTTON_SIZE_CLASS = {
-  rail: "min-h-8 px-3",
-  sheet: "min-h-9 px-3.5",
+// The narrow rail can't fit four labels in one row without truncating
+// ("This week"), so it folds into a 2x2 grid; the wider sheet keeps the
+// classic single-row segmented control.
+const TRACK_CLASS = {
+  rail: "grid grid-cols-2 gap-1 rounded-2xl bg-ink/[0.05] p-1",
+  sheet: "flex rounded-full bg-ink/[0.05] p-1",
 } as const;
 
+const SEGMENT_CLASS = {
+  rail: "rounded-xl py-1.5 px-2 text-[12px]",
+  sheet: "flex-1 rounded-full py-1.5 px-2 text-[13px]",
+} as const;
+
+/**
+ * Segmented control for the time window. A single rounded track with an
+ * elevated canvas "thumb" under the active segment; the others stay quiet
+ * until hovered.
+ */
 export function EventDayWindowFilter({
   layout,
   dayWindow,
@@ -20,7 +33,7 @@ export function EventDayWindowFilter({
 }: EventDayWindowFilterProps) {
   return (
     <div
-      className="flex flex-wrap gap-1.5"
+      className={TRACK_CLASS[layout]}
       role="group"
       aria-label="Filter events by time window"
     >
@@ -33,11 +46,11 @@ export function EventDayWindowFilter({
             onClick={() => onDayWindowChange(w.value)}
             aria-pressed={active}
             className={[
-              "interactive-focus inline-flex items-center rounded-full border py-1 text-[13px] transition-colors",
-              BUTTON_SIZE_CLASS[layout],
+              "interactive-focus min-w-0 truncate text-center font-medium transition-colors duration-200",
+              SEGMENT_CLASS[layout],
               active
-                ? "border-ink bg-ink text-canvas"
-                : "border-ink/15 bg-canvas text-ink hover:border-ink",
+                ? "bg-canvas text-ink shadow-card"
+                : "text-muted hover:text-ink",
             ].join(" ")}
           >
             {w.label}

@@ -65,8 +65,8 @@ function EventCardComponent({
       onFocus={prefetch}
       aria-label={eventListLinkLabel(event)}
       data-event-id={event.id}
-      className={`interactive-focus card-hover group relative isolate flex w-full min-w-0 overflow-hidden rounded-xl border border-ink/10 bg-canvas transition-[border-color,box-shadow] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-ink/30 hover:shadow-card ${
-        compact ? "" : "min-h-[6rem]"
+      className={`interactive-focus card-hover group relative isolate flex w-full min-w-0 overflow-hidden rounded-2xl border border-ink/10 bg-canvas transition-[border-color,box-shadow] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-ink/30 hover:shadow-cardHover ${
+        compact ? "" : "min-h-[6rem] shadow-card"
       }`}
     >
       {/* Time column: typographic anchor at the left edge. The right edge is
@@ -84,7 +84,7 @@ function EventCardComponent({
          this size without the over-stated double-bezel a hero card would use. */}
       {showImage && (
         <div className="relative shrink-0 self-stretch py-2 pl-2">
-          <div className="relative h-full w-[80px] overflow-hidden rounded-md bg-surface">
+          <div className="relative h-full w-[80px] overflow-hidden rounded-lg bg-surface">
             <EventFlyerImage
               src={event.imageUrl!}
               alt={eventFlyerAlt(event)}
@@ -95,7 +95,7 @@ function EventCardComponent({
             />
             <span
               aria-hidden
-              className="pointer-events-none absolute inset-0 rounded-md ring-1 ring-inset ring-ink/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]"
+              className="pointer-events-none absolute inset-0 rounded-lg ring-1 ring-inset ring-ink/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]"
             />
           </div>
         </div>
@@ -112,14 +112,11 @@ function EventCardComponent({
           {event.title}
         </h3>
 
-        <div className="flex min-w-0 items-center gap-x-1.5 text-[13px] text-muted">
+        <div className="flex min-w-0 items-center gap-x-2 text-[13px] text-muted">
           {event.isFree && !compact && (
-            <>
-              <span className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-deep-leaf">
-                Free
-              </span>
-              <span aria-hidden className="shrink-0 text-ink/20">·</span>
-            </>
+            <span className="shrink-0 rounded-full bg-leaf/10 px-2 py-0.5 text-[11px] font-medium text-deep-leaf">
+              Free
+            </span>
           )}
           {event.host ? (
             <span className="min-w-0 truncate">{event.host}</span>

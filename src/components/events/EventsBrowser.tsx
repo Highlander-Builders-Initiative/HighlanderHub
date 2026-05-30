@@ -151,7 +151,7 @@ export function EventsBrowser({
     matchingTotal,
     grouped,
     dayKeys,
-    categoriesByDay,
+    countsByDay,
     hasActiveFilters,
     resultsLabel,
     activeFilterCount,
@@ -338,7 +338,7 @@ export function EventsBrowser({
             todayKey={todayKey}
             selectedKey={observedDayKey}
             onSelect={handleCalendarSelect}
-            categoriesByDay={categoriesByDay}
+            countsByDay={countsByDay}
             isLoading={isCalendarLoading}
             dayWindow={dayWindow}
             onDayWindowChange={handleDayWindow}
@@ -362,7 +362,7 @@ export function EventsBrowser({
           handleCalendarSelect(dayKey);
           setMobileSheetOpen(false);
         }}
-        categoriesByDay={categoriesByDay}
+        countsByDay={countsByDay}
         isLoading={isCalendarLoading}
         onClear={clearFilters}
         hasActiveFilters={hasActiveFilters}
