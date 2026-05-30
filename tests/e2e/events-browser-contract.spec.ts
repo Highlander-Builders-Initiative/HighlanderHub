@@ -95,7 +95,9 @@ test("calendar trailing next-month days load that month before jumping", async (
   const calendarRail = page.locator(
     'aside[aria-label="Calendar and time filter"]'
   );
-  await expect(calendarRail.getByRole("heading")).toHaveText(/may 2026/i);
+  const calendarHeading = calendarRail.getByRole("heading", { level: 2 });
+  await expect(calendarRail).toBeVisible();
+  await expect(calendarHeading).toHaveText(/may 2026/i);
 
   const nextMonthEvent = {
     id: "e2e-next-month-jump",
@@ -115,7 +117,7 @@ test("calendar trailing next-month days load that month before jumping", async (
     rsvpRequired: false,
     scrapedAt: "2026-05-18T12:00:00.000Z",
   };
-  let sawNextMonthRequest = false;
+  let nextMonthRequestCount = 0;
 
   await page.route("**/api/events/calendar**", async (route) => {
     const url = new URL(route.request().url());
@@ -123,7 +125,7 @@ test("calendar trailing next-month days load that month before jumping", async (
       url.searchParams.get("start") === "2026-05-31" &&
       url.searchParams.get("end") === "2026-07-11"
     ) {
-      sawNextMonthRequest = true;
+      nextMonthRequestCount += 1;
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -139,10 +141,64 @@ test("calendar trailing next-month days load that month before jumping", async (
     .getByRole("button", { name: "Jump to 2026-06-01" })
     .click();
 
-  await expect.poll(() => sawNextMonthRequest).toBe(true);
-  await expect(calendarRail.getByRole("heading")).toHaveText(/june 2026/i);
+  // Cursor flips on click; the mocked month fetch can finish later on slow CI runners.
+  await expect
+    .poll(async () => calendarHeading.textContent(), { timeout: 15_000 })
+    .toMatch(/june 2026/i);
+  await expect.poll(() => nextMonthRequestCount).toBeGreaterThan(0);
+  await expect(calendarRail.locator('[aria-busy="true"]')).toHaveCount(0);
   await expect(page.locator('[data-day-key="2026-06-01"]')).toBeAttached();
   await expect(page.getByText(nextMonthEvent.title)).toBeVisible();
+});
+
+test("empty adjacent-month calendar days release the pending jump", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto("/events");
+
+  const calendarRail = page.locator(
+    'aside[aria-label="Calendar and time filter"]'
+  );
+  const calendarHeading = calendarRail.getByRole("heading", { level: 2 });
+  await expect(calendarRail).toBeVisible();
+  await expect(calendarHeading).toHaveText(/may 2026/i);
+
+  let nextMonthRequestCount = 0;
+  await page.route("**/api/events/calendar**", async (route) => {
+    const url = new URL(route.request().url());
+    if (
+      url.searchParams.get("start") === "2026-05-31" &&
+      url.searchParams.get("end") === "2026-07-11"
+    ) {
+      nextMonthRequestCount += 1;
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ events: [] }),
+      });
+      return;
+    }
+
+    await route.continue();
+  });
+
+  await calendarRail
+    .getByRole("button", { name: "Jump to 2026-06-02, no events" })
+    .click();
+
+  await expect
+    .poll(async () => calendarHeading.textContent(), { timeout: 15_000 })
+    .toMatch(/june 2026/i);
+  await expect.poll(() => nextMonthRequestCount).toBeGreaterThan(0);
+  await expect(calendarRail.locator('[aria-busy="true"]')).toHaveCount(0);
+
+  await page.waitForTimeout(700);
+  await page.mouse.wheel(0, 160);
+
+  await expect
+    .poll(async () => calendarHeading.textContent(), { timeout: 15_000 })
+    .toMatch(/may 2026/i);
 });
 
 test("calendar jumps leave the selected day below the sticky search bar", async ({
