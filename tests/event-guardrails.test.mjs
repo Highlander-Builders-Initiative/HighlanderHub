@@ -209,6 +209,7 @@ test("public event reads are Data-Cached and busted on admin writes", () => {
     "getEventsSummary",
     "getEventsPage",
     "getEventFilterCountSource",
+    "getSitemapEvents",
     "getCalendarEvents",
     "getEventById",
   ]) {

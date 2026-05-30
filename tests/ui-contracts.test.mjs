@@ -431,12 +431,21 @@ test("site exposes crawler and social preview metadata", () => {
   assert.match(eventDetail, /twitter:/);
   assert.match(eventDetail, /event\.imageUrl/);
   assert.match(eventDetail, /\/events\/\$\{event\.id\}/);
+  assert.match(eventDetail, /type="application\/ld\+json"/);
+  assert.match(eventDetail, /"@context": "https:\/\/schema\.org"/);
+  assert.match(eventDetail, /"@type": "Event"/);
+  assert.match(eventDetail, /EventScheduled/);
+  assert.match(eventDetail, /OfflineEventAttendanceMode/);
+  assert.match(eventDetail, /PostalAddress/);
+  assert.match(eventDetail, /isPublicContentKind/);
 
   assert.match(submitPage, /title: "Submit an event · Highlander Hub"/);
   assert.match(submitPage, /description:/);
   assert.match(submitPage, /SubmitBackButton/);
 
   assert.match(sitemap, /MetadataRoute\.Sitemap/);
+  assert.match(sitemap, /getSitemapEvents/);
+  assert.match(sitemap, /absoluteUrl\(`\/events\/\$\{event\.id\}`\)/);
   assert.match(sitemap, /\/events/);
   assert.match(sitemap, /\/about/);
   assert.match(sitemap, /\/submit/);

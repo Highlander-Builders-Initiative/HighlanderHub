@@ -12,12 +12,12 @@ test("public event reads filter to PUBLIC_CONTENT_KINDS", () => {
 
   // Browse, counts, calendar, and summary all constrain content_kind. Each
   // public read adds `.in("content_kind", PUBLIC_CONTENT_KINDS)`; there are
-  // seven such reads (3 summary counts, 2 page branches, filter counts,
-  // calendar).
+  // eight such reads (3 summary counts, 2 page branches, filter counts,
+  // sitemap, calendar).
   const filters = data.match(/\.in\("content_kind", PUBLIC_CONTENT_KINDS\)/g) ?? [];
   assert.ok(
-    filters.length >= 6,
-    `expected >= 6 content_kind filters, found ${filters.length}`
+    filters.length >= 8,
+    `expected >= 8 content_kind filters, found ${filters.length}`
   );
 });
 

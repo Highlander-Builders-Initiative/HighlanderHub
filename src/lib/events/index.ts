@@ -31,6 +31,7 @@ import {
 const DB_RETRY_ATTEMPTS = 2;
 export const EVENTS_PAGE_SIZE = 24;
 export const EVENTS_CALENDAR_RANGE_LIMIT = 500;
+const EVENTS_SITEMAP_LIMIT = 500;
 
 // Cross-request caching for the public read path. The Supabase client is
 // hardwired to `cache: "no-store"` (see lib/supabase.ts), so route-level
@@ -72,10 +73,17 @@ type EventFilterCountRow = Pick<
   | "tags"
 >;
 
+type EventSitemapRow = Pick<EventRow, "id" | "scraped_at">;
+
 export type EventsPageResult = {
   events: CampusEvent[];
   hasMore: boolean;
   nextOffset: number;
+};
+
+export type EventSitemapEntry = {
+  id: string;
+  lastModified: string;
 };
 
 export type EventsSummary = {
@@ -361,6 +369,36 @@ async function getEventFilterCountSourceUncached(): Promise<
   );
 }
 
+async function getSitemapEventsUncached(): Promise<EventSitemapEntry[]> {
+  return withE2eFixture(
+    () =>
+      E2E_PUBLIC_FIXTURE_EVENTS.map((event) => ({
+        id: event.id,
+        lastModified: event.scrapedAt,
+      })),
+    async () => {
+      const nowIso = new Date().toISOString();
+
+      const { data } = await withDbRetry("sitemap events", () =>
+        supabase
+          .from("events")
+          .select("id,starts_at,scraped_at")
+          .in("content_kind", PUBLIC_CONTENT_KINDS)
+          .or(activeEventFilter(nowIso))
+          .order("starts_at", { ascending: true })
+          .order("id", { ascending: true })
+          .limit(EVENTS_SITEMAP_LIMIT)
+          .overrideTypes<EventSitemapRow[], { merge: false }>()
+      );
+
+      return (data ?? []).map((event) => ({
+        id: event.id,
+        lastModified: event.scraped_at,
+      }));
+    }
+  );
+}
+
 async function getCalendarEventsUncached({
   startDayKey,
   endDayKey,
@@ -442,6 +480,10 @@ export const getEventsPage = cachePublicRead(
 export const getEventFilterCountSource = cachePublicRead(
   getEventFilterCountSourceUncached,
   ["event-filter-counts"]
+);
+export const getSitemapEvents = cachePublicRead(
+  getSitemapEventsUncached,
+  ["sitemap-events"]
 );
 export const getCalendarEvents = cachePublicRead(
   getCalendarEventsUncached,
