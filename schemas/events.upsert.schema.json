@@ -13,6 +13,7 @@
     "location",
     "host",
     "category",
+    "content_kind",
     "tags",
     "source",
     "is_free",
@@ -39,6 +40,15 @@
         "arts",
         "community",
         "free_food"
+      ]
+    },
+    "content_kind": {
+      "type": "string",
+      "enum": [
+        "student_event",
+        "student_deadline",
+        "fundraiser",
+        "other"
       ]
     },
     "tags": { "type": "array", "items": { "type": "string" } },

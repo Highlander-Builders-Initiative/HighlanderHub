@@ -123,17 +123,19 @@ export function SelectField({
   label,
   name,
   options,
+  defaultValue,
 }: {
   label: string;
   name: string;
   options: { value: string; label: string }[];
+  defaultValue?: string;
 }) {
   return (
     <label className="block">
       <span className="text-sm font-medium text-ink/80">{label}</span>
       <select
         name={name}
-        defaultValue="club"
+        defaultValue={defaultValue ?? options[0]?.value}
         className="interactive-focus mt-1 w-full rounded-md border border-ink/15 bg-canvas px-3 py-2 text-ink focus:border-ink"
       >
         {options.map((o) => (

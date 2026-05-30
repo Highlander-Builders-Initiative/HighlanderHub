@@ -14,6 +14,7 @@ type EditFormState = {
   host: string;
   hostHandle: string;
   category: string;
+  contentKind: string;
   imageUrl: string;
   rsvpUrl: string;
   isFree: boolean;
@@ -33,6 +34,7 @@ const initialFormState: EditFormState = {
   host: "",
   hostHandle: "",
   category: "",
+  contentKind: "student_event",
   imageUrl: "",
   rsvpUrl: "",
   isFree: true,
@@ -51,6 +53,7 @@ function formReducer(state: EditFormState, action: EditFormAction): EditFormStat
       host: event.host,
       hostHandle: event.host_handle || "",
       category: event.category,
+      contentKind: event.content_kind,
       imageUrl: event.image_url || "",
       rsvpUrl: event.rsvp_url || "",
       isFree: event.is_free,
@@ -83,6 +86,7 @@ export function buildAdminEventUpdatePayload(
       host: form.host,
       host_handle: form.hostHandle || null,
       category: form.category as AdminEventUpdatePayload["category"],
+      content_kind: form.contentKind as AdminEventUpdatePayload["content_kind"],
       image_url: form.imageUrl || null,
       rsvp_url: form.rsvpUrl || null,
       is_free: form.isFree,

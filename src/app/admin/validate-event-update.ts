@@ -1,4 +1,4 @@
-import { EVENT_CATEGORIES } from "@/lib/supabase-rows";
+import { EVENT_CATEGORIES, EVENT_CONTENT_KINDS } from "@/lib/supabase-rows";
 import {
   ADMIN_EVENT_UPDATE_KEYS,
   type AdminEventUpdatePayload,
@@ -57,6 +57,7 @@ export function parseAdminEventUpdate(
   const host = raw.host;
   const host_handle = raw.host_handle;
   const category = raw.category;
+  const content_kind = raw.content_kind;
   const image_url = raw.image_url;
   const rsvp_url = raw.rsvp_url;
   const is_free = raw.is_free;
@@ -89,6 +90,12 @@ export function parseAdminEventUpdate(
   ) {
     return { ok: false, error: "category is invalid." };
   }
+  if (
+    typeof content_kind !== "string" ||
+    !(EVENT_CONTENT_KINDS as readonly string[]).includes(content_kind)
+  ) {
+    return { ok: false, error: "content_kind is invalid." };
+  }
   if (!isOptionalStringOrNull(image_url)) {
     return { ok: false, error: "image_url must be a string or null." };
   }
@@ -113,6 +120,7 @@ export function parseAdminEventUpdate(
       host: host.trim(),
       host_handle: host_handle === "" ? null : host_handle,
       category: category as AdminEventUpdatePayload["category"],
+      content_kind: content_kind as AdminEventUpdatePayload["content_kind"],
       image_url: image_url === "" ? null : image_url,
       rsvp_url: rsvp_url === "" ? null : rsvp_url,
       is_free,

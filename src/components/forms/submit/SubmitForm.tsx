@@ -11,7 +11,7 @@ import { track } from "@/lib/analytics";
 import { validateEventTimes } from "@/lib/events/validation";
 import { buildSubmissionRow } from "@/lib/submissions";
 import { computeSubmitEndsAtLocal, type EndChoice } from "@/lib/submit-datetime";
-import { SUBMIT_EVENT_CATEGORIES } from "@/types/event";
+import { SUBMIT_CONTENT_KINDS, SUBMIT_EVENT_CATEGORIES } from "@/types/event";
 import { Checkbox, Field, FormSection, SelectField } from "./fields";
 import { FlyerUpload } from "./FlyerUpload";
 import { EndTimePicker } from "./EndTimePicker";
@@ -188,6 +188,11 @@ export default function SubmitForm() {
       </FormSection>
 
       <FormSection eyebrow="the event">
+        <SelectField
+          label="Listing type"
+          name="content_kind"
+          options={SUBMIT_CONTENT_KINDS}
+        />
         <Field
           label="Event title"
           name="title"

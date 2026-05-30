@@ -16,6 +16,7 @@ export function eventRowToCampusEvent(r: EventRow): CampusEvent {
     host,
     hostHandle,
     category: r.category,
+    contentKind: r.content_kind,
     tags: r.tags,
     source: r.source,
     sourceUrl: normalizeHttpUrl(r.source_url) ?? undefined,

@@ -100,6 +100,7 @@ export async function approveSubmission(submissionId: string) {
     host: submission.host,
     host_handle: submission.host_handle || null,
     category: submission.category,
+    content_kind: submission.content_kind || "student_event",
     tags: submission.tags || [],
     source: "manual",
     source_url: submission.source_url || null,

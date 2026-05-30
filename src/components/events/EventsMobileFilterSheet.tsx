@@ -167,7 +167,7 @@ export function EventsMobileFilterSheet({
 
         <div className="flex-1 overflow-y-auto px-5 py-5">
           <div>
-            <p className="pb-2 text-[12px] font-medium text-muted">Browse</p>
+            <p className="pb-2 text-[12px] font-medium text-muted">Topics</p>
             <EventCategoryFilter
               layout="grid"
               category={category}

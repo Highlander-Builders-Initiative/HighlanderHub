@@ -1,11 +1,13 @@
 import {
   EVENT_CATEGORIES,
   type EventCategory,
+  type EventContentKind,
   type EventSource,
 } from "@/lib/supabase-rows";
+import { EVENT_CONTENT_KIND_LABELS } from "@/lib/events/content-kind";
 
 export { EVENT_CATEGORIES };
-export type { EventCategory, EventSource };
+export type { EventCategory, EventContentKind, EventSource };
 
 export const EVENT_CATEGORY_LABELS: Record<EventCategory, string> = {
   club: "Club / org",
@@ -23,6 +25,16 @@ export const SUBMIT_EVENT_CATEGORIES = EVENT_CATEGORIES.map((value) => ({
   label: EVENT_CATEGORY_LABELS[value],
 }));
 
+/** Listing-type options for the public submit form (no fundraiser/other). */
+export const SUBMIT_CONTENT_KINDS: { value: EventContentKind; label: string }[] =
+  [
+    { value: "student_event", label: EVENT_CONTENT_KIND_LABELS.student_event },
+    {
+      value: "student_deadline",
+      label: EVENT_CONTENT_KIND_LABELS.student_deadline,
+    },
+  ];
+
 export interface CampusEvent {
   id: string;
   title: string;
@@ -33,6 +45,7 @@ export interface CampusEvent {
   host: string; // club, dept, or org running it
   hostHandle?: string; // @instagram or similar
   category: EventCategory;
+  contentKind: EventContentKind;
   tags: string[];
   source: EventSource;
   sourceUrl?: string;

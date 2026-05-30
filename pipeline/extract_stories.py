@@ -24,6 +24,7 @@ from config import (
     ensure_dirs,
     load_accounts,
 )
+from classify import classify_content_kind
 from discord_notify import notify_free_food_events
 from event_identity import dedupe_event_rows, suppress_tombstoned_event_groups
 from url_utils import normalize_http_url as _normalize_url
@@ -641,6 +642,8 @@ def _to_event_row(
         return None
 
     title = str(llm.get("title") or "").strip()
+    description = str(llm.get("description") or "")
+    tags = _clean_tags(llm.get("tags"))
     ocr_range = _ocr_local_event_range(raw, cached)
     if ocr_range is None:
         starts_at = _normalize_timestamptz(llm.get("starts_at"))
@@ -669,14 +672,20 @@ def _to_event_row(
     return {
         "id": f"ig_{handle}_{start_slug}",
         "title": title[:200],
-        "description": str(llm.get("description") or ""),
+        "description": description,
         "starts_at": starts_at,
         "ends_at": ends_at,
         "location": str(llm.get("location") or "").strip() or "UC Riverside",
         "host": host,
         "host_handle": host_handle,
         "category": _category(llm.get("category")),
-        "tags": _clean_tags(llm.get("tags")),
+        "content_kind": classify_content_kind(
+            "instagram",
+            title=title,
+            description=description,
+            tags=tags,
+        ),
+        "tags": tags,
         "source": "instagram",
         "source_url": _normalize_url(raw.get("permalink")),
         "image_url": _normalize_url(cached.get("image_url") or raw.get("image_url")),

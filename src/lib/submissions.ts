@@ -2,7 +2,12 @@ import { normalizeHttpUrl } from "@/lib/events/validation";
 import {
   EVENT_CATEGORIES,
   type EventCategory,
+  type EventContentKind,
 } from "@/lib/supabase-rows";
+import {
+  coerceSubmittableContentKind,
+  isSubmittableContentKind,
+} from "@/lib/events/content-kind";
 
 export type SubmissionInsertRow = {
   title: string;
@@ -12,6 +17,7 @@ export type SubmissionInsertRow = {
   location: string;
   host: string;
   category: EventCategory;
+  content_kind: EventContentKind;
   tags: string[];
   source_url: string | null;
   image_url: string | null;
@@ -38,6 +44,7 @@ const SUBMISSION_INSERT_FIELDS = [
   "location",
   "host",
   "category",
+  "content_kind",
   "tags",
   "source_url",
   "image_url",
@@ -116,6 +123,7 @@ export function buildSubmissionRow(
     location: String(form.get("location") ?? ""),
     host: String(form.get("host") ?? ""),
     category: form.get("category") as EventCategory,
+    content_kind: coerceSubmittableContentKind(form.get("content_kind")),
     tags: tagsRaw
       .split(",")
       .map((t) => t.trim())
@@ -189,6 +197,13 @@ export function parseSubmissionInsert(raw: unknown): SubmissionParseResult {
     return { ok: false, error: "category is invalid." };
   }
 
+  if (!isSubmittableContentKind(raw.content_kind)) {
+    return {
+      ok: false,
+      error: "content_kind must be student_event or student_deadline.",
+    };
+  }
+
   const tags = parseTags(raw.tags);
   if (!tags) {
     return { ok: false, error: "tags must be an array of strings." };
@@ -240,6 +255,7 @@ export function parseSubmissionInsert(raw: unknown): SubmissionParseResult {
       location,
       host,
       category: category as EventCategory,
+      content_kind: raw.content_kind,
       tags,
       source_url: sourceUrl.value,
       image_url: imageUrl.value,

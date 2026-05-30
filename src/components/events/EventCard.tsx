@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { type CampusEvent } from "@/types/event";
 import { EventFlyerImage } from "@/components/events/EventFlyerImage";
 import { eventFlyerAlt, eventListLinkLabel } from "@/lib/events/a11y";
+import { isDeadlineKind } from "@/lib/events/content-kind";
 import { track } from "@/lib/analytics";
 import { saveEventFeedReturn } from "@/lib/events/feed-session";
 import { EventListRowTimeColumn } from "@/components/events/EventListRowTimeColumn";
@@ -32,6 +33,7 @@ function EventCardComponent({
   const descRef = useRef<HTMLParagraphElement>(null);
   const [isDescTruncated, setIsDescTruncated] = useState(false);
   const showDescription = !compact && !!event.description?.trim();
+  const isDeadline = isDeadlineKind(event.contentKind);
 
   useLayoutEffect(() => {
     if (!showDescription) return;
@@ -76,6 +78,7 @@ function EventCardComponent({
       <EventListRowTimeColumn
         startsAt={event.startsAt}
         category={event.category}
+        contentKind={event.contentKind}
         compact={compact}
       />
 
@@ -113,7 +116,15 @@ function EventCardComponent({
         </h3>
 
         <div className="flex min-w-0 items-center gap-x-1.5 text-[13px] text-muted">
-          {event.isFree && !compact && (
+          {isDeadline && !compact && (
+            <>
+              <span className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-deep-coral">
+                Deadline
+              </span>
+              <span aria-hidden className="shrink-0 text-ink/20">·</span>
+            </>
+          )}
+          {event.isFree && !compact && !isDeadline && (
             <>
               <span className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-deep-leaf">
                 Free
