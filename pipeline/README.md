@@ -199,10 +199,11 @@ The Next.js app reads upcoming events from the Supabase `events` table via
 same table with `source='instagram'`, so extracted IG events appear alongside
 Localist events without a frontend change.
 
-If `DISCORD_WEBHOOK_URL` is set, the pipeline posts newly discovered
-`category='free_food'` events to Discord after Supabase upsert. The
-`discord_notifications` table records successful sends so reruns do not repost
-the same event.
+If `DISCORD_WEBHOOK_URL` is set, the pipeline posts newly discovered free-food
+events to Discord after Supabase upsert. The `discord_notifications` table
+records successful sends by a durable `notification_key` based on the public
+event identity, so reruns and generated row ID changes do not repost the same
+event.
 
 ## Instagram story extraction
 

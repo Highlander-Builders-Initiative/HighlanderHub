@@ -2,6 +2,7 @@ instaloader==4.15.1
 requests>=2.31
 supabase>=2.0
 python-dotenv>=1.0
+tzdata>=2024.1
 google-genai>=2.0
 beautifulsoup4>=4.12
 browser-cookie3>=0.19  # import_safari_session.py only
