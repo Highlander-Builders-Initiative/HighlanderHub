@@ -75,7 +75,7 @@ flowchart LR
 
 - Client uploads optional flyer, validates Pacific wall-clock times, then posts the submission row to `/api/submissions`.
 - The server route inserts into `submissions` and sends a Discord webhook alert when `DISCORD_WEBHOOK_URL` is configured.
-- Pipeline-discovered `free_food` events are announced once through the same webhook; `discord_notifications` prevents reposts across reruns.
+- Pipeline-discovered free-food events are announced once through the same webhook; `discord_notifications.notification_key` prevents reposts across reruns and scraper row ID changes.
 
 ## Testing
 

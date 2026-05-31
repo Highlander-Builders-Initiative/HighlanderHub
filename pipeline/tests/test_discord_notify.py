@@ -13,6 +13,14 @@ PIPELINE_ROOT = Path(__file__).resolve().parents[1]
 if str(PIPELINE_ROOT) not in sys.path:
     sys.path.insert(0, str(PIPELINE_ROOT))
 
+try:
+    import requests  # noqa: F401
+except ModuleNotFoundError:
+    fake_requests = types.ModuleType("requests")
+    fake_requests.RequestException = Exception
+    fake_requests.post = Mock()
+    sys.modules["requests"] = fake_requests
+
 
 class FakeTable:
     def __init__(self, client: "FakeClient") -> None:
@@ -27,7 +35,7 @@ class FakeTable:
         return self
 
     def in_(self, _column, values):
-        self.client.requested_ids = list(values)
+        self.client.requests.append((_column, list(values)))
         return self
 
     def upsert(self, rows, on_conflict=None):
@@ -45,7 +53,7 @@ class FakeTable:
 class FakeClient:
     def __init__(self, existing):
         self.existing = existing
-        self.requested_ids = []
+        self.requests = []
         self.upserted = []
         self.on_conflict = None
 
@@ -63,9 +71,6 @@ class DiscordNotifyTests(unittest.TestCase):
         sys.modules.pop("discord_notify", None)
 
     def test_free_food_notifications_skip_ledgered_events(self) -> None:
-        fake_client = FakeClient(existing=[{"event_id": "old"}])
-        fake_db = types.SimpleNamespace(client=Mock(return_value=fake_client))
-
         rows = [
             {
                 "id": "old",
@@ -88,6 +93,10 @@ class DiscordNotifyTests(unittest.TestCase):
                 "category": "social",
             },
         ]
+        old_key = self.discord_notify.free_food_notification_key(rows[0])
+        new_key = self.discord_notify.free_food_notification_key(rows[1])
+        fake_client = FakeClient(existing=[{"notification_key": old_key}])
+        fake_db = types.SimpleNamespace(client=Mock(return_value=fake_client))
 
         with patch.dict(os.environ, {"DISCORD_WEBHOOK_URL": "https://discord.test"}):
             with patch.dict(sys.modules, {"db": fake_db}):
@@ -99,16 +108,95 @@ class DiscordNotifyTests(unittest.TestCase):
                     notified = self.discord_notify.notify_free_food_events(rows)
 
         self.assertEqual(1, notified)
-        self.assertEqual(["old", "new"], fake_client.requested_ids)
+
         self.assertEqual(
-            [{"event_id": "new", "kind": "free_food"}],
+            [
+                ("notification_key", [old_key, new_key]),
+                ("event_id", ["old", "new"]),
+            ],
+            fake_client.requests,
+        )
+        self.assertEqual(
+            [
+                {
+                    "event_id": "new",
+                    "kind": "free_food",
+                    "notification_key": new_key,
+                }
+            ],
             fake_client.upserted,
         )
-        self.assertEqual("event_id,kind", fake_client.on_conflict)
+        self.assertEqual("kind,notification_key", fake_client.on_conflict)
         post.assert_called_once()
         payload = post.call_args.kwargs["json"]
         self.assertIn("Pizza night", payload["content"])
+        self.assertIn("Where: HUB 302", payload["content"])
         self.assertEqual({"parse": []}, payload["allowed_mentions"])
+
+    def test_free_food_notifications_skip_same_event_with_new_row_id(self) -> None:
+        replacement_row = {
+            "id": "new-generated-id",
+            "title": "Pizza night",
+            "category": "club",
+            "has_free_food": True,
+            "starts_at": "2026-05-21T02:30:00.000Z",
+            "location": "HUB 302",
+            "host": "ACM at UCR",
+        }
+        key = self.discord_notify.free_food_notification_key(replacement_row)
+        fake_client = FakeClient(existing=[{"notification_key": key}])
+        fake_db = types.SimpleNamespace(client=Mock(return_value=fake_client))
+
+        with patch.dict(os.environ, {"DISCORD_WEBHOOK_URL": "https://discord.test"}):
+            with patch.dict(sys.modules, {"db": fake_db}):
+                with patch.object(self.discord_notify.requests, "post") as post:
+                    notified = self.discord_notify.notify_free_food_events(
+                        [replacement_row]
+                    )
+
+        self.assertEqual(0, notified)
+        self.assertEqual(
+            [
+                ("notification_key", [key]),
+                ("event_id", ["new-generated-id"]),
+            ],
+            fake_client.requests,
+        )
+        self.assertEqual([], fake_client.upserted)
+        post.assert_not_called()
+
+    def test_free_food_notifications_skip_duplicate_keys_in_same_run(self) -> None:
+        rows = [
+            {
+                "id": "structured-id",
+                "title": "Taco Social",
+                "category": "club",
+                "has_free_food": True,
+                "starts_at": "2026-05-21T02:00:00.000Z",
+            },
+            {
+                "id": "ig-id",
+                "title": "Taco Social",
+                "category": "social",
+                "has_free_food": True,
+                "starts_at": "2026-05-21T04:00:00.000Z",
+            },
+        ]
+        fake_client = FakeClient(existing=[])
+        fake_db = types.SimpleNamespace(client=Mock(return_value=fake_client))
+
+        with patch.dict(os.environ, {"DISCORD_WEBHOOK_URL": "https://discord.test"}):
+            with patch.dict(sys.modules, {"db": fake_db}):
+                with patch.object(
+                    self.discord_notify.requests,
+                    "post",
+                    return_value=types.SimpleNamespace(status_code=204),
+                ) as post:
+                    notified = self.discord_notify.notify_free_food_events(rows)
+
+        self.assertEqual(1, notified)
+        post.assert_called_once()
+        self.assertEqual(1, len(fake_client.upserted))
 
     def test_free_food_message_has_details(self) -> None:
         message = self.discord_notify.build_free_food_discord_message(
@@ -122,10 +210,10 @@ class DiscordNotifyTests(unittest.TestCase):
             }
         )
 
-        self.assertIn("Free food found on Highlander Hub", message)
+        self.assertIn("Free food on campus", message)
         self.assertIn("Bagel breakfast", message)
-        self.assertIn("Hosted by UCR Library", message)
-        self.assertIn("Details: /events/event-1", message)
+        self.assertIn("Host: UCR Library", message)
+        self.assertIn("Details: https://highlanderhub.app/events/event-1", message)
 
 
 if __name__ == "__main__":

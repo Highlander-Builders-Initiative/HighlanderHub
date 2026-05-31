@@ -175,15 +175,26 @@ test("database migration adds Discord notification ledger for free food", () => 
   const migrationName = readdirSync(migrationsDir).find((name) =>
     name.includes("discord_notifications")
   );
+  const stableKeyMigrationName = readdirSync(migrationsDir).find((name) =>
+    name.includes("discord_notification_stable_keys")
+  );
 
   assert.ok(migrationName, "missing Discord notification ledger migration");
+  assert.ok(stableKeyMigrationName, "missing Discord stable key migration");
   const migration = read(`supabase/migrations/${migrationName}`);
+  const stableKeyMigration = read(
+    `supabase/migrations/${stableKeyMigrationName}`
+  );
 
   assert.match(migration, /create table if not exists discord_notifications/i);
   assert.match(migration, /primary key \(event_id, kind\)/i);
   assert.match(migration, /kind in \('free_food'\)/i);
   assert.match(migration, /enable row level security/i);
   assert.match(migration, /where category = 'free_food'/i);
+  assert.match(stableKeyMigration, /notification_key text/i);
+  assert.match(stableKeyMigration, /drop constraint if exists discord_notifications_event_id_fkey/i);
+  assert.match(stableKeyMigration, /discord_notifications_kind_notification_key_idx/i);
+  assert.match(stableKeyMigration, /has_free_food or category = 'free_food'/i);
 });
 
 test("event detail lookup is request-level cached", () => {
