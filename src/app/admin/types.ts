@@ -25,6 +25,7 @@ export interface SubmissionRow {
   source_url: string | null;
   image_url: string | null;
   is_free: boolean;
+  has_free_food: boolean;
   rsvp_required: boolean;
   rsvp_url: string | null;
   submitter_name: string;
@@ -55,6 +56,7 @@ export const ADMIN_EVENT_UPDATE_KEYS = [
   "image_url",
   "rsvp_url",
   "is_free",
+  "has_free_food",
   "rsvp_required",
 ] as const;
 
@@ -71,6 +73,7 @@ export type AdminEventUpdatePayload = {
   image_url: string | null;
   rsvp_url: string | null;
   is_free: boolean;
+  has_free_food: boolean;
   rsvp_required: boolean;
 };
 

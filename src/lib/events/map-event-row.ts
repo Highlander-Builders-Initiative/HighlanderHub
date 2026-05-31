@@ -22,6 +22,7 @@ export function eventRowToCampusEvent(r: EventRow): CampusEvent {
     sourceUrl: normalizeHttpUrl(r.source_url) ?? undefined,
     imageUrl: normalizeHttpUrl(r.image_url) ?? undefined,
     isFree: r.is_free,
+    hasFreeFood: r.has_free_food,
     rsvpRequired: r.rsvp_required,
     rsvpUrl: normalizeHttpUrl(r.rsvp_url) ?? undefined,
     scrapedAt: r.scraped_at,

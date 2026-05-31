@@ -44,6 +44,7 @@ export interface EventRow {
   source_url?: string | null;
   image_url?: string | null;
   is_free: boolean;
+  has_free_food: boolean;
   rsvp_required: boolean;
   rsvp_url?: string | null;
   scraped_at: string;

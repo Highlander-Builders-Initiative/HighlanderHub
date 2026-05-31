@@ -130,6 +130,11 @@ function EventCardComponent({
                 Free
               </span>
             )}
+            {event.hasFreeFood && !compact && !isDeadline && (
+              <span className="shrink-0 rounded-full bg-gold/15 px-2 py-0.5 text-[11px] font-medium text-deep-gold">
+                Free food
+              </span>
+            )}
             {event.host ? (
               <span className="min-w-0 truncate">{event.host}</span>
             ) : null}

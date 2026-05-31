@@ -73,12 +73,14 @@ export function coerceDayWindowParam(
 }
 
 export function matchesCategory(
-  ev: Pick<CampusEvent, "category" | "tags">,
+  ev: Pick<CampusEvent, "category" | "hasFreeFood">,
   cat: CategoryValue
 ): boolean {
   if (cat === "all") return true;
   if (cat === "free_food") {
-    return ev.category === "free_food" || ev.tags.includes("free food");
+    // Free food is its own attribute now; `category === "free_food"` only
+    // matches legacy rows predating the split (kept until they expire).
+    return ev.hasFreeFood || ev.category === "free_food";
   }
   return ev.category === cat;
 }
@@ -129,7 +131,7 @@ type SearchableEvent = Pick<
 >;
 
 type EventFilterable = SearchableEvent &
-  Pick<CampusEvent, "startsAt" | "category" | "tags">;
+  Pick<CampusEvent, "startsAt" | "category" | "tags" | "hasFreeFood">;
 
 export type EventFilterCriteria = {
   category: CategoryValue;
@@ -198,7 +200,7 @@ export function filterEventSource<T extends EventFilterable>(
   );
 }
 
-export function countEventsByCategory<T extends Pick<CampusEvent, "category" | "tags">>(
+export function countEventsByCategory<T extends Pick<CampusEvent, "category" | "hasFreeFood">>(
   events: T[]
 ): Map<CategoryValue, number> {
   const map = new Map<CategoryValue, number>();

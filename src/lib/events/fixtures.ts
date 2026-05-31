@@ -19,6 +19,7 @@ export const E2E_FIXTURE_EVENT: CampusEvent = {
   sourceUrl: "https://example.com/e2e-event",
   imageUrl: undefined,
   isFree: true,
+  hasFreeFood: false,
   rsvpRequired: false,
   rsvpUrl: undefined,
   scrapedAt: "2026-05-18T12:00:00.000Z",

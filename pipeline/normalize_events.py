@@ -20,7 +20,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
-from classify import classify_content_kind
+from classify import classify_content_kind, detect_free_food
 from config import RAW_DIR, ensure_dirs
 from db import delete_events_missing_from_ids, get_deleted_event_ids, upsert_batched
 from discord_notify import notify_free_food_events
@@ -57,12 +57,6 @@ _CATEGORY_KEYWORDS: list[tuple[str, list[str]]] = [
     ("community", ["community", "service", "volunteer", "outreach", "donate"]),
 ]
 
-_FREE_FOOD_PATTERNS = re.compile(
-    r"\b(free food|free pizza|pizza provided|free snacks|snacks provided|"
-    r"refreshments|lunch provided|dinner provided|boba|free drinks)\b",
-    re.IGNORECASE,
-)
-
 _HTML_TAG = re.compile(r"<[^>]+>")
 _WHITESPACE = re.compile(r"\s+")
 
@@ -88,8 +82,6 @@ def _filter_names(raw: dict[str, Any], key: str) -> list[str]:
 
 
 def _infer_category(raw: dict[str, Any], blob: str) -> str:
-    if _FREE_FOOD_PATTERNS.search(blob):
-        return "free_food"
     type_names = " ".join(_filter_names(raw, "event_types")).lower()
     topic_names = " ".join(_filter_names(raw, "event_topic")).lower()
     haystack = " ".join([type_names, topic_names, blob.lower()])
@@ -289,6 +281,7 @@ def _to_event_row(
         "source_url": _normalize_url(raw.get("localist_url") or raw.get("url")),
         "image_url": _normalize_url(raw.get("photo_url")),
         "is_free": bool(raw.get("free", True)),
+        "has_free_food": detect_free_food(blob, *tags),
         "rsvp_required": bool(ticket_url),
         "rsvp_url": ticket_url or None,
         "scraped_at": scraped_at,
@@ -343,17 +336,17 @@ def _to_event_row_hlink(raw: dict[str, Any], scraped_at: str) -> dict[str, Any] 
         ends_at = None
 
     benefits = raw.get("benefitNames") or []
-    if isinstance(benefits, list) and any(
-        isinstance(b, str) and b.lower() == "free food" for b in benefits
-    ):
-        category = "free_food"
-    else:
-        theme = raw.get("theme")
-        category = _HLINK_THEME_TO_CATEGORY.get(theme) if isinstance(theme, str) else None
-        if not category:
-            # Fall back to keyword inference over categoryNames + title + body.
-            cat_blob = " ".join(raw.get("categoryNames") or [])
-            category = _infer_category({}, f"{cat_blob}\n{title}\n{description}")
+    theme = raw.get("theme")
+    category = _HLINK_THEME_TO_CATEGORY.get(theme) if isinstance(theme, str) else None
+    if not category:
+        # Fall back to keyword inference over categoryNames + title + body.
+        cat_blob = " ".join(raw.get("categoryNames") or [])
+        category = _infer_category({}, f"{cat_blob}\n{title}\n{description}")
+
+    has_free_food = (
+        isinstance(benefits, list)
+        and any(isinstance(b, str) and b.lower() == "free food" for b in benefits)
+    ) or detect_free_food(title, description)
 
     tags = sorted(
         {
@@ -389,6 +382,7 @@ def _to_event_row_hlink(raw: dict[str, Any], scraped_at: str) -> dict[str, Any] 
         "source_url": _normalize_url(_HLINK_EVENT_URL.format(id=eid)),
         "image_url": image_url,
         "is_free": True,
+        "has_free_food": has_free_food,
         "rsvp_required": False,
         "rsvp_url": None,
         "scraped_at": scraped_at,

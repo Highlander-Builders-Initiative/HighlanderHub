@@ -22,6 +22,7 @@ export type SubmissionInsertRow = {
   source_url: string | null;
   image_url: string | null;
   is_free: boolean;
+  has_free_food: boolean;
   rsvp_required: boolean;
   rsvp_url: string | null;
   submitter_name: string;
@@ -49,6 +50,7 @@ const SUBMISSION_INSERT_FIELDS = [
   "source_url",
   "image_url",
   "is_free",
+  "has_free_food",
   "rsvp_required",
   "rsvp_url",
   "submitter_name",
@@ -131,6 +133,7 @@ export function buildSubmissionRow(
     source_url: normalizeHttpUrl(form.get("source_url")),
     image_url: imageUrl ?? normalizeHttpUrl(form.get("image_url")),
     is_free: form.get("is_free") === "on",
+    has_free_food: form.get("has_free_food") === "on",
     rsvp_required: form.get("rsvp_required") === "on",
     rsvp_url: normalizeHttpUrl(form.get("rsvp_url")),
     submitter_name: String(form.get("submitter_name") ?? ""),
@@ -219,6 +222,10 @@ export function parseSubmissionInsert(raw: unknown): SubmissionParseResult {
     return { ok: false, error: "is_free must be a boolean." };
   }
 
+  if (typeof raw.has_free_food !== "boolean") {
+    return { ok: false, error: "has_free_food must be a boolean." };
+  }
+
   if (typeof raw.rsvp_required !== "boolean") {
     return { ok: false, error: "rsvp_required must be a boolean." };
   }
@@ -260,6 +267,7 @@ export function parseSubmissionInsert(raw: unknown): SubmissionParseResult {
       source_url: sourceUrl.value,
       image_url: imageUrl.value,
       is_free: raw.is_free,
+      has_free_food: raw.has_free_food,
       rsvp_required: raw.rsvp_required,
       rsvp_url: rsvpUrl.value,
       submitter_name: submitterName,

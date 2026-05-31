@@ -270,6 +270,7 @@ export default function SubmitForm() {
         />
         <div className="flex gap-6">
           <Checkbox label="Free to attend" name="is_free" defaultChecked />
+          <Checkbox label="Free food provided" name="has_free_food" />
           <Checkbox
             label="RSVP required"
             name="rsvp_required"

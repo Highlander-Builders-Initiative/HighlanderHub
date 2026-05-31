@@ -24,7 +24,7 @@ from config import (
     ensure_dirs,
     load_accounts,
 )
-from classify import classify_content_kind
+from classify import classify_content_kind, detect_free_food
 from discord_notify import notify_free_food_events
 from event_identity import dedupe_event_rows, suppress_tombstoned_event_groups
 from url_utils import normalize_http_url as _normalize_url
@@ -43,6 +43,11 @@ EVENT_CATEGORIES = (
     "community",
     "free_food",
 )
+# Categories the LLM may assign. `free_food` is excluded: free food is detected
+# deterministically (see classify.detect_free_food / has_free_food), so the model
+# always picks the event's real type. `free_food` stays valid for storage so
+# legacy/cached rows that predate the split still round-trip until they expire.
+LLM_EVENT_CATEGORIES = tuple(c for c in EVENT_CATEGORIES if c != "free_food")
 REMOTE_CACHE_TERMINAL_STATUSES = {"ok", "not_event", "no_text", "image_expired"}
 DURABLE_FLYER_BUCKET = "event-flyers"
 # Instagram handles that must not appear as the public "hosted by" name on listings.
@@ -98,7 +103,7 @@ GEMINI_RESPONSE_SCHEMA: dict[str, Any] = {
         "starts_at": {"type": "string", "nullable": True},
         "ends_at": {"type": "string", "nullable": True},
         "location": {"type": "string"},
-        "category": {"type": "string", "enum": list(EVENT_CATEGORIES)},
+        "category": {"type": "string", "enum": list(LLM_EVENT_CATEGORIES)},
         "tags": {"type": "array", "items": {"type": "string"}},
         "is_free": {"type": "boolean"},
         "rsvp_required": {"type": "boolean"},
@@ -329,7 +334,7 @@ def _build_gemini_prompt(
         "story_caption": raw.get("caption"),
         "story_cta_url": raw.get("story_cta_url"),
         "posted_at": raw.get("posted_at"),
-        "category_values": list(EVENT_CATEGORIES),
+        "category_values": list(LLM_EVENT_CATEGORIES),
     }
     return (
         "Extract a UC Riverside campus event from this Instagram story flyer. "
@@ -690,6 +695,9 @@ def _to_event_row(
         "source_url": _normalize_url(raw.get("permalink")),
         "image_url": _normalize_url(cached.get("image_url") or raw.get("image_url")),
         "is_free": _bool_or_default(llm.get("is_free"), True),
+        "has_free_food": detect_free_food(
+            cached.get("ocr_text"), title, description, *tags
+        ),
         "rsvp_required": _bool_or_default(llm.get("rsvp_required"), False),
         "rsvp_url": rsvp_url,
         "scraped_at": scraped_at,
