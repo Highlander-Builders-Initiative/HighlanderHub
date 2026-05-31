@@ -82,7 +82,8 @@ def notify_free_food_events(rows: Iterable[dict[str, Any]]) -> int:
     candidates = [
         row
         for row in rows
-        if row.get("category") == "free_food" and _text(row.get("id"))
+        if (row.get("has_free_food") or row.get("category") == "free_food")
+        and _text(row.get("id"))
     ]
     if not candidates:
         return 0

@@ -106,6 +106,7 @@ export async function approveSubmission(submissionId: string) {
     source_url: submission.source_url || null,
     image_url: submission.image_url || null,
     is_free: submission.is_free,
+    has_free_food: submission.has_free_food,
     rsvp_required: submission.rsvp_required,
     rsvp_url: submission.rsvp_url || null,
     is_locked: true, // Manual events are locked by default to prevent any scraping collision

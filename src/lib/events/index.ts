@@ -71,6 +71,7 @@ type EventFilterCountRow = Pick<
   | "host_handle"
   | "category"
   | "tags"
+  | "has_free_food"
 >;
 
 type EventSitemapRow = Pick<EventRow, "id" | "scraped_at">;
@@ -106,6 +107,7 @@ function toEventFilterCountSource(
     hostHandle,
     category: r.category,
     tags: r.tags,
+    hasFreeFood: r.has_free_food,
   };
 }
 
@@ -241,7 +243,7 @@ async function getEventsSummaryUncached(): Promise<EventsSummary> {
               .select("id", { count: "exact", head: true })
               .in("content_kind", PUBLIC_CONTENT_KINDS)
               .gte("starts_at", todayIso)
-              .or('category.eq.free_food,tags.cs.{"free food"}')
+              .or("has_free_food.eq.true,category.eq.free_food")
           ),
         ]);
 
@@ -356,7 +358,7 @@ async function getEventFilterCountSourceUncached(): Promise<
       const { data } = await withDbRetry("event filter counts", () =>
         supabase
           .from("events")
-          .select("id,title,description,starts_at,location,host,host_handle,category,tags")
+          .select("id,title,description,starts_at,location,host,host_handle,category,tags,has_free_food")
           .in("content_kind", PUBLIC_CONTENT_KINDS)
           .or(activeEventFilter(nowIso))
           .order("starts_at", { ascending: true })

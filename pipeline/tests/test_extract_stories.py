@@ -426,6 +426,84 @@ class ExtractStoriesTests(unittest.TestCase):
         self.assertEqual(cached["image_url"], row["image_url"])
         self.assertEqual(raw["story_cta_url"], row["rsvp_url"])
         self.assertTrue(row["rsvp_required"])
+        self.assertFalse(row["has_free_food"])
+
+    def test_cached_event_flags_free_food_without_touching_category(self) -> None:
+        # A boba study session: the LLM picks a real category ("club"), and free
+        # food is detected deterministically from the OCR text instead.
+        raw = {
+            "id": "3908252818582041234",
+            "handle": "wincucr",
+            "permalink": "https://www.instagram.com/stories/wincucr/3908252818582041234/",
+        }
+        cached = {
+            "status": "ok",
+            "ocr_text": "WINC STUDY SESSION SOCIAL\nSANDWICHES AND BOBA WILL BE PROVIDED",
+            "result": {
+                "is_event": True,
+                "title": "WINC Study Session Social",
+                "description": "Study session social.",
+                "starts_at": "2026-06-02T13:00:00-07:00",
+                "ends_at": "2026-06-02T14:00:00-07:00",
+                "location": "WCH 205/206",
+                "category": "club",
+                "tags": ["study session", "social"],
+                "is_free": True,
+                "rsvp_required": False,
+                "rsvp_url": None,
+                "confidence": "high",
+            },
+        }
+
+        row = self.extract_stories._to_event_row(
+            raw,
+            cached,
+            {"label": "Women in Computing", "category": "club"},
+            "2026-05-30T20:22:48+00:00",
+        )
+
+        self.assertIsNotNone(row)
+        assert row is not None
+        self.assertEqual("club", row["category"])
+        self.assertTrue(row["has_free_food"])
+
+    def test_llm_cannot_choose_free_food_but_storage_still_accepts_it(self) -> None:
+        # The model picks the real type; free food is detected separately. The
+        # value stays valid for storage so legacy/cached rows still round-trip.
+        enum = self.extract_stories.GEMINI_RESPONSE_SCHEMA["properties"]["category"][
+            "enum"
+        ]
+        self.assertNotIn("free_food", enum)
+        self.assertIn("free_food", self.extract_stories.EVENT_CATEGORIES)
+
+    def test_cached_legacy_free_food_category_round_trips(self) -> None:
+        # A cached extraction predating the split still maps to free_food rather
+        # than being reclassified to a fallback.
+        raw = {
+            "id": "3894795737410658799",
+            "handle": "cyber_ucr",
+            "permalink": "https://www.instagram.com/stories/cyber_ucr/3894795737410658799/",
+        }
+        cached = {
+            "status": "ok",
+            "result": {
+                "is_event": True,
+                "title": "Pizza Social",
+                "starts_at": "2026-05-15T19:00:00-07:00",
+                "category": "free_food",
+            },
+        }
+
+        row = self.extract_stories._to_event_row(
+            raw,
+            cached,
+            {"label": "UCR Cybersecurity Club", "category": "club"},
+            "2026-05-14T12:00:00+00:00",
+        )
+
+        self.assertIsNotNone(row)
+        assert row is not None
+        self.assertEqual("free_food", row["category"])
 
     def test_cached_event_blanks_host_for_anonymized_handle(self) -> None:
         raw = {

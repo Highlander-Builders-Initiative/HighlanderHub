@@ -51,6 +51,7 @@ export interface CampusEvent {
   sourceUrl?: string;
   imageUrl?: string;
   isFree: boolean;
+  hasFreeFood: boolean;
   rsvpRequired: boolean;
   rsvpUrl?: string;
   scrapedAt: string; // ISO timestamp

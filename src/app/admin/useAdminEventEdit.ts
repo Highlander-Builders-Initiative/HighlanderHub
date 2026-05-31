@@ -18,6 +18,7 @@ type EditFormState = {
   imageUrl: string;
   rsvpUrl: string;
   isFree: boolean;
+  hasFreeFood: boolean;
   rsvpRequired: boolean;
 };
 
@@ -38,6 +39,7 @@ const initialFormState: EditFormState = {
   imageUrl: "",
   rsvpUrl: "",
   isFree: true,
+  hasFreeFood: false,
   rsvpRequired: false,
 };
 
@@ -57,6 +59,7 @@ function formReducer(state: EditFormState, action: EditFormAction): EditFormStat
       imageUrl: event.image_url || "",
       rsvpUrl: event.rsvp_url || "",
       isFree: event.is_free,
+      hasFreeFood: event.has_free_food,
       rsvpRequired: event.rsvp_required,
     };
   }
@@ -90,6 +93,7 @@ export function buildAdminEventUpdatePayload(
       image_url: form.imageUrl || null,
       rsvp_url: form.rsvpUrl || null,
       is_free: form.isFree,
+      has_free_food: form.hasFreeFood,
       rsvp_required: form.rsvpRequired,
     },
   };

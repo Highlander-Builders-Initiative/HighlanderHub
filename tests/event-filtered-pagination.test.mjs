@@ -16,6 +16,7 @@ function makeSource(id, overrides = {}) {
     hostHandle: null,
     category: "social",
     tags: [],
+    hasFreeFood: false,
     ...overrides,
   };
 }
@@ -30,7 +31,7 @@ test("shared event filters apply query, category, and day window consistently", 
     makeSource("food-hack", {
       title: "Snack Hackathon",
       category: "club",
-      tags: ["free food"],
+      hasFreeFood: true,
     }),
     makeSource("later-hack", {
       title: "Fall Hackathon",
@@ -59,7 +60,7 @@ test("category counts reuse the shared filtered source", async () => {
     [
       makeSource("social"),
       makeSource("academic", { category: "academic" }),
-      makeSource("food-tag", { category: "club", tags: ["free food"] }),
+      makeSource("food-flag", { category: "club", hasFreeFood: true }),
     ],
     {
       category: "all",

@@ -61,6 +61,7 @@ export function parseAdminEventUpdate(
   const image_url = raw.image_url;
   const rsvp_url = raw.rsvp_url;
   const is_free = raw.is_free;
+  const has_free_food = raw.has_free_food;
   const rsvp_required = raw.rsvp_required;
 
   if (!isNonEmptyString(title)) {
@@ -105,6 +106,9 @@ export function parseAdminEventUpdate(
   if (typeof is_free !== "boolean") {
     return { ok: false, error: "is_free must be a boolean." };
   }
+  if (typeof has_free_food !== "boolean") {
+    return { ok: false, error: "has_free_food must be a boolean." };
+  }
   if (typeof rsvp_required !== "boolean") {
     return { ok: false, error: "rsvp_required must be a boolean." };
   }
@@ -124,6 +128,7 @@ export function parseAdminEventUpdate(
       image_url: image_url === "" ? null : image_url,
       rsvp_url: rsvp_url === "" ? null : rsvp_url,
       is_free,
+      has_free_food,
       rsvp_required,
     },
   };

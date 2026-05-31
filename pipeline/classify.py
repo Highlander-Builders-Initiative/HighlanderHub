@@ -23,9 +23,25 @@ Precedence (first match wins):
 """
 from __future__ import annotations
 
+import re
 from typing import Iterable
 
 CONTENT_KINDS = ("student_event", "student_deadline", "fundraiser", "other")
+
+# Free food is an attribute (does this event hand out food?), not a category.
+# Detected deterministically across all sources so a club/social event that
+# provides boba still gets flagged without the LLM having to pick it.
+_FREE_FOOD_PATTERNS = re.compile(
+    r"\b(free food|free pizza|pizza provided|free snacks|snacks provided|"
+    r"refreshments|lunch provided|dinner provided|boba|free drinks)\b",
+    re.IGNORECASE,
+)
+
+
+def detect_free_food(*texts: str | None) -> bool:
+    """True when any of the given text blobs advertises free food."""
+    blob = " ".join(t for t in texts if t)
+    return bool(_FREE_FOOD_PATTERNS.search(blob))
 
 # Origins that are inherently student/club content.
 _STUDENT_ORIGINS = frozenset({"instagram", "highlander_link", "manual", "submission"})

@@ -201,6 +201,15 @@ export function AdminEventEditDrawer({
                   />
                   <span>RSVP Required</span>
                 </label>
+                <label className="flex items-center gap-2 cursor-pointer font-sans text-sm text-ink">
+                  <input
+                    type="checkbox"
+                    checked={form.hasFreeFood}
+                    onChange={(e) => setField("hasFreeFood", e.target.checked)}
+                    className="h-4 w-4 accent-ink rounded text-ink outline-none interactive-focus"
+                  />
+                  <span>Free food</span>
+                </label>
               </div>
             </div>
           </div>

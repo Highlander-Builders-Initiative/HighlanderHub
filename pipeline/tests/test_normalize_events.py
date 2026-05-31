@@ -233,7 +233,9 @@ class NormalizeEventsTests(unittest.TestCase):
         rows = self.fake_db.upsert_batched.call_args.args[1]
         self.assertEqual(1, len(rows))
         self.assertEqual("highlander_link_456", rows[0]["id"])
-        self.assertEqual("free_food", rows[0]["category"])
+        # Free food is now its own attribute; category stays the real type.
+        self.assertTrue(rows[0]["has_free_food"])
+        self.assertNotEqual("free_food", rows[0]["category"])
 
 
 if __name__ == "__main__":

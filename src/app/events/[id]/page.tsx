@@ -206,6 +206,11 @@ export default async function EventDetailPage({
                   Free
                 </span>
               )}
+              {event.hasFreeFood && (
+                <span className="inline-flex items-center rounded-full bg-gold/15 px-2.5 py-0.5 text-[12px] font-medium text-deep-gold">
+                  Free food
+                </span>
+              )}
               {event.rsvpRequired && (
                 <span className="inline-flex items-center rounded-full border border-ink/15 px-2.5 py-0.5 text-[12px] font-medium text-muted">
                   RSVP required
