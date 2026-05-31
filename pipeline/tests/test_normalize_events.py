@@ -135,6 +135,24 @@ class NormalizeEventsTests(unittest.TestCase):
         self.assertEqual(rows[0]["starts_at"], "2026-05-15T19:00:00-07:00")
         self.assertEqual(rows[0]["ends_at"], "2026-05-15T21:00:00-07:00")
 
+    def test_build_host_prefixes_event_type_fallback_with_ucr(self) -> None:
+        host = self.normalize_events._build_host(
+            {"filters": {"event_types": [{"name": "Recreation"}]}}
+        )
+        self.assertEqual(host, "UCR Recreation")
+
+    def test_build_host_keeps_real_organizer_unprefixed(self) -> None:
+        host = self.normalize_events._build_host(
+            {
+                "custom_fields": {"department": "Department of Music"},
+                "filters": {"event_types": [{"name": "Arts"}]},
+            }
+        )
+        self.assertEqual(host, "Department of Music")
+
+    def test_build_host_defaults_to_uc_riverside(self) -> None:
+        self.assertEqual(self.normalize_events._build_host({}), "UC Riverside")
+
     def test_normalizer_reconciles_structured_import_ids(self) -> None:
         raw = {
             "id": 52310591390648,

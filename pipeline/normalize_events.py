@@ -111,9 +111,13 @@ def _build_host(raw: dict[str, Any]) -> str:
             val = custom.get(key)
             if val and isinstance(val, str) and val.strip():
                 return val.strip()
+    # No real organizer field: Localist events fall back to their event_type
+    # bucket ("Recreation", "Arts", "Seminars", …). Bare, these read as a host
+    # AND collide with our category chip labels ("Arts", "Academic", "Social"),
+    # so prefix with "UCR" to mark them as a campus area, not an organization.
     types = _filter_names(raw, "event_types")
     if types:
-        return types[0]
+        return f"UCR {types[0]}"
     return "UC Riverside"
 
 
