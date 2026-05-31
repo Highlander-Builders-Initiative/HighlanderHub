@@ -164,6 +164,16 @@ class ExtractStoriesTests(unittest.TestCase):
         self.assertIn("Do not change an explicit OCR date", prompt)
         self.assertIn("11:00 AM as starts_at and 2:00 PM as ends_at", prompt)
 
+    def test_gemini_prompt_warns_about_schedule_grids(self) -> None:
+        prompt = self.extract_stories._build_gemini_prompt(
+            {"handle": "ucrlibrary", "posted_at": "2026-05-31T16:00:00Z"},
+            {"label": "UCR Library", "category": "academic"},
+            "WEEK 10\nSun. May 31\nMon. June 1\nTues. June 2",
+        )
+
+        self.assertIn("weekly schedule grids", prompt)
+        self.assertIn("never invent a time", prompt)
+
     def test_supabase_cache_hit_writes_local_cache_without_ocr_or_gemini_calls(self) -> None:
         raw = {
             "id": "3894795737410658772",
@@ -581,6 +591,72 @@ class ExtractStoriesTests(unittest.TestCase):
         assert row is not None
         self.assertEqual("2026-05-16T02:00:00+00:00", row["starts_at"])
         self.assertEqual("2026-05-16T04:00:00+00:00", row["ends_at"])
+
+    def test_event_row_skips_collapsed_multiday_schedule_grid(self) -> None:
+        # A two-week finals-week schedule grid: the LLM collapsed every day
+        # column into a single 13-day "event" anchored on the empty Sun May 31
+        # column. The flyer lists many dates and the span is far longer than a
+        # day, so the row is skipped instead of published with a wrong start.
+        raw = {
+            "id": "3909284982299534837",
+            "handle": "ucrlibrary",
+            "posted_at": "2026-05-31T16:00:00Z",
+        }
+        cached = {
+            "status": "ok",
+            "ocr_text": (
+                "FINALS WEEK STRESS RELIEF\nWEEK 10\n"
+                "Sun. May 31\nMon. June 1\nTues. June 2\nWed. June 3\n"
+                "Thurs. June 4\nFri. June 5\nFINALS WEEK\n"
+                "Sun. June 7\nMon. June 8\nTues. June 9\nWed. June 10\n"
+                "Thurs. June 11\nFri. June 12"
+            ),
+            "result": {
+                "is_event": True,
+                "title": "FINALS WEEK STRESS RELIEF",
+                "starts_at": "2026-05-31T13:00:00-07:00",
+                "ends_at": "2026-06-12T17:00:00-07:00",
+            },
+        }
+
+        row = self.extract_stories._to_event_row(
+            raw,
+            cached,
+            {"label": "UCR Library", "category": "academic"},
+            "2026-05-31T16:09:54+00:00",
+        )
+
+        self.assertIsNone(row)
+
+    def test_event_row_keeps_single_day_event_that_lists_many_dates(self) -> None:
+        # The OCR names several dates (a "save these dates" series promo), but the
+        # event the model returns spans a single afternoon. Only multi-day spans
+        # look like a collapsed grid, so this one is kept.
+        raw = {"id": "3894795737410658780", "handle": "cyber_ucr"}
+        cached = {
+            "status": "ok",
+            "ocr_text": (
+                "WORKSHOP SERIES\nMay 31\nJune 7\nJune 14\n"
+                "First session details below"
+            ),
+            "result": {
+                "is_event": True,
+                "title": "Workshop Series Kickoff",
+                "starts_at": "2026-05-31T13:00:00-07:00",
+                "ends_at": "2026-05-31T15:00:00-07:00",
+            },
+        }
+
+        row = self.extract_stories._to_event_row(
+            raw,
+            cached,
+            {"label": "UCR Cybersecurity Club", "category": "club"},
+            "2026-05-30T12:00:00+00:00",
+        )
+
+        self.assertIsNotNone(row)
+        assert row is not None
+        self.assertEqual("2026-05-31T20:00:00+00:00", row["starts_at"])
 
     def test_event_row_uses_unambiguous_ocr_date_over_gemini_date(self) -> None:
         raw = {

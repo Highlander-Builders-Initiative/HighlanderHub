@@ -10,7 +10,7 @@ import base64
 import json
 import logging
 import re
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Iterable
 from zoneinfo import ZoneInfo
@@ -344,7 +344,11 @@ def _build_gemini_prompt(
         "California, so interpret flyer times as America/Los_Angeles local "
         "wall time unless the OCR explicitly gives another timezone. Do not "
         "change an explicit OCR date based on relative text like THIS SUNDAY "
-        "or NEXT SUNDAY. For ranges like 11:00 AM 2:00 PM, use 11:00 AM as "
+        "or NEXT SUNDAY. Some flyers are weekly schedule grids with one column "
+        "per day, and some day columns list no event; never use a day with no "
+        "listed activity as starts_at and never invent a time that is not "
+        "printed for that day — anchor starts_at on the first day and time that "
+        "actually has an event. For ranges like 11:00 AM 2:00 PM, use 11:00 AM as "
         "starts_at and 2:00 PM as ends_at on the same OCR date. Return "
         "starts_at and ends_at as ISO-8601 timestamps with the correct Pacific "
         "timezone offset for that date. Prefer exact text from OCR over "
@@ -555,11 +559,15 @@ def _posted_year(raw: dict[str, Any]) -> int | None:
         return None
 
 
-def _ocr_date(ocr_text: str) -> tuple[int, int] | None:
-    dates = {
+def _distinct_ocr_dates(ocr_text: str) -> set[tuple[int, int]]:
+    return {
         (_MONTHS[match.group(1).lower().rstrip(".")], int(match.group(2)))
         for match in _OCR_DATE_RE.finditer(ocr_text)
     }
+
+
+def _ocr_date(ocr_text: str) -> tuple[int, int] | None:
+    dates = _distinct_ocr_dates(ocr_text)
     if len(dates) != 1:
         return None
     return next(iter(dates))
@@ -634,6 +642,27 @@ def _ocr_local_event_range(
     ).isoformat()
 
 
+# Schedule-grid flyers (finals week, welcome week) lay out one column per day,
+# and the single-event extractor collapses the whole grid into one event that
+# spans the first column to the last — often anchored on an empty day. A real
+# event names one or two dates, never a calendar of them, so treat "many dates
+# plus a multi-day span" as a mis-collapsed grid and skip it.
+_GRID_MIN_DISTINCT_DATES = 3
+
+
+def _looks_like_schedule_grid(
+    ocr_text: Any,
+    starts_at: str,
+    ends_at: str | None,
+) -> bool:
+    if not isinstance(ocr_text, str) or not ends_at:
+        return False
+    if len(_distinct_ocr_dates(ocr_text)) < _GRID_MIN_DISTINCT_DATES:
+        return False
+    span = datetime.fromisoformat(ends_at) - datetime.fromisoformat(starts_at)
+    return span > timedelta(days=1)
+
+
 def _to_event_row(
     raw: dict[str, Any],
     cached: dict[str, Any],
@@ -656,6 +685,15 @@ def _to_event_row(
     else:
         starts_at, ends_at = ocr_range
     if not title or not starts_at:
+        return None
+
+    if _looks_like_schedule_grid(cached.get("ocr_text"), starts_at, ends_at):
+        log.info(
+            "extract %s: skipping collapsed multi-day schedule grid (%s -> %s)",
+            raw.get("id"),
+            starts_at,
+            ends_at,
+        )
         return None
 
     handle = str(raw.get("handle") or "")
