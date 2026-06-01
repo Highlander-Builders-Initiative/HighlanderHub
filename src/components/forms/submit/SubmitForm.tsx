@@ -118,6 +118,16 @@ export default function SubmitForm() {
         body: JSON.stringify(row),
       });
 
+      if (response.status === 429) {
+        track("submission_error", { message: "rate_limited" });
+        setStatus({
+          kind: "error",
+          message:
+            "You’re submitting a little too fast. Wait a few minutes, then try again.",
+        });
+        return;
+      }
+
       if (!response.ok) {
         throw new Error(`submission_save_failed:${response.status}`);
       }
