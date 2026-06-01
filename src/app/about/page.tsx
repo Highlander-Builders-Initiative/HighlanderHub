@@ -81,8 +81,7 @@ export default function AboutPage() {
         <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 md:py-20">
           <div className="grid gap-10 md:grid-cols-12 md:items-start">
             <Reveal className="md:col-span-5">
-              <p className="text-[13px] text-muted">About The Hub</p>
-              <h1 className="mt-4 max-w-xl font-display text-[36px] font-semibold leading-[1.03] tracking-[-0.035em] text-ink sm:text-[46px] md:text-[56px]">
+              <h1 className="max-w-xl font-display text-[36px] font-semibold leading-[1.03] tracking-[-0.035em] text-ink sm:text-[46px] md:text-[56px]">
                 Campus events are scattered across ten different feeds.
               </h1>
             </Reveal>
