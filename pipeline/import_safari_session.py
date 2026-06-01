@@ -93,7 +93,20 @@ def main(argv: list[str] | None = None) -> None:
     # Validate that we actually captured a logged-in session. The old code would
     # happily overwrite a working session file with a logged-out/empty cookie jar
     # and still print "SUCCESS".
-    sessionid = L.context._session.cookies.get("sessionid")
+    sessionid = None
+    for domain in (".instagram.com", "instagram.com", "www.instagram.com"):
+        for cookie in L.context._session.cookies:
+            if cookie.name == "sessionid" and cookie.domain == domain:
+                sessionid = cookie.value
+                break
+        if sessionid:
+            break
+
+    if not sessionid:
+        for cookie in L.context._session.cookies:
+            if cookie.name == "sessionid" and cookie.domain.endswith("instagram.com"):
+                sessionid = cookie.value
+                break
     if not sessionid:
         print(
             "\n❌ No `sessionid` cookie found for instagram.com in Safari.\n"
