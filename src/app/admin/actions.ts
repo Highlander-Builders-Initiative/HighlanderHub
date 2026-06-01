@@ -1,9 +1,10 @@
 "use server";
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { EVENTS_CACHE_TAG } from "@/lib/events";
 import { signSession, verifySession, getAdminSupabase, getAdminPassword, verifyPassword } from "@/lib/admin";
+import { ADMIN_LOGIN_RATE_LIMIT, clientIp, rateLimit } from "@/lib/rate-limit";
 import { parseAdminEventUpdate } from "./validate-event-update";
 import type { AdminEventUpdatePayload } from "./types";
 
@@ -27,6 +28,21 @@ export async function loginAdmin(password: string) {
     return {
       success: false,
       error: "Admin login is not configured. Set ADMIN_PASSWORD in the environment.",
+    };
+  }
+
+  // Throttle attempts per IP so the single shared password can't be brute-forced.
+  const limit = rateLimit(
+    `admin-login:${clientIp(headers())}`,
+    ADMIN_LOGIN_RATE_LIMIT
+  );
+  if (!limit.ok) {
+    const minutes = Math.ceil(limit.retryAfterSeconds / 60);
+    return {
+      success: false,
+      error: `Too many attempts. Try again in about ${minutes} minute${
+        minutes === 1 ? "" : "s"
+      }.`,
     };
   }
 
