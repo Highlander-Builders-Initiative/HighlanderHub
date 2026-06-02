@@ -93,11 +93,14 @@ _OCR_TIME_RANGE_RE = re.compile(
     r"(\d{1,2})(?::(\d{2}))?\s*([ap]\.?m\.?)\b",
     re.IGNORECASE,
 )
+# Compact ranges like "1-2 pm" apply the trailing meridiem to both endpoints.
 _OCR_COMPACT_TIME_RANGE_RE = re.compile(
     r"\b(\d{1,2})(?::(\d{2}))?\s*(?:-|to)\s*"
     r"(\d{1,2})(?::(\d{2}))?\s*([ap]\.?m\.?)\b",
     re.IGNORECASE,
 )
+# Private extraction metadata; stripped before event rows are written.
+_SUPERSEDED_EVENT_ID_KEY = "_superseded_event_id"
 
 GEMINI_RESPONSE_SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -700,9 +703,11 @@ def _to_event_row(
     description = str(llm.get("description") or "")
     tags = _clean_tags(llm.get("tags"))
     ocr_range = _ocr_local_event_range(raw, cached)
+    llm_starts_at = _normalize_timestamptz(llm.get("starts_at"))
+    llm_ends_at = _normalize_timestamptz(llm.get("ends_at"))
     if ocr_range is None:
-        starts_at = _normalize_timestamptz(llm.get("starts_at"))
-        ends_at = _normalize_timestamptz(llm.get("ends_at"))
+        starts_at = llm_starts_at
+        ends_at = llm_ends_at
     else:
         starts_at, ends_at = ocr_range
     if not title or not starts_at:
@@ -735,7 +740,7 @@ def _to_event_row(
     if event_id is None:
         return None
 
-    return {
+    row = {
         "id": event_id,
         "title": title[:200],
         "description": description,
@@ -764,32 +769,19 @@ def _to_event_row(
         "scraped_at": scraped_at,
     }
 
-
-def _superseded_llm_event_id(
-    raw: dict[str, Any],
-    cached: dict[str, Any],
-    row: dict[str, Any],
-) -> str | None:
-    llm = cached.get("result") or {}
-    if not isinstance(llm, dict):
-        return None
-
-    llm_starts_at = _normalize_timestamptz(llm.get("starts_at"))
-    if llm_starts_at is None:
-        return None
-
-    event_id = _instagram_event_id(str(raw.get("handle") or ""), llm_starts_at)
-    if event_id and event_id != row.get("id"):
-        return event_id
-    return None
+    superseded_event_id = (
+        _instagram_event_id(handle, llm_starts_at) if llm_starts_at else None
+    )
+    if superseded_event_id and superseded_event_id != event_id:
+        row[_SUPERSEDED_EVENT_ID_KEY] = superseded_event_id
+    return row
 
 
 def _collect_event_rows(
     meta_by_handle: dict[str, dict[str, Any]],
     scraped_at: str,
-) -> tuple[list[dict[str, Any]], set[str]]:
+) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
-    superseded_ids: set[str] = set()
     for raw in _iter_raw_stories(set(meta_by_handle.keys())):
         story_id = str(raw.get("id") or "")
         if not story_id:
@@ -810,9 +802,23 @@ def _collect_event_rows(
         )
         if row is not None:
             rows.append(row)
-            if superseded_id := _superseded_llm_event_id(raw, cached, row):
-                superseded_ids.add(superseded_id)
-    return rows, superseded_ids
+    return rows
+
+
+def _current_event_ids(rows: list[dict[str, Any]]) -> set[str]:
+    return {
+        str(event_id)
+        for row in rows
+        for event_id in (row.get("id"), row.get(_SUPERSEDED_EVENT_ID_KEY))
+        if event_id
+    }
+
+
+def _strip_event_row_metadata(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [
+        {key: value for key, value in row.items() if key != _SUPERSEDED_EVENT_ID_KEY}
+        for row in rows
+    ]
 
 
 def _filter_locked_events(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -878,16 +884,17 @@ def main() -> None:
         _process_story(raw, meta_by_handle.get(str(raw.get("handle") or ""), {}))
 
     scraped_at = _utc_now()
-    rows, superseded_ids = _collect_event_rows(meta_by_handle, scraped_at)
-    current_ids = {row["id"] for row in rows}
+    rows = _collect_event_rows(meta_by_handle, scraped_at)
+    current_ids = _current_event_ids(rows)
     event_rows = _filter_locked_events(rows)
     event_rows = _filter_deleted_events(event_rows)
     event_rows = dedupe_event_rows(event_rows)
     deleted = _delete_imported_event_ids(
-        (current_ids | superseded_ids) - {row["id"] for row in event_rows}
+        current_ids - {row["id"] for row in event_rows}
     )
     if deleted:
         log.info("Deleted %d stale Instagram event rows from Supabase", deleted)
+    event_rows = _strip_event_row_metadata(event_rows)
     written = _upsert_events(event_rows)
     log.info("Wrote %d events to Supabase", written)
     notified = notify_free_food_events(event_rows)
