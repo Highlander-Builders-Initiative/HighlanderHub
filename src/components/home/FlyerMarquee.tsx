@@ -340,7 +340,7 @@ export function FlyerMarquee({ events }: { events: CampusEvent[] }) {
           }
         }}
         style={{ x, gap: TILE_GAP_PX }}
-        className="relative flex w-max cursor-grab active:cursor-grabbing [@media(hover:hover)]:[&_a]:grayscale [@media(hover:hover)]:[&_a]:opacity-80 [@media(hover:hover)]:[&:has(a:hover)_a:not(:hover)]:opacity-50 [@media(hover:hover)]:[&_a:hover]:grayscale-0 [@media(hover:hover)]:[&_a:hover]:opacity-100 [&_a:focus-visible]:grayscale-0 [&_a:focus-visible]:opacity-100"
+        className="relative flex w-max cursor-grab active:cursor-grabbing [@media(hover:hover)]:[&:has(a:hover)_a:not(:hover)]:grayscale-[.5] [@media(hover:hover)]:[&:has(a:hover)_a:not(:hover)]:opacity-80 [&:has(a:focus-visible)_a:not(:focus-visible)]:grayscale-[.5] [&:has(a:focus-visible)_a:not(:focus-visible)]:opacity-80"
       >
         <FlyerTileSet events={base} setRef={setRef} />
         <FlyerTileSet events={base} decorative />
@@ -371,7 +371,6 @@ function FlyerTileSet({
             size="medium"
             aspectClassName="aspect-[4/5]"
             decorative={decorative}
-            progressiveBlur
           />
         </div>
       ))}
