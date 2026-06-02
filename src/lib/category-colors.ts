@@ -12,52 +12,52 @@ export const CATEGORY_RAIL: Record<CampusEvent["category"], string> = {
 };
 
 /**
- * Filter-pill tints. The category color becomes the pill's own surface (no
- * leading dot): a barely-there wash on hover, a firmer wash plus the matched
- * deep text and a hairline ring when active. Opacities are tuned per hue so the
- * desaturated ones (sage) read at the same weight as the punchy ones (coral).
- * Literal class strings so Tailwind's JIT compiler keeps them.
+ * Filter-pill colors. `highlight` tints the sliding selection background (a
+ * soft category wash plus a matched hairline ring); `text` is the matched deep
+ * text for the selected row. Opacities are tuned per hue so the desaturated
+ * ones (sage) read at the same weight as the punchy ones (coral). Literal class
+ * strings so Tailwind's JIT compiler keeps them.
  */
 export const CATEGORY_PILL: Record<
   CampusEvent["category"],
-  { hover: string; active: string }
+  { highlight: string; text: string }
 > = {
   club: {
-    hover: "hover:bg-highlander/[0.07]",
-    active: "bg-highlander/[0.12] text-highlander ring-1 ring-inset ring-highlander/25",
+    highlight: "bg-highlander/[0.12] ring-1 ring-inset ring-highlander/25",
+    text: "text-highlander",
   },
   academic: {
-    hover: "hover:bg-leaf/[0.08]",
-    active: "bg-leaf/[0.13] text-deep-leaf ring-1 ring-inset ring-leaf/25",
+    highlight: "bg-leaf/[0.13] ring-1 ring-inset ring-leaf/25",
+    text: "text-deep-leaf",
   },
   social: {
-    hover: "hover:bg-coral/[0.08]",
-    active: "bg-coral/[0.13] text-deep-coral ring-1 ring-inset ring-coral/25",
+    highlight: "bg-coral/[0.13] ring-1 ring-inset ring-coral/25",
+    text: "text-deep-coral",
   },
   career: {
-    hover: "hover:bg-ink/[0.05]",
-    active: "bg-ink/[0.08] text-ink ring-1 ring-inset ring-ink/20",
+    highlight: "bg-ink/[0.08] ring-1 ring-inset ring-ink/20",
+    text: "text-ink",
   },
   sports: {
-    hover: "hover:bg-sky/[0.08]",
-    active: "bg-sky/[0.13] text-deep-sky ring-1 ring-inset ring-sky/25",
+    highlight: "bg-sky/[0.13] ring-1 ring-inset ring-sky/25",
+    text: "text-deep-sky",
   },
   arts: {
-    hover: "hover:bg-plum/[0.08]",
-    active: "bg-plum/[0.13] text-deep-plum ring-1 ring-inset ring-plum/25",
+    highlight: "bg-plum/[0.13] ring-1 ring-inset ring-plum/25",
+    text: "text-deep-plum",
   },
   community: {
-    hover: "hover:bg-sage/[0.12]",
-    active: "bg-sage/[0.18] text-deep-sage ring-1 ring-inset ring-sage/30",
+    highlight: "bg-sage/[0.18] ring-1 ring-inset ring-sage/30",
+    text: "text-deep-sage",
   },
   free_food: {
-    hover: "hover:bg-gold/[0.10]",
-    active: "bg-gold/[0.14] text-deep-gold ring-1 ring-inset ring-gold/25",
+    highlight: "bg-gold/[0.14] ring-1 ring-inset ring-gold/25",
+    text: "text-deep-gold",
   },
 };
 
 // "All" has no category hue; it gets a neutral ink wash in the same shape.
 export const ALL_PILL = {
-  hover: "hover:bg-ink/[0.04]",
-  active: "bg-ink/[0.06] text-ink ring-1 ring-inset ring-ink/15",
+  highlight: "bg-ink/[0.06] ring-1 ring-inset ring-ink/15",
+  text: "text-ink",
 };

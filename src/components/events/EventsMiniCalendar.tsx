@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { AnimatedBackground } from "@/components/core/animated-background";
 import {
   addPacificDays,
   addPacificMonths,
@@ -57,7 +58,7 @@ export function EventsMiniCalendar({
     return all.slice(0, weeks * 7);
   }, [cursor, monthKey]);
 
-  const monthLabel = formatPacificMonth(cursor).toLowerCase();
+  const monthLabel = formatPacificMonth(cursor);
 
   return (
     <div>
@@ -66,29 +67,38 @@ export function EventsMiniCalendar({
           {monthLabel}
         </h2>
         <div className="flex items-center gap-0.5">
-          <button
-            type="button"
-            onClick={() => onCursorChange(startOfPacificMonthKey(todayKey))}
-            className="interactive-focus inline-flex h-7 items-center rounded-md px-2.5 text-[12px] font-medium text-muted transition-colors hover:bg-ink/[0.04] hover:text-ink"
+          <AnimatedBackground
+            className="rounded-md bg-ink/[0.06]"
+            transition={{ type: "spring", bounce: 0.2, duration: 0.3 }}
+            enableHover
           >
-            Today
-          </button>
-          <button
-            type="button"
-            onClick={() => onCursorChange(addPacificMonths(cursor, -1))}
-            aria-label="Previous month"
-            className="interactive-focus inline-flex h-7 w-7 items-center justify-center rounded-md text-muted transition-colors hover:bg-ink/[0.04] hover:text-ink"
-          >
-            ‹
-          </button>
-          <button
-            type="button"
-            onClick={() => onCursorChange(addPacificMonths(cursor, 1))}
-            aria-label="Next month"
-            className="interactive-focus inline-flex h-7 w-7 items-center justify-center rounded-md text-muted transition-colors hover:bg-ink/[0.04] hover:text-ink"
-          >
-            ›
-          </button>
+            <button
+              type="button"
+              data-id="today"
+              onClick={() => onCursorChange(startOfPacificMonthKey(todayKey))}
+              className="interactive-focus inline-flex h-7 items-center rounded-md px-2.5 text-[12px] font-medium text-muted transition-colors hover:text-ink"
+            >
+              Today
+            </button>
+            <button
+              type="button"
+              data-id="prev"
+              onClick={() => onCursorChange(addPacificMonths(cursor, -1))}
+              aria-label="Previous month"
+              className="interactive-focus inline-flex h-7 w-7 items-center justify-center rounded-md text-muted transition-colors hover:text-ink"
+            >
+              ‹
+            </button>
+            <button
+              type="button"
+              data-id="next"
+              onClick={() => onCursorChange(addPacificMonths(cursor, 1))}
+              aria-label="Next month"
+              className="interactive-focus inline-flex h-7 w-7 items-center justify-center rounded-md text-muted transition-colors hover:text-ink"
+            >
+              ›
+            </button>
+          </AnimatedBackground>
         </div>
       </div>
 
