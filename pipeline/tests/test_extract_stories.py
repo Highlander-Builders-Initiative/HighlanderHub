@@ -730,6 +730,134 @@ class ExtractStoriesTests(unittest.TestCase):
         self.assertEqual("2026-05-31T18:00:00+00:00", row["starts_at"])
         self.assertEqual("2026-05-31T21:00:00+00:00", row["ends_at"])
 
+    def test_event_row_uses_compact_pm_ocr_range_over_gemini_relative_date(
+        self,
+    ) -> None:
+        raw = {
+            "id": "3910090085357363175",
+            "handle": "wincucr",
+            "posted_at": "2026-06-01T18:38:02Z",
+        }
+        cached = {
+            "status": "ok",
+            "ocr_text": (
+                "join us TOMORROW\n"
+                "WINC PRESENTS\n"
+                "W:\n"
+                "STUDY\n"
+                "SESSION\n"
+                "SOCIAL\n"
+                "Tuesday, June 2\n"
+                "1-2 pm\n"
+                "WCH 205/206\n"
+                "SANDWICHES\n"
+                "AND BOBA WILL\n"
+                "BE PROVIDED\n"
+                "MORE INFO@WINCUCR\n"
+                "@wincucr"
+            ),
+            "result": {
+                "is_event": True,
+                "title": "WINC PRESENTS W: STUDY SESSION SOCIAL",
+                "description": "Study session social.",
+                "starts_at": "2026-06-03T01:00:00-07:00",
+                "ends_at": "2026-06-03T02:00:00-07:00",
+            },
+        }
+
+        row = self.extract_stories._to_event_row(
+            raw,
+            cached,
+            {"label": "Women in Computing at UCR", "category": "club"},
+            "2026-06-02T16:05:42+00:00",
+        )
+
+        self.assertIsNotNone(row)
+        assert row is not None
+        self.assertEqual("ig_wincucr_20260602T2000Z", row["id"])
+        self.assertEqual("2026-06-02T20:00:00+00:00", row["starts_at"])
+        self.assertEqual("2026-06-02T21:00:00+00:00", row["ends_at"])
+
+    def test_event_row_keeps_full_pm_range_after_ocr_date(self) -> None:
+        raw = {
+            "id": "3910090085357363175",
+            "handle": "wincucr",
+            "posted_at": "2026-06-01T18:38:02Z",
+        }
+        cached = {
+            "status": "ok",
+            "ocr_text": (
+                "WINC PRESENTS STUDY SESSION SOCIAL\n"
+                "Tuesday, June 2\n"
+                "1pm - 2pm\n"
+                "WCH 205/206"
+            ),
+            "result": {
+                "is_event": True,
+                "title": "WINC PRESENTS W: STUDY SESSION SOCIAL",
+                "description": "Study session social.",
+                "starts_at": "2026-06-03T01:00:00-07:00",
+                "ends_at": "2026-06-03T02:00:00-07:00",
+            },
+        }
+
+        row = self.extract_stories._to_event_row(
+            raw,
+            cached,
+            {"label": "Women in Computing at UCR", "category": "club"},
+            "2026-06-02T16:05:42+00:00",
+        )
+
+        self.assertIsNotNone(row)
+        assert row is not None
+        self.assertEqual("ig_wincucr_20260602T2000Z", row["id"])
+        self.assertEqual("2026-06-02T20:00:00+00:00", row["starts_at"])
+        self.assertEqual("2026-06-02T21:00:00+00:00", row["ends_at"])
+
+    def test_collect_event_rows_marks_superseded_bad_llm_timestamp_id(self) -> None:
+        raw = {
+            "id": "3910090085357363175",
+            "handle": "wincucr",
+            "posted_at": "2026-06-01T18:38:02Z",
+        }
+        cached = {
+            "status": "ok",
+            "ocr_text": (
+                "join us TOMORROW\n"
+                "WINC PRESENTS\n"
+                "STUDY SESSION SOCIAL\n"
+                "Tuesday, June 2\n"
+                "1-2 pm\n"
+                "WCH 205/206"
+            ),
+            "result": {
+                "is_event": True,
+                "title": "WINC PRESENTS W: STUDY SESSION SOCIAL",
+                "starts_at": "2026-06-03T01:00:00-07:00",
+                "ends_at": "2026-06-03T02:00:00-07:00",
+            },
+        }
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            raw_dir = root / "raw"
+            extracted_dir = root / "extracted"
+            handle_dir = raw_dir / "wincucr"
+            handle_dir.mkdir(parents=True)
+            extracted_dir.mkdir()
+            (handle_dir / f"{raw['id']}.json").write_text(json.dumps(raw))
+            (extracted_dir / f"{raw['id']}.json").write_text(json.dumps(cached))
+
+            with patch.object(self.extract_stories, "RAW_DIR", raw_dir):
+                with patch.object(self.extract_stories, "EXTRACTED_DIR", extracted_dir):
+                    rows, superseded_ids = self.extract_stories._collect_event_rows(
+                        {"wincucr": {"label": "Women in Computing at UCR"}},
+                        "2026-06-02T16:05:42+00:00",
+                    )
+
+        self.assertEqual(["ig_wincucr_20260602T2000Z"], [row["id"] for row in rows])
+        self.assertEqual({"ig_wincucr_20260603T0800Z"}, superseded_ids)
+
     def test_event_row_drops_invalid_optional_ends_at(self) -> None:
         raw = {
             "id": "3894795737410658770",

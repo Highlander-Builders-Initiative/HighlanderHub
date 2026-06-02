@@ -89,7 +89,12 @@ _OCR_DATE_RE = re.compile(
 )
 _OCR_TIME_RANGE_RE = re.compile(
     r"\b(\d{1,2})(?::(\d{2}))?\s*([ap]\.?m\.?)"
-    r"\s*(?:-|to)?\s+"
+    r"(?:\s*(?:-|to)\s*|\s+)"
+    r"(\d{1,2})(?::(\d{2}))?\s*([ap]\.?m\.?)\b",
+    re.IGNORECASE,
+)
+_OCR_COMPACT_TIME_RANGE_RE = re.compile(
+    r"\b(\d{1,2})(?::(\d{2}))?\s*(?:-|to)\s*"
     r"(\d{1,2})(?::(\d{2}))?\s*([ap]\.?m\.?)\b",
     re.IGNORECASE,
 )
@@ -594,13 +599,19 @@ def _parse_ampm_time(
 
 
 def _ocr_time_range(ocr_text: str) -> tuple[tuple[int, int], tuple[int, int]] | None:
-    matches = list(_OCR_TIME_RANGE_RE.finditer(ocr_text))
-    if len(matches) != 1:
+    full_matches = list(_OCR_TIME_RANGE_RE.finditer(ocr_text))
+    compact_matches = list(_OCR_COMPACT_TIME_RANGE_RE.finditer(ocr_text))
+    if len(full_matches) + len(compact_matches) != 1:
         return None
 
-    match = matches[0]
-    start = _parse_ampm_time(match.group(1), match.group(2), match.group(3))
-    end = _parse_ampm_time(match.group(4), match.group(5), match.group(6))
+    if full_matches:
+        match = full_matches[0]
+        start = _parse_ampm_time(match.group(1), match.group(2), match.group(3))
+        end = _parse_ampm_time(match.group(4), match.group(5), match.group(6))
+    else:
+        match = compact_matches[0]
+        start = _parse_ampm_time(match.group(1), match.group(2), match.group(5))
+        end = _parse_ampm_time(match.group(3), match.group(4), match.group(5))
     if start is None or end is None:
         return None
     return start, end
@@ -663,6 +674,16 @@ def _looks_like_schedule_grid(
     return span > timedelta(days=1)
 
 
+def _instagram_event_id(handle: str, starts_at: str) -> str | None:
+    if not handle:
+        return None
+    try:
+        start_slug = datetime.fromisoformat(starts_at).strftime("%Y%m%dT%H%MZ")
+    except ValueError:
+        return None
+    return f"ig_{handle}_{start_slug}"
+
+
 def _to_event_row(
     raw: dict[str, Any],
     cached: dict[str, Any],
@@ -710,10 +731,12 @@ def _to_event_row(
     # Derive the event ID from (handle, starts_at) so multiple stories about
     # the same event (announcement flyer + "happening now" reminder) collapse
     # into one row via upsert instead of becoming separate events.
-    start_slug = datetime.fromisoformat(starts_at).strftime("%Y%m%dT%H%MZ")
+    event_id = _instagram_event_id(handle, starts_at)
+    if event_id is None:
+        return None
 
     return {
-        "id": f"ig_{handle}_{start_slug}",
+        "id": event_id,
         "title": title[:200],
         "description": description,
         "starts_at": starts_at,
@@ -742,11 +765,31 @@ def _to_event_row(
     }
 
 
+def _superseded_llm_event_id(
+    raw: dict[str, Any],
+    cached: dict[str, Any],
+    row: dict[str, Any],
+) -> str | None:
+    llm = cached.get("result") or {}
+    if not isinstance(llm, dict):
+        return None
+
+    llm_starts_at = _normalize_timestamptz(llm.get("starts_at"))
+    if llm_starts_at is None:
+        return None
+
+    event_id = _instagram_event_id(str(raw.get("handle") or ""), llm_starts_at)
+    if event_id and event_id != row.get("id"):
+        return event_id
+    return None
+
+
 def _collect_event_rows(
     meta_by_handle: dict[str, dict[str, Any]],
     scraped_at: str,
-) -> list[dict[str, Any]]:
+) -> tuple[list[dict[str, Any]], set[str]]:
     rows: list[dict[str, Any]] = []
+    superseded_ids: set[str] = set()
     for raw in _iter_raw_stories(set(meta_by_handle.keys())):
         story_id = str(raw.get("id") or "")
         if not story_id:
@@ -767,7 +810,9 @@ def _collect_event_rows(
         )
         if row is not None:
             rows.append(row)
-    return rows
+            if superseded_id := _superseded_llm_event_id(raw, cached, row):
+                superseded_ids.add(superseded_id)
+    return rows, superseded_ids
 
 
 def _filter_locked_events(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -833,13 +878,13 @@ def main() -> None:
         _process_story(raw, meta_by_handle.get(str(raw.get("handle") or ""), {}))
 
     scraped_at = _utc_now()
-    rows = _collect_event_rows(meta_by_handle, scraped_at)
+    rows, superseded_ids = _collect_event_rows(meta_by_handle, scraped_at)
     current_ids = {row["id"] for row in rows}
     event_rows = _filter_locked_events(rows)
     event_rows = _filter_deleted_events(event_rows)
     event_rows = dedupe_event_rows(event_rows)
     deleted = _delete_imported_event_ids(
-        current_ids - {row["id"] for row in event_rows}
+        (current_ids | superseded_ids) - {row["id"] for row in event_rows}
     )
     if deleted:
         log.info("Deleted %d stale Instagram event rows from Supabase", deleted)
