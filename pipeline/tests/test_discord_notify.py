@@ -129,8 +129,15 @@ class DiscordNotifyTests(unittest.TestCase):
         self.assertEqual("kind,notification_key", fake_client.on_conflict)
         post.assert_called_once()
         payload = post.call_args.kwargs["json"]
-        self.assertIn("Pizza night", payload["content"])
-        self.assertIn("Where: HUB 302", payload["content"])
+        self.assertNotIn("content", payload)
+        embed = payload["embeds"][0]
+        fields = {field["name"]: field["value"] for field in embed["fields"]}
+        self.assertEqual("Free food on campus", embed["author"]["name"])
+        self.assertEqual("Pizza night", embed["title"])
+        self.assertEqual("https://highlanderhub.app/events/new", embed["url"])
+        self.assertEqual("HUB 302", fields["Where"])
+        self.assertEqual("ACM at UCR", fields["Host"])
+        self.assertNotIn("events.ucr.edu", str(payload))
         self.assertEqual({"parse": []}, payload["allowed_mentions"])
 
     def test_free_food_notifications_skip_same_event_with_new_row_id(self) -> None:
@@ -198,8 +205,8 @@ class DiscordNotifyTests(unittest.TestCase):
         post.assert_called_once()
         self.assertEqual(1, len(fake_client.upserted))
 
-    def test_free_food_message_has_details(self) -> None:
-        message = self.discord_notify.build_free_food_discord_message(
+    def test_free_food_payload_has_one_embedded_details_link(self) -> None:
+        payload = self.discord_notify.build_free_food_discord_payload(
             {
                 "id": "event-1",
                 "title": "Bagel breakfast",
@@ -211,12 +218,18 @@ class DiscordNotifyTests(unittest.TestCase):
             }
         )
 
-        self.assertIn("Free food on campus", message)
-        self.assertIn("Bagel breakfast", message)
-        self.assertIn("Host: UCR Library", message)
-        self.assertIn("Details: https://highlanderhub.app/events/event-1", message)
-        self.assertNotIn("Source:", message)
-        self.assertNotIn("instagram.com", message)
+        embed = payload["embeds"][0]
+        fields = {field["name"]: field["value"] for field in embed["fields"]}
+
+        self.assertNotIn("content", payload)
+        self.assertEqual("Free food on campus", embed["author"]["name"])
+        self.assertEqual("Bagel breakfast", embed["title"])
+        self.assertEqual("https://highlanderhub.app/events/event-1", embed["url"])
+        self.assertEqual("Thu, May 21, 9:00 AM", fields["When"])
+        self.assertEqual("Rivera Library", fields["Where"])
+        self.assertEqual("UCR Library", fields["Host"])
+        self.assertEqual("Highlander Hub | Free food alert", embed["footer"]["text"])
+        self.assertNotIn("instagram.com", str(payload))
 
 
 if __name__ == "__main__":
