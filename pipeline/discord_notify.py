@@ -13,7 +13,9 @@ import requests
 
 log = logging.getLogger("pipeline.discord_notify")
 
-MESSAGE_LIMIT = 1900
+EMBED_FIELD_LIMIT = 1024
+EMBED_TITLE_LIMIT = 256
+FREE_FOOD_EMBED_COLOR = 0x45B36B
 SITE_URL = os.environ.get("NEXT_PUBLIC_SITE_URL", "https://highlanderhub.app").rstrip("/")
 _WHITESPACE = re.compile(r"\s+")
 
@@ -89,32 +91,53 @@ def free_food_notification_key(row: dict[str, Any]) -> str:
     return f"free_food:v2:id:{event_id}"
 
 
-def _compact(parts: Iterable[str | None]) -> str:
-    return "\n".join(part for part in parts if part)[:MESSAGE_LIMIT]
-
-
-def build_free_food_discord_message(row: dict[str, Any]) -> str:
+def _event_link(row: dict[str, Any]) -> str:
     event_id = _text(row.get("id"))
+    return f"{SITE_URL}/events/{event_id}" if event_id else ""
+
+
+def _embed_field(name: str, value: str, inline: bool = True) -> dict[str, Any] | None:
+    if not value:
+        return None
+    return {"name": name, "value": value[:EMBED_FIELD_LIMIT], "inline": inline}
+
+
+def build_free_food_discord_embed(row: dict[str, Any]) -> dict[str, Any]:
     title = _text(row.get("title"), "Untitled event")
     host = _text(row.get("host"))
     location = _text(row.get("location"))
-    event_link = f"{SITE_URL}/events/{event_id}" if event_id else ""
-    source_link = _text(row.get("source_url"))
-    link = event_link or source_link
-
-    return _compact(
-        [
-            "Free food on campus",
-            f"**{title}**",
-            _format_when(row.get("starts_at")),
-            location and f"Where: {location}",
-            host and f"Host: {host}",
-            link and f"Details: {link}",
+    fields = [
+        field
+        for field in [
+            _embed_field("When", _format_when(row.get("starts_at"))),
+            _embed_field("Where", location),
+            _embed_field("Host", host),
         ]
-    )
+        if field is not None
+    ]
+
+    embed: dict[str, Any] = {
+        "author": {"name": "Free food on campus"},
+        "title": title[:EMBED_TITLE_LIMIT],
+        "color": FREE_FOOD_EMBED_COLOR,
+        "footer": {"text": "Highlander Hub | Free food alert"},
+    }
+    event_link = _event_link(row)
+    if event_link:
+        embed["url"] = event_link
+    if fields:
+        embed["fields"] = fields
+    return embed
 
 
-def _post_discord_message(content: str) -> bool:
+def build_free_food_discord_payload(row: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "embeds": [build_free_food_discord_embed(row)],
+        "allowed_mentions": {"parse": []},
+    }
+
+
+def _post_discord_payload(payload: dict[str, Any]) -> bool:
     webhook_url = os.environ.get("DISCORD_WEBHOOK_URL")
     if not webhook_url:
         return False
@@ -122,7 +145,7 @@ def _post_discord_message(content: str) -> bool:
     try:
         response = requests.post(
             webhook_url,
-            json={"content": content, "allowed_mentions": {"parse": []}},
+            json=payload,
             timeout=10,
         )
     except requests.RequestException as exc:
@@ -189,7 +212,7 @@ def notify_free_food_events(rows: Iterable[dict[str, Any]]) -> int:
         notification_key = free_food_notification_key(row)
         if notification_key in queued_keys or event_id in existing_ids:
             continue
-        if _post_discord_message(build_free_food_discord_message(row)):
+        if _post_discord_payload(build_free_food_discord_payload(row)):
             queued_keys.add(notification_key)
             sent.append(
                 {
