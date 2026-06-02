@@ -1,5 +1,6 @@
 "use client";
 
+import { AnimatedBackground } from "@/components/core/animated-background";
 import { DAY_WINDOWS, type DayWindow } from "./events-filters";
 
 type EventDayWindowFilterProps = {
@@ -8,63 +9,51 @@ type EventDayWindowFilterProps = {
   onDayWindowChange: (next: DayWindow) => void;
 };
 
-// Four windows in one pill (All / Today / Week / Weekend). Short labels fit the
-// narrow rail; the sheet uses the same track at a slightly larger text size.
-const SEGMENT_TEXT_CLASS = {
+const TEXT_SIZE_CLASS = {
   rail: "text-[12px]",
   sheet: "text-[13px]",
 } as const;
 
 /**
- * Segmented control: a single rounded track with one elevated thumb that
- * slides to the active window. The buttons sit transparently on top; only the
- * thumb moves, so switching reads as one continuous control rather than four
- * separate toggles.
+ * Segmented control for the time window. One rounded track with a canvas
+ * "thumb" that springs to the selected window via the shared AnimatedBackground
+ * (same motion system as the Topics list and the calendar nav).
  */
 export function EventDayWindowFilter({
   layout,
   dayWindow,
   onDayWindowChange,
 }: EventDayWindowFilterProps) {
-  const activeIndex = Math.max(
-    0,
-    DAY_WINDOWS.findIndex((w) => w.value === dayWindow)
-  );
-
   return (
     <div
-      className="relative flex w-full rounded-full bg-ink/[0.05] p-1"
+      className="flex w-full rounded-full bg-ink/[0.05] p-1"
       role="group"
       aria-label="Filter events by time window"
     >
-      {/* Sliding thumb: one segment wide, translated by whole segments. */}
-      <span
-        aria-hidden
-        className="pointer-events-none absolute inset-y-1 left-1 rounded-full bg-canvas shadow-card transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none"
-        style={{
-          width: `calc((100% - 0.5rem) / ${DAY_WINDOWS.length})`,
-          transform: `translateX(${activeIndex * 100}%)`,
-        }}
-      />
-
-      {DAY_WINDOWS.map((w) => {
-        const active = dayWindow === w.value;
-        return (
-          <button
-            type="button"
-            key={w.value}
-            onClick={() => onDayWindowChange(w.value)}
-            aria-pressed={active}
-            className={[
-              "interactive-focus relative z-10 min-w-0 flex-1 truncate rounded-full px-1.5 py-1.5 text-center font-medium transition-colors duration-200",
-              SEGMENT_TEXT_CLASS[layout],
-              active ? "text-ink" : "text-muted hover:text-ink",
-            ].join(" ")}
-          >
-            {w.label}
-          </button>
-        );
-      })}
+      <AnimatedBackground
+        defaultValue={dayWindow}
+        enableHover
+        className="rounded-full bg-canvas shadow-card"
+        transition={{ type: "spring", bounce: 0.2, duration: 0.3 }}
+      >
+        {DAY_WINDOWS.map((w) => {
+          const active = dayWindow === w.value;
+          return (
+            <button
+              key={w.value}
+              data-id={w.value}
+              type="button"
+              aria-pressed={active}
+              onClick={() => onDayWindowChange(w.value)}
+              className={`interactive-focus flex-1 rounded-full py-1.5 font-medium transition-colors ${
+                TEXT_SIZE_CLASS[layout]
+              } ${active ? "text-ink" : "text-muted hover:text-ink"}`}
+            >
+              {w.label}
+            </button>
+          );
+        })}
+      </AnimatedBackground>
     </div>
   );
 }

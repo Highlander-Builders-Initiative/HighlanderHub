@@ -15,7 +15,7 @@ const SPEED_PX_PER_SEC = 32;
 // Hover lets the strip keep breathing without snapping to a stop, so the
 // spotlight effect stays legible without forcing the eye to chase tiles.
 const HOVER_SPEED_FACTOR = 0.3;
-const TILE_GAP_PX = 12;
+const TILE_GAP_PX = 20;
 const DRAG_CLICK_THRESHOLD_PX = 6;
 const WHEEL_RESUME_DELAY_MS = 180;
 // Spotlight falloff: tiles within this distance of the focal point earn
@@ -340,7 +340,7 @@ export function FlyerMarquee({ events }: { events: CampusEvent[] }) {
           }
         }}
         style={{ x, gap: TILE_GAP_PX }}
-        className="relative flex w-max cursor-grab active:cursor-grabbing [@media(hover:hover)]:[&:has(a:hover)_a:not(:hover)]:opacity-[0.78] [@media(hover:hover)]:[&:has(a:hover)_a:not(:hover)]:grayscale-[.55] [&:has(a:focus-visible)_a:not(:focus-visible)]:opacity-[0.78] [&:has(a:focus-visible)_a:not(:focus-visible)]:grayscale-[.55]"
+        className="relative flex w-max cursor-grab active:cursor-grabbing [@media(hover:hover)]:[&_a]:grayscale [@media(hover:hover)]:[&_a]:opacity-80 [@media(hover:hover)]:[&:has(a:hover)_a:not(:hover)]:opacity-50 [@media(hover:hover)]:[&_a:hover]:grayscale-0 [@media(hover:hover)]:[&_a:hover]:opacity-100 [&_a:focus-visible]:grayscale-0 [&_a:focus-visible]:opacity-100"
       >
         <FlyerTileSet events={base} setRef={setRef} />
         <FlyerTileSet events={base} decorative />
@@ -371,6 +371,7 @@ function FlyerTileSet({
             size="medium"
             aspectClassName="aspect-[4/5]"
             decorative={decorative}
+            progressiveBlur
           />
         </div>
       ))}
