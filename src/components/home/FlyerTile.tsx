@@ -33,6 +33,7 @@ export function FlyerTile({
   enterDelayMs = 0,
   aspectClassName = "aspect-[4/5] md:aspect-auto",
   decorative = false,
+  progressiveBlur = false,
 }: {
   event: CampusEvent;
   size: FlyerTileSize;
@@ -44,6 +45,10 @@ export function FlyerTile({
   /** A repeated tile in a looping marquee: kept out of the tab order and the
    *  accessibility tree so screen readers see each event only once. */
   decorative?: boolean;
+  /** Carousel treatment: the flyer reads clean at rest, and the caption rides
+   *  in over a frosted (blurred) bottom on hover/focus instead of a persistent
+   *  gradient. */
+  progressiveBlur?: boolean;
 }) {
   const router = useRouter();
   const [imageBroken, setImageBroken] = useState(false);
@@ -99,12 +104,38 @@ export function FlyerTile({
         <div className="absolute inset-0 bg-surface" aria-hidden />
       )}
 
-      {/* Gradient overlay keeps title readable over any flyer. */}
-      <div
-        aria-hidden
-        className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-ink/90 via-ink/50 to-transparent"
-      />
-      <div className="absolute inset-x-0 bottom-0 p-3 md:p-4">{caption}</div>
+      {progressiveBlur ? (
+        <>
+          {/* Frosted bottom that fades in on hover/focus. A single masked
+             backdrop-blur (not a stack of layers) so the frost reads as one
+             smooth band with no mid-tile seam. */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-[78%] opacity-0 backdrop-blur-md transition-opacity duration-200 ease-out group-hover:opacity-100 group-focus-visible:opacity-100"
+            style={{
+              maskImage: "linear-gradient(to top, black 55%, transparent 100%)",
+              WebkitMaskImage: "linear-gradient(to top, black 55%, transparent 100%)",
+            }}
+          />
+          {/* Soft scrim so the white caption stays legible over any flyer. */}
+          <div
+            aria-hidden
+            className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-ink/70 to-transparent opacity-0 transition-opacity duration-200 ease-out group-hover:opacity-100 group-focus-visible:opacity-100"
+          />
+          <div className="absolute inset-x-0 bottom-0 p-3 opacity-0 transition-opacity duration-200 ease-out group-hover:opacity-100 group-focus-visible:opacity-100 md:p-4">
+            {caption}
+          </div>
+        </>
+      ) : (
+        <>
+          {/* Gradient overlay keeps title readable over any flyer. */}
+          <div
+            aria-hidden
+            className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-ink/90 via-ink/50 to-transparent"
+          />
+          <div className="absolute inset-x-0 bottom-0 p-3 md:p-4">{caption}</div>
+        </>
+      )}
     </Link>
   );
 }
