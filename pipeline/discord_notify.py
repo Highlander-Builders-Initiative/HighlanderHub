@@ -110,7 +110,6 @@ def build_free_food_discord_message(row: dict[str, Any]) -> str:
             location and f"Where: {location}",
             host and f"Host: {host}",
             link and f"Details: {link}",
-            source_link and source_link != link and f"Source: {source_link}",
         ]
     )
 
