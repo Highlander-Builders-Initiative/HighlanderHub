@@ -730,6 +730,14 @@ class ExtractStoriesTests(unittest.TestCase):
         self.assertEqual("2026-05-31T18:00:00+00:00", row["starts_at"])
         self.assertEqual("2026-05-31T21:00:00+00:00", row["ends_at"])
 
+    def test_ocr_time_range_parses_full_and_compact_meridiem_ranges(self) -> None:
+        parse = self.extract_stories._ocr_time_range
+
+        self.assertEqual(((11, 0), (14, 0)), parse("11:00 AM 2:00 PM"))
+        self.assertEqual(((13, 0), (14, 0)), parse("1-2 pm"))
+        self.assertEqual(((13, 0), (14, 0)), parse("1pm - 2pm"))
+        self.assertIsNone(parse("1-2 pm and 3-4 pm"))
+
     def test_event_row_uses_compact_pm_ocr_range_over_gemini_relative_date(
         self,
     ) -> None:
@@ -850,13 +858,22 @@ class ExtractStoriesTests(unittest.TestCase):
 
             with patch.object(self.extract_stories, "RAW_DIR", raw_dir):
                 with patch.object(self.extract_stories, "EXTRACTED_DIR", extracted_dir):
-                    rows, superseded_ids = self.extract_stories._collect_event_rows(
+                    rows = self.extract_stories._collect_event_rows(
                         {"wincucr": {"label": "Women in Computing at UCR"}},
                         "2026-06-02T16:05:42+00:00",
                     )
 
         self.assertEqual(["ig_wincucr_20260602T2000Z"], [row["id"] for row in rows])
-        self.assertEqual({"ig_wincucr_20260603T0800Z"}, superseded_ids)
+        self.assertEqual(
+            "ig_wincucr_20260603T0800Z",
+            rows[0].get(self.extract_stories._SUPERSEDED_EVENT_ID_KEY),
+        )
+        self.assertEqual(
+            {"ig_wincucr_20260602T2000Z", "ig_wincucr_20260603T0800Z"},
+            self.extract_stories._current_event_ids(rows),
+        )
+        stripped_rows = self.extract_stories._strip_event_row_metadata(rows)
+        self.assertNotIn(self.extract_stories._SUPERSEDED_EVENT_ID_KEY, stripped_rows[0])
 
     def test_event_row_drops_invalid_optional_ends_at(self) -> None:
         raw = {
