@@ -207,6 +207,7 @@ class DiscordNotifyTests(unittest.TestCase):
                 "starts_at": "2026-05-21T16:00:00.000Z",
                 "location": "Rivera Library",
                 "host": "UCR Library",
+                "source_url": "https://www.instagram.com/stories/ucrlibrary/1/",
             }
         )
 
@@ -214,6 +215,8 @@ class DiscordNotifyTests(unittest.TestCase):
         self.assertIn("Bagel breakfast", message)
         self.assertIn("Host: UCR Library", message)
         self.assertIn("Details: https://highlanderhub.app/events/event-1", message)
+        self.assertNotIn("Source:", message)
+        self.assertNotIn("instagram.com", message)
 
 
 if __name__ == "__main__":
