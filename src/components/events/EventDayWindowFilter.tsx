@@ -32,9 +32,13 @@ export function EventDayWindowFilter({
     >
       <AnimatedBackground
         defaultValue={dayWindow}
-        enableHover
+        onValueChange={(id) => {
+          if (id) onDayWindowChange(id as DayWindow);
+        }}
         className="rounded-full bg-canvas shadow-card"
-        transition={{ type: "spring", bounce: 0.2, duration: 0.3 }}
+        // Selection only (no hover-follow), and instant: the thumb just sits on
+        // the chosen window so it never animates while the feed re-renders.
+        transition={{ duration: 0 }}
       >
         {DAY_WINDOWS.map((w) => {
           const active = dayWindow === w.value;
@@ -44,7 +48,6 @@ export function EventDayWindowFilter({
               data-id={w.value}
               type="button"
               aria-pressed={active}
-              onClick={() => onDayWindowChange(w.value)}
               className={`interactive-focus flex-1 rounded-full py-1.5 font-medium transition-colors ${
                 TEXT_SIZE_CLASS[layout]
               } ${active ? "text-ink" : "text-muted hover:text-ink"}`}

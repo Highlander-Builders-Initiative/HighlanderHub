@@ -69,7 +69,9 @@ export function EventsMiniCalendar({
         <div className="flex items-center gap-0.5">
           <AnimatedBackground
             className="rounded-md bg-ink/[0.06]"
-            transition={{ type: "spring", bounce: 0.2, duration: 0.3 }}
+            // No slide between the nav buttons; the highlight just appears under
+            // whichever is hovered (the sliding version read as janky here).
+            transition={{ duration: 0 }}
             enableHover
           >
             <button
