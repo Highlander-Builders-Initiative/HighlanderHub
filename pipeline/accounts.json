@@ -225,7 +225,7 @@
     {
       "handle": "ucr_resed",
       "label": "ucr residential education",
-      "category": "club",
+      "category": "organization",
       "instagram_user_id": 5992300951
     },
     {
@@ -248,7 +248,7 @@
     },
     {
       "handle": "ucrcsa",
-      "label": "ucrcsa",
+      "label": "UCR Chinese Student Association",
       "category": "club",
       "instagram_user_id": 1615969864
     },
@@ -309,7 +309,7 @@
     {
       "handle": "ucrlibrary",
       "label": "ucrlibrary",
-      "category": "club",
+      "category": "organization",
       "instagram_user_id": 321894409
     },
     {
@@ -327,7 +327,7 @@
     {
       "handle": "ucrstudentlife",
       "label": "ucrstudentlife",
-      "category": "club",
+      "category": "organization",
       "instagram_user_id": 796208340
     },
     {
@@ -345,7 +345,7 @@
     {
       "handle": "ucrwrc",
       "label": "Women's Resource Center @ UCR",
-      "category": "club",
+      "category": "organization",
       "instagram_user_id": 3909601186
     },
     {
@@ -389,6 +389,36 @@
       "label": "UCR Snow Club",
       "category": "club",
       "instagram_user_id": 2093647104
+    },
+    {
+      "handle": "ucrhub_programs",
+      "label": "HUB programs",
+      "category": "organization",
+      "instagram_user_id": 176295393
+    },
+    {
+      "handle": "ucrnsu",
+      "label": "Nikkei Student Union at UCR",
+      "category": "club",
+      "instagram_user_id": 1700220034
+    },
+    {
+      "handle": "ucrsrc",
+      "label": "UCR Student Recreation Center",
+      "category": "organization",
+      "instagram_user_id": 198878079
+    },
+    {
+      "handle": "ucrcareercenter",
+      "label": "UC Riverside Career Center",
+      "category": "organization",
+      "instagram_user_id": 486297734
+    },
+    {
+      "handle": "ucrchass",
+      "label": "UCR CHASS",
+      "category": "college",
+      "instagram_user_id": 7581166164
     }
   ]
 }
