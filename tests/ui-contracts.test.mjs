@@ -234,21 +234,23 @@ test("home flyer marquee animates with wrapped transforms", () => {
 });
 
 test("event detail page exposes RSVP / calendar / share actions", () => {
-  const source = read("src/app/events/[id]/page.tsx");
+  const page = read("src/app/events/[id]/page.tsx");
+  const calendarMenu = read("src/components/events/EventCalendarMenu.tsx");
 
-  assert.match(source, /Add to calendar|aria-label="Add to calendar"/);
-  assert.match(source, /FaApple/);
-  assert.match(source, /FcGoogle/);
-  assert.match(source, /Apple Calendar/);
-  assert.match(source, /Google Calendar/);
-  assert.match(source, /CalendarChoiceLinks event=\{event\} surface="desktop" \//);
-  assert.match(source, /CalendarChoiceLinks event=\{event\} surface="mobile" \//);
-  assert.match(source, /method="google"/);
-  assert.match(source, /method="ics"/);
-  assert.doesNotMatch(source, /Download \.ics/);
-  assert.match(source, /SaveButton/);
-  assert.match(source, /Share|aria-label="Share"/);
-  assert.match(source, /RSVP|View source/);
+  assert.match(page, /EventCalendarMenu/);
+  assert.match(page, /surface="desktop"/);
+  assert.match(page, /surface="mobile"/);
+  assert.match(calendarMenu, /Add to calendar|choose calendar app/);
+  assert.match(calendarMenu, /FaApple/);
+  assert.match(calendarMenu, /FcGoogle/);
+  assert.match(calendarMenu, /Apple Calendar/);
+  assert.match(calendarMenu, /Google Calendar/);
+  assert.match(calendarMenu, /method="google"/);
+  assert.match(calendarMenu, /method="ics"/);
+  assert.doesNotMatch(calendarMenu, /Download \.ics/);
+  assert.match(page, /SaveButton/);
+  assert.match(page, /Share|aria-label="Share"/);
+  assert.match(page, /RSVP|View source/);
 });
 
 test("saved events page resolves local saved ids through the batch API", () => {
