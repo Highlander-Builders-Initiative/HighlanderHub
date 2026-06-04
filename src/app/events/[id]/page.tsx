@@ -36,6 +36,44 @@ const SOURCE_LABELS: Record<CampusEvent["source"], string> = {
   manual: "Manual",
 };
 
+type CalendarChoiceSurface = "desktop" | "mobile";
+
+function CalendarChoiceLinks({
+  event,
+  surface,
+}: {
+  event: CampusEvent;
+  surface: CalendarChoiceSurface;
+}) {
+  return (
+    <>
+      <TrackedAnchor
+        event="calendar"
+        method="ics"
+        eventId={event.id}
+        surface={surface}
+        href={icsHref(event.id)}
+        className="interactive-focus flex min-h-11 items-center gap-2.5 px-4 text-sm font-medium text-ink transition-colors hover:bg-surface"
+      >
+        <FaApple aria-hidden className="h-4 w-4 shrink-0" />
+        <span>Apple Calendar</span>
+      </TrackedAnchor>
+      <div className="hairline" />
+      <TrackedAnchor
+        event="calendar"
+        method="google"
+        eventId={event.id}
+        surface={surface}
+        href={calendarHref(event)}
+        className="interactive-focus flex min-h-11 items-center gap-2.5 px-4 text-sm font-medium text-ink transition-colors hover:bg-surface"
+      >
+        <FcGoogle aria-hidden className="h-4 w-4 shrink-0" />
+        <span>Google Calendar</span>
+      </TrackedAnchor>
+    </>
+  );
+}
+
 function jsonLdHtml(data: Record<string, unknown>): string {
   return JSON.stringify(data).replace(/</g, "\\u003c");
 }
@@ -365,16 +403,17 @@ export default async function EventDetailPage({
                       <span aria-hidden>↗</span>
                     </TrackedAnchor>
                   )}
-                  <TrackedAnchor
-                    event="calendar"
-                    method="google"
-                    eventId={event.id}
-                    surface="desktop"
-                    href={calendarHref(event)}
-                    className="interactive-focus text-sm font-medium text-ink underline-offset-4 hover:underline"
-                  >
-                    {calendarLabel}
-                  </TrackedAnchor>
+                  <details className="relative">
+                    <summary
+                      aria-label={`${calendarLabel}: choose calendar app`}
+                      className="interactive-focus cursor-pointer list-none text-sm font-medium text-ink underline-offset-4 hover:underline [&::-webkit-details-marker]:hidden"
+                    >
+                      {calendarLabel}
+                    </summary>
+                    <div className="absolute left-0 top-[calc(100%+0.5rem)] z-10 w-44 overflow-hidden rounded-lg border border-ink/15 bg-canvas shadow-[0_18px_44px_rgba(15,17,21,0.12)]">
+                      <CalendarChoiceLinks event={event} surface="desktop" />
+                    </div>
+                  </details>
 
                   <SaveButton eventId={event.id} surface="detail" variant="label" />
                   <ShareButton event={event} variant="text" />
@@ -439,29 +478,7 @@ export default async function EventDetailPage({
               </svg>
             </summary>
             <div className="absolute bottom-[calc(100%+0.5rem)] right-0 z-10 w-44 overflow-hidden rounded-lg border border-ink/15 bg-canvas shadow-[0_18px_44px_rgba(15,17,21,0.12)]">
-              <TrackedAnchor
-                event="calendar"
-                method="ics"
-                eventId={event.id}
-                surface="mobile"
-                href={icsHref(event.id)}
-                className="interactive-focus flex min-h-11 items-center gap-2.5 px-4 text-sm font-medium text-ink transition-colors hover:bg-surface"
-              >
-                <FaApple aria-hidden className="h-4 w-4 shrink-0" />
-                <span>Apple Calendar</span>
-              </TrackedAnchor>
-              <div className="hairline" />
-              <TrackedAnchor
-                event="calendar"
-                method="google"
-                eventId={event.id}
-                surface="mobile"
-                href={calendarHref(event)}
-                className="interactive-focus flex min-h-11 items-center gap-2.5 px-4 text-sm font-medium text-ink transition-colors hover:bg-surface"
-              >
-                <FcGoogle aria-hidden className="h-4 w-4 shrink-0" />
-                <span>Google Calendar</span>
-              </TrackedAnchor>
+              <CalendarChoiceLinks event={event} surface="mobile" />
             </div>
           </details>
           <SaveButton eventId={event.id} surface="detail" variant="icon" />
