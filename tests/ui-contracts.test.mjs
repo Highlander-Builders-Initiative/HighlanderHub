@@ -241,6 +241,8 @@ test("event detail page exposes RSVP / calendar / share actions", () => {
   assert.match(source, /FcGoogle/);
   assert.match(source, /Apple Calendar/);
   assert.match(source, /Google Calendar/);
+  assert.match(source, /CalendarChoiceLinks event=\{event\} surface="desktop" \//);
+  assert.match(source, /CalendarChoiceLinks event=\{event\} surface="mobile" \//);
   assert.match(source, /method="google"/);
   assert.match(source, /method="ics"/);
   assert.doesNotMatch(source, /Download \.ics/);
