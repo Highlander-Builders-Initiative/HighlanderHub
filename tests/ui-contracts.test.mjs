@@ -237,6 +237,9 @@ test("event detail page exposes RSVP / calendar / share actions", () => {
   const source = read("src/app/events/[id]/page.tsx");
 
   assert.match(source, /Add to calendar|aria-label="Add to calendar"/);
+  assert.match(source, /Apple Calendar/);
+  assert.match(source, /Google Calendar/);
+  assert.match(source, /method="google"/);
   assert.match(source, /method="ics"/);
   assert.doesNotMatch(source, /Download \.ics/);
   assert.match(source, /SaveButton/);
