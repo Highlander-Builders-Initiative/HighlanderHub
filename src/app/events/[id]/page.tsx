@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { FaApple } from "react-icons/fa";
+import { FcGoogle } from "react-icons/fc";
 import { Masthead } from "@/components/layout/Masthead";
 import { Footer } from "@/components/layout/Footer";
 import { CategoryBadge } from "@/components/ui/CategoryBadge";
@@ -443,9 +445,10 @@ export default async function EventDetailPage({
                 eventId={event.id}
                 surface="mobile"
                 href={icsHref(event.id)}
-                className="interactive-focus flex min-h-11 items-center px-4 text-sm font-medium text-ink transition-colors hover:bg-surface"
+                className="interactive-focus flex min-h-11 items-center gap-2.5 px-4 text-sm font-medium text-ink transition-colors hover:bg-surface"
               >
-                Apple Calendar
+                <FaApple aria-hidden className="h-4 w-4 shrink-0" />
+                <span>Apple Calendar</span>
               </TrackedAnchor>
               <div className="hairline" />
               <TrackedAnchor
@@ -454,9 +457,10 @@ export default async function EventDetailPage({
                 eventId={event.id}
                 surface="mobile"
                 href={calendarHref(event)}
-                className="interactive-focus flex min-h-11 items-center px-4 text-sm font-medium text-ink transition-colors hover:bg-surface"
+                className="interactive-focus flex min-h-11 items-center gap-2.5 px-4 text-sm font-medium text-ink transition-colors hover:bg-surface"
               >
-                Google Calendar
+                <FcGoogle aria-hidden className="h-4 w-4 shrink-0" />
+                <span>Google Calendar</span>
               </TrackedAnchor>
             </div>
           </details>
