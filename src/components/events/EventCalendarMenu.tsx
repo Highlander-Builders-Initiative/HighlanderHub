@@ -6,6 +6,26 @@ import type { CampusEvent } from "@/types/event";
 
 type CalendarSurface = "desktop" | "mobile";
 
+const SURFACE_STYLES: Record<
+  CalendarSurface,
+  { details: string; summary: string; popover: string }
+> = {
+  desktop: {
+    details: "relative",
+    summary:
+      "interactive-focus cursor-pointer list-none text-sm font-medium text-ink underline-offset-4 hover:underline [&::-webkit-details-marker]:hidden",
+    popover:
+      "absolute left-0 top-[calc(100%+0.5rem)] z-10 w-44 overflow-hidden rounded-lg border border-ink/15 bg-canvas shadow-[0_18px_44px_rgba(15,17,21,0.12)]",
+  },
+  mobile: {
+    details: "relative shrink-0",
+    summary:
+      "interactive-focus inline-flex min-h-12 min-w-12 cursor-pointer list-none items-center justify-center rounded-lg border border-ink/15 text-ink [&::-webkit-details-marker]:hidden",
+    popover:
+      "absolute bottom-[calc(100%+0.5rem)] right-0 z-10 w-44 overflow-hidden rounded-lg border border-ink/15 bg-canvas shadow-[0_18px_44px_rgba(15,17,21,0.12)]",
+  },
+};
+
 function CalendarChoiceLinks({
   event,
   surface,
@@ -69,27 +89,17 @@ export function EventCalendarMenu({
   calendarLabel: string;
   surface: CalendarSurface;
 }) {
-  const isMobile = surface === "mobile";
+  const { details, summary, popover } = SURFACE_STYLES[surface];
 
   return (
-    <details className={isMobile ? "relative shrink-0" : "relative"}>
+    <details className={details}>
       <summary
         aria-label={`${calendarLabel}: choose calendar app`}
-        className={
-          isMobile
-            ? "interactive-focus inline-flex min-h-12 min-w-12 cursor-pointer list-none items-center justify-center rounded-lg border border-ink/15 text-ink [&::-webkit-details-marker]:hidden"
-            : "interactive-focus cursor-pointer list-none text-sm font-medium text-ink underline-offset-4 hover:underline [&::-webkit-details-marker]:hidden"
-        }
+        className={summary}
       >
-        {isMobile ? <CalendarIcon /> : calendarLabel}
+        {surface === "mobile" ? <CalendarIcon /> : calendarLabel}
       </summary>
-      <div
-        className={
-          isMobile
-            ? "absolute bottom-[calc(100%+0.5rem)] right-0 z-10 w-44 overflow-hidden rounded-lg border border-ink/15 bg-canvas shadow-[0_18px_44px_rgba(15,17,21,0.12)]"
-            : "absolute left-0 top-[calc(100%+0.5rem)] z-10 w-44 overflow-hidden rounded-lg border border-ink/15 bg-canvas shadow-[0_18px_44px_rgba(15,17,21,0.12)]"
-        }
-      >
+      <div className={popover}>
         <CalendarChoiceLinks event={event} surface={surface} />
       </div>
     </details>
