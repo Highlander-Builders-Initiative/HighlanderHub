@@ -118,11 +118,18 @@ def main(argv: list[str] | None = None) -> None:
 
     print(f"Cookies extracted. sessionid = {_mask(sessionid)}")
     if previous_sessionid is not None and sessionid == previous_sessionid:
+        # Hard stop, NOT a warning-then-success. Printing "SUCCESS" after this
+        # is exactly what makes you think the import worked, run run.py, and hit
+        # the same stale-session 400. Refuse loudly and leave the old file as-is.
         print(
-            "\n⚠️  This sessionid is IDENTICAL to the one already saved — this import\n"
-            "   did NOT capture a new login. Safari almost certainly hadn't flushed\n"
-            "   your fresh session to disk. Fully quit Safari (⌘Q) and run this again."
+            "\n❌ NOTHING IMPORTED — this sessionid is IDENTICAL to the one already\n"
+            "   saved, so the session file is unchanged and run.py will keep hitting\n"
+            "   the same error.\n\n"
+            "   Safari almost certainly hadn't flushed your fresh login to disk yet.\n"
+            "   Fully quit Safari (⌘Q), then run this script again.\n\n"
+            "   (Left the existing session file untouched.)"
         )
+        sys.exit(1)
 
     L.context.username = username
     session_file.parent.mkdir(parents=True, exist_ok=True)
