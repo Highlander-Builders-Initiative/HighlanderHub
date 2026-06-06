@@ -99,8 +99,6 @@ _OCR_COMPACT_TIME_RANGE_RE = re.compile(
     r"(\d{1,2})(?::(\d{2}))?\s*([ap]\.?m\.?)\b",
     re.IGNORECASE,
 )
-# Private extraction metadata; stripped before event rows are written.
-_SUPERSEDED_EVENT_ID_KEY = "_superseded_event_id"
 
 GEMINI_RESPONSE_SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -692,12 +690,18 @@ def _to_event_row(
     cached: dict[str, Any],
     account_meta: dict[str, Any],
     scraped_at: str,
-) -> dict[str, Any] | None:
+) -> tuple[dict[str, Any] | None, str | None]:
+    """Return the event row plus the prior event ID it supersedes, if any.
+
+    The superseded ID (derived from the LLM's pre-OCR timestamp) is surfaced
+    out-of-band so the row stays a clean DB record; the caller uses it to delete
+    the stale row when OCR refines the start time into a new ID.
+    """
     if cached.get("status") != "ok":
-        return None
+        return None, None
     llm = cached.get("result") or {}
     if not isinstance(llm, dict) or not llm.get("is_event"):
-        return None
+        return None, None
 
     title = str(llm.get("title") or "").strip()
     description = str(llm.get("description") or "")
@@ -711,7 +715,7 @@ def _to_event_row(
     else:
         starts_at, ends_at = ocr_range
     if not title or not starts_at:
-        return None
+        return None, None
 
     if _looks_like_schedule_grid(cached.get("ocr_text"), starts_at, ends_at):
         log.info(
@@ -720,7 +724,7 @@ def _to_event_row(
             starts_at,
             ends_at,
         )
-        return None
+        return None, None
 
     handle = str(raw.get("handle") or "")
     rsvp_url = _normalize_url(llm.get("rsvp_url") or raw.get("story_cta_url"))
@@ -738,7 +742,7 @@ def _to_event_row(
     # into one row via upsert instead of becoming separate events.
     event_id = _instagram_event_id(handle, starts_at)
     if event_id is None:
-        return None
+        return None, None
 
     row = {
         "id": event_id,
@@ -772,16 +776,17 @@ def _to_event_row(
     superseded_event_id = (
         _instagram_event_id(handle, llm_starts_at) if llm_starts_at else None
     )
-    if superseded_event_id and superseded_event_id != event_id:
-        row[_SUPERSEDED_EVENT_ID_KEY] = superseded_event_id
-    return row
+    if superseded_event_id == event_id:
+        superseded_event_id = None
+    return row, superseded_event_id
 
 
 def _collect_event_rows(
     meta_by_handle: dict[str, dict[str, Any]],
     scraped_at: str,
-) -> list[dict[str, Any]]:
+) -> tuple[list[dict[str, Any]], set[str]]:
     rows: list[dict[str, Any]] = []
+    superseded_ids: set[str] = set()
     for raw in _iter_raw_stories(set(meta_by_handle.keys())):
         story_id = str(raw.get("id") or "")
         if not story_id:
@@ -794,7 +799,7 @@ def _collect_event_rows(
         except json.JSONDecodeError:
             log.warning("skipping malformed extraction cache: %s", cache)
             continue
-        row = _to_event_row(
+        row, superseded_id = _to_event_row(
             raw,
             cached,
             meta_by_handle.get(str(raw.get("handle") or ""), {}),
@@ -802,23 +807,9 @@ def _collect_event_rows(
         )
         if row is not None:
             rows.append(row)
-    return rows
-
-
-def _current_event_ids(rows: list[dict[str, Any]]) -> set[str]:
-    return {
-        str(event_id)
-        for row in rows
-        for event_id in (row.get("id"), row.get(_SUPERSEDED_EVENT_ID_KEY))
-        if event_id
-    }
-
-
-def _strip_event_row_metadata(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    return [
-        {key: value for key, value in row.items() if key != _SUPERSEDED_EVENT_ID_KEY}
-        for row in rows
-    ]
+        if superseded_id is not None:
+            superseded_ids.add(superseded_id)
+    return rows, superseded_ids
 
 
 def _filter_locked_events(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -884,8 +875,8 @@ def main() -> None:
         _process_story(raw, meta_by_handle.get(str(raw.get("handle") or ""), {}))
 
     scraped_at = _utc_now()
-    rows = _collect_event_rows(meta_by_handle, scraped_at)
-    current_ids = _current_event_ids(rows)
+    rows, superseded_ids = _collect_event_rows(meta_by_handle, scraped_at)
+    current_ids = {row["id"] for row in rows} | superseded_ids
     event_rows = _filter_locked_events(rows)
     event_rows = _filter_deleted_events(event_rows)
     event_rows = dedupe_event_rows(event_rows)
@@ -894,7 +885,6 @@ def main() -> None:
     )
     if deleted:
         log.info("Deleted %d stale Instagram event rows from Supabase", deleted)
-    event_rows = _strip_event_row_metadata(event_rows)
     written = _upsert_events(event_rows)
     log.info("Wrote %d events to Supabase", written)
     notified = notify_free_food_events(event_rows)
