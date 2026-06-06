@@ -11,10 +11,6 @@ const ALL_CLUBS: Club[] = (accountsData.accounts as Club[])
   .map((a) => ({ handle: a.handle, label: a.label, category: a.category }))
   .sort((a, b) => a.label.localeCompare(b.label));
 
-export function getAllClubs(): Club[] {
-  return ALL_CLUBS;
-}
-
 export function searchClubs(query: string, limit = 8): Club[] {
   const q = query.trim().toLowerCase();
   if (!q) return ALL_CLUBS.slice(0, limit);

@@ -46,21 +46,6 @@ function isComplete(h: string, m: string): boolean {
   return hi >= 1 && hi <= 12 && mi >= 0 && mi <= 59;
 }
 
-function commitValue(
-  h: string,
-  m: string,
-  period: Period,
-  onChange: (v: string) => void
-) {
-  if (!isComplete(h, m)) {
-    onChange("");
-    return;
-  }
-  const h24 = to24h(parseInt(h, 10), period);
-  const mm = parseInt(m, 10);
-  onChange(`${String(h24).padStart(2, "0")}:${String(mm).padStart(2, "0")}`);
-}
-
 export function SegmentedTimeInput({
   value,
   onChange,
