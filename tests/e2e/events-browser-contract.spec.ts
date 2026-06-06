@@ -69,7 +69,13 @@ test("calendar shows loading state while month events refresh", async ({
     releaseCalendarResponse = resolve;
   });
 
+  let blockCalendarFetch = false;
   await page.route("**/api/events/calendar**", async (route) => {
+    if (!blockCalendarFetch) {
+      await route.continue();
+      return;
+    }
+
     await calendarResponse;
     await route.fulfill({
       status: 200,
@@ -79,7 +85,10 @@ test("calendar shows loading state while month events refresh", async ({
   });
 
   const calendarGrid = calendarRail.locator("[aria-busy]").first();
+  blockCalendarFetch = true;
+  const fetchStarted = page.waitForRequest("**/api/events/calendar**");
   await calendarRail.getByRole("button", { name: "Next month" }).click();
+  await fetchStarted;
   await expect(calendarGrid).toHaveAttribute("aria-busy", "true");
 
   releaseCalendarResponse();
