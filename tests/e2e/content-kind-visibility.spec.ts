@@ -38,7 +38,7 @@ test("deadline detail uses reminder-oriented copy", async ({ page }) => {
     })
   ).toBeVisible();
   await expect(
-    page.getByRole("link", { name: /Add reminder/i }).first()
+    page.getByRole("button", { name: /Add reminder/i }).first()
   ).toBeVisible();
 });
 
