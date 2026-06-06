@@ -415,7 +415,7 @@ class ExtractStoriesTests(unittest.TestCase):
             },
         }
 
-        row = self.extract_stories._to_event_row(
+        row, _ = self.extract_stories._to_event_row(
             raw,
             cached,
             {"label": "UCR Cybersecurity Club", "category": "club"},
@@ -465,7 +465,7 @@ class ExtractStoriesTests(unittest.TestCase):
             },
         }
 
-        row = self.extract_stories._to_event_row(
+        row, _ = self.extract_stories._to_event_row(
             raw,
             cached,
             {"label": "Women in Computing", "category": "club"},
@@ -504,7 +504,7 @@ class ExtractStoriesTests(unittest.TestCase):
             },
         }
 
-        row = self.extract_stories._to_event_row(
+        row, _ = self.extract_stories._to_event_row(
             raw,
             cached,
             {"label": "UCR Cybersecurity Club", "category": "club"},
@@ -530,7 +530,7 @@ class ExtractStoriesTests(unittest.TestCase):
             },
         }
 
-        row = self.extract_stories._to_event_row(
+        row, _ = self.extract_stories._to_event_row(
             raw,
             cached,
             {"label": "highlander_opps", "category": "club"},
@@ -556,7 +556,7 @@ class ExtractStoriesTests(unittest.TestCase):
             },
         }
 
-        row = self.extract_stories._to_event_row(
+        row, _ = self.extract_stories._to_event_row(
             raw,
             cached,
             {"label": "UCR Cybersecurity Club", "category": "club"},
@@ -580,7 +580,7 @@ class ExtractStoriesTests(unittest.TestCase):
             },
         }
 
-        row = self.extract_stories._to_event_row(
+        row, _ = self.extract_stories._to_event_row(
             raw,
             cached,
             {"label": "UCR Cybersecurity Club", "category": "club"},
@@ -619,7 +619,7 @@ class ExtractStoriesTests(unittest.TestCase):
             },
         }
 
-        row = self.extract_stories._to_event_row(
+        row, _ = self.extract_stories._to_event_row(
             raw,
             cached,
             {"label": "UCR Library", "category": "academic"},
@@ -647,7 +647,7 @@ class ExtractStoriesTests(unittest.TestCase):
             },
         }
 
-        row = self.extract_stories._to_event_row(
+        row, _ = self.extract_stories._to_event_row(
             raw,
             cached,
             {"label": "UCR Cybersecurity Club", "category": "club"},
@@ -681,7 +681,7 @@ class ExtractStoriesTests(unittest.TestCase):
             },
         }
 
-        row = self.extract_stories._to_event_row(
+        row, _ = self.extract_stories._to_event_row(
             raw,
             cached,
             {"label": "Women's Resource Center @ UCR", "category": "community"},
@@ -717,7 +717,7 @@ class ExtractStoriesTests(unittest.TestCase):
             },
         }
 
-        row = self.extract_stories._to_event_row(
+        row, _ = self.extract_stories._to_event_row(
             raw,
             cached,
             {"label": "Women's Resource Center @ UCR", "category": "community"},
@@ -773,7 +773,7 @@ class ExtractStoriesTests(unittest.TestCase):
             },
         }
 
-        row = self.extract_stories._to_event_row(
+        row, _ = self.extract_stories._to_event_row(
             raw,
             cached,
             {"label": "Women in Computing at UCR", "category": "club"},
@@ -809,7 +809,7 @@ class ExtractStoriesTests(unittest.TestCase):
             },
         }
 
-        row = self.extract_stories._to_event_row(
+        row, _ = self.extract_stories._to_event_row(
             raw,
             cached,
             {"label": "Women in Computing at UCR", "category": "club"},
@@ -858,22 +858,20 @@ class ExtractStoriesTests(unittest.TestCase):
 
             with patch.object(self.extract_stories, "RAW_DIR", raw_dir):
                 with patch.object(self.extract_stories, "EXTRACTED_DIR", extracted_dir):
-                    rows = self.extract_stories._collect_event_rows(
+                    rows, superseded_ids = self.extract_stories._collect_event_rows(
                         {"wincucr": {"label": "Women in Computing at UCR"}},
                         "2026-06-02T16:05:42+00:00",
                     )
 
         self.assertEqual(["ig_wincucr_20260602T2000Z"], [row["id"] for row in rows])
-        self.assertEqual(
-            "ig_wincucr_20260603T0800Z",
-            rows[0].get(self.extract_stories._SUPERSEDED_EVENT_ID_KEY),
-        )
+        self.assertEqual({"ig_wincucr_20260603T0800Z"}, superseded_ids)
+        # Superseded IDs ride out-of-band; the row stays a clean DB record.
+        self.assertNotIn("_superseded_event_id", rows[0])
+        current_ids = {row["id"] for row in rows} | superseded_ids
         self.assertEqual(
             {"ig_wincucr_20260602T2000Z", "ig_wincucr_20260603T0800Z"},
-            self.extract_stories._current_event_ids(rows),
+            current_ids,
         )
-        stripped_rows = self.extract_stories._strip_event_row_metadata(rows)
-        self.assertNotIn(self.extract_stories._SUPERSEDED_EVENT_ID_KEY, stripped_rows[0])
 
     def test_event_row_drops_invalid_optional_ends_at(self) -> None:
         raw = {
@@ -890,7 +888,7 @@ class ExtractStoriesTests(unittest.TestCase):
             },
         }
 
-        row = self.extract_stories._to_event_row(
+        row, _ = self.extract_stories._to_event_row(
             raw,
             cached,
             {"label": "UCR Cybersecurity Club", "category": "club"},
@@ -918,7 +916,7 @@ class ExtractStoriesTests(unittest.TestCase):
             },
         }
 
-        row = self.extract_stories._to_event_row(
+        row, _ = self.extract_stories._to_event_row(
             raw,
             cached,
             {"label": "UCR Cybersecurity Club", "category": "club"},
