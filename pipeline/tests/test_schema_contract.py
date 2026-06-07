@@ -78,7 +78,7 @@ class SchemaContractTests(unittest.TestCase):
                 sys.modules[name] = mod
 
     def test_extract_stories_event_row_keys(self) -> None:
-        row = self.extract_stories._to_event_row(
+        row, _superseded_id = self.extract_stories._to_event_row(
             {
                 "id": "3894795737410658765",
                 "handle": "cyber_ucr",

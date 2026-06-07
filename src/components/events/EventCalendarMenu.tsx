@@ -94,6 +94,7 @@ export function EventCalendarMenu({
   return (
     <details className={details}>
       <summary
+        role="button"
         aria-label={`${calendarLabel}: choose calendar app`}
         className={summary}
       >
