@@ -62,20 +62,22 @@ test("calendar shows loading state while month events refresh", async ({
   const calendarRail = page.locator(
     'aside[aria-label="Calendar and time filter"]'
   );
-  await expect(calendarRail.getByRole("heading")).toBeVisible();
+  const calendarHeading = calendarRail.getByRole("heading", { level: 2 });
+  await expect(calendarRail).toBeVisible();
+  // The calendar follows the feed's first visible day, so it settles on the
+  // observed month (May 2026) shortly after load. Wait for that initial sync to
+  // finish before testing a navigation fetch — otherwise the stray sync request
+  // races the click and the displayed month reads as already-loaded on slow CI.
+  await expect(calendarHeading).toHaveText(/may 2026/i);
 
   let releaseCalendarResponse!: () => void;
   const calendarResponse = new Promise<void>((resolve) => {
     releaseCalendarResponse = resolve;
   });
 
-  let blockCalendarFetch = false;
+  // Installed only after the initial sync settled, so the single request it holds
+  // open is the one triggered by the Next-month click below.
   await page.route("**/api/events/calendar**", async (route) => {
-    if (!blockCalendarFetch) {
-      await route.continue();
-      return;
-    }
-
     await calendarResponse;
     await route.fulfill({
       status: 200,
@@ -85,10 +87,8 @@ test("calendar shows loading state while month events refresh", async ({
   });
 
   const calendarGrid = calendarRail.locator("[aria-busy]").first();
-  blockCalendarFetch = true;
-  const fetchStarted = page.waitForRequest("**/api/events/calendar**");
   await calendarRail.getByRole("button", { name: "Next month" }).click();
-  await fetchStarted;
+  await expect(calendarHeading).toHaveText(/june 2026/i);
   await expect(calendarGrid).toHaveAttribute("aria-busy", "true");
 
   releaseCalendarResponse();
