@@ -112,6 +112,54 @@ class ScrapeMainTests(unittest.TestCase):
         )
         loader.test_login.assert_not_called()
 
+    def _loader_with_sessionid(self, value: str | None) -> Mock:
+        loader = Mock()
+        jar = []
+        if value is not None:
+            jar.append(types.SimpleNamespace(
+                name="sessionid", domain=".instagram.com", value=value
+            ))
+        loader.context._session.cookies = jar
+        return loader
+
+    def test_persist_rotated_session_saves_when_sessionid_present(self) -> None:
+        loader = self._loader_with_sessionid("rotated-value")
+        with patch.object(self.scrape, "SESSION_FILE", "/tmp/ig-session"):
+            self.scrape._persist_rotated_session(loader)
+        loader.save_session_to_file.assert_called_once_with("/tmp/ig-session")
+
+    def test_persist_rotated_session_refuses_logged_out_jar(self) -> None:
+        loader = self._loader_with_sessionid(None)
+        with patch.object(self.scrape, "SESSION_FILE", "/tmp/ig-session"):
+            self.scrape._persist_rotated_session(loader)
+        loader.save_session_to_file.assert_not_called()
+
+    def test_persist_rotated_session_noop_without_session_file(self) -> None:
+        loader = self._loader_with_sessionid("rotated-value")
+        with patch.object(self.scrape, "SESSION_FILE", None):
+            self.scrape._persist_rotated_session(loader)
+        loader.save_session_to_file.assert_not_called()
+
+    def test_main_persists_session_even_when_run_raises(self) -> None:
+        accounts = [{"handle": "acm.ucr"}]
+        loader = self._loader_with_sessionid("rotated-value")
+
+        with patch.object(self.scrape, "SESSION_FILE", "/tmp/ig-session"):
+            with patch.object(self.scrape, "ensure_dirs"):
+                with patch.object(self.scrape, "_load_scrape_accounts", return_value=accounts):
+                    with patch.object(self.scrape.instaloader, "Instaloader", return_value=loader):
+                        with patch.object(self.scrape, "_login"):
+                            with patch.object(
+                                self.scrape,
+                                "scrape_account",
+                                side_effect=self.scrape.ConnectionException("401"),
+                            ):
+                                with patch.object(self.scrape.time, "sleep"):
+                                    with self.assertRaises(RuntimeError):
+                                        self.scrape.main()
+
+        loader.save_session_to_file.assert_called_once_with("/tmp/ig-session")
+
     def test_all_profiles_missing_after_session_load_reports_session_failure(self) -> None:
         accounts = [{"handle": "ucrvsa"}, {"handle": "cyber_ucr"}]
 

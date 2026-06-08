@@ -113,6 +113,55 @@ def _login(L: instaloader.Instaloader) -> None:
     log.info("Logged in as %s", IG_USERNAME)
 
 
+def _current_sessionid(L: instaloader.Instaloader) -> str | None:
+    """Return the live `sessionid` cookie value from the in-memory jar, if any."""
+    session = getattr(getattr(L, "context", None), "_session", None)
+    cookies = getattr(session, "cookies", None)
+    if cookies is None:
+        return None
+    for cookie in cookies:
+        if (
+            cookie.name == "sessionid"
+            and str(getattr(cookie, "domain", "")).endswith("instagram.com")
+            and cookie.value
+        ):
+            return cookie.value
+    return None
+
+
+def _persist_rotated_session(L: instaloader.Instaloader) -> None:
+    """Write the (possibly rotated) session cookies back to SESSION_FILE.
+
+    Instagram rotates `sessionid` via Set-Cookie as the session is used, but we
+    only ever loaded a snapshot at startup and never saved the rotated jar back.
+    Every run therefore replayed an aging snapshot until it went stale — which
+    happens within a day or two when the same account is also live in a browser
+    that rotates the shared cookie out from under the on-disk copy. Persisting the
+    rotated jar after each run keeps the file current so the session survives.
+
+    Guards (mirrors import_safari_session.py so a dead run can't clobber a good
+    file):
+      * Only writes in session-file mode (IG_SESSION_FILE configured).
+      * Refuses to overwrite when the jar has no `sessionid` (logged-out/expired).
+      * Never raises — persistence must not mask the scrape's own result.
+    """
+    if not SESSION_FILE:
+        return
+    try:
+        sessionid = _current_sessionid(L)
+        if not sessionid:
+            log.warning(
+                "Not saving session back to %s: no live sessionid cookie "
+                "(session looks logged out/expired). Left the file untouched.",
+                SESSION_FILE,
+            )
+            return
+        L.save_session_to_file(SESSION_FILE)
+        log.info("Saved rotated session back to %s", SESSION_FILE)
+    except Exception as e:  # noqa: BLE001 — persistence must never break the run
+        log.warning("Could not persist rotated session to %s: %s", SESSION_FILE, e)
+
+
 def _serialize_item(item: Any, handle: str) -> dict[str, Any]:
     """Pull the fields we care about off an instaloader StoryItem."""
     return {
@@ -348,61 +397,67 @@ def main() -> None:
     # Register after _login: load_session_from_file replaces L.context._session,
     # which would drop a hook attached earlier.
     _attach_http_error_logger(L)
-    accounts = _load_scrape_accounts(L)
+    try:
+        accounts = _load_scrape_accounts(L)
 
-    totals = {"accounts": 0, "seen": 0, "new": 0, "errors": 0, "missing_profiles": 0}
-    for acct in accounts:
-        handle = acct["handle"]
-        totals["accounts"] += 1
-        try:
-            seen, new = scrape_account(L, acct)
-            totals["seen"] += seen
-            totals["new"] += new
-            log.info("%s: %d items, %d new", handle, seen, new)
-        except LoginRequiredException:
-            log.error("Login required (session expired). Re-auth and re-run.")
-            raise
-        except ConnectionException as e:
-            totals["errors"] += 1
-            log.warning("%s: connection error: %s", handle, e)
-        except ProfileNotExistsException as e:
-            totals["errors"] += 1
-            totals["missing_profiles"] += 1
-            log.warning(
-                "%s: profile lookup failed: %s. If this affects every account, "
-                "Instagram is likely hiding profiles behind an expired, challenged, "
-                "or rate-limited session.",
-                handle,
-                e,
-                exc_info=True,
-            )
-        except InstagramStoriesBadRequest as e:
-            totals["errors"] += 1
-            log.error("%s", e)
-            raise RuntimeError(str(e)) from None
-        except Exception as e:  # noqa: BLE001 — keep run alive across per-account failures
-            totals["errors"] += 1
-            log.warning("%s: %s: %s", handle, type(e).__name__, e, exc_info=True)
-        # Polite jitter between accounts. IG aggressively rate-limits scraping.
-        time.sleep(random.uniform(2.0, 5.0))
+        totals = {"accounts": 0, "seen": 0, "new": 0, "errors": 0, "missing_profiles": 0}
+        for acct in accounts:
+            handle = acct["handle"]
+            totals["accounts"] += 1
+            try:
+                seen, new = scrape_account(L, acct)
+                totals["seen"] += seen
+                totals["new"] += new
+                log.info("%s: %d items, %d new", handle, seen, new)
+            except LoginRequiredException:
+                log.error("Login required (session expired). Re-auth and re-run.")
+                raise
+            except ConnectionException as e:
+                totals["errors"] += 1
+                log.warning("%s: connection error: %s", handle, e)
+            except ProfileNotExistsException as e:
+                totals["errors"] += 1
+                totals["missing_profiles"] += 1
+                log.warning(
+                    "%s: profile lookup failed: %s. If this affects every account, "
+                    "Instagram is likely hiding profiles behind an expired, challenged, "
+                    "or rate-limited session.",
+                    handle,
+                    e,
+                    exc_info=True,
+                )
+            except InstagramStoriesBadRequest as e:
+                totals["errors"] += 1
+                log.error("%s", e)
+                raise RuntimeError(str(e)) from None
+            except Exception as e:  # noqa: BLE001 — keep run alive across per-account failures
+                totals["errors"] += 1
+                log.warning("%s: %s: %s", handle, type(e).__name__, e, exc_info=True)
+            # Polite jitter between accounts. IG aggressively rate-limits scraping.
+            time.sleep(random.uniform(2.0, 5.0))
 
-    log.info("Done: %s", totals)
-    if totals["errors"]:
-        if (
-            totals["missing_profiles"] == totals["accounts"]
-            and totals["seen"] == 0
-            and totals["accounts"] > 0
-        ):
+        log.info("Done: %s", totals)
+        if totals["errors"]:
+            if (
+                totals["missing_profiles"] == totals["accounts"]
+                and totals["seen"] == 0
+                and totals["accounts"] > 0
+            ):
+                raise RuntimeError(
+                    "Instagram session appears invalid, challenged, or rate-limited: "
+                    f"all {totals['accounts']} configured profiles returned "
+                    "ProfileNotExistsException. Refresh IG_SESSION_FILE and verify the "
+                    "scraper account can view these profiles before re-running."
+                )
             raise RuntimeError(
-                "Instagram session appears invalid, challenged, or rate-limited: "
-                f"all {totals['accounts']} configured profiles returned "
-                "ProfileNotExistsException. Refresh IG_SESSION_FILE and verify the "
-                "scraper account can view these profiles before re-running."
+                f"Instagram scrape failed for {totals['errors']} account(s); "
+                "check the logs for expired sessions, auth challenges, or rate limits."
             )
-        raise RuntimeError(
-            f"Instagram scrape failed for {totals['errors']} account(s); "
-            "check the logs for expired sessions, auth challenges, or rate limits."
-        )
+    finally:
+        # Persist whatever the jar rotated to during this run, even when we exit by
+        # raising (e.g. one flaky account). Guarded so a logged-out jar can't clobber
+        # a still-good session file.
+        _persist_rotated_session(L)
 
 
 if __name__ == "__main__":
