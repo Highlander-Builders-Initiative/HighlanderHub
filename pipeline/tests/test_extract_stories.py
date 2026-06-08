@@ -846,22 +846,11 @@ class ExtractStoriesTests(unittest.TestCase):
             },
         }
 
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            raw_dir = root / "raw"
-            extracted_dir = root / "extracted"
-            handle_dir = raw_dir / "wincucr"
-            handle_dir.mkdir(parents=True)
-            extracted_dir.mkdir()
-            (handle_dir / f"{raw['id']}.json").write_text(json.dumps(raw))
-            (extracted_dir / f"{raw['id']}.json").write_text(json.dumps(cached))
-
-            with patch.object(self.extract_stories, "RAW_DIR", raw_dir):
-                with patch.object(self.extract_stories, "EXTRACTED_DIR", extracted_dir):
-                    rows, superseded_ids = self.extract_stories._collect_event_rows(
-                        {"wincucr": {"label": "Women in Computing at UCR"}},
-                        "2026-06-02T16:05:42+00:00",
-                    )
+        rows, superseded_ids = self.extract_stories._collect_event_rows(
+            [(raw, cached)],
+            {"wincucr": {"label": "Women in Computing at UCR"}},
+            "2026-06-02T16:05:42+00:00",
+        )
 
         self.assertEqual(["ig_wincucr_20260602T2000Z"], [row["id"] for row in rows])
         self.assertEqual({"ig_wincucr_20260603T0800Z"}, superseded_ids)
