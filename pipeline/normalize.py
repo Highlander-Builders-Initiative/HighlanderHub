@@ -8,10 +8,11 @@ from __future__ import annotations
 
 import json
 import logging
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
-from config import RAW_DIR, ensure_dirs, load_accounts
+from config import RAW_DIR, STORIES_WINDOW_DAYS, ensure_dirs, load_accounts
 from db import upsert_batched
 
 log = logging.getLogger("pipeline.normalize")
@@ -62,6 +63,23 @@ def _to_story_row(item: dict[str, Any], meta: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _within_window(posted_at: Any, cutoff: datetime) -> bool:
+    """True if the story was posted on/after the cutoff. Missing or unparseable
+    timestamps are kept — we'd rather re-upsert than silently drop a story."""
+    if not isinstance(posted_at, str):
+        return True
+    text = posted_at.strip()
+    if text.endswith("Z"):
+        text = f"{text[:-1]}+00:00"
+    try:
+        parsed = datetime.fromisoformat(text)
+    except ValueError:
+        return True
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed >= cutoff
+
+
 def main() -> None:
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
@@ -69,6 +87,18 @@ def main() -> None:
     ensure_dirs()
     meta = _load_account_meta()
     items = collect(set(meta.keys()))
+
+    if STORIES_WINDOW_DAYS > 0:
+        cutoff = datetime.now(timezone.utc) - timedelta(days=STORIES_WINDOW_DAYS)
+        kept = [it for it in items if _within_window(it.get("posted_at"), cutoff)]
+        log.info(
+            "stories window: %d/%d posted within last %dd (older snapshots already "
+            "in Supabase from prior runs; skipping re-upsert)",
+            len(kept),
+            len(items),
+            STORIES_WINDOW_DAYS,
+        )
+        items = kept
 
     by_id: dict[str, dict[str, Any]] = {}
     for it in items:

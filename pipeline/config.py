@@ -32,6 +32,18 @@ ACCOUNTS_FILE = ROOT / "accounts.json"
 FOLLOWED_ACCOUNTS_FILE = DATA_DIR / "followed_accounts.json"
 ACCOUNT_SOURCE = os.environ.get("PIPELINE_ACCOUNT_SOURCE", "followed").lower()
 
+# How many days back `normalize` re-pushes story snapshots to Supabase. Raw
+# stories are immutable once scraped and the on-disk archive only grows, so
+# re-upserting the whole history every run is unbounded wasted writes. Stories
+# older than this stay as-is in Supabase (they were written when fresh). Widen
+# this or set it <= 0 to force a full re-sync — e.g. after editing accounts.json
+# labels or changing the story row shape. Override with
+# PIPELINE_STORIES_WINDOW_DAYS.
+try:
+    STORIES_WINDOW_DAYS = int(os.environ.get("PIPELINE_STORIES_WINDOW_DAYS", "30"))
+except ValueError:
+    STORIES_WINDOW_DAYS = 30
+
 # Instaloader needs to be logged in to fetch stories. Two supported modes:
 #   1. IG_USERNAME + IG_PASSWORD env vars  (interactive 2FA prompt if needed)
 #   2. A session file dropped here by `instaloader -l <user>` (preferred for cron)

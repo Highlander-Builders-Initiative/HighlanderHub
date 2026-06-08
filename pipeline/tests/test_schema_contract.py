@@ -30,6 +30,7 @@ class SchemaContractTests(unittest.TestCase):
             ROOT=PIPELINE_ROOT,
             RAW_DIR=PIPELINE_ROOT / "data" / "raw",
             EXTRACTED_DIR=PIPELINE_ROOT / "data" / "extracted",
+            STORIES_WINDOW_DAYS=30,
             GOOGLE_CLOUD_PROJECT="test-project",
             GOOGLE_CLOUD_LOCATION="global",
             GOOGLE_VISION_API_KEY="test",
