@@ -430,7 +430,7 @@ def _process_story(raw: dict[str, Any], meta: dict[str, Any]) -> dict[str, Any]:
     cache = _cache_path(story_id)
     if cache.exists():
         cached = _read_json(cache)
-        log.info("extract %s: cache %s", label, cached.get("status"))
+        log.debug("extract %s: cache %s", label, cached.get("status"))
         return cached
 
     remote_cached = _load_remote_cache(story_id)
@@ -782,23 +782,19 @@ def _to_event_row(
 
 
 def _collect_event_rows(
+    processed: list[tuple[dict[str, Any], dict[str, Any]]],
     meta_by_handle: dict[str, dict[str, Any]],
     scraped_at: str,
 ) -> tuple[list[dict[str, Any]], set[str]]:
+    """Build event rows from the (raw, extraction) pairs produced this run.
+
+    Works off the in-memory results from _process_story instead of re-reading
+    the raw archive and extraction cache from disk. _to_event_row already drops
+    anything whose status isn't a usable "ok" event.
+    """
     rows: list[dict[str, Any]] = []
     superseded_ids: set[str] = set()
-    for raw in _iter_raw_stories(set(meta_by_handle.keys())):
-        story_id = str(raw.get("id") or "")
-        if not story_id:
-            continue
-        cache = _cache_path(story_id)
-        if not cache.exists():
-            continue
-        try:
-            cached = _read_json(cache)
-        except json.JSONDecodeError:
-            log.warning("skipping malformed extraction cache: %s", cache)
-            continue
+    for raw, cached in processed:
         row, superseded_id = _to_event_row(
             raw,
             cached,
@@ -871,11 +867,25 @@ def main() -> None:
     ensure_dirs()
     meta_by_handle = _load_account_meta()
 
+    # Process each story once and keep the (raw, extraction) pair in memory so
+    # event-row collection below doesn't re-read the whole archive from disk.
+    processed: list[tuple[dict[str, Any], dict[str, Any]]] = []
+    cache_hits = 0
     for raw in _iter_raw_stories(set(meta_by_handle.keys())):
-        _process_story(raw, meta_by_handle.get(str(raw.get("handle") or ""), {}))
+        story_id = str(raw.get("id") or "")
+        if story_id and _cache_path(story_id).exists():
+            cache_hits += 1
+        cached = _process_story(raw, meta_by_handle.get(str(raw.get("handle") or ""), {}))
+        processed.append((raw, cached))
+    log.info(
+        "extract: %d stories (%d cached, %d newly processed)",
+        len(processed),
+        cache_hits,
+        len(processed) - cache_hits,
+    )
 
     scraped_at = _utc_now()
-    rows, superseded_ids = _collect_event_rows(meta_by_handle, scraped_at)
+    rows, superseded_ids = _collect_event_rows(processed, meta_by_handle, scraped_at)
     current_ids = {row["id"] for row in rows} | superseded_ids
     event_rows = _filter_locked_events(rows)
     event_rows = _filter_deleted_events(event_rows)

@@ -25,13 +25,21 @@ SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY") or os.environ.get(
 log = logging.getLogger("pipeline.db")
 
 
+_client: Client | None = None
+
+
 def client() -> Client:
-    if not SUPABASE_URL or not SUPABASE_SERVICE_KEY:
-        raise SystemExit(
-            "Supabase env missing. Set SUPABASE_URL and SUPABASE_SERVICE_KEY "
-            "in pipeline/.env."
-        )
-    return create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+    # Reuse one client across the whole run so HTTP connections (and TLS
+    # handshakes) are pooled instead of rebuilt on every call.
+    global _client
+    if _client is None:
+        if not SUPABASE_URL or not SUPABASE_SERVICE_KEY:
+            raise SystemExit(
+                "Supabase env missing. Set SUPABASE_URL and SUPABASE_SERVICE_KEY "
+                "in pipeline/.env."
+            )
+        _client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+    return _client
 
 
 def upsert_batched(
