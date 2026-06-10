@@ -210,7 +210,8 @@ event.
 `extract_stories.py` turns raw IG story image flyers into `events` rows:
 
 1. Walks `data/raw/<handle>/*.json` for handles in `accounts.json`.
-2. Skips videos and story IDs already cached in `data/extracted/`.
+2. Skips story IDs already cached in `data/extracted/`; video stories use their
+   Instagram cover frame as the flyer image.
 3. If the local cache misses, checks Supabase `story_extractions` for a
    terminal result and writes that result back to `data/extracted/`.
 4. Downloads `image_url`; expired CDN URLs (`403`, `404`, `410`) are cached

@@ -149,6 +149,7 @@ class ExtractStoriesTests(unittest.TestCase):
             "application/json",
             calls["generate_content"]["config"]["response_mime_type"],
         )
+        self.assertIsInstance(calls["generate_content"]["contents"], str)
 
     def test_gemini_prompt_requires_pacific_wall_time(self) -> None:
         prompt = self.extract_stories._build_gemini_prompt(
@@ -658,6 +659,40 @@ class ExtractStoriesTests(unittest.TestCase):
         assert row is not None
         self.assertEqual("2026-05-31T20:00:00+00:00", row["starts_at"])
 
+    def test_event_row_skips_single_day_schedule_with_many_time_slots(self) -> None:
+        raw = {
+            "id": "3916647022207452743",
+            "handle": "ucrnsu",
+            "posted_at": "2026-06-10T19:45:30Z",
+        }
+        cached = {
+            "status": "ok",
+            "ocr_text": (
+                "STUDY ROOM SCHEDULE\n"
+                "Wednesday, June 10\n"
+                "ORBACH 215 12-2 PM\n"
+                "ORBACH 229 2-5 PM\n"
+                "ORBACH 310 2:30-5:30 PM\n"
+                "ORBACH 234 4-5 PM\n"
+                "ORBACH 329 8-11 PM"
+            ),
+            "result": {
+                "is_event": True,
+                "title": "STUDY ROOM SCHEDULE",
+                "starts_at": "2026-06-10T12:00:00-07:00",
+                "ends_at": "2026-06-10T23:00:00-07:00",
+            },
+        }
+
+        row, _ = self.extract_stories._to_event_row(
+            raw,
+            cached,
+            {"label": "UCR Nikkei Student Union", "category": "club"},
+            "2026-06-10T21:00:00+00:00",
+        )
+
+        self.assertIsNone(row)
+
     def test_event_row_uses_unambiguous_ocr_date_over_gemini_date(self) -> None:
         raw = {
             "id": "3905650594048735498",
@@ -786,6 +821,26 @@ class ExtractStoriesTests(unittest.TestCase):
         self.assertEqual("2026-06-02T20:00:00+00:00", row["starts_at"])
         self.assertEqual("2026-06-02T21:00:00+00:00", row["ends_at"])
 
+    def test_ocr_range_uses_next_year_for_january_event_posted_in_december(
+        self,
+    ) -> None:
+        raw = {
+            "id": "3910090085357363176",
+            "handle": "wincucr",
+            "posted_at": "2026-12-20T18:38:02Z",
+        }
+        cached = {
+            "ocr_text": "Study Social\nJanuary 8\n1-2 pm",
+        }
+
+        self.assertEqual(
+            (
+                "2027-01-08T21:00:00+00:00",
+                "2027-01-08T22:00:00+00:00",
+            ),
+            self.extract_stories._ocr_local_event_range(raw, cached),
+        )
+
     def test_event_row_keeps_full_pm_range_after_ocr_date(self) -> None:
         raw = {
             "id": "3910090085357363175",
@@ -887,6 +942,109 @@ class ExtractStoriesTests(unittest.TestCase):
         self.assertIsNotNone(row)
         assert row is not None
         self.assertIsNone(row["ends_at"])
+
+    def test_event_row_drops_end_time_that_is_not_after_start(self) -> None:
+        raw = {
+            "id": "3894795737410658781",
+            "handle": "cyber_ucr",
+            "posted_at": "2026-05-14T12:00:00Z",
+        }
+        cached = {
+            "status": "ok",
+            "result": {
+                "is_event": True,
+                "title": "Security Night Workshop",
+                "starts_at": "2026-05-15T19:00:00-07:00",
+                "ends_at": "2026-05-15T18:00:00-07:00",
+            },
+        }
+
+        row, _ = self.extract_stories._to_event_row(
+            raw,
+            cached,
+            {"label": "UCR Cybersecurity Club", "category": "club"},
+            "2026-05-14T12:00:00+00:00",
+        )
+
+        self.assertIsNotNone(row)
+        assert row is not None
+        self.assertIsNone(row["ends_at"])
+
+    def test_event_row_skips_event_that_was_stale_when_story_was_posted(self) -> None:
+        raw = {
+            "id": "3910114941801392088",
+            "handle": "gammaphibeta_ucr",
+            "posted_at": "2026-06-01T19:27:25Z",
+        }
+        cached = {
+            "status": "ok",
+            "ocr_text": "BIGGEST GYM RAT\nGamma Phi Beta Formal\n2016",
+            "result": {
+                "is_event": True,
+                "title": "Gamma Phi Beta Formal",
+                "starts_at": "2016-01-01T00:00:00-08:00",
+                "ends_at": None,
+            },
+        }
+
+        row, _ = self.extract_stories._to_event_row(
+            raw,
+            cached,
+            {"label": "Gamma Phi Beta at UCR", "category": "club"},
+            "2026-06-01T20:00:00+00:00",
+        )
+
+        self.assertIsNone(row)
+
+    def test_event_row_keeps_ongoing_event_that_started_before_story(self) -> None:
+        raw = {
+            "id": "3894795737410658782",
+            "handle": "cyber_ucr",
+            "posted_at": "2026-05-14T12:00:00Z",
+        }
+        cached = {
+            "status": "ok",
+            "result": {
+                "is_event": True,
+                "title": "Security Week",
+                "starts_at": "2026-05-12T09:00:00-07:00",
+                "ends_at": "2026-05-16T17:00:00-07:00",
+            },
+        }
+
+        row, _ = self.extract_stories._to_event_row(
+            raw,
+            cached,
+            {"label": "UCR Cybersecurity Club", "category": "club"},
+            "2026-05-14T12:00:00+00:00",
+        )
+
+        self.assertIsNotNone(row)
+
+    def test_event_row_keeps_same_day_date_only_event(self) -> None:
+        raw = {
+            "id": "3894795737410658783",
+            "handle": "cyber_ucr",
+            "posted_at": "2026-05-14T19:00:00Z",
+        }
+        cached = {
+            "status": "ok",
+            "result": {
+                "is_event": True,
+                "title": "Security Day",
+                "starts_at": "2026-05-14T00:00:00-07:00",
+                "ends_at": None,
+            },
+        }
+
+        row, _ = self.extract_stories._to_event_row(
+            raw,
+            cached,
+            {"label": "UCR Cybersecurity Club", "category": "club"},
+            "2026-05-14T20:00:00+00:00",
+        )
+
+        self.assertIsNotNone(row)
 
     def test_event_row_drops_unsafe_external_urls(self) -> None:
         raw = {

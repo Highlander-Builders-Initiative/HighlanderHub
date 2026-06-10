@@ -552,7 +552,7 @@ def _normalize_timestamptz(value: Any) -> str | None:
     return parsed.astimezone(timezone.utc).isoformat()
 
 
-def _posted_year(raw: dict[str, Any]) -> int | None:
+def _posted_at(raw: dict[str, Any]) -> datetime | None:
     posted_at = raw.get("posted_at")
     if not isinstance(posted_at, str):
         return None
@@ -560,9 +560,12 @@ def _posted_year(raw: dict[str, Any]) -> int | None:
     if text.endswith("Z"):
         text = f"{text[:-1]}+00:00"
     try:
-        return datetime.fromisoformat(text).year
+        parsed = datetime.fromisoformat(text)
     except ValueError:
         return None
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        return None
+    return parsed.astimezone(PACIFIC_TZ)
 
 
 def _distinct_ocr_dates(ocr_text: str) -> set[tuple[int, int]]:
@@ -626,26 +629,41 @@ def _ocr_local_event_range(
     if not isinstance(ocr_text, str):
         return None
 
-    year = _posted_year(raw)
+    posted_at = _posted_at(raw)
     date_parts = _ocr_date(ocr_text)
     time_range = _ocr_time_range(ocr_text)
-    if year is None or date_parts is None or time_range is None:
+    if posted_at is None or date_parts is None or time_range is None:
         return None
 
     month, day = date_parts
     (start_hour, start_minute), (end_hour, end_minute) = time_range
     try:
         start = datetime(
-            year,
+            posted_at.year,
             month,
             day,
             start_hour,
             start_minute,
             tzinfo=PACIFIC_TZ,
         )
-        end = datetime(year, month, day, end_hour, end_minute, tzinfo=PACIFIC_TZ)
+        end = datetime(
+            posted_at.year,
+            month,
+            day,
+            end_hour,
+            end_minute,
+            tzinfo=PACIFIC_TZ,
+        )
     except ValueError:
         return None
+
+    # A December story advertising January omits the year but means next year.
+    if start < posted_at - timedelta(days=180):
+        try:
+            start = start.replace(year=start.year + 1)
+            end = end.replace(year=end.year + 1)
+        except ValueError:
+            return None
 
     if end <= start:
         return None
@@ -654,12 +672,19 @@ def _ocr_local_event_range(
     ).isoformat()
 
 
-# Schedule-grid flyers (finals week, welcome week) lay out one column per day,
-# and the single-event extractor collapses the whole grid into one event that
-# spans the first column to the last — often anchored on an empty day. A real
-# event names one or two dates, never a calendar of them, so treat "many dates
-# plus a multi-day span" as a mis-collapsed grid and skip it.
+# Schedule flyers lay out multiple dates or time slots, while this extractor can
+# emit only one event row. Skip clear multi-event schedules instead of publishing
+# a made-up range that collapses every slot together.
 _GRID_MIN_DISTINCT_DATES = 3
+_GRID_MIN_TIME_RANGES = 3
+_SCHEDULE_HINT_RE = re.compile(r"\b(?:schedule|hours)\b", re.IGNORECASE)
+_STALE_EVENT_GRACE = timedelta(days=1)
+
+
+def _ocr_time_range_count(ocr_text: str) -> int:
+    return len(list(_OCR_TIME_RANGE_RE.finditer(ocr_text))) + len(
+        list(_OCR_COMPACT_TIME_RANGE_RE.finditer(ocr_text))
+    )
 
 
 def _looks_like_schedule_grid(
@@ -667,12 +692,29 @@ def _looks_like_schedule_grid(
     starts_at: str,
     ends_at: str | None,
 ) -> bool:
-    if not isinstance(ocr_text, str) or not ends_at:
+    if not isinstance(ocr_text, str):
         return False
-    if len(_distinct_ocr_dates(ocr_text)) < _GRID_MIN_DISTINCT_DATES:
+    if (
+        _SCHEDULE_HINT_RE.search(ocr_text)
+        and _ocr_time_range_count(ocr_text) >= _GRID_MIN_TIME_RANGES
+    ):
+        return True
+    if not ends_at or len(_distinct_ocr_dates(ocr_text)) < _GRID_MIN_DISTINCT_DATES:
         return False
     span = datetime.fromisoformat(ends_at) - datetime.fromisoformat(starts_at)
     return span > timedelta(days=1)
+
+
+def _event_was_stale_when_posted(
+    raw: dict[str, Any],
+    starts_at: str,
+    ends_at: str | None,
+) -> bool:
+    posted_at = _posted_at(raw)
+    if posted_at is None:
+        return False
+    latest_event_time = datetime.fromisoformat(ends_at or starts_at)
+    return latest_event_time < posted_at - _STALE_EVENT_GRACE
 
 
 def _instagram_event_id(handle: str, starts_at: str) -> str | None:
@@ -717,12 +759,29 @@ def _to_event_row(
     if not title or not starts_at:
         return None, None
 
+    if ends_at and datetime.fromisoformat(ends_at) <= datetime.fromisoformat(starts_at):
+        log.info(
+            "extract %s: dropping invalid end time (%s <= %s)",
+            raw.get("id"),
+            ends_at,
+            starts_at,
+        )
+        ends_at = None
+
     if _looks_like_schedule_grid(cached.get("ocr_text"), starts_at, ends_at):
         log.info(
-            "extract %s: skipping collapsed multi-day schedule grid (%s -> %s)",
+            "extract %s: skipping ambiguous multi-event schedule (%s -> %s)",
             raw.get("id"),
             starts_at,
             ends_at,
+        )
+        return None, None
+
+    if _event_was_stale_when_posted(raw, starts_at, ends_at):
+        log.info(
+            "extract %s: skipping event already stale when story was posted (%s)",
+            raw.get("id"),
+            starts_at,
         )
         return None, None
 
