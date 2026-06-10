@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib
 import sys
+import tempfile
 import types
 import unittest
 from datetime import datetime, timezone
@@ -176,13 +177,36 @@ class NormalizeEventsTests(unittest.TestCase):
             "_collect_raw",
             side_effect=[[raw], []],
         ):
-            self.normalize_events.main()
+            self.normalize_events.main(["ucr_events_"])
 
         self.fake_db.upsert_batched.assert_called_once()
         self.fake_db.delete_events_missing_from_ids.assert_called_once_with(
-            ["ucr_events_", "highlander_link_"],
+            ["ucr_events_"],
             ["ucr_events_52310591390648_9002"],
         )
+
+    def test_normalizer_does_not_reconcile_unverified_sources(self) -> None:
+        with patch.object(
+            self.normalize_events,
+            "_collect_raw",
+            side_effect=[[], []],
+        ):
+            self.normalize_events.main()
+
+        self.fake_db.delete_events_missing_from_ids.assert_not_called()
+
+    def test_verified_source_rejects_malformed_raw_cache(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            source_dir = Path(tmp)
+            (source_dir / "broken.json").write_text("{", encoding="utf-8")
+
+            with self.assertRaises(ValueError):
+                list(
+                    self.normalize_events._collect_raw(
+                        source_dir,
+                        require_complete=True,
+                    )
+                )
 
     def test_normalizer_suppresses_admin_deleted_events(self) -> None:
         raw = {

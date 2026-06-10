@@ -81,25 +81,66 @@ def _prune_missing_events(seen_ids: set[str]) -> int:
     return removed
 
 
+def _events_from_payload(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    entries = payload.get("events")
+    if not isinstance(entries, list):
+        raise ValueError("Localist response is missing an events list")
+
+    events: list[dict[str, Any]] = []
+    for entry in entries:
+        event = entry.get("event") if isinstance(entry, dict) else None
+        if not isinstance(event, dict):
+            raise ValueError("Localist response contains a malformed event")
+        if (
+            event.get("id") is None
+            or not isinstance(event.get("title"), str)
+            or not event.get("title", "").strip()
+        ):
+            raise ValueError("Localist response contains an event without id/title")
+        start = event.get("first_date") or event.get("start")
+        has_start = isinstance(start, str) and bool(start.strip())
+        if not has_start:
+            instances = event.get("event_instances")
+            has_start = isinstance(instances, list) and any(
+                isinstance(item, dict)
+                and isinstance(item.get("event_instance"), dict)
+                and isinstance(item["event_instance"].get("start"), str)
+                and bool(item["event_instance"]["start"].strip())
+                for item in instances
+            )
+        if not has_start:
+            raise ValueError("Localist response contains an event without a start")
+        events.append(event)
+    return events
+
+
 def fetch_all() -> tuple[int, int]:
     """Walk the paginated API. Returns (total_events, new_events)."""
     s = _session()
     first = _fetch_page(s, 1)
-    total = first.get("page", {}).get("total", 0)
-    size = first.get("page", {}).get("size", PER_PAGE)
+    page_info = first.get("page")
+    if not isinstance(page_info, dict):
+        raise ValueError("Localist response is missing page metadata")
+    total = page_info.get("total")
+    size = page_info.get("size")
+    if (
+        not isinstance(total, int)
+        or isinstance(total, bool)
+        or total <= 0
+        or not isinstance(size, int)
+        or isinstance(size, bool)
+        or size <= 0
+    ):
+        raise ValueError("Localist response has invalid or empty page metadata")
     pages = max(1, -(-total // size))  # ceil
     log.info("Localist reports %d events across %d page(s)", total, pages)
 
     seen = new = 0
     seen_ids: set[str] = set()
-    completed = True
 
     def handle_payload(payload: dict[str, Any]) -> None:
         nonlocal seen, new
-        for entry in payload.get("events", []):
-            ev = entry.get("event") if isinstance(entry, dict) else None
-            if not ev or "id" not in ev:
-                continue
+        for ev in _events_from_payload(payload):
             seen += 1
             seen_ids.add(str(ev["id"]))
             if _write_event(ev):
@@ -109,17 +150,16 @@ def fetch_all() -> tuple[int, int]:
     for page in range(2, pages + 1):
         # Polite jitter — Localist isn't IG, but no reason to hammer it.
         time.sleep(random.uniform(1.0, 2.0))
-        try:
-            handle_payload(_fetch_page(s, page))
-        except requests.HTTPError as e:
-            log.warning("page %d failed: %s — stopping pagination", page, e)
-            completed = False
-            break
+        handle_payload(_fetch_page(s, page))
 
-    if completed:
-        pruned = _prune_missing_events(seen_ids)
-        if pruned:
-            log.info("UCR events: pruned %d stale raw file(s)", pruned)
+    if len(seen_ids) != total:
+        raise ValueError(
+            f"Localist snapshot incomplete: expected {total} unique events, got {len(seen_ids)}"
+        )
+
+    pruned = _prune_missing_events(seen_ids)
+    if pruned:
+        log.info("UCR events: pruned %d stale raw file(s)", pruned)
 
     return seen, new
 

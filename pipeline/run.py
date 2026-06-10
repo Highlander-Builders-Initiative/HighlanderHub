@@ -11,9 +11,9 @@ Stages:
      per-story outputs to avoid redundant API calls.  Note: this stage
      makes external API calls (Google Vision, Vertex AI Gemini) and incurs cost.
   3. **Normalize** – convert raw on-disk archives into canonical event
-     rows and upsert them into Supabase.  Normalization runs regardless
-     of whether scraping succeeded, because the on-disk archive is the
-     source of truth and may contain data from earlier runs.
+     rows and upsert them into Supabase. Normalization can reuse older raw
+     data after a scrape failure, but stale-row reconciliation is enabled
+     only for structured sources whose current scrape completed.
 """
 from __future__ import annotations
 
@@ -47,13 +47,23 @@ def main() -> None:
     )
     ok = True
     ok &= _safe("instagram.scrape", scrape.main)
-    ok &= _safe("ucr_events.scrape", ucr_events.main)
-    ok &= _safe("highlander_link.scrape", highlander_link.main)
+    ucr_events_ok = _safe("ucr_events.scrape", ucr_events.main)
+    highlander_link_ok = _safe("highlander_link.scrape", highlander_link.main)
+    ok &= ucr_events_ok
+    ok &= highlander_link_ok
     # Extraction and normalization always run using whatever is on disk.
     ok &= _safe("instagram.extract", extract_stories.main)
     ok &= _safe("instagram.normalize", normalize.main)
     # normalize_events handles both ucr_events and highlander_link.
-    ok &= _safe("events.normalize", normalize_events.main)
+    reconcile_prefixes = []
+    if ucr_events_ok:
+        reconcile_prefixes.append("ucr_events_")
+    if highlander_link_ok:
+        reconcile_prefixes.append("highlander_link_")
+    ok &= _safe(
+        "events.normalize",
+        lambda: normalize_events.main(reconcile_prefixes),
+    )
     if not ok:
         sys.exit(1)
 

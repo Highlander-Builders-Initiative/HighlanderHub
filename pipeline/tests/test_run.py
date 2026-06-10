@@ -34,13 +34,13 @@ class RunMainTests(unittest.TestCase):
         calls: list[str] = []
 
         def succeeds(name: str):
-            def inner() -> None:
+            def inner(*_args) -> None:
                 calls.append(name)
 
             return inner
 
         def fails(name: str):
-            def inner() -> None:
+            def inner(*_args) -> None:
                 calls.append(name)
                 raise RuntimeError(f"{name} failed")
 
@@ -75,6 +75,19 @@ class RunMainTests(unittest.TestCase):
                 "events.normalize",
             ],
             calls,
+        )
+        self.fake_modules["normalize_events"].main.assert_called_once_with(
+            ["ucr_events_", "highlander_link_"]
+        )
+
+    def test_failed_structured_scrape_is_not_reconciled(self) -> None:
+        self.fake_modules["ucr_events"].main.side_effect = RuntimeError("ucr failed")
+
+        with self.assertRaises(SystemExit):
+            self.run.main()
+
+        self.fake_modules["normalize_events"].main.assert_called_once_with(
+            ["highlander_link_"]
         )
 
 
