@@ -89,7 +89,7 @@ export function FlyerTile({
       tabIndex={decorative ? -1 : undefined}
       data-event-id={event.id}
       style={{ animationDelay: `${enterDelayMs}ms` }}
-      className={`interactive-focus card-hover group relative block overflow-hidden rounded-xl border border-ink/15 bg-canvas transition-[filter,opacity,border-color] duration-300 hover:border-ink/30 ${aspectClassName} animate-scale-in ${className}`}
+      className={`interactive-focus card-hover group relative block overflow-hidden rounded-xl border border-ink/15 bg-highlander/[0.07] transition-[filter,opacity,border-color] duration-300 hover:border-ink/30 ${aspectClassName} animate-scale-in ${className}`}
     >
       {showImage ? (
         <EventFlyerImage
@@ -101,7 +101,7 @@ export function FlyerTile({
           onError={() => setImageBroken(true)}
         />
       ) : (
-        <div className="absolute inset-0 bg-surface" aria-hidden />
+        <div className="absolute inset-0 bg-highlander/[0.07]" aria-hidden />
       )}
 
       {progressiveBlur ? (
