@@ -7,7 +7,7 @@ import tempfile
 import types
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 PIPELINE_ROOT = Path(__file__).resolve().parents[1]
 MODULE_PATH = PIPELINE_ROOT / "extract_stories.py"
@@ -960,6 +960,22 @@ class ExtractStoriesTests(unittest.TestCase):
         self.assertEqual(
             [row["id"] for row in filtered],
             ["ig_ucrlibrary_20260601T0700Z"],
+        )
+
+    def test_delete_imported_event_ids_uses_locked_safe_delete(self) -> None:
+        delete_unlocked = Mock(return_value=1)
+        fake_db = types.SimpleNamespace(
+            delete_unlocked_event_rows_by_ids=delete_unlocked
+        )
+
+        with patch.dict(sys.modules, {"db": fake_db}):
+            deleted = self.extract_stories._delete_imported_event_ids(
+                {"ig_locked_20260601T1900Z", "ig_stale_20260602T1900Z"}
+            )
+
+        self.assertEqual(1, deleted)
+        delete_unlocked.assert_called_once_with(
+            ["ig_locked_20260601T1900Z", "ig_stale_20260602T1900Z"]
         )
 
     def test_bool_or_default_parses_common_llm_boolean_forms(self) -> None:

@@ -77,6 +77,29 @@ def delete_rows_by_ids(
     return total
 
 
+def delete_unlocked_event_rows_by_ids(
+    ids: Iterable[str],
+    batch_size: int = 200,
+) -> int:
+    """Delete event rows by id without ever deleting manually locked rows."""
+    c = client()
+    ids = list(dict.fromkeys(ids))
+    total = 0
+    for i in range(0, len(ids), batch_size):
+        chunk = ids[i : i + batch_size]
+        deleted = (
+            c.table("events")
+            .delete()
+            .in_("id", chunk)
+            .eq("is_locked", False)
+            .execute()
+        )
+        count = len(getattr(deleted, "data", None) or [])
+        total += count
+        log.info("events: deleted %d/%d unlocked stale rows", total, len(ids))
+    return total
+
+
 def delete_rows_by_prefix(table: str, prefix: str) -> int:
     """Delete rows whose id starts with the given prefix."""
     c = client()
@@ -112,7 +135,7 @@ def delete_events_missing_from_ids(
                 continue
             stale_ids.append(event_id)
 
-    return delete_rows_by_ids("events", stale_ids, batch_size=batch_size)
+    return delete_unlocked_event_rows_by_ids(stale_ids, batch_size=batch_size)
 
 
 def get_deleted_event_ids() -> set[str]:
