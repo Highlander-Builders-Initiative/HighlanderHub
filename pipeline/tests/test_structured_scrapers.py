@@ -5,7 +5,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 
 PIPELINE_ROOT = Path(__file__).resolve().parents[1]
@@ -49,6 +49,34 @@ class StructuredScraperTests(unittest.TestCase):
             self.assertEqual(1, removed)
             self.assertFalse((source_dir / "123.json").exists())
             self.assertTrue((source_dir / "456.json").exists())
+
+    def test_ucr_events_rejects_empty_or_malformed_snapshot(self) -> None:
+        payloads = [
+            {"page": {"total": 0, "size": 100}, "events": []},
+            {"page": {"total": 1, "size": 100}, "events": [{}]},
+        ]
+        for payload in payloads:
+            with self.subTest(payload=payload):
+                with (
+                    patch.object(self.ucr_events, "_session", return_value=Mock()),
+                    patch.object(self.ucr_events, "_fetch_page", return_value=payload),
+                ):
+                    with self.assertRaises(ValueError):
+                        self.ucr_events.fetch_all()
+
+    def test_highlander_link_rejects_empty_or_malformed_snapshot(self) -> None:
+        payloads = [
+            {"@odata.count": 0, "value": []},
+            {"@odata.count": 1, "value": [{}]},
+        ]
+        for payload in payloads:
+            with self.subTest(payload=payload):
+                with (
+                    patch.object(self.highlander_link, "_session", return_value=Mock()),
+                    patch.object(self.highlander_link, "_fetch_page", return_value=payload),
+                ):
+                    with self.assertRaises(ValueError):
+                        self.highlander_link.fetch_all()
 
 
 if __name__ == "__main__":

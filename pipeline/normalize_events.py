@@ -393,14 +393,24 @@ def _to_event_row_hlink(raw: dict[str, Any], scraped_at: str) -> dict[str, Any] 
     }
 
 
-def _collect_raw(source_dir: Path) -> Iterable[dict[str, Any]]:
+def _collect_raw(
+    source_dir: Path,
+    require_complete: bool = False,
+) -> Iterable[dict[str, Any]]:
     if not source_dir.exists():
+        if require_complete:
+            raise ValueError(f"verified source directory is missing: {source_dir}")
         return
-    for path in source_dir.glob("*.json"):
+    paths = list(source_dir.glob("*.json"))
+    if require_complete and not paths:
+        raise ValueError(f"verified source directory is empty: {source_dir}")
+    for path in paths:
         try:
             with path.open(encoding="utf-8") as f:
                 yield json.load(f)
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as e:
+            if require_complete:
+                raise ValueError(f"verified source contains malformed JSON: {path}") from e
             log.warning("skipping malformed file: %s", path)
 
 
@@ -434,17 +444,24 @@ def _locked_event_ids() -> set[str]:
         return set()
 
 
-def main() -> None:
+def main(reconcile_prefixes: Iterable[str] = ()) -> None:
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
     )
     ensure_dirs()
     scraped_at = datetime.now(timezone.utc).isoformat()
+    verified_prefixes = set(reconcile_prefixes)
 
     rows: list[dict[str, Any]] = []
-    for raw in _collect_raw(UCR_EVENTS_RAW):
+    for raw in _collect_raw(
+        UCR_EVENTS_RAW,
+        require_complete="ucr_events_" in verified_prefixes,
+    ):
         rows.extend(_to_event_rows(raw, scraped_at))
-    for raw in _collect_raw(HIGHLANDER_LINK_RAW):
+    for raw in _collect_raw(
+        HIGHLANDER_LINK_RAW,
+        require_complete="highlander_link_" in verified_prefixes,
+    ):
         row = _to_event_row_hlink(raw, scraped_at)
         if row is not None:
             rows.append(row)
@@ -456,10 +473,12 @@ def main() -> None:
 
     deduped = dedupe_event_rows(_filter_deleted_events(rows))
 
-    deleted = delete_events_missing_from_ids(
-        STRUCTURED_EVENT_ID_PREFIXES,
-        sorted(r["id"] for r in deduped),
-    )
+    deleted = 0
+    for prefix in STRUCTURED_EVENT_ID_PREFIXES:
+        if prefix not in verified_prefixes:
+            continue
+        keep_ids = sorted(r["id"] for r in deduped if r["id"].startswith(prefix))
+        deleted += delete_events_missing_from_ids([prefix], keep_ids)
     if deleted:
         log.info("Deleted %d stale structured event rows from Supabase", deleted)
 

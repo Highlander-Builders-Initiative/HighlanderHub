@@ -85,25 +85,46 @@ def _prune_missing_events(seen_ids: set[str]) -> int:
     return removed
 
 
+def _events_from_payload(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    events = payload.get("value")
+    if not isinstance(events, list):
+        raise ValueError("HighlanderLink response is missing a value list")
+    for event in events:
+        if not isinstance(event, dict):
+            raise ValueError("HighlanderLink response contains a malformed event")
+        if (
+            event.get("id") is None
+            or not isinstance(event.get("name"), str)
+            or not event.get("name", "").strip()
+            or not isinstance(event.get("startsOn"), str)
+            or not event.get("startsOn", "").strip()
+        ):
+            raise ValueError("HighlanderLink response contains an incomplete event")
+    return events
+
+
 def fetch_all() -> tuple[int, int]:
     """Walk paginated results. Returns (total_events, new_events)."""
     s = _session()
     ends_after = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     first = _fetch_page(s, skip=0, ends_after=ends_after)
-    total = first.get("@odata.count") or 0
+    total = first.get("@odata.count")
+    if (
+        not isinstance(total, int)
+        or isinstance(total, bool)
+        or total <= 0
+    ):
+        raise ValueError("HighlanderLink response has an invalid or empty event count")
     pages = max(1, -(-total // PER_PAGE))
     log.info("HighlanderLink reports %d events across %d page(s)", total, pages)
 
     seen = new = 0
     seen_ids: set[str] = set()
-    completed = True
 
     def handle_payload(payload: dict[str, Any]) -> None:
         nonlocal seen, new
-        for ev in payload.get("value", []):
-            if not isinstance(ev, dict) or "id" not in ev:
-                continue
+        for ev in _events_from_payload(payload):
             seen += 1
             seen_ids.add(str(ev["id"]))
             if _write_event(ev):
@@ -112,17 +133,17 @@ def fetch_all() -> tuple[int, int]:
     handle_payload(first)
     for page in range(1, pages):
         time.sleep(random.uniform(1.0, 2.0))
-        try:
-            handle_payload(_fetch_page(s, skip=page * PER_PAGE, ends_after=ends_after))
-        except requests.HTTPError as e:
-            log.warning("page %d failed: %s — stopping pagination", page, e)
-            completed = False
-            break
+        handle_payload(_fetch_page(s, skip=page * PER_PAGE, ends_after=ends_after))
 
-    if completed:
-        pruned = _prune_missing_events(seen_ids)
-        if pruned:
-            log.info("HighlanderLink events: pruned %d stale raw file(s)", pruned)
+    if len(seen_ids) != total:
+        raise ValueError(
+            "HighlanderLink snapshot incomplete: "
+            f"expected {total} unique events, got {len(seen_ids)}"
+        )
+
+    pruned = _prune_missing_events(seen_ids)
+    if pruned:
+        log.info("HighlanderLink events: pruned %d stale raw file(s)", pruned)
 
     return seen, new
 
