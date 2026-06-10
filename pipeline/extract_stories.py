@@ -855,9 +855,9 @@ def _delete_imported_event_ids(ids: set[str]) -> int:
     if not ids:
         return 0
 
-    from db import delete_rows_by_ids
+    from db import delete_unlocked_event_rows_by_ids
 
-    return delete_rows_by_ids("events", sorted(ids))
+    return delete_unlocked_event_rows_by_ids(sorted(ids))
 
 
 def main() -> None:
