@@ -7,10 +7,71 @@
       "instagram_user_id": 325968047
     },
     {
+      "handle": "aacfucriverside",
+      "label": "Asian American Christian Fellowship",
+      "category": "spiritual-religious-atheist"
+    },
+    {
+      "handle": "aart.ucr",
+      "label": "Asian Americans of Riverside Theatre",
+      "category": "arts-and-expression"
+    },
+    {
+      "handle": "aaus_ucr",
+      "label": "African Americans United in Science (AAUS)",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "abhinaya.ucr",
+      "label": "Abhinaya",
+      "category": "arts-and-expression"
+    },
+    {
+      "handle": "absaucr",
+      "label": "Ahlul-Bayt Student Association",
+      "category": "spiritual-religious-atheist"
+    },
+    {
       "handle": "acm_ucr",
       "label": "ACM @ UCR",
       "category": "club",
       "instagram_user_id": 10839758322
+    },
+    {
+      "handle": "activemindsucr",
+      "label": "Active Minds",
+      "category": "department-affiliated-organization"
+    },
+    {
+      "handle": "aepi_ucr",
+      "label": "Alpha Epsilon Pi Fraternity",
+      "category": "fraternity-sorority"
+    },
+    {
+      "handle": "afaatucr",
+      "label": "Alzheimers Foundation of America at UCR",
+      "category": "action-and-awareness"
+    },
+    {
+      "handle": "afriendinmeucr",
+      "label": "A Friend in Me",
+      "category": "service"
+    },
+    {
+      "handle": "agsmwibucr",
+      "label": "AGSM Women in Business",
+      "category": "graduate-student-organization"
+    },
+    {
+      "handle": "aicheucr",
+      "label": "American Institute of Chemical Engineers (AIChE)",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "aisatucr",
+      "label": "Association for Information Systems @ UCR",
+      "category": "club",
+      "instagram_user_id": 42300677675
     },
     {
       "handle": "aisc_riv",
@@ -19,10 +80,65 @@
       "instagram_user_id": 61584481276
     },
     {
+      "handle": "akakappatheta",
+      "label": "Alpha Kappa Alpha Sorority Inc. (Kappa Theta Chapter)",
+      "category": "fraternity-sorority"
+    },
+    {
+      "handle": "alightatucr",
+      "label": "Alight Campus Ministry at UCR",
+      "category": "spiritual-religious-atheist"
+    },
+    {
+      "handle": "amaucr",
+      "label": "American Marketing Association at UCR",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "amsaucr",
+      "label": "American Medical Student Association",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "amwa_ucr",
+      "label": "American Medical Women's Association",
+      "category": "academic-professional"
+    },
+    {
       "handle": "animedivaclub",
       "label": "animedivaclub",
       "category": "club",
       "instagram_user_id": 77832372254
+    },
+    {
+      "handle": "apoucr",
+      "label": "Alpha Phi Omega",
+      "category": "service"
+    },
+    {
+      "handle": "aprendiendojuntos.us",
+      "label": "Aprendiendo Juntos",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "archeryatucr",
+      "label": "Archery Club at UCR",
+      "category": "recreational"
+    },
+    {
+      "handle": "artfactory.ucr",
+      "label": "Art Factory at UCR",
+      "category": "arts-and-expression"
+    },
+    {
+      "handle": "arthistgrads.ucr",
+      "label": "Art History Graduate Student Association",
+      "category": "mini-gsa"
+    },
+    {
+      "handle": "ascend_ucr",
+      "label": "AscendUCR",
+      "category": "academic-professional"
     },
     {
       "handle": "aspb_ucr",
@@ -31,10 +147,151 @@
       "instagram_user_id": 176255893
     },
     {
+      "handle": "astroclubatucr",
+      "label": "Astronomy Club @ UCR",
+      "category": "academic-professional"
+    },
+    {
       "handle": "asucr",
       "label": "asucr",
       "category": "club",
       "instagram_user_id": 449388329
+    },
+    {
+      "handle": "audeamus_journal",
+      "label": "Audeamus",
+      "category": "club"
+    },
+    {
+      "handle": "avantgarde_acapella",
+      "label": "Avant-Garde A Cappella Group",
+      "category": "arts-and-expression"
+    },
+    {
+      "handle": "aws_ucr",
+      "label": "Autistic Women's Society @ UCR",
+      "category": "club",
+      "instagram_user_id": 39467131173
+    },
+    {
+      "handle": "awwcucr",
+      "label": "Anti Warfare Warfare Club",
+      "category": "recreational"
+    },
+    {
+      "handle": "axo_ucr",
+      "label": "Alpha Chi Omega",
+      "category": "fraternity-sorority"
+    },
+    {
+      "handle": "b2engineeringucr",
+      "label": "Break and Build Engineering",
+      "category": "recreational"
+    },
+    {
+      "handle": "badmintonatucr",
+      "label": "Badminton Club at UCR",
+      "category": "recreational"
+    },
+    {
+      "handle": "bcmbgsa_ucr",
+      "label": "Biochemistry & Molecular Biology Graduate Student Association",
+      "category": "club"
+    },
+    {
+      "handle": "bestbuddies_ucr",
+      "label": "Best Buddies at UCR",
+      "category": "service"
+    },
+    {
+      "handle": "beta_ellas",
+      "label": "Sigma Pi Alpha Sorority, Inc.",
+      "category": "fraternity-sorority"
+    },
+    {
+      "handle": "beusaucr",
+      "label": "Botany and Entomology Undergraduate Student Association",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "bf_ucr",
+      "label": "Ballet Folklorico de UCR",
+      "category": "arts-and-expression"
+    },
+    {
+      "handle": "biotechclubucr",
+      "label": "Biotechnology Club",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "blackpsychsociety",
+      "label": "Black Psych Society",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "blaqout.ucr",
+      "label": "Black Queer Collective",
+      "category": "cultural"
+    },
+    {
+      "handle": "bmesatucr",
+      "label": "BioMedical Engineering Society",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "bpscminigsa",
+      "label": "Botany Graduate Student Association (BGSA)",
+      "category": "mini-gsa"
+    },
+    {
+      "handle": "bridgingvoices_ucr",
+      "label": "Bridging Voices in Healthcare",
+      "category": "action-and-awareness"
+    },
+    {
+      "handle": "bsa_ucr",
+      "label": "Bengali Student Association",
+      "category": "cultural"
+    },
+    {
+      "handle": "bseucr_",
+      "label": "Black Students in Education",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "bsibucr",
+      "label": "Black Scholars in Business",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "bsma_ucr",
+      "label": "Bright Smiles Medical Association at UCR",
+      "category": "action-and-awareness"
+    },
+    {
+      "handle": "careersinscrubs_",
+      "label": "Careers in Scrubs",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "casaucr",
+      "label": "Central American Student Alliance ",
+      "category": "cultural"
+    },
+    {
+      "handle": "ccc_ucr",
+      "label": "Competitive Coding Club At UCR",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "ccowucr",
+      "label": "Creative Community of Writers",
+      "category": "arts-and-expression"
+    },
+    {
+      "handle": "chemclubatucr",
+      "label": "Chemistry Club",
+      "category": "academic-professional"
     },
     {
       "handle": "chessclubatucr",
@@ -43,10 +300,65 @@
       "instagram_user_id": 8662756865
     },
     {
+      "handle": "citrusfreecare",
+      "label": "Citrus Free Care",
+      "category": "service"
+    },
+    {
       "handle": "climbucr",
       "label": "climbucr",
       "category": "club",
       "instagram_user_id": 51886513518
+    },
+    {
+      "handle": "clubbaseball_ucr",
+      "label": "Club Baseball at UCR",
+      "category": "recreational"
+    },
+    {
+      "handle": "clubquetzalucr",
+      "label": "Club Quetzal",
+      "category": "cultural"
+    },
+    {
+      "handle": "clubsamplingclub.ucr",
+      "label": "Club Sampling Club at UCR",
+      "category": "arts-and-expression"
+    },
+    {
+      "handle": "cmcatucr",
+      "label": "Collaborative Multicultural Council",
+      "category": "fraternity-sorority"
+    },
+    {
+      "handle": "cocatucr",
+      "label": "Christians on Campus",
+      "category": "spiritual-religious-atheist"
+    },
+    {
+      "handle": "collectivefaction",
+      "label": "Collective Faction",
+      "category": "recreational"
+    },
+    {
+      "handle": "combatroboticsucr",
+      "label": "Highlander Combat Robotics at UCR",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "comedyclosetucr",
+      "label": "The Comedy Closet",
+      "category": "arts-and-expression"
+    },
+    {
+      "handle": "creatives.in.business",
+      "label": "Creatives In Business",
+      "category": "graduate-student-organization"
+    },
+    {
+      "handle": "creativewritersguild.ucr",
+      "label": "Creative Writer's Guild at UCR",
+      "category": "arts-and-expression"
     },
     {
       "handle": "creatorsatucr",
@@ -55,10 +367,35 @@
       "instagram_user_id": 77821851635
     },
     {
+      "handle": "cssucr",
+      "label": "Classical Studies Society at UCR",
+      "category": "academic-professional"
+    },
+    {
       "handle": "cyber_ucr",
       "label": "Cyber @ UCR",
       "category": "club",
       "instagram_user_id": 38460809748
+    },
+    {
+      "handle": "daleplayucr",
+      "label": "Dale Play Club",
+      "category": "cultural"
+    },
+    {
+      "handle": "dancesportatucr",
+      "label": "Dancesport at UCR",
+      "category": "recreational"
+    },
+    {
+      "handle": "dapi_ucr",
+      "label": "Delta Alpha Pi International Honor Society",
+      "category": "honors"
+    },
+    {
+      "handle": "darbaratucr",
+      "label": "Darbar",
+      "category": "arts-and-expression"
     },
     {
       "handle": "deltachiucr",
@@ -67,10 +404,107 @@
       "instagram_user_id": 271351471
     },
     {
+      "handle": "deltagamma_ucr",
+      "label": "Delta Gamma",
+      "category": "fraternity-sorority"
+    },
+    {
+      "handle": "deltasify",
+      "label": "Change in Scientific Importance for Youth",
+      "category": "academic-professional"
+    },
+    {
       "handle": "designatucr",
       "label": "designatucr",
       "category": "club",
       "instagram_user_id": 45874984735
+    },
+    {
+      "handle": "designingdreamsucr",
+      "label": "Designing Dreams",
+      "category": "arts-and-expression"
+    },
+    {
+      "handle": "designverseucr",
+      "label": "DesignVerse @ UCR",
+      "category": "club",
+      "instagram_user_id": 61594996435
+    },
+    {
+      "handle": "destinoucr",
+      "label": "Destino",
+      "category": "spiritual-religious-atheist"
+    },
+    {
+      "handle": "dgog.ucr",
+      "label": "The Dynamic Genome Outreach Group",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "dmf_ucr",
+      "label": "Dependents and Military Family",
+      "category": "action-and-awareness"
+    },
+    {
+      "handle": "dss.ucr",
+      "label": "Data Science Society @ UCR",
+      "category": "club",
+      "instagram_user_id": 66845058719
+    },
+    {
+      "handle": "earsstudentgroup",
+      "label": "EARS Student Group",
+      "category": "arts-and-expression"
+    },
+    {
+      "handle": "easaucr",
+      "label": "East African Student Association",
+      "category": "cultural"
+    },
+    {
+      "handle": "ecocar.ucr",
+      "label": "The EcoCAR EV Challenge Team at UC Riverside",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "emaatucr",
+      "label": "English Majors Association",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "endoverdose.ucr",
+      "label": "End Overdose UCR",
+      "category": "action-and-awareness"
+    },
+    {
+      "handle": "engageucr",
+      "label": "Community Engaged Learning",
+      "category": "department-program"
+    },
+    {
+      "handle": "enscclub_ucr",
+      "label": "Environmental Science Club",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "epsilonsigmazetas",
+      "label": "Zeta Phi Beta Sorority Incorporated",
+      "category": "fraternity-sorority"
+    },
+    {
+      "handle": "esa_ucr",
+      "label": "Egyptian  Student Association",
+      "category": "cultural"
+    },
+    {
+      "handle": "ethicsbowl.ucr",
+      "label": "Ethics Bowl at UCR",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "ewb_ucr",
+      "label": "Engineers Without Borders at UCR",
+      "category": "service"
     },
     {
       "handle": "f1_ucr",
@@ -79,16 +513,106 @@
       "instagram_user_id": 74939757467
     },
     {
+      "handle": "feenucr",
+      "label": " Free Enterprise, Entrepreneurship and Networking club",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "fencingatucr",
+      "label": "Fencing at UCR",
+      "category": "recreational"
+    },
+    {
+      "handle": "fgsa.ucr",
+      "label": "First Generation Student Association",
+      "category": "cultural"
+    },
+    {
       "handle": "fit.ucr",
       "label": "fit ucr",
       "category": "club",
       "instagram_user_id": 77448754500
     },
     {
+      "handle": "friendsmsf_ucr",
+      "label": "Friends of M\u00e9decins Sans Fronti\u00e8res at UCR",
+      "category": "service"
+    },
+    {
+      "handle": "fsicucr",
+      "label": "Fraternity and Sorority Involvement Center",
+      "category": "department-program"
+    },
+    {
+      "handle": "ftoc_ucr",
+      "label": "Future Teachers of Color Committed to Racial Justice+",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "futurepills_ucr",
+      "label": "Future Pharmacists Interested in Learning Leadership Skills",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "gamespawn.ucr",
+      "label": "Gamespawn at UCR",
+      "category": "academic-professional"
+    },
+    {
       "handle": "gammaphibeta_ucr",
       "label": "gammaphibeta ucr",
       "category": "club",
       "instagram_user_id": 211340585
+    },
+    {
+      "handle": "gdg_ucr",
+      "label": "Google Developer Group, University of California, Riverside",
+      "category": "graduate-student-organization"
+    },
+    {
+      "handle": "geostudentorg",
+      "label": "Geology Student Organization",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "giddhaucr",
+      "label": "Riverside Giddhe di Raunak",
+      "category": "arts-and-expression"
+    },
+    {
+      "handle": "gmb_ucr",
+      "label": "Global Medical Brigades at UCR",
+      "category": "service"
+    },
+    {
+      "handle": "gopatucr",
+      "label": "California College Republicans",
+      "category": "action-and-awareness"
+    },
+    {
+      "handle": "greenwoodanimeclub",
+      "label": "Greenwood Anime Club",
+      "category": "arts-and-expression"
+    },
+    {
+      "handle": "gsa_ucr",
+      "label": "Gujarat Student Association ",
+      "category": "cultural"
+    },
+    {
+      "handle": "guitarclubatucr",
+      "label": "Guitar Club at UCR",
+      "category": "arts-and-expression"
+    },
+    {
+      "handle": "hallyucr",
+      "label": "Hallyu At UCR",
+      "category": "cultural"
+    },
+    {
+      "handle": "handsonhealthcare_ucr",
+      "label": "Hands On Health Care",
+      "category": "service"
     },
     {
       "handle": "hbi.ucr",
@@ -103,10 +627,35 @@
       "instagram_user_id": 50054887393
     },
     {
+      "handle": "he_ucr",
+      "label": "History Enthusiasts at UCR",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "healthqueers.ucr",
+      "label": "Health Queers",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "healthyheartnationucr",
+      "label": "Healthy Heart Nation UCR",
+      "category": "service"
+    },
+    {
+      "handle": "hec_ucr",
+      "label": "Highlander Economics Club",
+      "category": "academic-professional"
+    },
+    {
       "handle": "heressentialsucr",
       "label": "heressentialsucr",
       "category": "club",
       "instagram_user_id": 69526589570
+    },
+    {
+      "handle": "hermandaducr",
+      "label": "La Hermandad de UCR",
+      "category": "cultural"
     },
     {
       "handle": "hfgucr",
@@ -115,10 +664,30 @@
       "instagram_user_id": 39866702660
     },
     {
+      "handle": "highlander_cubing",
+      "label": "Highlander Cubing",
+      "category": "recreational"
+    },
+    {
       "handle": "highlander_opps",
       "label": "highlander_opps",
       "category": "club",
       "instagram_user_id": 61891229261
+    },
+    {
+      "handle": "highlander_riders",
+      "label": "Highlander Riders",
+      "category": "recreational"
+    },
+    {
+      "handle": "highlanderduelist",
+      "label": "Highlander Duelists",
+      "category": "recreational"
+    },
+    {
+      "handle": "highlanderems",
+      "label": "Highlander EMS",
+      "category": "academic-professional"
     },
     {
       "handle": "highlandergloves",
@@ -133,10 +702,125 @@
       "instagram_user_id": 6099631600
     },
     {
+      "handle": "hisa.ucr",
+      "label": "Hispanic Student Association at UCR",
+      "category": "cultural"
+    },
+    {
+      "handle": "hiss.ucr",
+      "label": "Highlander Statistics Society",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "hlg_ucr",
+      "label": "Highlander Gaming",
+      "category": "recreational"
+    },
+    {
+      "handle": "hmtg_ucr",
+      "label": "Highlander MTG",
+      "category": "arts-and-expression"
+    },
+    {
+      "handle": "hsa.ucr",
+      "label": "Hmong Student Association at UCR",
+      "category": "cultural"
+    },
+    {
+      "handle": "hsgradstudents",
+      "label": "Hispanic Studies Graduate Student Organization",
+      "category": "mini-gsa"
+    },
+    {
       "handle": "hspucr",
       "label": "hspucr",
       "category": "club",
       "instagram_user_id": 58896999086
+    },
+    {
+      "handle": "hungry4biscuits_ucr",
+      "label": "Hungry 4 Biscuits",
+      "category": "service"
+    },
+    {
+      "handle": "hznupes",
+      "label": "Kappa Alpha Psi Fraternity, Inc.",
+      "category": "fraternity-sorority"
+    },
+    {
+      "handle": "ie.communists",
+      "label": "Revolutionary Communists of America at UCR",
+      "category": "action-and-awareness"
+    },
+    {
+      "handle": "ieeeucr",
+      "label": "Institute of Electrical and Electronics Engineers",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "ifc_ucr",
+      "label": "Interfraternity Council (IFC)",
+      "category": "fraternity-sorority"
+    },
+    {
+      "handle": "inlandempirestreetmed",
+      "label": "Inland Empire Street Care",
+      "category": "service"
+    },
+    {
+      "handle": "isa.ucr",
+      "label": "Indian Students Association",
+      "category": "cultural"
+    },
+    {
+      "handle": "isaatucr",
+      "label": "Iranian Student Association",
+      "category": "cultural"
+    },
+    {
+      "handle": "italianclub.ucr",
+      "label": "Italian Club",
+      "category": "cultural"
+    },
+    {
+      "handle": "ite_ucr",
+      "label": "Institute of Transportation Engineers at University of California, Riverside",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "juiceclubucr",
+      "label": "Joining Undergraduates in Civic Enagement",
+      "category": "service"
+    },
+    {
+      "handle": "ka.orderofomega",
+      "label": "Order of Omega",
+      "category": "department-affiliated-organization"
+    },
+    {
+      "handle": "kadenceucr",
+      "label": "KADENCE UCR Cover Team",
+      "category": "arts-and-expression"
+    },
+    {
+      "handle": "kendo_ucr",
+      "label": "Kendo Club @ UCR",
+      "category": "recreational"
+    },
+    {
+      "handle": "kindred_vc",
+      "label": "Kindred Volunteer Collective",
+      "category": "service"
+    },
+    {
+      "handle": "kkg_ucr",
+      "label": "Kappa Kappa Gamma Sorority",
+      "category": "fraternity-sorority"
+    },
+    {
+      "handle": "klesis_ucr",
+      "label": "Klesis Christian Fellowship",
+      "category": "spiritual-religious-atheist"
     },
     {
       "handle": "lablinkucr",
@@ -145,10 +829,185 @@
       "instagram_user_id": 69417052070
     },
     {
+      "handle": "lafamiliadeucr",
+      "label": "La Familia de UCR",
+      "category": "cultural"
+    },
+    {
+      "handle": "latinounion",
+      "label": "Latino Union",
+      "category": "service"
+    },
+    {
+      "handle": "lbsariverside",
+      "label": "Latino Business Student Association",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "legoclub.ucr",
+      "label": "LEGO Club",
+      "category": "recreational"
+    },
+    {
+      "handle": "lifeoncampus.ucr",
+      "label": "Life",
+      "category": "spiritual-religious-atheist"
+    },
+    {
+      "handle": "literacyucr",
+      "label": "The Literacy Initiative",
+      "category": "service"
+    },
+    {
+      "handle": "live.action.ucr",
+      "label": "Live Action at UCR",
+      "category": "action-and-awareness"
+    },
+    {
+      "handle": "lmsaucr",
+      "label": "Latino Medical Student Association +",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "lsv.ucr",
+      "label": "Latinic Societas Unitas (LSU)",
+      "category": "fraternity-sorority"
+    },
+    {
+      "handle": "lta_gammazeta",
+      "label": "Lambda Theta Alpha Latin Sorority, Inc.",
+      "category": "fraternity-sorority"
+    },
+    {
+      "handle": "maes.ucr",
+      "label": "MAES Student Chapter at UC Riverside",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "mcl_ucr",
+      "label": "Music Changing Lives at UCR",
+      "category": "service"
+    },
+    {
+      "handle": "mechadeucr",
+      "label": "Movimiento Estudiantil Chicanx de Aztlan (MECHA)",
+      "category": "action-and-awareness"
+    },
+    {
+      "handle": "melodymakeratucr",
+      "label": "Melody Maker at UCR",
+      "category": "arts-and-expression"
+    },
+    {
+      "handle": "mes.ucr",
+      "label": "Music Enthusiasts Society",
+      "category": "arts-and-expression"
+    },
+    {
+      "handle": "mhc_ucr",
+      "label": "Mixed Heritage Club",
+      "category": "cultural"
+    },
+    {
+      "handle": "mia_ucr",
+      "label": "Medics in Armenia at UC Riverside",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "msaucr",
+      "label": "Muslim Student Association",
+      "category": "spiritual-religious-atheist"
+    },
+    {
+      "handle": "msmegsa",
+      "label": "Materials Science and Mechanical Engineering Graduate Student Association",
+      "category": "mini-gsa"
+    },
+    {
+      "handle": "muchidst",
+      "label": "Delta Sigma Theta Sorority, Incorporated",
+      "category": "fraternity-sorority"
+    },
+    {
+      "handle": "mujeresunidas_ucr",
+      "label": "Mujeres Unidas de UCR",
+      "category": "action-and-awareness"
+    },
+    {
+      "handle": "naamaucr",
+      "label": "National Arab American Medical Association NextGen Chapter at University of California, Riverside",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "nasaucr",
+      "label": "Native American Student Association (NASA)",
+      "category": "cultural"
+    },
+    {
+      "handle": "naspucr",
+      "label": "Native American Student Programs",
+      "category": "campus-department"
+    },
+    {
+      "handle": "nblsa_ucr",
+      "label": "National Black Law Student Association",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "neuropsychatucr",
+      "label": "NeuroPsychology Club at UCR",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "newmancentercsf",
+      "label": "Catholic Student Fellowship",
+      "category": "spiritual-religious-atheist"
+    },
+    {
+      "handle": "nhmc_at_ucr",
+      "label": "Natural History Museum Club",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "nnc.ucr",
+      "label": "Neo-Noir Creatives",
+      "category": "academic-professional"
+    },
+    {
       "handle": "nsbe_ucr",
       "label": "nsbe ucr",
       "category": "club",
       "instagram_user_id": 1535605578
+    },
+    {
+      "handle": "nsls_ucr",
+      "label": "The National Society of Leadership and Success",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "oasis.ucr",
+      "label": "Oasis Christian Fellowship",
+      "category": "spiritual-religious-atheist"
+    },
+    {
+      "handle": "oaxaquenosdeucr",
+      "label": "Oaxaque\u00f1os de UCR",
+      "category": "cultural"
+    },
+    {
+      "handle": "officialblackgsaucr",
+      "label": "Black Graduate Student Association at UCR",
+      "category": "graduate-student-organization"
+    },
+    {
+      "handle": "openarmsucr",
+      "label": "Open Arms",
+      "category": "action-and-awareness"
+    },
+    {
+      "handle": "patatucr",
+      "label": "Physician Associates of Tomorrow",
+      "category": "academic-professional"
     },
     {
       "handle": "period.ucr",
@@ -157,10 +1016,110 @@
       "instagram_user_id": 6249445918
     },
     {
+      "handle": "phideucr",
+      "label": "Phi Delta Epsilon International Medical Fraternity",
+      "category": "academic-professional"
+    },
+    {
       "handle": "pickleballclubatucr",
       "label": "pickleballclubatucr",
       "category": "club",
       "instagram_user_id": 62329001999
+    },
+    {
+      "handle": "pihengage_ucr",
+      "label": "Partners in Health Engage at UC Riverside",
+      "category": "service"
+    },
+    {
+      "handle": "pikappucr",
+      "label": "Pi Kappa Phi",
+      "category": "fraternity-sorority"
+    },
+    {
+      "handle": "pisa_ucr",
+      "label": "Pacific Islander Student Association",
+      "category": "cultural"
+    },
+    {
+      "handle": "poderatucr",
+      "label": "Providing Opportunities Dreams and Education in Riverside",
+      "category": "action-and-awareness"
+    },
+    {
+      "handle": "precisionforvision",
+      "label": "Precision For Vision",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "productclubatucr",
+      "label": "AGSM PRODUCT CLUB at UCR",
+      "category": "mini-gsa"
+    },
+    {
+      "handle": "projectluxucr",
+      "label": "Project Lux",
+      "category": "service"
+    },
+    {
+      "handle": "psaucr",
+      "label": "Pakistani Student Association",
+      "category": "cultural"
+    },
+    {
+      "handle": "psi_chi_ucr",
+      "label": "Psi Chi Psychology Honor Society",
+      "category": "honors"
+    },
+    {
+      "handle": "psucriverside",
+      "label": "Project Sunshine at University of California Riverside School of Medicine Chapter",
+      "category": "service"
+    },
+    {
+      "handle": "qa_ucr",
+      "label": "Queer Alliance",
+      "category": "action-and-awareness"
+    },
+    {
+      "handle": "qaapi.ucr_",
+      "label": "Queer Association of Asian and Pacific Islanders",
+      "category": "cultural"
+    },
+    {
+      "handle": "qs.ucr",
+      "label": "Quranic Studies UCR",
+      "category": "spiritual-religious-atheist"
+    },
+    {
+      "handle": "qsswana.ucr",
+      "label": "Queer South Asian & South West Asian Student Org",
+      "category": "club"
+    },
+    {
+      "handle": "qtpoc.ucr",
+      "label": "Queer & Trans People of Color",
+      "category": "action-and-awareness"
+    },
+    {
+      "handle": "r_p.a.w.s._ucr",
+      "label": "Our Protectors of Animal Wellbeing and Safety",
+      "category": "action-and-awareness"
+    },
+    {
+      "handle": "rbrainsatucr",
+      "label": "R'Brains and Behavior",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "rcycle_coop",
+      "label": "R'Cycle Co-op",
+      "category": "action-and-awareness"
+    },
+    {
+      "handle": "reach.ucr",
+      "label": "Real Estate Careers and Horizons",
+      "category": "club"
     },
     {
       "handle": "ridesucr",
@@ -175,10 +1134,125 @@
       "instagram_user_id": 80276544262
     },
     {
+      "handle": "riversidekcm",
+      "label": "Kristos Campus Mission",
+      "category": "spiritual-religious-atheist"
+    },
+    {
+      "handle": "rling.ucr",
+      "label": "R'LING",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "rpantry.ucr",
+      "label": "R'Pantry",
+      "category": "club"
+    },
+    {
+      "handle": "rsd_dragonboat",
+      "label": "Riverside Surging Dragons Dragon Boat Association",
+      "category": "recreational"
+    },
+    {
+      "handle": "rside_bhangra_",
+      "label": "Riverside Bhangra",
+      "category": "arts-and-expression"
+    },
+    {
+      "handle": "rssa.ucr",
+      "label": "Russian-Speaking Student Association",
+      "category": "cultural"
+    },
+    {
+      "handle": "rstageucr",
+      "label": "R'Stage Productions",
+      "category": "arts-and-expression"
+    },
+    {
+      "handle": "rtimeinaflash",
+      "label": "R'TimeinaFlash",
+      "category": "arts-and-expression"
+    },
+    {
       "handle": "runningclubatucr",
       "label": "runningclubatucr",
       "category": "club",
       "instagram_user_id": 1063625722
+    },
+    {
+      "handle": "rxducr",
+      "label": "Riverside X Dance",
+      "category": "arts-and-expression"
+    },
+    {
+      "handle": "sakurabu_ucr",
+      "label": "Sakura-bu",
+      "category": "cultural"
+    },
+    {
+      "handle": "sblcucr",
+      "label": "School of Business Leadership Council at UC Riverside",
+      "category": "department-affiliated-organization"
+    },
+    {
+      "handle": "scf.ucr",
+      "label": "Sikh Collegiate Federation",
+      "category": "action-and-awareness"
+    },
+    {
+      "handle": "scicommucr",
+      "label": "SciComm @ UCR",
+      "category": "graduate-student-organization"
+    },
+    {
+      "handle": "scottyslaunchsquad",
+      "label": "Scotty's Launch Squad",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "scs.ucr",
+      "label": "Supply Chain Society at UC Riverside",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "sdu_ucr",
+      "label": "Student Disability Union",
+      "category": "action-and-awareness"
+    },
+    {
+      "handle": "seasgraducr",
+      "label": "Southeast Asian Studies Graduate Student Association",
+      "category": "graduate-student-organization"
+    },
+    {
+      "handle": "senryutaiko",
+      "label": "Senryu Taiko",
+      "category": "arts-and-expression"
+    },
+    {
+      "handle": "sharpucr",
+      "label": "Student Homeless Aid Relief Project at UCR",
+      "category": "service"
+    },
+    {
+      "handle": "shpeucr",
+      "label": "Society of Hispanic Professional Engineers",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "sigmaeta1976",
+      "label": "Omega Psi Phi Fraternity, Inc",
+      "category": "fraternity-sorority"
+    },
+    {
+      "handle": "signinghighlanders",
+      "label": "American Sign Language Club",
+      "category": "cultural"
+    },
+    {
+      "handle": "sjpucr",
+      "label": "Students for Justice in Palestine (SJP)",
+      "category": "action-and-awareness"
     },
     {
       "handle": "skateclubucr",
@@ -187,10 +1261,55 @@
       "instagram_user_id": 53161097663
     },
     {
+      "handle": "skyatucr",
+      "label": "SKY Campus",
+      "category": "recreational"
+    },
+    {
+      "handle": "sm.ucr",
+      "label": "SOON Movement Global",
+      "category": "spiritual-religious-atheist"
+    },
+    {
       "handle": "smthnsweet.ucr",
       "label": "smthnsweet ucr",
       "category": "club",
       "instagram_user_id": 77689103764
+    },
+    {
+      "handle": "sos_ucr",
+      "label": "Students Organize for Syria",
+      "category": "action-and-awareness"
+    },
+    {
+      "handle": "ssa_ucr",
+      "label": "Sikh Student Association",
+      "category": "spiritual-religious-atheist"
+    },
+    {
+      "handle": "stage_ucr",
+      "label": "STAGE: Chinese Performing Arts Club",
+      "category": "arts-and-expression"
+    },
+    {
+      "handle": "starvingartistsucr",
+      "label": "Starving Artists",
+      "category": "arts-and-expression"
+    },
+    {
+      "handle": "starwarsucr",
+      "label": "Star Wars Club at UCR",
+      "category": "arts-and-expression"
+    },
+    {
+      "handle": "stem_connections_club",
+      "label": "STEM Connections Club",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "sustainableucr",
+      "label": "Sustainable UCR",
+      "category": "action-and-awareness"
     },
     {
       "handle": "swe.ucr",
@@ -199,10 +1318,45 @@
       "instagram_user_id": 1517079735
     },
     {
+      "handle": "tartanseoul",
+      "label": "Tartan Seoul",
+      "category": "recreational"
+    },
+    {
+      "handle": "tasc_ucr",
+      "label": "The Actuarial Science Club",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "tausigma_ucr",
+      "label": "Tau Sigma National Honor Society",
+      "category": "honors"
+    },
+    {
+      "handle": "tbp.ucr",
+      "label": "Tau Beta Pi (The Engineering Honor Society)",
+      "category": "honors"
+    },
+    {
+      "handle": "thegardenprojectucr",
+      "label": "The Garden Project at UCR",
+      "category": "club"
+    },
+    {
+      "handle": "theservecollective.ucr",
+      "label": "The Serve Collective",
+      "category": "service"
+    },
+    {
       "handle": "thetatauucr",
       "label": "thetatauucr",
       "category": "club",
       "instagram_user_id": 261167692
+    },
+    {
+      "handle": "theverbalcoliseum",
+      "label": "The Verbal Coliseum",
+      "category": "arts-and-expression"
     },
     {
       "handle": "thewomensnetwork_ucr",
@@ -211,10 +1365,195 @@
       "instagram_user_id": 44297150814
     },
     {
+      "handle": "tkdatucr",
+      "label": "Taekwondo Club @ UCR",
+      "category": "recreational"
+    },
+    {
+      "handle": "together_in_grief_ucr",
+      "label": "Together in Grief",
+      "category": "action-and-awareness"
+    },
+    {
+      "handle": "tpusa_at_ucr",
+      "label": "Turning Point USA at University of California Riverside",
+      "category": "action-and-awareness"
+    },
+    {
+      "handle": "transfersf1rst",
+      "label": "CHASS Transfers First Program",
+      "category": "department-affiliated-organization"
+    },
+    {
+      "handle": "tsuucr",
+      "label": "Thai Student Union at UCR",
+      "category": "cultural"
+    },
+    {
+      "handle": "ttsmatucr",
+      "label": "Tomorrow's Teachers in Science and Math",
+      "category": "academic-professional"
+    },
+    {
       "handle": "ubaucr",
       "label": "ubaucr",
       "category": "club",
       "instagram_user_id": 349188505
+    },
+    {
+      "handle": "ucr.apisac",
+      "label": "Asian Pacific Islander Student Advisory Council",
+      "category": "cultural"
+    },
+    {
+      "handle": "ucr.army.rotc",
+      "label": "US Army ROTC",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "ucr.asme",
+      "label": "American Society of Mechanical Engineers at UCR (ASME)",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "ucr.aurora",
+      "label": "Astronomy Union for Reading, Outreach and Research Activities",
+      "category": "mini-gsa"
+    },
+    {
+      "handle": "ucr.bsu",
+      "label": "Black Student Union",
+      "category": "cultural"
+    },
+    {
+      "handle": "ucr.ffa",
+      "label": "Fight For Autism",
+      "category": "service"
+    },
+    {
+      "handle": "ucr.karing.kits",
+      "label": "Karing Kits",
+      "category": "service"
+    },
+    {
+      "handle": "ucr.mrs",
+      "label": "Materials Research Society at UC Riverside",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "ucr.psa",
+      "label": "Pi Sigma Alpha",
+      "category": "honors"
+    },
+    {
+      "handle": "ucr.rshorts",
+      "label": "R'shorts",
+      "category": "arts-and-expression"
+    },
+    {
+      "handle": "ucr.saiv",
+      "label": "South Asian InterVarsity",
+      "category": "spiritual-religious-atheist"
+    },
+    {
+      "handle": "ucr.sasi",
+      "label": "Sisters Affirming our Social-cultural Identities",
+      "category": "action-and-awareness"
+    },
+    {
+      "handle": "ucr_aga",
+      "label": "Alpha Gamma Alpha Sorority",
+      "category": "fraternity-sorority"
+    },
+    {
+      "handle": "ucr_ahua",
+      "label": "Art History Undergraduate Association",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "ucr_asa",
+      "label": "Armenian Student Association",
+      "category": "cultural"
+    },
+    {
+      "handle": "ucr_biomedical_sciences",
+      "label": "Biomedical Sciences Departmental Graduate Student Association",
+      "category": "mini-gsa"
+    },
+    {
+      "handle": "ucr_calpirg",
+      "label": "CA Public Interest Research Group (CALPIRG)",
+      "category": "action-and-awareness"
+    },
+    {
+      "handle": "ucr_chemgsa",
+      "label": "Chemistry Graduate Student Association at UCR",
+      "category": "mini-gsa"
+    },
+    {
+      "handle": "ucr_copeclub",
+      "label": "COPE Health Scholars",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "ucr_creatrlab",
+      "label": "Creat'R Lab",
+      "category": "club"
+    },
+    {
+      "handle": "ucr_csgsa",
+      "label": "CSGSA",
+      "category": "mini-gsa"
+    },
+    {
+      "handle": "ucr_eeob_gsa",
+      "label": "Evolution, Ecology, and Organismal Biology Graduate Student Association",
+      "category": "mini-gsa"
+    },
+    {
+      "handle": "ucr_entomology",
+      "label": "Entomology Graduate Student Association",
+      "category": "mini-gsa"
+    },
+    {
+      "handle": "ucr_flyingsamaritans",
+      "label": "Flying Samaritans at UCR",
+      "category": "service"
+    },
+    {
+      "handle": "ucr_gsa",
+      "label": "Graduate Student Association",
+      "category": "mini-gsa"
+    },
+    {
+      "handle": "ucr_hanwave",
+      "label": "HanWave",
+      "category": "cultural"
+    },
+    {
+      "handle": "ucr_hillel",
+      "label": "Hillel at UCR",
+      "category": "spiritual-religious-atheist"
+    },
+    {
+      "handle": "ucr_intervarsity",
+      "label": "InterVarsity Christian Fellowship",
+      "category": "spiritual-religious-atheist"
+    },
+    {
+      "handle": "ucr_lsa",
+      "label": "Lebanese Student Association at UCR",
+      "category": "cultural"
+    },
+    {
+      "handle": "ucr_lsg",
+      "label": "Lambda Sigma Gamma",
+      "category": "fraternity-sorority"
+    },
+    {
+      "handle": "ucr_mcbl",
+      "label": "Microbiology Graduate Student Association",
+      "category": "mini-gsa"
     },
     {
       "handle": "ucr_mcvb",
@@ -223,10 +1562,45 @@
       "instagram_user_id": 53716759548
     },
     {
+      "handle": "ucr_nphc",
+      "label": "National Pan-Hellenic Council (NPHC)",
+      "category": "fraternity-sorority"
+    },
+    {
+      "handle": "ucr_powur",
+      "label": "Physics Organization for Womxn and the Under-Represented",
+      "category": "graduate-student-organization"
+    },
+    {
+      "handle": "ucr_ptso",
+      "label": "Pre-Therapy Student Organization",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "ucr_racquetball",
+      "label": "Racquetball Club at UCR",
+      "category": "recreational"
+    },
+    {
       "handle": "ucr_resed",
       "label": "ucr residential education",
       "category": "organization",
       "instagram_user_id": 5992300951
+    },
+    {
+      "handle": "ucr_rugby",
+      "label": "Rugby Football Club at UCR",
+      "category": "recreational"
+    },
+    {
+      "handle": "ucr_s4",
+      "label": "Secret Swords and Sorcery Society",
+      "category": "arts-and-expression"
+    },
+    {
+      "handle": "ucr_sps",
+      "label": "The Society of Physics Students",
+      "category": "academic-professional"
     },
     {
       "handle": "ucr_table_tennis",
@@ -241,10 +1615,163 @@
       "instagram_user_id": 62539073670
     },
     {
+      "handle": "ucr_vex_robotics",
+      "label": "VEX Robotics",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "ucr_wcs",
+      "label": "Women's Club Soccer",
+      "category": "recreational"
+    },
+    {
+      "handle": "ucr_womenswpc",
+      "label": "Women\u2019s Water Polo Club",
+      "category": "recreational"
+    },
+    {
+      "handle": "ucraag",
+      "label": "Aag: Fusion Dance Team",
+      "category": "recreational"
+    },
+    {
+      "handle": "ucraas_",
+      "label": "UCRaas Collegiate Indian Folk Dance Team",
+      "category": "recreational"
+    },
+    {
+      "handle": "ucraccountingsociety",
+      "label": "Accounting Society at UC Riverside",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "ucracs",
+      "label": "American Cancer Society at UCR",
+      "category": "action-and-awareness"
+    },
+    {
+      "handle": "ucradpi",
+      "label": "Alpha Delta Pi",
+      "category": "fraternity-sorority"
+    },
+    {
+      "handle": "ucradventureclub",
+      "label": "Adventure Club",
+      "category": "recreational"
+    },
+    {
       "handle": "ucrakpsi",
       "label": "ucrakpsi",
       "category": "club",
       "instagram_user_id": 305825871
+    },
+    {
+      "handle": "ucralphapisigma",
+      "label": "Alpha Pi Sigma Sorority, Incorporated.",
+      "category": "fraternity-sorority"
+    },
+    {
+      "handle": "ucrasa",
+      "label": "Afghan Student Association",
+      "category": "cultural"
+    },
+    {
+      "handle": "ucraviationclub",
+      "label": "Aviation Club at UC Riverside",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "ucrbap",
+      "label": "Beta Alpha Psi",
+      "category": "honors"
+    },
+    {
+      "handle": "ucrbbqclub",
+      "label": "Barbecue Club",
+      "category": "recreational"
+    },
+    {
+      "handle": "ucrbcoe",
+      "label": "UCR Bourns College of Engineering",
+      "category": "college",
+      "instagram_user_id": 13267338009
+    },
+    {
+      "handle": "ucrbea",
+      "label": "Business Entertainment Association",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "ucrbeating_in_sync",
+      "label": "Beating in Sync",
+      "category": "action-and-awareness"
+    },
+    {
+      "handle": "ucrbiggsa",
+      "label": "Bioengineering Mini-GSA",
+      "category": "mini-gsa"
+    },
+    {
+      "handle": "ucrbjj",
+      "label": "Highlander Jiu Jitsu at UCR",
+      "category": "recreational"
+    },
+    {
+      "handle": "ucrbloodinitiative",
+      "label": "University Blood Initiative at UCR",
+      "category": "service"
+    },
+    {
+      "handle": "ucrbookbears",
+      "label": "Book Bears at UCR",
+      "category": "arts-and-expression"
+    },
+    {
+      "handle": "ucrbsc",
+      "label": "Business Strategy Club",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "ucrcamp",
+      "label": "California Alliance for Maximizing Potential",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "ucrcareercenter",
+      "label": "UC Riverside Career Center",
+      "category": "organization",
+      "instagram_user_id": 486297734
+    },
+    {
+      "handle": "ucrchass",
+      "label": "UCR CHASS",
+      "category": "college",
+      "instagram_user_id": 7581166164
+    },
+    {
+      "handle": "ucrclubswim",
+      "label": "Club Swim at UCR",
+      "category": "recreational"
+    },
+    {
+      "handle": "ucrclubtennis",
+      "label": "Tennis on Campus at University of California, Riverside",
+      "category": "recreational"
+    },
+    {
+      "handle": "ucrclubvolleyball",
+      "label": "Women's Club Volleyball",
+      "category": "recreational"
+    },
+    {
+      "handle": "ucrcommunitygarden",
+      "label": "R'Garden",
+      "category": "department-program"
+    },
+    {
+      "handle": "ucrcricket",
+      "label": "Cricket Team at UCR",
+      "category": "recreational"
     },
     {
       "handle": "ucrcsa",
@@ -253,10 +1780,40 @@
       "instagram_user_id": 1615969864
     },
     {
+      "handle": "ucrdems",
+      "label": "College Democrats at UC Riverside",
+      "category": "action-and-awareness"
+    },
+    {
       "handle": "ucrdragclub",
       "label": "ucrdragclub",
       "category": "club",
       "instagram_user_id": 29640157498
+    },
+    {
+      "handle": "ucretox_mgsa",
+      "label": "The Mini-Graduate Student Association of the Environmental Toxicology Program",
+      "category": "mini-gsa"
+    },
+    {
+      "handle": "ucrfinaid",
+      "label": "Financial Aid Office",
+      "category": "club"
+    },
+    {
+      "handle": "ucrfinwell",
+      "label": "Financial Wellness Program",
+      "category": "club"
+    },
+    {
+      "handle": "ucrfitnessangels",
+      "label": "Fitness Angels",
+      "category": "recreational"
+    },
+    {
+      "handle": "ucrflh",
+      "label": "Fostering Loving Hands",
+      "category": "service"
     },
     {
       "handle": "ucrfurries",
@@ -265,10 +1822,25 @@
       "instagram_user_id": 66784623427
     },
     {
+      "handle": "ucrgardening",
+      "label": "Gardening Club",
+      "category": "service"
+    },
+    {
       "handle": "ucrgirlgains",
       "label": "ucrgirlgains",
       "category": "club",
       "instagram_user_id": 55148341319
+    },
+    {
+      "handle": "ucrgoalies",
+      "label": "Global Opportunities Abroad Leaders Initiative",
+      "category": "service"
+    },
+    {
+      "handle": "ucrgoldenarches",
+      "label": "Golden ARCHES",
+      "category": "department-affiliated-organization"
     },
     {
       "handle": "ucrhcg",
@@ -277,10 +1849,66 @@
       "instagram_user_id": 55005045886
     },
     {
+      "handle": "ucrhealthycampus",
+      "label": "UCR Healthy Campus",
+      "category": "campus-department"
+    },
+    {
+      "handle": "ucrhealthyhearts",
+      "label": "Healthy Hearts Student Organization at UCR",
+      "category": "service"
+    },
+    {
+      "handle": "ucrhearts",
+      "label": "Health Exploration and Rotational Training Society at UCR",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "ucrhinduyuva",
+      "label": "Hindu YUVA at UCR",
+      "category": "cultural"
+    },
+    {
       "handle": "ucrhksa",
       "label": "ucrhksa",
       "category": "club",
       "instagram_user_id": 38098166631
+    },
+    {
+      "handle": "ucrhooksforhope",
+      "label": "Hooks for Hope",
+      "category": "service"
+    },
+    {
+      "handle": "ucrhosa",
+      "label": "HOSA - Future Health Professionals",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "ucrhpa",
+      "label": "Health Professions Association",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "ucrhsa",
+      "label": "Highlander Sports Analytics",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "ucrhub_programs",
+      "label": "HUB programs",
+      "category": "organization",
+      "instagram_user_id": 176295393
+    },
+    {
+      "handle": "ucrigsa",
+      "label": "Iranian Graduate Student Association",
+      "category": "graduate-student-organization"
+    },
+    {
+      "handle": "ucrispestudent",
+      "label": "Student Chapter of ISPE at UCR",
+      "category": "academic-professional"
     },
     {
       "handle": "ucriversidearc",
@@ -295,10 +1923,40 @@
       "instagram_user_id": 228928590
     },
     {
+      "handle": "ucrkapi",
+      "label": "Kappa Alpha Pi",
+      "category": "academic-professional"
+    },
+    {
       "handle": "ucrkasa",
       "label": "ucrkasa",
       "category": "club",
       "instagram_user_id": 11137893764
+    },
+    {
+      "handle": "ucrkdsap",
+      "label": "Kidney Disease Screening and Awareness Program @ UCR",
+      "category": "action-and-awareness"
+    },
+    {
+      "handle": "ucrlawtinx",
+      "label": "Lawtinx Pre-Law Club",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "ucrlax",
+      "label": "Lacrosse Club at UCR",
+      "category": "recreational"
+    },
+    {
+      "handle": "ucrleap",
+      "label": "Loving our Emotions as Asians & Pacific Islanders",
+      "category": "action-and-awareness"
+    },
+    {
+      "handle": "ucrleosclub",
+      "label": "LEO's Club at UCR",
+      "category": "service"
     },
     {
       "handle": "ucrlgbtrc",
@@ -313,10 +1971,40 @@
       "instagram_user_id": 321894409
     },
     {
+      "handle": "ucrlms",
+      "label": "Legal Minds Society",
+      "category": "academic-professional"
+    },
+    {
       "handle": "ucrmcbb",
       "label": "ucrmcbb",
       "category": "club",
       "instagram_user_id": 50696028633
+    },
+    {
+      "handle": "ucrmeep",
+      "label": "Medical Emergency Education Project",
+      "category": "action-and-awareness"
+    },
+    {
+      "handle": "ucrmensclubsoccer",
+      "label": "Men's Club Soccer at UCR",
+      "category": "recreational"
+    },
+    {
+      "handle": "ucrmensclubvb",
+      "label": "Men's Club Volleyball at UCR",
+      "category": "recreational"
+    },
+    {
+      "handle": "ucrmmc",
+      "label": "Military Medical Community",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "ucrmocktrial",
+      "label": "Highlander Mock Trial",
+      "category": "academic-professional"
     },
     {
       "handle": "ucrmuaythai",
@@ -325,76 +2013,29 @@
       "instagram_user_id": 55532477462
     },
     {
-      "handle": "ucrstudentlife",
-      "label": "ucrstudentlife",
-      "category": "organization",
-      "instagram_user_id": 796208340
+      "handle": "ucrmun",
+      "label": "Model United Nations (MUN) at UC Riverside",
+      "category": "academic-professional"
     },
     {
-      "handle": "ucrthriftclub",
-      "label": "ucrthriftclub",
-      "category": "club",
-      "instagram_user_id": 55876794071
+      "handle": "ucrnavs",
+      "label": "Navigators at UCR",
+      "category": "spiritual-religious-atheist"
     },
     {
-      "handle": "ucrvsa",
-      "label": "UCR VSA",
-      "category": "club",
-      "instagram_user_id": 241289265
+      "handle": "ucrneuro",
+      "label": "Neuroscience Graduate Student Association",
+      "category": "mini-gsa"
     },
     {
-      "handle": "ucrwrc",
-      "label": "Women's Resource Center @ UCR",
-      "category": "organization",
-      "instagram_user_id": 3909601186
+      "handle": "ucrneuroclub",
+      "label": "Neuroscience Club",
+      "category": "academic-professional"
     },
     {
-      "handle": "wincucr",
-      "label": "wincucr",
-      "category": "club",
-      "instagram_user_id": 7373831525
-    },
-    {
-      "handle": "aws_ucr",
-      "label": "Autistic Women's Society @ UCR",
-      "category": "club",
-      "instagram_user_id": 39467131173
-    },
-    {
-      "handle": "dss.ucr",
-      "label": "Data Science Society @ UCR",
-      "category": "club",
-      "instagram_user_id": 66845058719
-    },
-    {
-      "handle": "designverseucr",
-      "label": "DesignVerse @ UCR",
-      "category": "club",
-      "instagram_user_id": 61594996435
-    },
-    {
-      "handle": "aisatucr",
-      "label": "Association for Information Systems @ UCR",
-      "category": "club",
-      "instagram_user_id": 42300677675
-    },
-    {
-      "handle": "ucrbcoe",
-      "label": "UCR Bourns College of Engineering",
-      "category": "college",
-      "instagram_user_id": 13267338009
-    },
-    {
-      "handle": "ucrsnowclub",
-      "label": "UCR Snow Club",
-      "category": "club",
-      "instagram_user_id": 2093647104
-    },
-    {
-      "handle": "ucrhub_programs",
-      "label": "HUB programs",
-      "category": "organization",
-      "instagram_user_id": 176295393
+      "handle": "ucrnsa",
+      "label": "Nigerian Student Association",
+      "category": "cultural"
     },
     {
       "handle": "ucrnsu",
@@ -403,22 +2044,271 @@
       "instagram_user_id": 1700220034
     },
     {
+      "handle": "ucrpanhellenic",
+      "label": "College Panhellenic Association",
+      "category": "fraternity-sorority"
+    },
+    {
+      "handle": "ucrpbl.fbla",
+      "label": "Future Business Leaders of America at UCR",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "ucrpct",
+      "label": "Phi Chi Theta",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "ucrpds",
+      "label": "Pre-Dental Society",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "ucrphialphadelta",
+      "label": "Phi Alpha Delta Pre-Law Fraternity",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "ucrpiphi",
+      "label": "Pi Beta Phi Fraternity for Women",
+      "category": "fraternity-sorority"
+    },
+    {
+      "handle": "ucrpresoma",
+      "label": "Pre-Student Osteopathic Medical Association  ",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "ucrpreveterinaryclub",
+      "label": "Pre-Veterinary Club",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "ucrprishi",
+      "label": "Project RISHI at UCR",
+      "category": "service"
+    },
+    {
+      "handle": "ucrpse",
+      "label": "Pi Sigma Epsilon",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "ucrradiant",
+      "label": "Radiant",
+      "category": "action-and-awareness"
+    },
+    {
+      "handle": "ucrrealestateclub",
+      "label": "Highlander Real Estate Association",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "ucrrfc",
+      "label": "Riverside Free Clinic at UCR",
+      "category": "service"
+    },
+    {
+      "handle": "ucrs2p",
+      "label": "Science Policy Graduate Student Association",
+      "category": "graduate-student-organization"
+    },
+    {
+      "handle": "ucrsaf",
+      "label": "South Asian Federation - SAF",
+      "category": "cultural"
+    },
+    {
+      "handle": "ucrsalsaclub",
+      "label": "The Salsa Club at UCR",
+      "category": "recreational"
+    },
+    {
+      "handle": "ucrsdrc",
+      "label": "Student Disability Resource Center (SDRC)",
+      "category": "campus-department"
+    },
+    {
+      "handle": "ucrsigmakappa",
+      "label": "Sigma Kappa Sorority",
+      "category": "fraternity-sorority"
+    },
+    {
+      "handle": "ucrsigmas",
+      "label": "Phi Beta Sigma Fraternity, Inc.",
+      "category": "fraternity-sorority"
+    },
+    {
+      "handle": "ucrsmilesociety",
+      "label": "Smile Society",
+      "category": "action-and-awareness"
+    },
+    {
+      "handle": "ucrsnowclub",
+      "label": "UCR Snow Club",
+      "category": "club",
+      "instagram_user_id": 2093647104
+    },
+    {
+      "handle": "ucrsoe_scholarnetwork",
+      "label": "Graduate Student Association for the Graduate School of Education",
+      "category": "mini-gsa"
+    },
+    {
+      "handle": "ucrspiritsquad",
+      "label": "Highlanderettes",
+      "category": "recreational"
+    },
+    {
       "handle": "ucrsrc",
       "label": "UCR Student Recreation Center",
       "category": "organization",
       "instagram_user_id": 198878079
     },
     {
-      "handle": "ucrcareercenter",
-      "label": "UC Riverside Career Center",
-      "category": "organization",
-      "instagram_user_id": 486297734
+      "handle": "ucrstratos",
+      "label": "Stratos Associates",
+      "category": "academic-professional"
     },
     {
-      "handle": "ucrchass",
-      "label": "UCR CHASS",
-      "category": "college",
-      "instagram_user_id": 7581166164
+      "handle": "ucrstudentlife",
+      "label": "ucrstudentlife",
+      "category": "organization",
+      "instagram_user_id": 796208340
+    },
+    {
+      "handle": "ucrstudentvets",
+      "label": "Veterans Services",
+      "category": "club"
+    },
+    {
+      "handle": "ucrtgsa",
+      "label": "Taiwanese Graduate Student Association",
+      "category": "graduate-student-organization"
+    },
+    {
+      "handle": "ucrthriftclub",
+      "label": "ucrthriftclub",
+      "category": "club",
+      "instagram_user_id": 55876794071
+    },
+    {
+      "handle": "ucrtrackclub",
+      "label": "Track Club at UCR",
+      "category": "recreational"
+    },
+    {
+      "handle": "ucrtzuching",
+      "label": "The Tzu Chi Collegiate Association at UCR",
+      "category": "service"
+    },
+    {
+      "handle": "ucruhp",
+      "label": "United Health Pathways",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "ucrultimatefrisbee",
+      "label": "Ultimate Frisbee Club at UCR",
+      "category": "recreational"
+    },
+    {
+      "handle": "ucrvrx",
+      "label": "Virtual Reality X",
+      "category": "service"
+    },
+    {
+      "handle": "ucrvsa",
+      "label": "UCR VSA",
+      "category": "club",
+      "instagram_user_id": 241289265
+    },
+    {
+      "handle": "ucrwaterpolo",
+      "label": "Men's Club Water Polo at UCR",
+      "category": "recreational"
+    },
+    {
+      "handle": "ucrwitl",
+      "label": "Womxn In the Law",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "ucrwoof",
+      "label": "Welfare Of Our Furry Friends",
+      "category": "service"
+    },
+    {
+      "handle": "ucrwrc",
+      "label": "Women's Resource Center @ UCR",
+      "category": "organization",
+      "instagram_user_id": 3909601186
+    },
+    {
+      "handle": "ucrwrestlingclub",
+      "label": "Wrestling Club at UCR",
+      "category": "recreational"
+    },
+    {
+      "handle": "uer_official_",
+      "label": "La Union Estudiantil de la Raza (UER)",
+      "category": "fraternity-sorority"
+    },
+    {
+      "handle": "unheardcriescharityatucr",
+      "label": "Unheard Cries Charity",
+      "category": "service"
+    },
+    {
+      "handle": "unicef_ucr",
+      "label": "United Nations International Children's Emergency Fund @ UCR",
+      "category": "service"
+    },
+    {
+      "handle": "urc.bcoe",
+      "label": "Undergraduate Research Club",
+      "category": "academic-professional"
+    },
+    {
+      "handle": "warhammerucr",
+      "label": "Warhammer Club at UCR",
+      "category": "recreational"
+    },
+    {
+      "handle": "werdancersucr",
+      "label": "We R\u2019 Dancers",
+      "category": "recreational"
+    },
+    {
+      "handle": "wincucr",
+      "label": "wincucr",
+      "category": "club",
+      "instagram_user_id": 7373831525
+    },
+    {
+      "handle": "womeninfilm_ucr",
+      "label": "Women in Film",
+      "category": "arts-and-expression"
+    },
+    {
+      "handle": "wushuatucr",
+      "label": "Wushu at UCR",
+      "category": "recreational"
+    },
+    {
+      "handle": "xirhopoodles",
+      "label": "Sigma Gamma Rho Sorority Inc.- Xi Rho Chapter",
+      "category": "fraternity-sorority"
+    },
+    {
+      "handle": "yal_at_ucr",
+      "label": "The Young Americans for Liberty at UCR",
+      "category": "action-and-awareness"
+    },
+    {
+      "handle": "ydsaucr",
+      "label": "Young Democratic Socialists of America at UC Riverside",
+      "category": "action-and-awareness"
     }
   ]
 }

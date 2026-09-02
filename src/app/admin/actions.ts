@@ -12,8 +12,9 @@ import type { AdminEventUpdatePayload } from "./types";
  * Verifies if the current requester is authorized as an admin.
  * Throws an error if not authenticated.
  */
-function requireAdmin() {
-  const session = cookies().get("hh_admin_session")?.value;
+async function requireAdmin() {
+  const cookieStore = await cookies();
+  const session = cookieStore.get("hh_admin_session")?.value;
   if (!verifySession(session)) {
     throw new Error("Unauthorized. Please log in as an administrator.");
   }
@@ -33,7 +34,7 @@ export async function loginAdmin(password: string) {
 
   // Throttle attempts per IP so the single shared password can't be brute-forced.
   const limit = rateLimit(
-    `admin-login:${clientIp(headers())}`,
+    `admin-login:${clientIp(await headers())}`,
     ADMIN_LOGIN_RATE_LIMIT
   );
   if (!limit.ok) {
@@ -54,7 +55,8 @@ export async function loginAdmin(password: string) {
   const expiresAt = Date.now() + durationMs;
   const sessionToken = signSession(expiresAt);
 
-  cookies().set("hh_admin_session", sessionToken, {
+  const cookieStore = await cookies();
+  cookieStore.set("hh_admin_session", sessionToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
@@ -69,7 +71,8 @@ export async function loginAdmin(password: string) {
  * Log out and clear the admin session cookie.
  */
 export async function logoutAdmin() {
-  cookies().set("hh_admin_session", "", {
+  const cookieStore = await cookies();
+  cookieStore.set("hh_admin_session", "", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
@@ -86,7 +89,7 @@ export async function logoutAdmin() {
  * sets its status to 'approved', and records the review timestamp.
  */
 export async function approveSubmission(submissionId: string) {
-  requireAdmin();
+  await requireAdmin();
 
   const supabase = getAdminSupabase();
 
@@ -166,7 +169,7 @@ export async function approveSubmission(submissionId: string) {
   }
 
   // Revalidate both /events feed and admin dashboard path
-  revalidateTag(EVENTS_CACHE_TAG);
+  revalidateTag(EVENTS_CACHE_TAG, "max");
   revalidatePath("/events");
   revalidatePath("/admin");
 
@@ -178,7 +181,7 @@ export async function approveSubmission(submissionId: string) {
  * Marks status as 'rejected' and stores optional notes.
  */
 export async function rejectSubmission(submissionId: string, notes?: string) {
-  requireAdmin();
+  await requireAdmin();
 
   const supabase = getAdminSupabase();
 
@@ -205,7 +208,7 @@ export async function rejectSubmission(submissionId: string, notes?: string) {
  * respect and do NOT overwrite these manual modifications.
  */
 export async function updateEvent(eventId: string, updatedFields: unknown) {
-  requireAdmin();
+  await requireAdmin();
 
   const parsed = parseAdminEventUpdate(updatedFields);
   if (!parsed.ok) {
@@ -233,7 +236,7 @@ export async function updateEvent(eventId: string, updatedFields: unknown) {
     return { success: false, error: `Failed to update event: ${error.message}` };
   }
 
-  revalidateTag(EVENTS_CACHE_TAG);
+  revalidateTag(EVENTS_CACHE_TAG, "max");
   revalidatePath("/events");
   revalidatePath("/admin");
 
@@ -244,7 +247,7 @@ export async function updateEvent(eventId: string, updatedFields: unknown) {
  * Deletes a live event from the bulletin.
  */
 export async function deleteEvent(eventId: string) {
-  requireAdmin();
+  await requireAdmin();
 
   const supabase = getAdminSupabase();
 
@@ -268,7 +271,7 @@ export async function deleteEvent(eventId: string) {
     return { success: false, error: `Failed to delete event: ${error.message}` };
   }
 
-  revalidateTag(EVENTS_CACHE_TAG);
+  revalidateTag(EVENTS_CACHE_TAG, "max");
   revalidatePath("/events");
   revalidatePath("/admin");
 

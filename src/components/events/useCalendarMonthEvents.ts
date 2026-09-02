@@ -22,18 +22,17 @@ export function useCalendarMonthEvents({
   initialCalendarEvents,
   calendarRange,
 }: UseCalendarMonthEventsArgs) {
-  const initialCalendarRangeKey = useRef(calendarRangeKey(calendarRange));
+  const initialKey = calendarRangeKey(calendarRange);
+  const initialCalendarRangeKey = useRef(initialKey);
   const [calendarEvents, setCalendarEvents] = useState(initialCalendarEvents);
   const [isCalendarLoading, setIsCalendarLoading] = useState(false);
-  const [loadedCalendarRangeKey, setLoadedCalendarRangeKey] = useState(
-    initialCalendarRangeKey.current
-  );
-  const [attemptedCalendarRangeKey, setAttemptedCalendarRangeKey] = useState(
-    initialCalendarRangeKey.current
-  );
+  const [loadedCalendarRangeKey, setLoadedCalendarRangeKey] = useState(initialKey);
+  const [attemptedCalendarRangeKey, setAttemptedCalendarRangeKey] =
+    useState(initialKey);
   const currentCalendarRangeKey = calendarRangeKey(calendarRange);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- server calendar payload is an external input
     setCalendarEvents(initialCalendarEvents);
     setLoadedCalendarRangeKey(initialCalendarRangeKey.current);
     setAttemptedCalendarRangeKey(initialCalendarRangeKey.current);
@@ -43,6 +42,7 @@ export function useCalendarMonthEvents({
   useEffect(() => {
     const key = currentCalendarRangeKey;
     if (key === loadedCalendarRangeKey) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- already-loaded month: drop the in-flight spinner
       setIsCalendarLoading(false);
       return;
     }

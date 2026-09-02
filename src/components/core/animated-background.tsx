@@ -59,6 +59,7 @@ export function AnimatedBackground({
 
   useEffect(() => {
     if (defaultValue !== undefined) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- defaultValue is a parent-controlled reset
       setActiveId(defaultValue);
     }
   }, [defaultValue]);

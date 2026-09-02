@@ -46,6 +46,7 @@ export function EventSearchBox({ query, onQueryChange }: Props) {
   }, [open]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- clamp highlight when the suggestion list shrinks
     if (clubs.length === 0) setActiveIndex(-1);
     else if (activeIndex >= clubs.length) setActiveIndex(clubs.length - 1);
   }, [clubs, activeIndex]);

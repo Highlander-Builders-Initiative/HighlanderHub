@@ -43,6 +43,7 @@ export function Masthead({
 
   useEffect(() => {
     if (!canHide) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- sticky/static is an external layout input
       setHidden(false);
       lastY.current = 0;
       return;

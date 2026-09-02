@@ -33,14 +33,15 @@ function firstParam(raw: SearchParam): string | undefined {
 }
 
 type EventsPageProps = {
-  searchParams: { [key: string]: SearchParam };
+  searchParams: Promise<{ [key: string]: SearchParam }>;
 };
 
 export default async function EventsPage({ searchParams }: EventsPageProps) {
+  const params = await searchParams;
   const initialFilters = {
-    category: coerceCategoryParam(firstParam(searchParams.cat)),
-    query: firstParam(searchParams.q) ?? "",
-    dayWindow: coerceDayWindowParam(firstParam(searchParams.when)),
+    category: coerceCategoryParam(firstParam(params.cat)),
+    query: firstParam(params.q) ?? "",
+    dayWindow: coerceDayWindowParam(firstParam(params.when)),
   };
   const calendarRange = pacificCalendarGridRange(
     startOfPacificMonthKey(pacificTodayKey())
