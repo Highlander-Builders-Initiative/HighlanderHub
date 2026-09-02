@@ -1,19 +1,14 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import nextConfig from "../next.config.js";
-import { hasMatch } from "next/dist/shared/lib/match-remote-pattern.js";
 import { importTsModule } from "./helpers/import-ts-module.mjs";
+import {
+  optimizerAllows,
+  supabaseOrigin,
+} from "./helpers/next-remote-match.mjs";
 
 const { isOptimizableFlyerHost } = await importTsModule(
   "src/lib/events/flyer-hosts.ts"
 );
-
-const remotePatterns = nextConfig.images?.remotePatterns ?? [];
-const optimizerAllows = (url) => hasMatch([], remotePatterns, new URL(url));
-const supabaseOrigin = new URL(
-  process.env.NEXT_PUBLIC_SUPABASE_URL ??
-    "https://qyxlojftdtjasxhzyqil.supabase.co"
-).origin;
 
 // The client-side helper must agree with the server-side optimizer allowlist:
 // if it says "optimizable" for a host next/image actually rejects, the

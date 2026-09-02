@@ -1,14 +1,10 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import nextConfig from "../next.config.js";
-import { hasMatch } from "next/dist/shared/lib/match-remote-pattern.js";
-
-const remotePatterns = nextConfig.images?.remotePatterns ?? [];
-const allows = (url) => hasMatch([], remotePatterns, new URL(url));
-const supabaseOrigin = new URL(
-  process.env.NEXT_PUBLIC_SUPABASE_URL ??
-    "https://qyxlojftdtjasxhzyqil.supabase.co"
-).origin;
+import {
+  optimizerAllows as allows,
+  remotePatterns,
+  supabaseOrigin,
+} from "./helpers/next-remote-match.mjs";
 
 test("next/image remote patterns do not allow arbitrary HTTPS hosts", () => {
   assert.ok(remotePatterns.length > 0);

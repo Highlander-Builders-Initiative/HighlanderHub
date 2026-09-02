@@ -127,12 +127,38 @@ are overwritten/pruned because they are mutable.
 ## Schedule
 
 Stories live 24h, so 4–6× a day is a reasonable cadence. UCR events change
-much more slowly — once a day is plenty, but since `run.py` does both, the
-IG cadence drives the schedule.
+much more slowly — once a day is plenty. The supported unattended runner is
+macOS launchd via `install-launchd.sh`, which runs `run_daily.sh` at 07:00
+local time. To run more often, point cron at that same wrapper — don't invoke
+`run.py` directly (you'd skip log rotation and the failure notification).
+
+### Unattended runs (macOS launchd)
+
+`run_daily.sh` wraps `run.py`: it logs to `pipeline.log` (rotated past 5 MB)
+and raises a macOS notification when the run exits nonzero. The install script
+writes a plist for *this* checkout (no hardcoded machine path) and loads it.
 
 ```
-0 */4 * * * cd /path/to/HighlanderHub/pipeline && .venv/bin/python run.py >> pipeline.log 2>&1
+./install-launchd.sh
+launchctl start com.highlanderhub.pipeline   # run once now, schedule untouched
 ```
+
+Uninstall:
+
+```
+launchctl unload ~/Library/LaunchAgents/com.highlanderhub.pipeline.plist
+```
+
+Run it here rather than in GitHub Actions: the Instagram session survives
+locally because the run comes from a residential IP and `scrape.py` writes the
+rotated `sessionid` back to `IG_SESSION_FILE` after every run. On a CI runner
+that file is ephemeral, so each run replays the same increasingly stale cookie
+from `IG_SESSION_FILE_B64` until Instagram rejects it — which is why the cron
+in `.github/workflows/scrape.yml` is commented out.
+
+Scheduling cannot renew an expired session. When the Instagram step starts
+failing with `400 ... "invalid request"`, quit Safari and re-run
+`import_safari_session.py`.
 
 ## Supabase row shapes
 

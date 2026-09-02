@@ -10,3 +10,7 @@ session-*
 __pycache__/
 *.pyc
 .env
+
+# Unattended run logs (pipeline/run_daily.sh + launchd)
+*.log
+*.log.1

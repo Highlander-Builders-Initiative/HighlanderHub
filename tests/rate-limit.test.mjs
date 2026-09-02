@@ -47,7 +47,7 @@ test("admin login is rate limited per IP to blunt brute-force", () => {
   const src = read("src/app/admin/actions.ts");
 
   assert.match(src, /ADMIN_LOGIN_RATE_LIMIT/);
-  assert.match(src, /rateLimit\(\s*`admin-login:\$\{clientIp\(headers\(\)\)\}`/);
+  assert.match(src, /rateLimit\(\s*`admin-login:\$\{clientIp\(await headers\(\)\)\}`/);
 
   // The throttle must gate verifyPassword, not run after a successful check.
   const guardIndex = src.indexOf("admin-login:");

@@ -50,6 +50,7 @@ export function useEventFeedRestore({
 
     const path = `${window.location.pathname}${window.location.search}`;
     let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- restore is an external session handshake
     setIsRestoring(true);
 
     void (async () => {

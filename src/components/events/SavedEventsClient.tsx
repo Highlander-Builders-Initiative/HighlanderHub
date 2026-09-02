@@ -21,6 +21,7 @@ export function SavedEventsClient() {
   useEffect(() => {
     let ignore = false;
     if (savedIds.length === 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- empty saved set is an external input
       setEvents([]);
       setStatus("ready");
       return;
