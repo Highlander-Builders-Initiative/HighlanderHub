@@ -1,8 +1,8 @@
 """Fill missing Instagram user IDs in accounts.json.
 
 Offline step after discover.py: given handles, resolve numeric instagram_user_id
-the same way tools like CommentPicker do (Instagram web_profile_info), then write
-IDs back into accounts.json so scrape.py can use cached IDs.
+via Instagram web_profile_info (authenticated with IG_SESSION_FILE, the same
+session scrape.py uses), then write IDs back into accounts.json.
 
 Usage:
     python resolve_ids.py
@@ -17,6 +17,7 @@ import argparse
 import json
 import logging
 import os
+import pickle
 import random
 import sys
 import time
@@ -29,11 +30,12 @@ from dotenv import load_dotenv
 load_dotenv(Path(__file__).resolve().parent.parent / ".env.local")
 load_dotenv(Path(__file__).resolve().parent / ".env")
 
-from config import ACCOUNTS_FILE  # noqa: E402
+from config import ACCOUNTS_FILE, SESSION_FILE  # noqa: E402
 
 log = logging.getLogger("pipeline.resolve_ids")
 
 WEB_PROFILE_URL = "https://i.instagram.com/api/v1/users/web_profile_info/"
+SEARCH_URL = "https://www.instagram.com/web/search/topsearch/"
 IG_APP_ID = "936619743392459"
 TIMEOUT_S = 20
 JITTER_RANGE = (2.0, 5.0)
@@ -55,7 +57,15 @@ DEFAULT_HEADERS = {
 
 
 class ResolveError(Exception):
-    """Failed to resolve a single handle."""
+    """Failed to resolve a single handle.
+
+    fallback=True means web_profile_info failed in a way search may still work
+    (Instagram 400 schema bugs on professional accounts, empty user payload).
+    """
+
+    def __init__(self, message: str, *, fallback: bool = False) -> None:
+        super().__init__(message)
+        self.fallback = fallback
 
 
 def _jitter() -> None:
@@ -70,6 +80,40 @@ def _normalize_handle(raw: str | None) -> str | None:
     if not s:
         return None
     return s
+
+
+def attach_ig_session(
+    session: requests.Session,
+    session_file: str | Path | None,
+) -> None:
+    """Load scrape.py's Instaloader session cookies onto a requests session.
+
+    web_profile_info returns 401 without a live sessionid.
+    """
+    if not session_file:
+        raise SystemExit(
+            "IG_SESSION_FILE is required. Instagram's web_profile_info "
+            "endpoint returns 401 without a logged-in session. Set it in "
+            "pipeline/.env (same file scrape.py uses)."
+        )
+    path = Path(session_file)
+    if not path.exists():
+        raise SystemExit(f"IG_SESSION_FILE not found: {path}")
+    try:
+        with path.open("rb") as fh:
+            cookies = pickle.load(fh)
+    except (OSError, pickle.UnpicklingError, EOFError) as e:
+        raise SystemExit(f"Could not read IG_SESSION_FILE {path}: {e}") from e
+    if not isinstance(cookies, dict) or not cookies.get("sessionid"):
+        raise SystemExit(
+            f"IG_SESSION_FILE has no sessionid cookie: {path}. "
+            "Re-import with import_safari_session.py."
+        )
+    session.cookies.update(cookies)
+    csrf = cookies.get("csrftoken")
+    if csrf:
+        session.headers["x-csrftoken"] = str(csrf)
+    log.info("Loaded Instagram session from %s", path)
 
 
 def _needs_id(account: dict[str, Any], *, force: bool) -> bool:
@@ -87,20 +131,51 @@ def _parse_user_id(payload: dict[str, Any], handle: str) -> int:
         )
     raw_id = user.get("id")
     if raw_id is None:
-        raise ResolveError("response missing data.user.id")
+        raise ResolveError("response missing data.user.id", fallback=True)
     try:
         return int(raw_id)
     except (TypeError, ValueError) as e:
-        raise ResolveError(f"invalid user id: {raw_id!r}") from e
+        raise ResolveError(f"invalid user id: {raw_id!r}", fallback=True) from e
 
 
-def fetch_user_id(
-    session: requests.Session,
-    handle: str,
-    *,
-    sleep_fn: Callable[[], None] | None = None,
-) -> int:
-    """Resolve handle to numeric Instagram user id via web_profile_info."""
+def _parse_search_user_id(payload: dict[str, Any], handle: str) -> int:
+    needle = handle.lower()
+    for item in payload.get("users") or []:
+        user = item.get("user") or {}
+        username = str(user.get("username") or "").strip().lower()
+        if username != needle:
+            continue
+        raw_id = user.get("pk", user.get("id"))
+        if raw_id is None:
+            raise ResolveError("search result missing user pk")
+        try:
+            return int(raw_id)
+        except (TypeError, ValueError) as e:
+            raise ResolveError(f"invalid search user id: {raw_id!r}") from e
+    raise ResolveError("handle not in search results")
+
+
+def _fetch_via_search(session: requests.Session, handle: str) -> int:
+    resp = session.get(
+        SEARCH_URL,
+        params={
+            "context": "blended",
+            "query": handle,
+            "include_reel": "false",
+            "__a": "1",
+        },
+        timeout=TIMEOUT_S,
+    )
+    if resp.status_code != 200:
+        raise ResolveError(f"search HTTP {resp.status_code}: {resp.text[:200]}")
+    try:
+        payload = resp.json()
+    except ValueError as e:
+        raise ResolveError("search response was not JSON") from e
+    return _parse_search_user_id(payload, handle)
+
+
+def _fetch_web_profile_info(session: requests.Session, handle: str) -> int:
     last_error: Exception | None = None
     for attempt in range(1, MAX_ATTEMPTS + 1):
         try:
@@ -133,6 +208,9 @@ def fetch_user_id(
         if resp.status_code == 404:
             raise ResolveError("profile not found (404)")
 
+        if resp.status_code == 400:
+            raise ResolveError(f"HTTP 400: {resp.text[:200]}", fallback=True)
+
         if resp.status_code != 200:
             raise ResolveError(f"HTTP {resp.status_code}: {resp.text[:200]}")
 
@@ -141,12 +219,33 @@ def fetch_user_id(
         except ValueError as e:
             raise ResolveError("response was not JSON") from e
 
-        user_id = _parse_user_id(payload, handle)
-        if sleep_fn is not None:
-            sleep_fn()
-        return user_id
+        return _parse_user_id(payload, handle)
 
     raise ResolveError(f"gave up after {MAX_ATTEMPTS} attempts: {last_error}")
+
+
+def fetch_user_id(
+    session: requests.Session,
+    handle: str,
+    *,
+    sleep_fn: Callable[[], None] | None = None,
+) -> int:
+    """Resolve handle to numeric Instagram user id.
+
+    Tries web_profile_info first. Professional/creator accounts often 400 with
+    Instagram's deleted ig_business_category_subvertical schema; those fall
+    back to topsearch, the same GET scrape.py uses.
+    """
+    try:
+        user_id = _fetch_web_profile_info(session, handle)
+    except ResolveError as e:
+        if not e.fallback:
+            raise
+        log.warning("%s: web_profile_info failed (%s); trying search", handle, e)
+        user_id = _fetch_via_search(session, handle)
+    if sleep_fn is not None:
+        sleep_fn()
+    return user_id
 
 
 def load_accounts(path: Path) -> list[dict[str, Any]]:
@@ -175,6 +274,7 @@ def resolve_accounts(
     dry_run: bool = False,
     jitter: bool = True,
     fetch_fn: Callable[[requests.Session, str], int] | None = None,
+    checkpoint_path: Path | None = None,
 ) -> tuple[list[dict[str, Any]], dict[str, int]]:
     """Return (updated_accounts, stats).
 
@@ -223,6 +323,8 @@ def resolve_accounts(
             log.info("%s: updated instagram_user_id %s to %s", handle, prev, user_id)
 
         updated.append(entry)
+        if checkpoint_path is not None and not dry_run:
+            write_accounts(checkpoint_path, updated + accounts[len(updated) :])
         if jitter:
             _jitter()
 
@@ -284,6 +386,7 @@ def main(argv: list[str] | None = None) -> int:
 
     session = requests.Session()
     session.headers.update(DEFAULT_HEADERS)
+    attach_ig_session(session, SESSION_FILE)
 
     updated, stats = resolve_accounts(
         accounts,
@@ -292,6 +395,7 @@ def main(argv: list[str] | None = None) -> int:
         only=_parse_only(args.only),
         dry_run=args.dry_run,
         jitter=not args.no_jitter,
+        checkpoint_path=None if args.dry_run else ACCOUNTS_FILE,
     )
 
     if not args.dry_run and stats["filled"] > 0:
