@@ -2,12 +2,15 @@ from __future__ import annotations
 
 import importlib
 import json
+import pickle
 import sys
 import tempfile
 import types
 import unittest
 from pathlib import Path
 from unittest import mock
+
+import requests
 
 
 PIPELINE_ROOT = Path(__file__).resolve().parents[1]
@@ -23,7 +26,10 @@ class ResolveIdsTests(unittest.TestCase):
         fake_dotenv.load_dotenv = lambda *args, **kwargs: None  # type: ignore[misc]
         cls._tmpdir = tempfile.TemporaryDirectory()
         accounts_path = Path(cls._tmpdir.name) / "accounts.json"
-        fake_config = types.SimpleNamespace(ACCOUNTS_FILE=accounts_path)
+        fake_config = types.SimpleNamespace(
+            ACCOUNTS_FILE=accounts_path,
+            SESSION_FILE=None,
+        )
         cls._saved_modules = {
             name: sys.modules.get(name) for name in ("config", "resolve_ids", "dotenv")
         }
@@ -165,6 +171,105 @@ class ResolveIdsTests(unittest.TestCase):
         self.resolve_ids.write_accounts(self.accounts_path, accounts)
         loaded = self.resolve_ids.load_accounts(self.accounts_path)
         self.assertEqual(loaded, accounts)
+
+    def _write_session_file(self, cookies: dict[str, str]) -> Path:
+        path = Path(self._tmpdir.name) / "session-test"
+        with path.open("wb") as fh:
+            pickle.dump(cookies, fh)
+        return path
+
+    def test_attach_ig_session_copies_cookies_and_csrf_header(self) -> None:
+        session_file = self._write_session_file(
+            {
+                "sessionid": "sess-abc",
+                "csrftoken": "csrf-xyz",
+                "ds_user_id": "123",
+            }
+        )
+        session = requests.Session()
+        self.resolve_ids.attach_ig_session(session, session_file)
+        self.assertEqual(session.cookies.get("sessionid"), "sess-abc")
+        self.assertEqual(session.cookies.get("ds_user_id"), "123")
+        self.assertEqual(session.headers["x-csrftoken"], "csrf-xyz")
+
+    def test_attach_ig_session_requires_session_file(self) -> None:
+        session = requests.Session()
+        with self.assertRaises(SystemExit):
+            self.resolve_ids.attach_ig_session(session, None)
+
+    def test_attach_ig_session_requires_sessionid_cookie(self) -> None:
+        session_file = self._write_session_file({"csrftoken": "csrf-xyz"})
+        session = requests.Session()
+        with self.assertRaises(SystemExit):
+            self.resolve_ids.attach_ig_session(session, session_file)
+
+    def test_parse_search_user_id_exact_match(self) -> None:
+        payload = {
+            "users": [
+                {"user": {"username": "other", "pk": "1"}},
+                {"user": {"username": "aart.ucr", "pk": "615000"}},
+            ]
+        }
+        self.assertEqual(
+            self.resolve_ids._parse_search_user_id(payload, "aart.ucr"), 615000
+        )
+
+    def test_parse_search_user_id_no_match(self) -> None:
+        payload = {"users": [{"user": {"username": "other", "pk": "1"}}]}
+        with self.assertRaises(self.resolve_ids.ResolveError):
+            self.resolve_ids._parse_search_user_id(payload, "aart.ucr")
+
+    def test_fetch_user_id_falls_back_to_search_on_400(self) -> None:
+        session = mock.Mock()
+        profile_resp = mock.Mock(
+            status_code=400,
+            text='{"message":"Asset asset://laser.provider/ig_business_category_subvertical has been deleted.","status":"fail"}',
+        )
+        search_resp = mock.Mock(status_code=200)
+        search_resp.json.return_value = {
+            "users": [{"user": {"username": "aart.ucr", "pk": "615000"}}]
+        }
+        session.get.side_effect = [profile_resp, search_resp]
+        self.assertEqual(self.resolve_ids.fetch_user_id(session, "aart.ucr"), 615000)
+        self.assertEqual(session.get.call_count, 2)
+
+    def test_fetch_user_id_falls_back_to_search_when_profile_omits_id(self) -> None:
+        session = mock.Mock()
+        profile_resp = mock.Mock(status_code=200)
+        profile_resp.json.return_value = {
+            "data": {"user": {"username": "activemindsucr"}}
+        }
+        search_resp = mock.Mock(status_code=200)
+        search_resp.json.return_value = {
+            "users": [{"user": {"username": "activemindsucr", "pk": "222"}}]
+        }
+        session.get.side_effect = [profile_resp, search_resp]
+        self.assertEqual(self.resolve_ids.fetch_user_id(session, "activemindsucr"), 222)
+
+    def test_fetch_user_id_does_not_search_on_404(self) -> None:
+        session = mock.Mock()
+        session.get.return_value = mock.Mock(status_code=404, text="")
+        with self.assertRaises(self.resolve_ids.ResolveError) as ctx:
+            self.resolve_ids.fetch_user_id(session, "abhinaya.ucr")
+        self.assertIn("404", str(ctx.exception))
+        self.assertEqual(session.get.call_count, 1)
+
+    def test_checkpoint_writes_filled_id_immediately(self) -> None:
+        accounts = self.resolve_ids.load_accounts(self.accounts_path)
+
+        def fake_fetch(_session, handle: str) -> int:
+            return 10839758322
+
+        self.resolve_ids.resolve_accounts(
+            accounts,
+            session=mock.Mock(),
+            jitter=False,
+            fetch_fn=fake_fetch,
+            checkpoint_path=self.accounts_path,
+        )
+        loaded = self.resolve_ids.load_accounts(self.accounts_path)
+        self.assertEqual(loaded[0]["instagram_user_id"], 10839758322)
+        self.assertEqual(loaded[1]["instagram_user_id"], 38460809748)
 
 
 if __name__ == "__main__":
