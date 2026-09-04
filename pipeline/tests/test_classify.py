@@ -114,6 +114,56 @@ class ClassifyContentKindTests(unittest.TestCase):
             ),
         )
 
+    def test_deadline_terms_in_description_do_not_reclassify_events(self) -> None:
+        cases = (
+            (
+                "Fall Registration Second Pass Begins",
+                "First-pass registration closes at 9am, then second pass opens.",
+            ),
+            (
+                "Fulbright Writing Drop-In Hours",
+                "Get help before the Fulbright campus deadline.",
+            ),
+            (
+                "School of Public Policy End-of-Year Celebration",
+                "We will honor scholarship recipients.",
+            ),
+        )
+        for title, description in cases:
+            with self.subTest(title=title):
+                self.assertEqual(
+                    "student_event",
+                    classify_content_kind(
+                        "localist",
+                        title=title,
+                        description=description,
+                        audiences=["Students"],
+                    ),
+                )
+
+    def test_opening_and_subject_titles_are_not_deadlines(self) -> None:
+        for title in (
+            "Scholarship Applications Open",
+            "Grant Writing Workshop",
+            "Immigrant Student Resource Fair",
+            "Office Hours Due to Midterms",
+            "Close-Knit Club Social",
+        ):
+            with self.subTest(title=title):
+                self.assertEqual(
+                    "student_event",
+                    classify_content_kind("instagram", title=title),
+                )
+
+    def test_cutoff_phrase_in_title_is_student_deadline(self) -> None:
+        self.assertEqual(
+            "student_deadline",
+            classify_content_kind(
+                "instagram",
+                title="Last Day to Add Classes",
+            ),
+        )
+
     def test_localist_deadline_without_student_signal_is_other(self) -> None:
         self.assertEqual(
             "other",

@@ -16,7 +16,7 @@ Origins:
 
 Precedence (first match wins):
   1. fundraiser terms                       -> fundraiser
-  2. deadline terms + student relevance     -> student_deadline
+  2. cutoff title + student relevance       -> student_deadline
   3. inherently student origin              -> student_event
   4. localist with student relevance        -> student_event
   5. otherwise                              -> other
@@ -59,21 +59,15 @@ _FUNDRAISER_TERMS = (
     "gofundme",
 )
 
-_DEADLINE_TERMS = (
+_DEADLINE_TITLE_TERMS = (
     "deadline",
-    "apply now",
     "apply by",
+    "register by",
+    "closing date",
+    "last day to",
     "applications due",
     "application due",
-    "applications open",
     "registration closes",
-    "register by",
-    "nomination",
-    "nominations",
-    "scholarship",
-    "grant",
-    "fellowship",
-    "last day to",
 )
 
 _STUDENT_SIGNAL_TERMS = (
@@ -153,7 +147,13 @@ def classify_content_kind(
 
     student = _has_student_signal(origin, text, audiences)
 
-    if student and any(term in text for term in _DEADLINE_TERMS):
+    # A deadline label means the listed timestamp is a cutoff. Descriptions may
+    # mention related deadlines, scholarships, or grants without changing what
+    # the scheduled item itself represents, so only strong title language can
+    # opt an item into deadline presentation.
+    if student and any(
+        term in (title or "").casefold() for term in _DEADLINE_TITLE_TERMS
+    ):
         return "student_deadline"
 
     if origin in _STUDENT_ORIGINS:
