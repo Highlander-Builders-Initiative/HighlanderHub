@@ -25,11 +25,6 @@
       "instagram_user_id": 21481552998
     },
     {
-      "handle": "abhinaya.ucr",
-      "label": "Abhinaya",
-      "category": "arts-and-expression"
-    },
-    {
       "handle": "absaucr",
       "label": "Ahlul-Bayt Student Association",
       "category": "spiritual-religious-atheist",
@@ -40,11 +35,6 @@
       "label": "ACM @ UCR",
       "category": "club",
       "instagram_user_id": 10839758322
-    },
-    {
-      "handle": "activemindsucr",
-      "label": "Active Minds",
-      "category": "department-affiliated-organization"
     },
     {
       "handle": "aepi_ucr",
@@ -131,11 +121,6 @@
       "instagram_user_id": 1256758804
     },
     {
-      "handle": "aprendiendojuntos.us",
-      "label": "Aprendiendo Juntos",
-      "category": "academic-professional"
-    },
-    {
       "handle": "archeryatucr",
       "label": "Archery Club at UCR",
       "category": "recreational",
@@ -146,11 +131,6 @@
       "label": "Art Factory at UCR",
       "category": "arts-and-expression",
       "instagram_user_id": 58740216557
-    },
-    {
-      "handle": "arthistgrads.ucr",
-      "label": "Art History Graduate Student Association",
-      "category": "mini-gsa"
     },
     {
       "handle": "ascend_ucr",
@@ -285,11 +265,6 @@
       "instagram_user_id": 77681693744
     },
     {
-      "handle": "bsa_ucr",
-      "label": "Bengali Student Association",
-      "category": "cultural"
-    },
-    {
       "handle": "bseucr_",
       "label": "Black Students in Education",
       "category": "academic-professional",
@@ -354,11 +329,6 @@
       "label": "climbucr",
       "category": "club",
       "instagram_user_id": 51886513518
-    },
-    {
-      "handle": "clubbaseball_ucr",
-      "label": "Club Baseball at UCR",
-      "category": "recreational"
     },
     {
       "handle": "clubquetzalucr",
@@ -445,11 +415,6 @@
       "instagram_user_id": 3797271180
     },
     {
-      "handle": "dapi_ucr",
-      "label": "Delta Alpha Pi International Honor Society",
-      "category": "honors"
-    },
-    {
       "handle": "darbaratucr",
       "label": "Darbar",
       "category": "arts-and-expression",
@@ -522,11 +487,6 @@
       "instagram_user_id": 8644618612
     },
     {
-      "handle": "easaucr",
-      "label": "East African Student Association",
-      "category": "cultural"
-    },
-    {
       "handle": "ecocar.ucr",
       "label": "The EcoCAR EV Challenge Team at UC Riverside",
       "category": "academic-professional",
@@ -573,11 +533,6 @@
       "label": "Ethics Bowl at UCR",
       "category": "academic-professional",
       "instagram_user_id": 70132243681
-    },
-    {
-      "handle": "ewb_ucr",
-      "label": "Engineers Without Borders at UCR",
-      "category": "service"
     },
     {
       "handle": "f1_ucr",
@@ -874,11 +829,6 @@
       "instagram_user_id": 4518966168
     },
     {
-      "handle": "inlandempirestreetmed",
-      "label": "Inland Empire Street Care",
-      "category": "service"
-    },
-    {
       "handle": "isa.ucr",
       "label": "Indian Students Association",
       "category": "cultural",
@@ -973,11 +923,6 @@
       "label": "LEGO Club",
       "category": "recreational",
       "instagram_user_id": 48209435707
-    },
-    {
-      "handle": "lifeoncampus.ucr",
-      "label": "Life",
-      "category": "spiritual-religious-atheist"
     },
     {
       "handle": "literacyucr",
@@ -1094,11 +1039,6 @@
       "instagram_user_id": 624290095
     },
     {
-      "handle": "nblsa_ucr",
-      "label": "National Black Law Student Association",
-      "category": "academic-professional"
-    },
-    {
       "handle": "neuropsychatucr",
       "label": "NeuroPsychology Club at UCR",
       "category": "academic-professional",
@@ -1181,11 +1121,6 @@
       "label": "pickleballclubatucr",
       "category": "club",
       "instagram_user_id": 62329001999
-    },
-    {
-      "handle": "pihengage_ucr",
-      "label": "Partners in Health Engage at UC Riverside",
-      "category": "service"
     },
     {
       "handle": "pikappucr",
@@ -1272,11 +1207,6 @@
       "instagram_user_id": 13277807413
     },
     {
-      "handle": "r_p.a.w.s._ucr",
-      "label": "Our Protectors of Animal Wellbeing and Safety",
-      "category": "action-and-awareness"
-    },
-    {
       "handle": "rbrainsatucr",
       "label": "R'Brains and Behavior",
       "category": "academic-professional",
@@ -1319,20 +1249,10 @@
       "instagram_user_id": 73938323291
     },
     {
-      "handle": "rpantry.ucr",
-      "label": "R'Pantry",
-      "category": "club"
-    },
-    {
       "handle": "rsd_dragonboat",
       "label": "Riverside Surging Dragons Dragon Boat Association",
       "category": "recreational",
       "instagram_user_id": 8235909638
-    },
-    {
-      "handle": "rside_bhangra_",
-      "label": "Riverside Bhangra",
-      "category": "arts-and-expression"
     },
     {
       "handle": "rssa.ucr",
@@ -1653,11 +1573,6 @@
       "instagram_user_id": 39298239439
     },
     {
-      "handle": "ucr.karing.kits",
-      "label": "Karing Kits",
-      "category": "service"
-    },
-    {
       "handle": "ucr.mrs",
       "label": "Materials Research Society at UC Riverside",
       "category": "academic-professional",
@@ -1706,11 +1621,6 @@
       "instagram_user_id": 1415878685
     },
     {
-      "handle": "ucr_biomedical_sciences",
-      "label": "Biomedical Sciences Departmental Graduate Student Association",
-      "category": "mini-gsa"
-    },
-    {
       "handle": "ucr_calpirg",
       "label": "CA Public Interest Research Group (CALPIRG)",
       "category": "action-and-awareness",
@@ -1729,11 +1639,6 @@
       "instagram_user_id": 66449096065
     },
     {
-      "handle": "ucr_creatrlab",
-      "label": "Creat'R Lab",
-      "category": "club"
-    },
-    {
       "handle": "ucr_csgsa",
       "label": "CSGSA",
       "category": "mini-gsa",
@@ -1750,11 +1655,6 @@
       "label": "Entomology Graduate Student Association",
       "category": "mini-gsa",
       "instagram_user_id": 11405815478
-    },
-    {
-      "handle": "ucr_flyingsamaritans",
-      "label": "Flying Samaritans at UCR",
-      "category": "service"
     },
     {
       "handle": "ucr_gsa",
@@ -1805,11 +1705,6 @@
       "instagram_user_id": 53716759548
     },
     {
-      "handle": "ucr_nphc",
-      "label": "National Pan-Hellenic Council (NPHC)",
-      "category": "fraternity-sorority"
-    },
-    {
       "handle": "ucr_powur",
       "label": "Physics Organization for Womxn and the Under-Represented",
       "category": "graduate-student-organization",
@@ -1840,11 +1735,6 @@
       "instagram_user_id": 1255253094
     },
     {
-      "handle": "ucr_s4",
-      "label": "Secret Swords and Sorcery Society",
-      "category": "arts-and-expression"
-    },
-    {
       "handle": "ucr_sps",
       "label": "The Society of Physics Students",
       "category": "academic-professional",
@@ -1861,11 +1751,6 @@
       "label": "ucr tag",
       "category": "club",
       "instagram_user_id": 62539073670
-    },
-    {
-      "handle": "ucr_vex_robotics",
-      "label": "VEX Robotics",
-      "category": "academic-professional"
     },
     {
       "handle": "ucr_wcs",
