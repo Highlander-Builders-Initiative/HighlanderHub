@@ -279,6 +279,125 @@ class NormalizeEventsTests(unittest.TestCase):
         self.assertTrue(rows[0]["has_free_food"])
         self.assertNotEqual("free_food", rows[0]["category"])
 
+    def _localist_category(self, **raw) -> str:
+        row = self.normalize_events._to_event_row(
+            {"id": 1, "first_date": "2026-05-15T19:00:00-07:00", **raw},
+            "2026-05-14T12:00:00+00:00",
+        )
+        assert row is not None
+        return row["category"]
+
+    def _hlink_category(self, **raw) -> str:
+        row = self.normalize_events._to_event_row_hlink(
+            {"id": 1, "startsOn": "2026-05-15T19:00:00+00:00", **raw},
+            "2026-05-14T12:00:00+00:00",
+        )
+        assert row is not None
+        return row["category"]
+
+    def _types(self, *names: str) -> dict:
+        return {"filters": {"event_types": [{"name": n} for n in names]}}
+
+    def test_localist_source_type_beats_keywords_in_the_blurb(self) -> None:
+        # The regression: Recreation listings whose blurbs say "class" used to
+        # come back academic, because "academic" was simply first in the
+        # keyword list and "class" matched as a substring.
+        for title in ("Power Yoga", "Zumba\u00ae", "Classical Pilates"):
+            with self.subTest(title=title):
+                self.assertEqual(
+                    "sports",
+                    self._localist_category(
+                        title=title,
+                        description_text="A drop-in class at the SRC. All fitness classes are free.",
+                        **self._types("Recreation"),
+                    ),
+                )
+
+    def test_localist_source_types_match_whole_labels(self) -> None:
+        self.assertEqual(
+            "academic",
+            self._localist_category(
+                title="Undergrads: Fall Fee Payments Due",
+                **self._types("Academic Calendar"),
+            ),
+        )
+        # "Academic Calendar" resolves as itself, and loses to the more
+        # specific co-tag rather than to list order.
+        self.assertEqual(
+            "community",
+            self._localist_category(
+                title="Commencement 2026",
+                **self._types("Academic Calendar", "Commencement"),
+            ),
+        )
+
+    def test_localist_athletics_filter_wins_outright(self) -> None:
+        self.assertEqual(
+            "sports",
+            self._localist_category(
+                title="Men's Soccer vs UNLV",
+                filters={
+                    "event_types": [{"name": "Social"}],
+                    "event_athletics": [{"name": "Soccer"}],
+                },
+            ),
+        )
+
+    def test_keyword_fallback_matches_whole_words_only(self) -> None:
+        # No source types at all, so the keyword pass decides. "Classical" and
+        # "self-defense" must not read as the academic words they contain.
+        self.assertEqual(
+            "arts",
+            self._localist_category(
+                title="Classical Guitar Recital",
+                description_text="An evening concert in the gallery.",
+            ),
+        )
+
+    def test_keyword_fallback_scores_instead_of_taking_the_first_match(self) -> None:
+        # One stray "research" in the body no longer outranks a title that
+        # names a career event three ways.
+        self.assertEqual(
+            "career",
+            self._localist_category(
+                title="Internship Resume Workshop",
+                description_text="Bring your research interests.",
+            ),
+        )
+
+    def test_localist_unmapped_types_fall_through_to_keywords(self) -> None:
+        # "Workshops" is deliberately unmapped: it hangs off everything, so it
+        # only gets to weigh in as a keyword hint.
+        self.assertEqual(
+            "career",
+            self._localist_category(
+                title="Level Up: Decision in a Day",
+                description_text="Hiring managers walk you through the process.",
+                **self._types("Workshops"),
+            ),
+        )
+
+    def test_localist_falls_back_to_community(self) -> None:
+        self.assertEqual(
+            "community",
+            self._localist_category(title="Storytime in the Gardens", description_text=""),
+        )
+
+    def test_hlink_theme_wins_then_category_names(self) -> None:
+        self.assertEqual(
+            "community",
+            self._hlink_category(name="CMC Street Cleanup", theme="CommunityService"),
+        )
+        # No theme: the free-text categoryNames get their own explicit pass
+        # before any keyword guessing.
+        self.assertEqual(
+            "arts",
+            self._hlink_category(
+                name="Silent Disglo",
+                categoryNames=["Free Food", "Just Show Up!", "Concert"],
+            ),
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
