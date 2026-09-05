@@ -33,31 +33,135 @@ UCR_EVENTS_RAW = RAW_DIR / "ucr_events"
 HIGHLANDER_LINK_RAW = RAW_DIR / "highlander_link"
 STRUCTURED_EVENT_ID_PREFIXES = ["ucr_events_", "highlander_link_"]
 
+# --------------------------------------------------------------------------
+# Category inference
+#
+# Structured sources tag their own events, and those tags beat anything we can
+# guess from prose. Resolution runs in three explicit tiers:
+#
+#   1. Source taxonomy — Localist `event_types`/`event_athletics` and Engage
+#      `theme`/`categoryNames`, matched as whole labels against the tables
+#      below.
+#   2. Keyword scoring — whole-word hits in the title, description and any
+#      leftover source labels, weighted by field and tie-broken by an explicit
+#      priority order.
+#   3. `community` — the catch-all when nothing matched.
+#
+# Tier 1 is why "Power Yoga" (Localist type "Recreation") is sports: it never
+# reaches the keyword pass, where the substring "class" in its blurb used to
+# decide the category purely because "academic" sat first in the keyword list.
+# --------------------------------------------------------------------------
+
+# Localist `event_types`, most specific first — the first label present on the
+# event decides. Order matters for the multi-typed events: "Recreation, Social"
+# is a rec-center session, and "Academic Calendar, Commencement" is the
+# ceremony rather than a registration deadline. Matching is on the whole label,
+# so "Academic Calendar" never reads as bare "Academic".
+_LOCALIST_TYPE_CATEGORIES: tuple[tuple[str, str], ...] = (
+    ("theatre & plays", "arts"),
+    ("film & screenings", "arts"),
+    ("exhibitions", "arts"),
+    ("arts", "arts"),
+    ("athletics", "sports"),
+    ("recreation", "sports"),
+    ("commencement", "community"),
+    ("fundraisers", "community"),
+    ("career", "career"),
+    ("conferences", "career"),
+    ("seminars", "academic"),
+    ("lectures & presentations", "academic"),
+    ("academic calendar", "academic"),
+    ("academic", "academic"),
+    ("social", "social"),
+)
+
+# Deliberately absent above: "Workshops" and "Meetings & Training" hang off
+# everything from PhD defenses to HR compliance training, so they carry no
+# category on their own and fall through to the keyword pass as weak hints.
+
 # Engage 'theme' is a single coarse bucket per event; map it onto our category
-# vocabulary. categoryNames are more specific but free-text, so they're fed
-# through the keyword fallback below.
+# vocabulary. Keyed lowercase — Engage spells them CamelCase.
 _HLINK_THEME_TO_CATEGORY = {
-    "Athletics": "sports",
-    "Cultural": "arts",
-    "Social": "social",
-    "Spirituality": "community",
-    "Fundraising": "community",
-    "ThoughtfulLearning": "academic",
+    "athletics": "sports",
+    "cultural": "arts",
+    "social": "social",
+    "spirituality": "community",
+    "communityservice": "community",
+    "fundraising": "community",
+    "thoughtfullearning": "academic",
 }
 
-# Heuristic keyword sets for category inference. Localist's own event_types are
-# the primary signal; these are fallbacks when types are missing/generic.
-_CATEGORY_KEYWORDS: list[tuple[str, list[str]]] = [
-    ("academic", ["lecture", "seminar", "colloquium", "symposium", "research", "thesis", "defense", "class"]),
-    ("career",   ["career", "internship", "workshop", "networking", "resume", "interview", "hiring", "recruit"]),
-    ("sports",   ["athletic", "basketball", "soccer", "baseball", "volleyball", "tennis", "football", "intramural"]),
-    ("arts",     ["concert", "recital", "exhibit", "exhibition", "gallery", "theater", "theatre", "performance", "film", "screening"]),
-    ("social",   ["mixer", "social", "party", "greek", "fraternity", "sorority", "kickback"]),
-    ("club",     ["club", "organization", "rso", "general meeting", "gbm"]),
-    ("community", ["community", "service", "volunteer", "outreach", "donate"]),
-]
+# Engage `categoryNames` are per-org free text and an event carries several
+# ("Free Food", "Just Show Up!", "Concert"), so only labels that name a
+# category outright are mapped, and only after `theme` declines.
+_HLINK_CATEGORY_NAME_CATEGORIES: tuple[tuple[str, str], ...] = (
+    ("concert", "arts"),
+    ("performance", "arts"),
+    ("exhibit", "arts"),
+    ("dance", "arts"),
+    ("cultural", "arts"),
+    ("competition", "sports"),
+    ("recreational", "sports"),
+    ("educational", "academic"),
+    ("community service", "community"),
+    ("late night", "social"),
+    ("gaming", "social"),
+    ("social", "social"),
+)
+
+# Keyword fallback for events whose source tags are missing or non-committal.
+# Matched whole-word (plus an optional plural), so "class" no longer fires on
+# "Classical Pilates". A couple of obvious-looking words are absent because the
+# bare form is not category-bearing on this campus: "performance" caught HR
+# trainings about employee performance, and "service" caught "military service"
+# (real community-service posts still match on "community").
+_CATEGORY_KEYWORDS: dict[str, tuple[str, ...]] = {
+    "academic": ("lecture", "seminar", "colloquium", "symposium", "research", "thesis", "defense", "class"),
+    "career": ("career", "internship", "workshop", "networking", "resume", "interview", "hiring", "recruit"),
+    "sports": ("athletic", "basketball", "soccer", "baseball", "volleyball", "tennis", "football", "intramural"),
+    "arts": ("concert", "recital", "exhibit", "exhibition", "gallery", "theater", "theatre", "dance performance", "film", "screening"),
+    "social": ("mixer", "social", "party", "greek", "fraternity", "sorority", "kickback"),
+    "club": ("club", "organization", "rso", "general meeting", "gbm"),
+    "community": ("community", "volunteer", "outreach", "donate"),
+}
+
+# Tie-break for the keyword pass, most-unambiguous vocabulary first: "soccer"
+# and "recital" name a category outright, while "class", "social" and
+# "workshop" turn up in half of what campus posts. `community` stays last —
+# it doubles as the default when nothing matches at all.
+_CATEGORY_PRIORITY: tuple[str, ...] = (
+    "sports",
+    "arts",
+    "career",
+    "club",
+    "academic",
+    "social",
+    "community",
+)
+_CATEGORY_RANK: dict[str, int] = {c: i for i, c in enumerate(_CATEGORY_PRIORITY)}
+_UNRANKED = len(_CATEGORY_PRIORITY)
+
+# A title hit is worth more than a hit buried in a long blurb; leftover source
+# labels ("Workshops", "Health & Wellness") sit in between.
+_TITLE_WEIGHT = 3
+_SOURCE_TERM_WEIGHT = 2
+_DESCRIPTION_WEIGHT = 1
+
+
+def _keyword_pattern(keywords: tuple[str, ...]) -> re.Pattern[str]:
+    # Longest alternative first so "exhibition" is not swallowed by "exhibit",
+    # and the capture group reports the base keyword rather than the inflected
+    # form, so "class" and "classes" count once.
+    alternatives = "|".join(re.escape(kw) for kw in sorted(keywords, key=len, reverse=True))
+    return re.compile(rf"\b({alternatives})(?:e?s)?\b")
+
+
+_CATEGORY_PATTERNS: dict[str, re.Pattern[str]] = {
+    category: _keyword_pattern(keywords) for category, keywords in _CATEGORY_KEYWORDS.items()
+}
 
 _HTML_TAG = re.compile(r"<[^>]+>")
+
 _WHITESPACE = re.compile(r"\s+")
 
 
@@ -81,14 +185,83 @@ def _filter_names(raw: dict[str, Any], key: str) -> list[str]:
     return out
 
 
-def _infer_category(raw: dict[str, Any], blob: str) -> str:
-    type_names = " ".join(_filter_names(raw, "event_types")).lower()
-    topic_names = " ".join(_filter_names(raw, "event_topic")).lower()
-    haystack = " ".join([type_names, topic_names, blob.lower()])
-    for category, keywords in _CATEGORY_KEYWORDS:
-        if any(kw in haystack for kw in keywords):
+def _match_source_category(
+    labels: Iterable[str],
+    table: tuple[tuple[str, str], ...],
+) -> str | None:
+    """First entry in `table` whose label the source put on this event.
+
+    Whole-label equality, not substring: a source that says "Academic Calendar"
+    has not said "Academic".
+    """
+    present = {label.strip().lower() for label in labels if isinstance(label, str) and label.strip()}
+    for label, category in table:
+        if label in present:
             return category
-    return "community"
+    return None
+
+
+def _infer_category_from_text(
+    title: str,
+    description: str,
+    source_terms: Iterable[str] = (),
+) -> str:
+    """Score keyword hits across the weighted fields; ties go to the priority order.
+
+    Each distinct keyword scores once, at the weight of the strongest field it
+    appeared in, so breadth of vocabulary wins over one word repeated through a
+    long blurb.
+    """
+    fields = (
+        (title.lower(), _TITLE_WEIGHT),
+        (" ".join(t for t in source_terms if isinstance(t, str)).lower(), _SOURCE_TERM_WEIGHT),
+        (description.lower(), _DESCRIPTION_WEIGHT),
+    )
+
+    scores: dict[str, int] = {}
+    for category, pattern in _CATEGORY_PATTERNS.items():
+        best: dict[str, int] = {}
+        for text, weight in fields:
+            if not text:
+                continue
+            for keyword in pattern.findall(text):
+                if weight > best.get(keyword, 0):
+                    best[keyword] = weight
+        if best:
+            scores[category] = sum(best.values())
+
+    if not scores:
+        return "community"
+    return max(scores, key=lambda c: (scores[c], -_CATEGORY_RANK.get(c, _UNRANKED)))
+
+
+def _infer_localist_category(raw: dict[str, Any], title: str, description: str) -> str:
+    # An `event_athletics` tag (Soccer, Basketball, …) only lands on real games.
+    if _filter_names(raw, "event_athletics"):
+        return "sports"
+    types = _filter_names(raw, "event_types")
+    mapped = _match_source_category(types, _LOCALIST_TYPE_CATEGORIES)
+    if mapped:
+        return mapped
+    # Types were missing or non-committal ("Workshops"); let them and the
+    # free-text topics weigh in as keywords alongside the title and body.
+    return _infer_category_from_text(title, description, [*types, *_filter_names(raw, "event_topic")])
+
+
+def _infer_hlink_category(
+    theme: Any,
+    category_names: list[str],
+    title: str,
+    description: str,
+) -> str:
+    if isinstance(theme, str):
+        mapped = _HLINK_THEME_TO_CATEGORY.get(theme.strip().lower())
+        if mapped:
+            return mapped
+    mapped = _match_source_category(category_names, _HLINK_CATEGORY_NAME_CATEGORIES)
+    if mapped:
+        return mapped
+    return _infer_category_from_text(title, description, category_names)
 
 
 def _build_location(raw: dict[str, Any]) -> str:
@@ -247,7 +420,7 @@ def _to_event_row(
         return None
 
     blob = f"{title}\n{description}"
-    category = _infer_category(raw, blob)
+    category = _infer_localist_category(raw, title, description)
 
     audiences = _filter_names(raw, "event_audience")
     tags = sorted(
@@ -340,12 +513,8 @@ def _to_event_row_hlink(raw: dict[str, Any], scraped_at: str) -> dict[str, Any] 
         ends_at = None
 
     benefits = raw.get("benefitNames") or []
-    theme = raw.get("theme")
-    category = _HLINK_THEME_TO_CATEGORY.get(theme) if isinstance(theme, str) else None
-    if not category:
-        # Fall back to keyword inference over categoryNames + title + body.
-        cat_blob = " ".join(raw.get("categoryNames") or [])
-        category = _infer_category({}, f"{cat_blob}\n{title}\n{description}")
+    category_names = [c for c in (raw.get("categoryNames") or []) if isinstance(c, str)]
+    category = _infer_hlink_category(raw.get("theme"), category_names, title, description)
 
     has_free_food = (
         isinstance(benefits, list)
@@ -354,7 +523,7 @@ def _to_event_row_hlink(raw: dict[str, Any], scraped_at: str) -> dict[str, Any] 
 
     tags = sorted(
         {
-            *(t for t in (raw.get("categoryNames") or []) if isinstance(t, str)),
+            *category_names,
             *(t for t in benefits if isinstance(t, str)),
             *([raw["theme"]] if isinstance(raw.get("theme"), str) else []),
         }
