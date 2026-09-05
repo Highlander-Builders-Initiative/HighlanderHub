@@ -175,6 +175,128 @@ class ClassifyContentKindTests(unittest.TestCase):
             ),
         )
 
+    def test_staff_audience_beats_incidental_student_mention(self) -> None:
+        # Real cache row: a Provost office-hours slot for staff whose blurb
+        # happens to name students as people the Provost hears from.
+        self.assertEqual(
+            "other",
+            classify_content_kind(
+                "localist",
+                title="Provost's Office Hours - Staff",
+                description=(
+                    "Provost Watkins holds regular office hours to get to know "
+                    "and hear from faculty, staff, and students at UCR."
+                ),
+                tags=["Faculty & Staff"],
+                audiences=["Faculty & Staff"],
+            ),
+        )
+
+    def test_staff_training_about_students_is_not_student_content(self) -> None:
+        self.assertEqual(
+            "other",
+            classify_content_kind(
+                "localist",
+                title="Supporting International Student Success",
+                description="A workshop on advising international students.",
+                audiences=["Faculty & Staff"],
+            ),
+        )
+
+    def test_generic_activity_words_do_not_establish_eligibility(self) -> None:
+        # "workshop", "seminar", "performance" and friends describe what
+        # happens, not who may attend.
+        cases = (
+            ("Faculty Workshop", "A grant-writing workshop.", ["Staff"]),
+            ("Addressing Employee Performance Issues", "Manager training.", ["Faculty & Staff"]),
+            ("Research Seminar: Guest Speaker", "A departmental seminar.", ["Faculty & Staff"]),
+            ("Leadership Workshop", "A professional development workshop.", []),
+            ("Campus Concert", "An evening performance.", ["General Public/Off-Campus Community"]),
+        )
+        for title, description, audiences in cases:
+            with self.subTest(title=title):
+                self.assertEqual(
+                    "other",
+                    classify_content_kind(
+                        "localist",
+                        title=title,
+                        description=description,
+                        audiences=audiences,
+                    ),
+                )
+
+    def test_restricted_audience_blocks_deadline_promotion(self) -> None:
+        self.assertEqual(
+            "other",
+            classify_content_kind(
+                "localist",
+                title="Applications Due for the Staff Award",
+                description="Nominate a colleague who mentors students.",
+                audiences=["Faculty & Staff"],
+            ),
+        )
+
+    def test_all_student_audience_variants_are_recognized(self) -> None:
+        for audience in (
+            "Undergraduate Students",
+            "Graduate Students",
+            "International Students",
+            "Transfer Students",
+            "Prospective Students",
+            "Student Organizations",
+        ):
+            with self.subTest(audience=audience):
+                self.assertEqual(
+                    "student_event",
+                    classify_content_kind(
+                        "localist",
+                        title="Campus Concert",
+                        description="An evening performance.",
+                        audiences=[audience],
+                    ),
+                )
+
+    def test_student_audience_wins_over_staff_audience(self) -> None:
+        self.assertEqual(
+            "student_event",
+            classify_content_kind(
+                "localist",
+                title="Career Fair",
+                description="Employers on campus.",
+                audiences=["Faculty & Staff", "Undergraduate Students"],
+            ),
+        )
+
+    def test_open_audience_is_not_a_restriction(self) -> None:
+        # "General Public" does not exclude students, so explicit eligibility
+        # language in the body can still promote the item.
+        self.assertEqual(
+            "student_event",
+            classify_content_kind(
+                "localist",
+                title="Open Lecture",
+                description="Open to all students.",
+                audiences=["Faculty & Staff", "General Public/Off-Campus Community"],
+            ),
+        )
+
+    def test_explicit_eligibility_language_promotes_without_audience_data(self) -> None:
+        for description in (
+            "Open to all students.",
+            "Students are welcome to attend.",
+            "A career workshop for students.",
+            "Meet every RSO on campus.",
+            "Weekly general body meeting.",
+        ):
+            with self.subTest(description=description):
+                self.assertEqual(
+                    "student_event",
+                    classify_content_kind(
+                        "localist",
+                        title="Campus Event",
+                        description=description,
+                    ),
+                )
 
 if __name__ == "__main__":
     unittest.main()
