@@ -12,9 +12,10 @@ keyword fallback.
 
 Keyword concepts list every accepted textual form explicitly. Title, source
 label, and description weights are 3/2/1. Bare ``performance`` and ``service``
-are intentionally omitted from keyword fallback (HLink category-name labels and
-phrases like ``dance performance`` / ``community service`` still map via
-source tables).
+are intentionally omitted from keyword fallback. Exact HLink category-name
+labels (e.g. ``performance``, ``community service``) map via source tables;
+multi-word keyword phrases such as ``dance performance`` match only in text
+scoring.
 """
 from __future__ import annotations
 
@@ -50,6 +51,7 @@ _HLINK_THEME_TO_CATEGORY = {
     "thoughtfullearning": "academic",
 }
 
+# Exact observed HLink categoryNames labels (case-insensitive); not substring matching.
 _HLINK_CATEGORY_NAME_CATEGORIES: tuple[tuple[str, str], ...] = (
     ("concert", "arts"),
     ("performance", "arts"),  # HLink label only; bare keyword fallback excluded.
@@ -84,7 +86,7 @@ _CATEGORY_CONCEPTS: dict[str, tuple[tuple[str, ...], ...]] = {
         ("resume", "resumes"),
         ("interview", "interviews", "interviewing"),
         ("hiring",),
-        ("recruit", "recruits", "recruiting", "recruitment"),
+        ("recruit", "recruits"),
     ),
     "sports": (
         ("athletic", "athletics"),
@@ -143,6 +145,12 @@ _CATEGORY_PRIORITY: tuple[str, ...] = (
 _CATEGORY_RANK = {
     category: rank for rank, category in enumerate(_CATEGORY_PRIORITY)
 }
+_missing_priority = set(_CATEGORY_CONCEPTS) - set(_CATEGORY_PRIORITY)
+if _missing_priority:
+    raise ValueError(
+        "_CATEGORY_CONCEPTS categories missing from _CATEGORY_PRIORITY: "
+        + ", ".join(sorted(_missing_priority))
+    )
 
 _TITLE_WEIGHT = 3
 _SOURCE_TERM_WEIGHT = 2
