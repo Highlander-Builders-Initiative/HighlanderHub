@@ -11,14 +11,14 @@ import json
 import logging
 import random
 import time
-from pathlib import Path
-from typing import Any
+from typing import Any, Iterator, NamedTuple
+from urllib.parse import parse_qs, urlsplit
 
 import instaloader
 from instaloader.exceptions import (
     ConnectionException,
+    IPhoneSupportDisabledException,
     LoginRequiredException,
-    ProfileNotExistsException,
     QueryReturnedBadRequestException,
 )
 
@@ -38,9 +38,22 @@ from config import (
 
 log = logging.getLogger("pipeline.scrape")
 
+# How many accounts go into one reels_media request. Matches instaloader's own
+# internal chunk size, so the request looks like what Instagram already gets
+# from a large installed base. This is not a tuning knob: Instagram's cap on
+# `reel_ids` is undocumented, and raising it is unvalidated. If Instagram ever
+# rejects requests this large, the split-retry below finds the working size and
+# logs it — lower this constant to match rather than guessing upward.
+STORY_CHUNK_SIZE = 50
+
+# Jitter between chunks. One chunk covers 50 accounts, so a full run is ~17
+# requests and the sleeps can be far more generous than the old per-account 2–5s
+# while still finishing in minutes.
+CHUNK_SLEEP_RANGE = (5.0, 15.0)
+
 
 class InstagramStoriesBadRequest(RuntimeError):
-    """Fatal Instagram stories API failure that should stop account iteration."""
+    """Fatal Instagram stories API failure that should stop the run."""
 
 
 # Response headers Instagram sets when it throttles or challenges a request.
@@ -162,6 +175,62 @@ def _persist_rotated_session(L: instaloader.Instaloader) -> None:
         log.warning("Could not persist rotated session to %s: %s", SESSION_FILE, e)
 
 
+_LINK_SHIM_HOSTS = {"l.instagram.com", "lm.instagram.com"}
+
+
+def _unwrap_link_shim(url: Any) -> str | None:
+    """Return the real destination behind an `l.instagram.com/?u=<target>` wrapper.
+
+    Instagram rewrites outbound story links through that shim, and the wrapper
+    carries a signed `e` parameter that expires. Storing the wrapper would put a
+    link that stops working into every rsvp_url.
+    """
+    if not isinstance(url, str) or not url.strip():
+        return None
+    url = url.strip()
+    parts = urlsplit(url)
+    if parts.netloc.lower() not in _LINK_SHIM_HOSTS:
+        return url
+    target = parse_qs(parts.query).get("u") or []
+    return target[0] if target and target[0] else url
+
+
+def _dict_entries(value: Any) -> list[dict[str, Any]]:
+    if not isinstance(value, list):
+        return []
+    return [entry for entry in value if isinstance(entry, dict)]
+
+
+def _story_cta_url(item: Any) -> str | None:
+    """Return the link a club attached to a story item, or None.
+
+    `StoryItem` exposes no property for this — the link lives only in the iphone
+    struct, which `Story.get_items()` has already stitched onto the item, so
+    reading it costs no extra request. Instagram uses two shapes: the link
+    sticker that replaced swipe-up in 2021, and the legacy swipe-up payload.
+    """
+    try:
+        struct = item._iphone_struct
+    except (IPhoneSupportDisabledException, KeyError):
+        return None
+    if not isinstance(struct, dict):
+        return None
+
+    for sticker in _dict_entries(struct.get("story_link_stickers")):
+        link = sticker.get("story_link")
+        url = _unwrap_link_shim(link.get("url")) if isinstance(link, dict) else None
+        if url:
+            return url
+
+    for cta in _dict_entries(struct.get("story_cta")):
+        for link in _dict_entries(cta.get("links")):
+            url = _unwrap_link_shim(link.get("webUri"))
+            if url:
+                return url
+
+    return None
+
+
 def _serialize_item(item: Any, handle: str) -> dict[str, Any]:
     """Pull the fields we care about off an instaloader StoryItem."""
     return {
@@ -179,7 +248,7 @@ def _serialize_item(item: Any, handle: str) -> dict[str, Any]:
         "video_url": item.video_url if item.is_video else None,
         "caption": item.caption,
         "caption_mentions": list(getattr(item, "caption_mentions", []) or []),
-        "story_cta_url": getattr(item, "story_cta_url", None),
+        "story_cta_url": _story_cta_url(item),
         # Best-effort link to view in browser (only works while story is live).
         "permalink": f"https://www.instagram.com/stories/{handle}/{item.mediaid}/",
     }
@@ -197,42 +266,52 @@ def _write_item(item_dict: dict[str, Any], handle: str) -> bool:
     return True
 
 
-def _resolve_profile(
-    L: instaloader.Instaloader,
-    handle: str,
-    *,
-    instagram_user_id: int | None = None,
-) -> instaloader.Profile:
-    """Resolve a username to an instaloader Profile object using a hybrid approach.
+def _chunks(
+    accounts: list[dict[str, Any]], size: int
+) -> Iterator[list[dict[str, Any]]]:
+    for start in range(0, len(accounts), size):
+        yield accounts[start : start + size]
 
-    1. If account metadata has instagram_user_id, instantiate Profile directly (0 network requests).
-    2. Fallback to Instagram search (TopSearchResults GET query) which is unaffected by GraphQL bugs.
-    3. Final fallback to instaloader's default from_username (GraphQL).
+
+def _index_by_userid(
+    accounts: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], dict[int, dict[str, Any]], list[dict[str, Any]]]:
+    """Split accounts into what we can batch and what we can't.
+
+    Returns `(batchable, by_userid, skipped)`. A batched reels_media response
+    identifies each story only by owner id, so `by_userid` is how a story gets
+    attributed back to a handle. `skipped` holds accounts with no
+    `instagram_user_id` — batching addresses accounts by id, so those can't be
+    asked about at all.
     """
-    normalized_handle = handle.lower()
+    batchable: list[dict[str, Any]] = []
+    by_userid: dict[int, dict[str, Any]] = {}
+    skipped: list[dict[str, Any]] = []
 
-    if instagram_user_id is not None:
-        log.info(
-            "%s: Resolved handle using cached instagram_user_id (%s)",
-            handle,
-            instagram_user_id,
-        )
-        return instaloader.Profile(
-            L.context, {"username": handle, "id": str(instagram_user_id)}
-        )
+    for acct in accounts:
+        try:
+            userid = int(acct["instagram_user_id"])
+        except (KeyError, TypeError, ValueError):
+            skipped.append(acct)
+            continue
 
-    # 2. Fallback to Search GET request (completely unaffected by issue #2695)
-    try:
-        search_results = instaloader.TopSearchResults(L.context, handle)
-        for profile in search_results.get_profiles():
-            if profile.username.lower() == normalized_handle:
-                log.info("%s: Resolved handle via search (ID: %s)", handle, profile.userid)
-                return profile
-    except Exception as e:
-        log.warning("%s: Search resolution failed: %s. Falling back to default lookup.", handle, e)
+        claimed = by_userid.get(userid)
+        if claimed is not None:
+            log.warning(
+                "%s and %s both claim instagram_user_id %s; keeping %s. Stories for "
+                "an ambiguous id would land in whichever directory won the race — "
+                "fix the duplicate in accounts.json.",
+                claimed["handle"],
+                acct.get("handle"),
+                userid,
+                claimed["handle"],
+            )
+            continue
 
-    # 3. Final fallback to instaloader's default from_username
-    return instaloader.Profile.from_username(L.context, handle)
+        by_userid[userid] = acct
+        batchable.append(acct)
+
+    return batchable, by_userid, skipped
 
 
 def _profile_username(profile: instaloader.Profile) -> str:
@@ -340,36 +419,177 @@ def _load_scrape_accounts(L: instaloader.Instaloader) -> list[dict[str, Any]]:
     return accounts
 
 
-def scrape_account(L: instaloader.Instaloader, acct: dict[str, Any]) -> tuple[int, int]:
-    """Fetch stories for one account. Returns (seen, new)."""
-    handle = acct["handle"]
-    raw_id = acct.get("instagram_user_id")
-    instagram_user_id = int(raw_id) if raw_id is not None else None
-    profile = _resolve_profile(L, handle, instagram_user_id=instagram_user_id)
-    seen = new = 0
+class StoryFetch(NamedTuple):
+    """What one chunk's worth of requests produced, after any split-retry."""
 
+    stories: list[Any]
+    # Sizes Instagram accepted. Empty means every request in this subtree failed.
+    accepted_sizes: list[int]
+    # Userids Instagram rejected when asked about on their own.
+    rejected_userids: list[int]
+
+
+def _fetch_stories(L: instaloader.Instaloader, userids: list[int]) -> StoryFetch:
+    """Fetch stories for `userids`, halving and retrying whatever gets rejected.
+
+    Recursing down to size 1 covers two different failures with one mechanism: a
+    poison userid (deleted, banned, mistyped) is isolated in ~12 requests instead
+    of costing 50 accounts their run, and a server-side cap below
+    STORY_CHUNK_SIZE degrades to whatever size Instagram does accept. Which one
+    happened is reported by the caller from the counts returned here.
+    """
     try:
-        stories = L.get_stories(userids=[profile.userid])
-        for story in stories:
-            try:
-                items = list(story.get_items())
-            except KeyError:
-                # Instaloader raises when the reels API omits this user (no active stories).
-                log.info("%s: no active stories in API response", handle)
-                continue
-            for item in items:
-                seen += 1
-                payload = _serialize_item(item, handle)
-                if _write_item(payload, handle):
-                    new += 1
+        # get_stories() is a generator — the request only fires on iteration, so
+        # the failure would escape this handler if we didn't materialize here.
+        stories = list(L.get_stories(userids=list(userids)))
     except QueryReturnedBadRequestException as e:
+        if len(userids) == 1:
+            log.warning("Instagram rejected userid %s on its own: %s", userids[0], e)
+            return StoryFetch([], [], list(userids))
+
+        half = len(userids) // 2
+        log.warning(
+            "Instagram rejected a %d-account story request (%s); retrying as %d + %d",
+            len(userids),
+            e,
+            half,
+            len(userids) - half,
+        )
+        left = _fetch_stories(L, userids[:half])
+        right = _fetch_stories(L, userids[half:])
+        return StoryFetch(
+            left.stories + right.stories,
+            left.accepted_sizes + right.accepted_sizes,
+            left.rejected_userids + right.rejected_userids,
+        )
+
+    return StoryFetch(stories, [len(userids)], [])
+
+
+class ChunkResult(NamedTuple):
+    seen: int
+    new: int
+    posting: int
+    accepted_sizes: list[int]
+    rejected_userids: list[int]
+
+
+def scrape_chunk(
+    L: instaloader.Instaloader,
+    chunk: list[dict[str, Any]],
+    by_userid: dict[int, dict[str, Any]],
+) -> ChunkResult:
+    """Fetch stories for a chunk of accounts in one request.
+
+    reels_media only returns entries for accounts with a live story, so a
+    50-account chunk typically yields two or three of them.
+    """
+    userids = [int(acct["instagram_user_id"]) for acct in chunk]
+    fetch = _fetch_stories(L, userids)
+
+    if not fetch.accepted_sizes and len(userids) > 1:
         raise InstagramStoriesBadRequest(
-            f"{handle}: Instagram stories GraphQL request failed with bad request: {e}. "
-            "Stopping the Instagram scrape now because this usually repeats for every "
-            "configured account until the session, rate limit, or Instaloader query "
-            "compatibility recovers."
-        ) from e
-    return seen, new
+            f"Instagram rejected all {len(userids)} accounts in this chunk, including "
+            "every one of them asked about individually. Only a dead, challenged, or "
+            "rate-limited session fails every account at once — a bad account would "
+            "have left the rest of the chunk working. Stopping the Instagram scrape "
+            "now; refresh IG_SESSION_FILE before re-running."
+        )
+
+    seen = new = posting = 0
+    for story in fetch.stories:
+        acct = by_userid.get(story.owner_id)
+        if acct is None:
+            log.warning(
+                "Ignoring stories from owner id %s, which this chunk never asked about",
+                story.owner_id,
+            )
+            continue
+
+        handle = acct["handle"]
+        _warn_on_handle_rename(story, handle)
+
+        try:
+            items = list(story.get_items())
+        except KeyError:
+            # The iphone reels response omitted this owner. Rare once the GraphQL
+            # response has already named them, but it means no readable items.
+            log.info("%s: reels response carried no items for this account", handle)
+            continue
+
+        story_seen = story_new = 0
+        for item in items:
+            story_seen += 1
+            if _write_item(_serialize_item(item, handle), handle):
+                story_new += 1
+
+        if story_seen:
+            posting += 1
+            log.info("%s: %d items, %d new", handle, story_seen, story_new)
+        seen += story_seen
+        new += story_new
+
+    return ChunkResult(seen, new, posting, fetch.accepted_sizes, fetch.rejected_userids)
+
+
+def _warn_on_handle_rename(story: Any, handle: str) -> None:
+    """Flag a club that renamed itself.
+
+    The raw directory and the permalink both come from the handle in the
+    accounts list, never from `owner_username` — trusting Instagram's current
+    name would start a second orphan directory and orphan the archive. But the
+    permalink only resolves under the current name, so a rename needs saying out
+    loud, and nothing detects it today.
+    """
+    reported = str(getattr(story, "owner_username", "") or "").strip()
+    if reported and reported.lower() != handle.lower():
+        log.warning(
+            "%s now posts as @%s. Still writing to data/raw/%s so the archive stays "
+            "joinable, but permalinks will be wrong until accounts.json is updated.",
+            handle,
+            reported,
+            handle,
+        )
+
+
+def _log_rejection_diagnosis(
+    *,
+    rejected_handles: list[str],
+    oversize_rejections: int,
+    chunk_count: int,
+    accepted_sizes: list[int],
+) -> None:
+    """Say which of the two split-retry failures the run actually saw.
+
+    A bad account and a server-side chunk cap both start as a rejected
+    full-size request, and the fix for each is different, so the run has to
+    name which one it was rather than leaving it to be inferred from the logs.
+    """
+    if rejected_handles:
+        log.error(
+            "Instagram rejected %d account(s) asked about individually: %s. That is a "
+            "bad userid — deleted, banned, or mistyped — not a size limit, since the "
+            "rest of the chunk went through. Prune or re-resolve these entries in "
+            "accounts.json.",
+            len(rejected_handles),
+            ", ".join(sorted(rejected_handles)),
+        )
+        return
+
+    largest_accepted = max(accepted_sizes, default=0)
+    if (
+        chunk_count
+        and oversize_rejections == chunk_count
+        and 0 < largest_accepted < STORY_CHUNK_SIZE
+    ):
+        log.error(
+            "Instagram rejected every full-size request but accepted %d accounts at "
+            "once, and no individual account was at fault. That is a server-side cap "
+            "on reel_ids: lower STORY_CHUNK_SIZE from %d to %d.",
+            largest_accepted,
+            STORY_CHUNK_SIZE,
+            largest_accepted,
+        )
 
 
 def main() -> None:
@@ -399,59 +619,99 @@ def main() -> None:
     _attach_http_error_logger(L)
     try:
         accounts = _load_scrape_accounts(L)
+        batchable, by_userid, skipped = _index_by_userid(accounts)
+        if skipped:
+            log.warning(
+                "Skipping %d account(s) with no instagram_user_id: %s. Batched story "
+                "fetch addresses accounts by id, so these are invisible to the run — "
+                "run `python resolve_ids.py` to fill them in.",
+                len(skipped),
+                ", ".join(
+                    sorted(str(acct.get("handle") or "<no handle>") for acct in skipped)
+                ),
+            )
 
-        totals = {"accounts": 0, "seen": 0, "new": 0, "errors": 0, "missing_profiles": 0}
-        for acct in accounts:
-            handle = acct["handle"]
-            totals["accounts"] += 1
+        chunks = list(_chunks(batchable, STORY_CHUNK_SIZE))
+        totals = {
+            "accounts": len(batchable),
+            "chunks": len(chunks),
+            "posting": 0,
+            "seen": 0,
+            "new": 0,
+            "errors": 0,
+            "no_userid": len(skipped),
+            "rejected_accounts": 0,
+        }
+        accepted_sizes: list[int] = []
+        rejected_handles: list[str] = []
+        oversize_rejections = 0
+
+        for index, chunk in enumerate(chunks, start=1):
             try:
-                seen, new = scrape_account(L, acct)
-                totals["seen"] += seen
-                totals["new"] += new
-                log.info("%s: %d items, %d new", handle, seen, new)
+                result = scrape_chunk(L, chunk, by_userid)
             except LoginRequiredException:
                 log.error("Login required (session expired). Re-auth and re-run.")
                 raise
             except ConnectionException as e:
                 totals["errors"] += 1
-                log.warning("%s: connection error: %s", handle, e)
-            except ProfileNotExistsException as e:
-                totals["errors"] += 1
-                totals["missing_profiles"] += 1
-                log.warning(
-                    "%s: profile lookup failed: %s. If this affects every account, "
-                    "Instagram is likely hiding profiles behind an expired, challenged, "
-                    "or rate-limited session.",
-                    handle,
-                    e,
-                    exc_info=True,
-                )
+                log.warning("chunk %d/%d: connection error: %s", index, len(chunks), e)
             except InstagramStoriesBadRequest as e:
                 totals["errors"] += 1
                 log.error("%s", e)
                 raise RuntimeError(str(e)) from None
-            except Exception as e:  # noqa: BLE001 — keep run alive across per-account failures
+            except Exception as e:  # noqa: BLE001 — keep the run alive across chunks
                 totals["errors"] += 1
-                log.warning("%s: %s: %s", handle, type(e).__name__, e, exc_info=True)
-            # Polite jitter between accounts. IG aggressively rate-limits scraping.
-            time.sleep(random.uniform(2.0, 5.0))
+                log.warning(
+                    "chunk %d/%d: %s: %s",
+                    index,
+                    len(chunks),
+                    type(e).__name__,
+                    e,
+                    exc_info=True,
+                )
+            else:
+                totals["seen"] += result.seen
+                totals["new"] += result.new
+                totals["posting"] += result.posting
+                accepted_sizes.extend(result.accepted_sizes)
+                # Any accepted sub-request is strictly smaller than the chunk, so
+                # the chunk's own size showing up is exactly "the full-size
+                # request went through".
+                if len(chunk) not in result.accepted_sizes:
+                    oversize_rejections += 1
+                rejected_handles.extend(
+                    by_userid[userid]["handle"] for userid in result.rejected_userids
+                )
+                log.info(
+                    "chunk %d/%d: %d accounts, %d posting, %d items, %d new",
+                    index,
+                    len(chunks),
+                    len(chunk),
+                    result.posting,
+                    result.seen,
+                    result.new,
+                )
+
+            if index < len(chunks):
+                time.sleep(random.uniform(*CHUNK_SLEEP_RANGE))
+
+        # A rejected account no longer stops the run, but it still has to fail it:
+        # nothing else would prompt anyone to prune the accounts.json entry.
+        totals["rejected_accounts"] = len(rejected_handles)
+        totals["errors"] += len(rejected_handles)
+        _log_rejection_diagnosis(
+            rejected_handles=rejected_handles,
+            oversize_rejections=oversize_rejections,
+            chunk_count=len(chunks),
+            accepted_sizes=accepted_sizes,
+        )
 
         log.info("Done: %s", totals)
         if totals["errors"]:
-            if (
-                totals["missing_profiles"] == totals["accounts"]
-                and totals["seen"] == 0
-                and totals["accounts"] > 0
-            ):
-                raise RuntimeError(
-                    "Instagram session appears invalid, challenged, or rate-limited: "
-                    f"all {totals['accounts']} configured profiles returned "
-                    "ProfileNotExistsException. Refresh IG_SESSION_FILE and verify the "
-                    "scraper account can view these profiles before re-running."
-                )
             raise RuntimeError(
-                f"Instagram scrape failed for {totals['errors']} account(s); "
-                "check the logs for expired sessions, auth challenges, or rate limits."
+                f"Instagram scrape hit {totals['errors']} failure(s); check the logs "
+                "for rejected accounts, expired sessions, auth challenges, or rate "
+                "limits."
             )
     finally:
         # Persist whatever the jar rotated to during this run, even when we exit by

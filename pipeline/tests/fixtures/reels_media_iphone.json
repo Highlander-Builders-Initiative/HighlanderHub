@@ -1,0 +1,146 @@
+{
+  "_comment": "Shape of the iphone API response instaloader reads from api/v1/feed/reels_media/?reel_ids=<owner_id>. Story.get_items() stitches each item here onto the matching GraphQL item by `pk`, which is where the outbound story link lives — the GraphQL response has no equivalent field.",
+  "reels": {
+    "10839758322": {
+      "id": 10839758322,
+      "latest_reel_media": 1778530500,
+      "expiring_at": 1778616900,
+      "user": {
+        "pk": 10839758322,
+        "username": "acm_ucr",
+        "full_name": "ACM at UCR",
+        "is_private": false,
+        "profile_pic_url": "https://scontent.cdninstagram.com/acm_ucr_avatar.jpg"
+      },
+      "items": [
+        {
+          "pk": 3140000000000000001,
+          "id": "3140000000000000001_10839758322",
+          "taken_at": 1778524200,
+          "expiring_at": 1778610600,
+          "media_type": 1,
+          "image_versions2": {
+            "candidates": [
+              {
+                "url": "https://scontent.cdninstagram.com/acm_ucr/flyer_hd.jpg",
+                "width": 1080,
+                "height": 1920
+              }
+            ]
+          },
+          "story_link_stickers": [
+            {
+              "x": 0.5,
+              "y": 0.82,
+              "z": 0,
+              "width": 0.44,
+              "height": 0.06,
+              "rotation": 0.0,
+              "story_link": {
+                "link_type": "web",
+                "url": "https://l.instagram.com/?u=https%3A%2F%2Flu.ma%2Fhack-night-2026&e=AT2mQ0",
+                "link_title": "RSVP"
+              }
+            }
+          ]
+        },
+        {
+          "pk": 3140000000000000002,
+          "id": "3140000000000000002_10839758322",
+          "taken_at": 1778530500,
+          "expiring_at": 1778616900,
+          "media_type": 2,
+          "image_versions2": {
+            "candidates": [
+              {
+                "url": "https://scontent.cdninstagram.com/acm_ucr/clip_thumb_hd.jpg",
+                "width": 1080,
+                "height": 1920
+              }
+            ]
+          },
+          "video_versions": [
+            {
+              "type": 101,
+              "url": "https://scontent.cdninstagram.com/acm_ucr/clip_1080.mp4",
+              "width": 1080,
+              "height": 1920
+            }
+          ]
+        }
+      ]
+    },
+    "449388329": {
+      "id": 449388329,
+      "latest_reel_media": 1778524200,
+      "expiring_at": 1778610600,
+      "user": {
+        "pk": 449388329,
+        "username": "cyber_ucr",
+        "full_name": "Cyber Security Club at UCR",
+        "is_private": false,
+        "profile_pic_url": "https://scontent.cdninstagram.com/cyber_ucr_avatar.jpg"
+      },
+      "items": [
+        {
+          "pk": 3140000000000000003,
+          "id": "3140000000000000003_449388329",
+          "taken_at": 1778524200,
+          "expiring_at": 1778610600,
+          "media_type": 1,
+          "image_versions2": {
+            "candidates": [
+              {
+                "url": "https://scontent.cdninstagram.com/cyber_ucr/flyer_hd.jpg",
+                "width": 1080,
+                "height": 1920
+              }
+            ]
+          },
+          "story_cta": [
+            {
+              "links": [
+                {
+                  "linkType": 1,
+                  "webUri": "https://l.instagram.com/?u=https%3A%2F%2Fforms.gle%2FsecurityNight&e=AT1xYz",
+                  "callToActionTitle": "See More",
+                  "redirectUri": null
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "220034115": {
+      "id": 220034115,
+      "latest_reel_media": 1778524200,
+      "expiring_at": 1778610600,
+      "user": {
+        "pk": 220034115,
+        "username": "ucrvsa",
+        "full_name": "UCR Vietnamese Student Association",
+        "is_private": false,
+        "profile_pic_url": "https://scontent.cdninstagram.com/ucrvsa_avatar.jpg"
+      },
+      "items": [
+        {
+          "pk": 3140000000000000004,
+          "id": "3140000000000000004_220034115",
+          "taken_at": 1778524200,
+          "expiring_at": 1778610600,
+          "media_type": 1,
+          "image_versions2": {
+            "candidates": [
+              {
+                "url": "https://scontent.cdninstagram.com/ucrvsa/flyer_hd.jpg",
+                "width": 1080,
+                "height": 1920
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}
