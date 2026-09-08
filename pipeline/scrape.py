@@ -126,20 +126,34 @@ def _login(L: instaloader.Instaloader) -> None:
     log.info("Logged in as %s", IG_USERNAME)
 
 
-def _current_sessionid(L: instaloader.Instaloader) -> str | None:
-    """Return the live `sessionid` cookie value from the in-memory jar, if any."""
+def _cookie_jar(L: instaloader.Instaloader) -> Any:
     session = getattr(getattr(L, "context", None), "_session", None)
-    cookies = getattr(session, "cookies", None)
+    return getattr(session, "cookies", None)
+
+
+def _current_sessionid(L: instaloader.Instaloader) -> str | None:
+    """Return the live `sessionid` cookie value from the in-memory jar, if any.
+
+    The same live session shows up under two domains. A `sessionid` Instagram
+    rotates in mid-run arrives via Set-Cookie scoped to `.instagram.com`, but
+    one loaded from SESSION_FILE has no domain at all — instaloader rebuilds
+    the jar with `requests.utils.cookiejar_from_dict`, which defaults the
+    domain to "". Accepting only the scoped form declared every unrotated run
+    logged out, which is most of them now that a run is ~17 requests rather
+    than ~840. Prefer the rotated value when both are present.
+    """
+    cookies = _cookie_jar(L)
     if cookies is None:
         return None
+
+    from_file: str | None = None
     for cookie in cookies:
-        if (
-            cookie.name == "sessionid"
-            and str(getattr(cookie, "domain", "")).endswith("instagram.com")
-            and cookie.value
-        ):
+        if cookie.name != "sessionid" or not cookie.value:
+            continue
+        if str(getattr(cookie, "domain", "") or "").endswith("instagram.com"):
             return cookie.value
-    return None
+        from_file = cookie.value
+    return from_file
 
 
 def _persist_rotated_session(L: instaloader.Instaloader) -> None:
@@ -163,10 +177,15 @@ def _persist_rotated_session(L: instaloader.Instaloader) -> None:
     try:
         sessionid = _current_sessionid(L)
         if not sessionid:
+            names = sorted(
+                {cookie.name for cookie in _cookie_jar(L) or [] if cookie.value}
+            )
             log.warning(
-                "Not saving session back to %s: no live sessionid cookie "
-                "(session looks logged out/expired). Left the file untouched.",
+                "Not saving session back to %s: no sessionid cookie with a value "
+                "(session looks logged out/expired). Left the file untouched. "
+                "Cookies in the jar: %s",
                 SESSION_FILE,
+                ", ".join(names) or "none",
             )
             return
         L.save_session_to_file(SESSION_FILE)

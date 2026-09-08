@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import importlib
 import json
+import pickle
 import sys
 import tempfile
 import types
@@ -19,6 +20,7 @@ from pathlib import Path
 from typing import Any, Iterator
 from unittest.mock import Mock, patch
 
+import instaloader
 from instaloader.exceptions import (
     ConnectionException,
     QueryReturnedBadRequestException,
@@ -564,6 +566,54 @@ class SessionTests(ScrapeTestCase):
             )
         loader.context._session.cookies = jar
         return loader
+
+    def _loader_from_session_file(self, cookies: dict[str, str]) -> Any:
+        """A real Instaloader with a session loaded off disk, as a run starts.
+
+        Worth going through instaloader rather than hand-building a jar: the
+        empty cookie domain this guards against is produced by its own
+        `load_session`, not by anything we control.
+        """
+        path = Path(tempfile.mkdtemp()) / "session-scraper"
+        with path.open("wb") as f:
+            pickle.dump(cookies, f)
+        loader = instaloader.Instaloader(quiet=True)
+        loader.load_session_from_file("scraper", str(path))
+        return loader
+
+    def test_sessionid_loaded_from_a_session_file_counts_as_live(self) -> None:
+        # instaloader rebuilds the jar with requests.utils.cookiejar_from_dict,
+        # which leaves every cookie's domain empty. A domain match would reject
+        # a perfectly good session on every run that Instagram never rotated.
+        loader = self._loader_from_session_file(
+            {"sessionid": "live-from-file", "csrftoken": "abc"}
+        )
+
+        self.assertEqual("live-from-file", self.scrape._current_sessionid(loader))
+
+    def test_rotated_sessionid_wins_over_the_one_loaded_from_file(self) -> None:
+        loader = self._loader_from_session_file(
+            {"sessionid": "stale-from-file", "csrftoken": "abc"}
+        )
+        loader.context._session.cookies.set(
+            "sessionid", "rotated-mid-run", domain=".instagram.com", path="/"
+        )
+
+        self.assertEqual("rotated-mid-run", self.scrape._current_sessionid(loader))
+
+    def test_session_file_without_a_sessionid_is_still_refused(self) -> None:
+        loader = self._loader_from_session_file({"csrftoken": "abc"})
+
+        self.assertIsNone(self.scrape._current_sessionid(loader))
+
+    def test_refusal_names_the_cookies_it_did_find(self) -> None:
+        loader = self._loader_from_session_file({"csrftoken": "abc", "mid": "xyz"})
+
+        with patch.object(self.scrape, "SESSION_FILE", "/tmp/ig-session"):
+            with self.assertLogs(self.scrape.log, level="WARNING") as captured:
+                self.scrape._persist_rotated_session(loader)
+
+        self.assertIn("csrftoken, mid", captured.output[0])
 
     def test_persist_rotated_session_saves_when_sessionid_present(self) -> None:
         loader = self._loader_with_sessionid("rotated-value")
