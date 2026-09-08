@@ -33,6 +33,60 @@ class CategoryInferenceTests(unittest.TestCase):
             infer_category_from_text("Class classes concert", ""),
         )
 
+    def test_exhibit_and_exhibition_forms_score_once(self) -> None:
+        # Separate concepts would double-score arts and beat academic here.
+        self.assertEqual(
+            "academic",
+            infer_category_from_text(
+                "Exhibit exhibitions",
+                "Lecture seminar colloquium symposium",
+            ),
+        )
+
+    def test_theater_and_theatre_forms_score_once(self) -> None:
+        # Separate concepts would double-score arts and beat academic here.
+        self.assertEqual(
+            "academic",
+            infer_category_from_text(
+                "Theater theatre night",
+                "Lecture seminar colloquium symposium",
+            ),
+        )
+
+    def test_career_option_one_aliases(self) -> None:
+        cases = (
+            ("Campus recruiting fair", "career"),
+            ("Recruitment open house", "career"),
+            ("Interviewing skills workshop", "career"),
+        )
+        for title, expected in cases:
+            with self.subTest(title=title):
+                self.assertEqual(expected, infer_category_from_text(title, ""))
+
+    def test_community_volunteering_alias(self) -> None:
+        self.assertEqual(
+            "community",
+            infer_category_from_text("Community volunteering day", ""),
+        )
+
+    def test_multi_word_aliases_match_line_break_whitespace(self) -> None:
+        self.assertEqual(
+            "club",
+            infer_category_from_text("general\nmeeting tonight", ""),
+        )
+
+    def test_bare_performance_is_excluded_from_keyword_fallback(self) -> None:
+        self.assertEqual(
+            "community",
+            infer_category_from_text("Addressing Employee Performance Issues", ""),
+        )
+
+    def test_bare_service_is_excluded_from_keyword_fallback(self) -> None:
+        self.assertEqual(
+            "community",
+            infer_category_from_text("Thriving After Military Service", ""),
+        )
+
     def test_hyphenated_and_substring_terms_do_not_match(self) -> None:
         self.assertEqual(
             "community",
@@ -87,6 +141,12 @@ class LocalistCategoryTests(unittest.TestCase):
                     infer_localist_category(types, [], False, "", ""),
                 )
 
+    def test_arts_before_athletics_type_precedence(self) -> None:
+        self.assertEqual(
+            "arts",
+            infer_localist_category(["Arts", "Athletics"], [], False, "", ""),
+        )
+
 
 class HlinkCategoryTests(unittest.TestCase):
     def test_theme_precedence_over_category_names(self) -> None:
@@ -104,6 +164,7 @@ class HlinkCategoryTests(unittest.TestCase):
         cases = (
             (None, ["Concert", "Free Food"], "Lecture night", "arts"),
             (None, ["Free Food"], "Graduate thesis defense", "academic"),
+            (None, ["Performance"], "Addressing Employee Performance Issues", "arts"),
         )
         for theme, category_names, title, expected in cases:
             with self.subTest(title=title):

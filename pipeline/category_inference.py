@@ -1,9 +1,27 @@
+"""Canonical event category inference for Localist and HighlanderLink sources.
+
+Each resolver follows a three-tier flow: structured source labels first, then
+weighted keyword scoring over title/source/description text, then ``community``
+as the default fallback.
+
+Localist type labels use table order for precedence (first match wins). That
+order is deliberately independent of keyword tie-break priority — e.g. ``Arts``
+beats ``Athletics`` even though sports ranks above arts in text scoring ties.
+Generic labels such as ``Workshops`` stay unmapped so they only influence
+keyword fallback.
+
+Keyword concepts list every accepted textual form explicitly. Title, source
+label, and description weights are 3/2/1. Bare ``performance`` and ``service``
+are intentionally omitted from keyword fallback (HLink category-name labels and
+phrases like ``dance performance`` / ``community service`` still map via
+source tables).
+"""
 from __future__ import annotations
 
 import re
 from collections.abc import Iterable
 
-
+# Localist event_types: first matching row wins (independent of keyword priority).
 _LOCALIST_TYPE_CATEGORIES: tuple[tuple[str, str], ...] = (
     ("theatre & plays", "arts"),
     ("film & screenings", "arts"),
@@ -34,14 +52,14 @@ _HLINK_THEME_TO_CATEGORY = {
 
 _HLINK_CATEGORY_NAME_CATEGORIES: tuple[tuple[str, str], ...] = (
     ("concert", "arts"),
-    ("performance", "arts"),
+    ("performance", "arts"),  # HLink label only; bare keyword fallback excluded.
     ("exhibit", "arts"),
     ("dance", "arts"),
     ("cultural", "arts"),
     ("competition", "sports"),
     ("recreational", "sports"),
     ("educational", "academic"),
-    ("community service", "community"),
+    ("community service", "community"),  # phrase only; bare ``service`` excluded.
     ("late night", "social"),
     ("gaming", "social"),
     ("social", "social"),
@@ -64,9 +82,9 @@ _CATEGORY_CONCEPTS: dict[str, tuple[tuple[str, ...], ...]] = {
         ("workshop", "workshops"),
         ("networking",),
         ("resume", "resumes"),
-        ("interview", "interviews"),
+        ("interview", "interviews", "interviewing"),
         ("hiring",),
-        ("recruit", "recruits"),
+        ("recruit", "recruits", "recruiting", "recruitment"),
     ),
     "sports": (
         ("athletic", "athletics"),
@@ -81,11 +99,9 @@ _CATEGORY_CONCEPTS: dict[str, tuple[tuple[str, ...], ...]] = {
     "arts": (
         ("concert", "concerts"),
         ("recital", "recitals"),
-        ("exhibit", "exhibits"),
-        ("exhibition", "exhibitions"),
+        ("exhibit", "exhibits", "exhibition", "exhibitions"),
         ("gallery", "galleries"),
-        ("theater", "theaters"),
-        ("theatre", "theatres"),
+        ("theater", "theaters", "theatre", "theatres"),
         ("dance performance", "dance performances"),
         ("film", "films"),
         ("screening", "screenings"),
@@ -108,12 +124,13 @@ _CATEGORY_CONCEPTS: dict[str, tuple[tuple[str, ...], ...]] = {
     ),
     "community": (
         ("community", "communities"),
-        ("volunteer", "volunteers"),
+        ("volunteer", "volunteers", "volunteering"),
         ("outreach",),
         ("donate", "donates"),
     ),
 }
 
+# Keyword tie-break when scores are equal (independent of source-table order).
 _CATEGORY_PRIORITY: tuple[str, ...] = (
     "sports",
     "arts",
@@ -126,16 +143,23 @@ _CATEGORY_PRIORITY: tuple[str, ...] = (
 _CATEGORY_RANK = {
     category: rank for rank, category in enumerate(_CATEGORY_PRIORITY)
 }
-_UNRANKED = len(_CATEGORY_PRIORITY)
 
 _TITLE_WEIGHT = 3
 _SOURCE_TERM_WEIGHT = 2
 _DESCRIPTION_WEIGHT = 1
 
 
+def _alias_pattern_fragment(alias: str) -> str:
+    parts = alias.split()
+    if len(parts) == 1:
+        return re.escape(alias)
+    return r"\s+".join(re.escape(part) for part in parts)
+
+
 def _concept_pattern(aliases: tuple[str, ...]) -> re.Pattern[str]:
     alternatives = "|".join(
-        re.escape(alias) for alias in sorted(aliases, key=len, reverse=True)
+        _alias_pattern_fragment(alias)
+        for alias in sorted(aliases, key=len, reverse=True)
     )
     return re.compile(rf"(?<![\w-])(?:{alternatives})(?![\w-])")
 
@@ -190,10 +214,7 @@ def infer_category_from_text(
         return "community"
     return max(
         scores,
-        key=lambda category: (
-            scores[category],
-            -_CATEGORY_RANK.get(category, _UNRANKED),
-        ),
+        key=lambda category: (scores[category], -_CATEGORY_RANK[category]),
     )
 
 
