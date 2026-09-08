@@ -1,8 +1,8 @@
 """Fill missing Instagram user IDs in accounts.json.
 
 Offline step after discover.py: given handles, resolve numeric instagram_user_id
-via Instagram web_profile_info (authenticated with IG_SESSION_FILE, the same
-session scrape.py uses), then write IDs back into accounts.json.
+via Instagram topsearch (authenticated with IG_SESSION_FILE, the same session
+scrape.py uses), then write IDs back into accounts.json.
 
 Usage:
     python resolve_ids.py
@@ -34,13 +34,10 @@ from config import ACCOUNTS_FILE, SESSION_FILE  # noqa: E402
 
 log = logging.getLogger("pipeline.resolve_ids")
 
-WEB_PROFILE_URL = "https://i.instagram.com/api/v1/users/web_profile_info/"
 SEARCH_URL = "https://www.instagram.com/web/search/topsearch/"
 IG_APP_ID = "936619743392459"
 TIMEOUT_S = 20
 JITTER_RANGE = (2.0, 5.0)
-BACKOFF_S = 45.0
-MAX_ATTEMPTS = 3
 
 DEFAULT_HEADERS = {
     "User-Agent": (
@@ -57,15 +54,7 @@ DEFAULT_HEADERS = {
 
 
 class ResolveError(Exception):
-    """Failed to resolve a single handle.
-
-    fallback=True means web_profile_info failed in a way search may still work
-    (Instagram 400 schema bugs on professional accounts, empty user payload).
-    """
-
-    def __init__(self, message: str, *, fallback: bool = False) -> None:
-        super().__init__(message)
-        self.fallback = fallback
+    """Failed to resolve a single handle."""
 
 
 def _jitter() -> None:
@@ -86,15 +75,11 @@ def attach_ig_session(
     session: requests.Session,
     session_file: str | Path | None,
 ) -> None:
-    """Load scrape.py's Instaloader session cookies onto a requests session.
-
-    web_profile_info returns 401 without a live sessionid.
-    """
+    """Load scrape.py's Instaloader session cookies onto a requests session."""
     if not session_file:
         raise SystemExit(
-            "IG_SESSION_FILE is required. Instagram's web_profile_info "
-            "endpoint returns 401 without a logged-in session. Set it in "
-            "pipeline/.env (same file scrape.py uses)."
+            "IG_SESSION_FILE is required. Instagram search returns 401 without "
+            "a logged-in session. Set it in pipeline/.env (same file scrape.py uses)."
         )
     path = Path(session_file)
     if not path.exists():
@@ -120,22 +105,6 @@ def _needs_id(account: dict[str, Any], *, force: bool) -> bool:
     if force:
         return True
     return account.get("instagram_user_id") is None
-
-
-def _parse_user_id(payload: dict[str, Any], handle: str) -> int:
-    user = (payload.get("data") or {}).get("user") or {}
-    username = str(user.get("username") or "").strip().lower()
-    if username and username != handle.lower():
-        raise ResolveError(
-            f"username mismatch: requested {handle!r}, got {username!r}"
-        )
-    raw_id = user.get("id")
-    if raw_id is None:
-        raise ResolveError("response missing data.user.id", fallback=True)
-    try:
-        return int(raw_id)
-    except (TypeError, ValueError) as e:
-        raise ResolveError(f"invalid user id: {raw_id!r}", fallback=True) from e
 
 
 def _parse_search_user_id(payload: dict[str, Any], handle: str) -> int:
@@ -175,74 +144,17 @@ def _fetch_via_search(session: requests.Session, handle: str) -> int:
     return _parse_search_user_id(payload, handle)
 
 
-def _fetch_web_profile_info(session: requests.Session, handle: str) -> int:
-    last_error: Exception | None = None
-    for attempt in range(1, MAX_ATTEMPTS + 1):
-        try:
-            resp = session.get(
-                WEB_PROFILE_URL,
-                params={"username": handle},
-                timeout=TIMEOUT_S,
-            )
-        except (requests.ConnectionError, requests.Timeout) as e:
-            last_error = e
-            log.warning("%s: network error (%s), attempt %d/%d", handle, e, attempt, MAX_ATTEMPTS)
-            if attempt < MAX_ATTEMPTS:
-                time.sleep(BACKOFF_S if attempt > 1 else 5.0)
-            continue
-
-        if resp.status_code in (429, 401, 403):
-            last_error = ResolveError(f"HTTP {resp.status_code}")
-            log.warning(
-                "%s: HTTP %d, backing off %ss (attempt %d/%d)",
-                handle,
-                resp.status_code,
-                BACKOFF_S,
-                attempt,
-                MAX_ATTEMPTS,
-            )
-            if attempt < MAX_ATTEMPTS:
-                time.sleep(BACKOFF_S)
-            continue
-
-        if resp.status_code == 404:
-            raise ResolveError("profile not found (404)")
-
-        if resp.status_code == 400:
-            raise ResolveError(f"HTTP 400: {resp.text[:200]}", fallback=True)
-
-        if resp.status_code != 200:
-            raise ResolveError(f"HTTP {resp.status_code}: {resp.text[:200]}")
-
-        try:
-            payload = resp.json()
-        except ValueError as e:
-            raise ResolveError("response was not JSON") from e
-
-        return _parse_user_id(payload, handle)
-
-    raise ResolveError(f"gave up after {MAX_ATTEMPTS} attempts: {last_error}")
-
-
 def fetch_user_id(
     session: requests.Session,
     handle: str,
     *,
     sleep_fn: Callable[[], None] | None = None,
 ) -> int:
-    """Resolve handle to numeric Instagram user id.
+    """Resolve handle to numeric Instagram user id via topsearch.
 
-    Tries web_profile_info first. Professional/creator accounts often 400 with
-    Instagram's deleted ig_business_category_subvertical schema; those fall
-    back to topsearch, the same GET scrape.py uses.
+    Avoids web_profile_info, which Instagram 429s independently of search.
     """
-    try:
-        user_id = _fetch_web_profile_info(session, handle)
-    except ResolveError as e:
-        if not e.fallback:
-            raise
-        log.warning("%s: web_profile_info failed (%s); trying search", handle, e)
-        user_id = _fetch_via_search(session, handle)
+    user_id = _fetch_via_search(session, handle)
     if sleep_fn is not None:
         sleep_fn()
     return user_id
