@@ -1,0 +1,139 @@
+{
+  "_comment": "Shape of the `data` payload instaloader reads from the reels_media GraphQL query (query hash 303a4ae99711322310f25250d988f3b7). Only accounts with a live story appear here; silent accounts are simply absent.",
+  "reels_media": [
+    {
+      "id": "10839758322",
+      "latest_reel_media": 1778530500,
+      "expiring_at": 1778616900,
+      "seen": null,
+      "media_count": 2,
+      "user": {
+        "id": "10839758322",
+        "username": "acm_ucr",
+        "profile_pic_url": "https://scontent.cdninstagram.com/acm_ucr_avatar.jpg"
+      },
+      "items": [
+        {
+          "__typename": "GraphStoryImage",
+          "id": "3140000000000000001",
+          "dimensions": { "height": 1920, "width": 1080 },
+          "display_resources": [
+            {
+              "src": "https://scontent.cdninstagram.com/acm_ucr/flyer_640.jpg",
+              "config_width": 640,
+              "config_height": 1138
+            },
+            {
+              "src": "https://scontent.cdninstagram.com/acm_ucr/flyer_1080.jpg",
+              "config_width": 1080,
+              "config_height": 1920
+            }
+          ],
+          "is_video": false,
+          "taken_at_timestamp": 1778524200,
+          "expiring_at_timestamp": 1778610600,
+          "owner": { "id": "10839758322", "username": "acm_ucr" },
+          "edge_media_to_caption": {
+            "edges": [
+              {
+                "node": {
+                  "text": "Hack Night this Friday! Co-hosted with @cyber_ucr"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "__typename": "GraphStoryVideo",
+          "id": "3140000000000000002",
+          "dimensions": { "height": 1920, "width": 1080 },
+          "display_resources": [
+            {
+              "src": "https://scontent.cdninstagram.com/acm_ucr/clip_thumb_1080.jpg",
+              "config_width": 1080,
+              "config_height": 1920
+            }
+          ],
+          "video_resources": [
+            {
+              "src": "https://scontent.cdninstagram.com/acm_ucr/clip_480.mp4",
+              "config_width": 480,
+              "config_height": 853
+            }
+          ],
+          "is_video": true,
+          "taken_at_timestamp": 1778530500,
+          "expiring_at_timestamp": 1778616900,
+          "owner": { "id": "10839758322", "username": "acm_ucr" },
+          "edge_media_to_caption": { "edges": [] }
+        }
+      ]
+    },
+    {
+      "id": "449388329",
+      "latest_reel_media": 1778524200,
+      "expiring_at": 1778610600,
+      "seen": null,
+      "media_count": 1,
+      "user": {
+        "id": "449388329",
+        "username": "cyber_ucr",
+        "profile_pic_url": "https://scontent.cdninstagram.com/cyber_ucr_avatar.jpg"
+      },
+      "items": [
+        {
+          "__typename": "GraphStoryImage",
+          "id": "3140000000000000003",
+          "dimensions": { "height": 1920, "width": 1080 },
+          "display_resources": [
+            {
+              "src": "https://scontent.cdninstagram.com/cyber_ucr/flyer_1080.jpg",
+              "config_width": 1080,
+              "config_height": 1920
+            }
+          ],
+          "is_video": false,
+          "taken_at_timestamp": 1778524200,
+          "expiring_at_timestamp": 1778610600,
+          "owner": { "id": "449388329", "username": "cyber_ucr" },
+          "edge_media_to_caption": {
+            "edges": [{ "node": { "text": "Security night, swipe up to RSVP" } }]
+          }
+        }
+      ]
+    },
+    {
+      "id": "220034115",
+      "latest_reel_media": 1778524200,
+      "expiring_at": 1778610600,
+      "seen": null,
+      "media_count": 1,
+      "user": {
+        "id": "220034115",
+        "username": "ucrvsa",
+        "profile_pic_url": "https://scontent.cdninstagram.com/ucrvsa_avatar.jpg"
+      },
+      "items": [
+        {
+          "__typename": "GraphStoryImage",
+          "id": "3140000000000000004",
+          "dimensions": { "height": 1920, "width": 1080 },
+          "display_resources": [
+            {
+              "src": "https://scontent.cdninstagram.com/ucrvsa/flyer_1080.jpg",
+              "config_width": 1080,
+              "config_height": 1920
+            }
+          ],
+          "is_video": false,
+          "taken_at_timestamp": 1778524200,
+          "expiring_at_timestamp": 1778610600,
+          "owner": { "id": "220034115", "username": "ucrvsa" },
+          "edge_media_to_caption": {
+            "edges": [{ "node": { "text": "Culture Night tickets at the door" } }]
+          }
+        }
+      ]
+    }
+  ]
+}

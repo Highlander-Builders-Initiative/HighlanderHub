@@ -22,6 +22,7 @@ current files and prune files absent from a completed source fetch.
 ```
 pipeline/
 ├── accounts.json          # IG handles to monitor (edit me)
+├── resolve_ids.py         # fills instagram_user_id for handles added by hand
 ├── config.py              # paths + env-driven auth config
 ├── scrape.py              # IG ingest:        data/raw/<handle>/<story_id>.json
 ├── extract_stories.py     # IG OCR + LLM:     data/extracted/<story_id>.json
@@ -75,7 +76,7 @@ IG_SESSION_FILE=$HOME/.config/instaloader/session-rhino.5172250
 (`base64 -i …` is only for the GitHub Actions secret `IG_SESSION_FILE_B64`.)
 
 If login succeeds but scrape dies on `get_followees` / `400 invalid request`, the
-session is fine for per-account story fetch — the follow-list GraphQL call is
+session is fine for the story fetch — the follow-list GraphQL call is
 what failed. The scraper falls back to `data/followed_accounts.json`, then
 `accounts.json`. To skip the follow-list call entirely:
 
@@ -93,7 +94,23 @@ export IG_PASSWORD=...
 Use a **dedicated account**, not your personal one. Instagram is aggressive
 about flagging accounts that look like scrapers — expect occasional
 checkpoints / temporary blocks, and add jitter / lower the cadence if you
-get throttled. `scrape.py` already sleeps 2–5s between accounts.
+get throttled. `scrape.py` asks about 50 accounts per request and sleeps
+5–15s between requests, so a full run is ~17 story requests rather than one
+per account.
+
+## Editing accounts.json
+
+`scrape.py` asks Instagram for stories by numeric user id, not by handle, so
+every entry needs an `instagram_user_id`. Handles added by hand (or by
+`discover.py`) don't have one:
+
+```bash
+python resolve_ids.py          # fills in every account missing an id
+python resolve_ids.py --dry-run
+```
+
+Accounts still missing an id are skipped by the scrape and named in a warning —
+they are invisible to the run until resolved.
 
 Supabase writes and story extraction also need credentials in `pipeline/.env`:
 
