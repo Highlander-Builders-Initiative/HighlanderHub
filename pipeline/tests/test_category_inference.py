@@ -54,14 +54,16 @@ class CategoryInferenceTests(unittest.TestCase):
         )
 
     def test_career_option_one_aliases(self) -> None:
-        cases = (
-            ("Campus recruiting fair", "career"),
-            ("Recruitment open house", "career"),
-            ("Interviewing skills workshop", "career"),
+        self.assertEqual(
+            "career",
+            infer_category_from_text("Interviewing skills workshop", ""),
         )
-        for title, expected in cases:
-            with self.subTest(title=title):
-                self.assertEqual(expected, infer_category_from_text(title, ""))
+
+    def test_sorority_recruitment_resolves_to_social(self) -> None:
+        self.assertEqual(
+            "social",
+            infer_category_from_text("Sorority Recruitment Week", ""),
+        )
 
     def test_community_volunteering_alias(self) -> None:
         self.assertEqual(
