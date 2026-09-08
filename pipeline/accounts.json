@@ -1827,12 +1827,14 @@
     {
       "handle": "ucrbap",
       "label": "Beta Alpha Psi",
-      "category": "honors"
+      "category": "honors",
+      "instagram_user_id": 13334671084
     },
     {
       "handle": "ucrbbqclub",
       "label": "Barbecue Club",
-      "category": "recreational"
+      "category": "recreational",
+      "instagram_user_id": 77761796800
     },
     {
       "handle": "ucrbcoe",
@@ -1843,42 +1845,44 @@
     {
       "handle": "ucrbea",
       "label": "Business Entertainment Association",
-      "category": "academic-professional"
+      "category": "academic-professional",
+      "instagram_user_id": 77255111635
     },
     {
       "handle": "ucrbeating_in_sync",
       "label": "Beating in Sync",
-      "category": "action-and-awareness"
+      "category": "action-and-awareness",
+      "instagram_user_id": 77815073299
     },
     {
       "handle": "ucrbiggsa",
       "label": "Bioengineering Mini-GSA",
-      "category": "mini-gsa"
+      "category": "mini-gsa",
+      "instagram_user_id": 44326073616
     },
     {
       "handle": "ucrbjj",
       "label": "Highlander Jiu Jitsu at UCR",
-      "category": "recreational"
-    },
-    {
-      "handle": "ucrbloodinitiative",
-      "label": "University Blood Initiative at UCR",
-      "category": "service"
+      "category": "recreational",
+      "instagram_user_id": 62474009817
     },
     {
       "handle": "ucrbookbears",
       "label": "Book Bears at UCR",
-      "category": "arts-and-expression"
+      "category": "arts-and-expression",
+      "instagram_user_id": 39530026878
     },
     {
       "handle": "ucrbsc",
       "label": "Business Strategy Club",
-      "category": "academic-professional"
+      "category": "academic-professional",
+      "instagram_user_id": 52630564693
     },
     {
       "handle": "ucrcamp",
       "label": "California Alliance for Maximizing Potential",
-      "category": "academic-professional"
+      "category": "academic-professional",
+      "instagram_user_id": 641725950
     },
     {
       "handle": "ucrcareercenter",
@@ -1895,27 +1899,26 @@
     {
       "handle": "ucrclubswim",
       "label": "Club Swim at UCR",
-      "category": "recreational"
+      "category": "recreational",
+      "instagram_user_id": 50278838371
     },
     {
       "handle": "ucrclubtennis",
       "label": "Tennis on Campus at University of California, Riverside",
-      "category": "recreational"
-    },
-    {
-      "handle": "ucrclubvolleyball",
-      "label": "Women's Club Volleyball",
-      "category": "recreational"
+      "category": "recreational",
+      "instagram_user_id": 4743256741
     },
     {
       "handle": "ucrcommunitygarden",
       "label": "R'Garden",
-      "category": "department-program"
+      "category": "department-program",
+      "instagram_user_id": 1369262327
     },
     {
       "handle": "ucrcricket",
       "label": "Cricket Team at UCR",
-      "category": "recreational"
+      "category": "recreational",
+      "instagram_user_id": 74058939537
     },
     {
       "handle": "ucrcsa",
@@ -1926,7 +1929,8 @@
     {
       "handle": "ucrdems",
       "label": "College Democrats at UC Riverside",
-      "category": "action-and-awareness"
+      "category": "action-and-awareness",
+      "instagram_user_id": 5651838623
     },
     {
       "handle": "ucrdragclub",
@@ -1937,27 +1941,32 @@
     {
       "handle": "ucretox_mgsa",
       "label": "The Mini-Graduate Student Association of the Environmental Toxicology Program",
-      "category": "mini-gsa"
+      "category": "mini-gsa",
+      "instagram_user_id": 44228500203
     },
     {
       "handle": "ucrfinaid",
       "label": "Financial Aid Office",
-      "category": "club"
+      "category": "club",
+      "instagram_user_id": 13685101066
     },
     {
       "handle": "ucrfinwell",
       "label": "Financial Wellness Program",
-      "category": "club"
+      "category": "club",
+      "instagram_user_id": 5706664507
     },
     {
       "handle": "ucrfitnessangels",
       "label": "Fitness Angels",
-      "category": "recreational"
+      "category": "recreational",
+      "instagram_user_id": 49537375601
     },
     {
       "handle": "ucrflh",
       "label": "Fostering Loving Hands",
-      "category": "service"
+      "category": "service",
+      "instagram_user_id": 69747315672
     },
     {
       "handle": "ucrfurries",
@@ -1968,7 +1977,8 @@
     {
       "handle": "ucrgardening",
       "label": "Gardening Club",
-      "category": "service"
+      "category": "service",
+      "instagram_user_id": 36358937662
     },
     {
       "handle": "ucrgirlgains",
@@ -1979,12 +1989,14 @@
     {
       "handle": "ucrgoalies",
       "label": "Global Opportunities Abroad Leaders Initiative",
-      "category": "service"
+      "category": "service",
+      "instagram_user_id": 30034815260
     },
     {
       "handle": "ucrgoldenarches",
       "label": "Golden ARCHES",
-      "category": "department-affiliated-organization"
+      "category": "department-affiliated-organization",
+      "instagram_user_id": 343563315
     },
     {
       "handle": "ucrhcg",
@@ -1993,24 +2005,22 @@
       "instagram_user_id": 55005045886
     },
     {
-      "handle": "ucrhealthycampus",
-      "label": "UCR Healthy Campus",
-      "category": "campus-department"
-    },
-    {
       "handle": "ucrhealthyhearts",
       "label": "Healthy Hearts Student Organization at UCR",
-      "category": "service"
+      "category": "service",
+      "instagram_user_id": 2992977276
     },
     {
       "handle": "ucrhearts",
       "label": "Health Exploration and Rotational Training Society at UCR",
-      "category": "academic-professional"
+      "category": "academic-professional",
+      "instagram_user_id": 63162963990
     },
     {
       "handle": "ucrhinduyuva",
       "label": "Hindu YUVA at UCR",
-      "category": "cultural"
+      "category": "cultural",
+      "instagram_user_id": 57852552897
     },
     {
       "handle": "ucrhksa",
@@ -2021,22 +2031,26 @@
     {
       "handle": "ucrhooksforhope",
       "label": "Hooks for Hope",
-      "category": "service"
+      "category": "service",
+      "instagram_user_id": 45576842761
     },
     {
       "handle": "ucrhosa",
       "label": "HOSA - Future Health Professionals",
-      "category": "academic-professional"
+      "category": "academic-professional",
+      "instagram_user_id": 12497129762
     },
     {
       "handle": "ucrhpa",
       "label": "Health Professions Association",
-      "category": "academic-professional"
+      "category": "academic-professional",
+      "instagram_user_id": 3104336599
     },
     {
       "handle": "ucrhsa",
       "label": "Highlander Sports Analytics",
-      "category": "academic-professional"
+      "category": "academic-professional",
+      "instagram_user_id": 80034460293
     },
     {
       "handle": "ucrhub_programs",
@@ -2047,12 +2061,8 @@
     {
       "handle": "ucrigsa",
       "label": "Iranian Graduate Student Association",
-      "category": "graduate-student-organization"
-    },
-    {
-      "handle": "ucrispestudent",
-      "label": "Student Chapter of ISPE at UCR",
-      "category": "academic-professional"
+      "category": "graduate-student-organization",
+      "instagram_user_id": 28636345557
     },
     {
       "handle": "ucriversidearc",
@@ -2069,7 +2079,8 @@
     {
       "handle": "ucrkapi",
       "label": "Kappa Alpha Pi",
-      "category": "academic-professional"
+      "category": "academic-professional",
+      "instagram_user_id": 65435305991
     },
     {
       "handle": "ucrkasa",
@@ -2080,27 +2091,32 @@
     {
       "handle": "ucrkdsap",
       "label": "Kidney Disease Screening and Awareness Program @ UCR",
-      "category": "action-and-awareness"
+      "category": "action-and-awareness",
+      "instagram_user_id": 40476753621
     },
     {
       "handle": "ucrlawtinx",
       "label": "Lawtinx Pre-Law Club",
-      "category": "academic-professional"
+      "category": "academic-professional",
+      "instagram_user_id": 40384690521
     },
     {
       "handle": "ucrlax",
       "label": "Lacrosse Club at UCR",
-      "category": "recreational"
+      "category": "recreational",
+      "instagram_user_id": 73237136001
     },
     {
       "handle": "ucrleap",
       "label": "Loving our Emotions as Asians & Pacific Islanders",
-      "category": "action-and-awareness"
+      "category": "action-and-awareness",
+      "instagram_user_id": 51684797453
     },
     {
       "handle": "ucrleosclub",
       "label": "LEO's Club at UCR",
-      "category": "service"
+      "category": "service",
+      "instagram_user_id": 65845440173
     },
     {
       "handle": "ucrlgbtrc",
@@ -2117,7 +2133,8 @@
     {
       "handle": "ucrlms",
       "label": "Legal Minds Society",
-      "category": "academic-professional"
+      "category": "academic-professional",
+      "instagram_user_id": 64246092797
     },
     {
       "handle": "ucrmcbb",
@@ -2128,27 +2145,26 @@
     {
       "handle": "ucrmeep",
       "label": "Medical Emergency Education Project",
-      "category": "action-and-awareness"
+      "category": "action-and-awareness",
+      "instagram_user_id": 7016127540
     },
     {
       "handle": "ucrmensclubsoccer",
       "label": "Men's Club Soccer at UCR",
-      "category": "recreational"
-    },
-    {
-      "handle": "ucrmensclubvb",
-      "label": "Men's Club Volleyball at UCR",
-      "category": "recreational"
+      "category": "recreational",
+      "instagram_user_id": 6316079380
     },
     {
       "handle": "ucrmmc",
       "label": "Military Medical Community",
-      "category": "academic-professional"
+      "category": "academic-professional",
+      "instagram_user_id": 80730810254
     },
     {
       "handle": "ucrmocktrial",
       "label": "Highlander Mock Trial",
-      "category": "academic-professional"
+      "category": "academic-professional",
+      "instagram_user_id": 4752242457
     },
     {
       "handle": "ucrmuaythai",
@@ -2159,27 +2175,32 @@
     {
       "handle": "ucrmun",
       "label": "Model United Nations (MUN) at UC Riverside",
-      "category": "academic-professional"
+      "category": "academic-professional",
+      "instagram_user_id": 1342046208
     },
     {
       "handle": "ucrnavs",
       "label": "Navigators at UCR",
-      "category": "spiritual-religious-atheist"
+      "category": "spiritual-religious-atheist",
+      "instagram_user_id": 2018070484
     },
     {
       "handle": "ucrneuro",
       "label": "Neuroscience Graduate Student Association",
-      "category": "mini-gsa"
+      "category": "mini-gsa",
+      "instagram_user_id": 25215837638
     },
     {
       "handle": "ucrneuroclub",
       "label": "Neuroscience Club",
-      "category": "academic-professional"
+      "category": "academic-professional",
+      "instagram_user_id": 21782764973
     },
     {
       "handle": "ucrnsa",
       "label": "Nigerian Student Association",
-      "category": "cultural"
+      "category": "cultural",
+      "instagram_user_id": 583695718
     },
     {
       "handle": "ucrnsu",
@@ -2190,102 +2211,116 @@
     {
       "handle": "ucrpanhellenic",
       "label": "College Panhellenic Association",
-      "category": "fraternity-sorority"
+      "category": "fraternity-sorority",
+      "instagram_user_id": 362418861
     },
     {
       "handle": "ucrpbl.fbla",
       "label": "Future Business Leaders of America at UCR",
-      "category": "academic-professional"
+      "category": "academic-professional",
+      "instagram_user_id": 411799166
     },
     {
       "handle": "ucrpct",
       "label": "Phi Chi Theta",
-      "category": "academic-professional"
+      "category": "academic-professional",
+      "instagram_user_id": 3306658402
     },
     {
       "handle": "ucrpds",
       "label": "Pre-Dental Society",
-      "category": "academic-professional"
+      "category": "academic-professional",
+      "instagram_user_id": 1274664537
     },
     {
       "handle": "ucrphialphadelta",
       "label": "Phi Alpha Delta Pre-Law Fraternity",
-      "category": "academic-professional"
+      "category": "academic-professional",
+      "instagram_user_id": 361115107
     },
     {
       "handle": "ucrpiphi",
       "label": "Pi Beta Phi Fraternity for Women",
-      "category": "fraternity-sorority"
+      "category": "fraternity-sorority",
+      "instagram_user_id": 226815748
     },
     {
       "handle": "ucrpresoma",
       "label": "Pre-Student Osteopathic Medical Association  ",
-      "category": "academic-professional"
+      "category": "academic-professional",
+      "instagram_user_id": 80479826603
     },
     {
       "handle": "ucrpreveterinaryclub",
       "label": "Pre-Veterinary Club",
-      "category": "academic-professional"
+      "category": "academic-professional",
+      "instagram_user_id": 23321735625
     },
     {
       "handle": "ucrprishi",
       "label": "Project RISHI at UCR",
-      "category": "service"
+      "category": "service",
+      "instagram_user_id": 656379392
     },
     {
       "handle": "ucrpse",
       "label": "Pi Sigma Epsilon",
-      "category": "academic-professional"
+      "category": "academic-professional",
+      "instagram_user_id": 64589971341
     },
     {
       "handle": "ucrradiant",
       "label": "Radiant",
-      "category": "action-and-awareness"
-    },
-    {
-      "handle": "ucrrealestateclub",
-      "label": "Highlander Real Estate Association",
-      "category": "academic-professional"
+      "category": "action-and-awareness",
+      "instagram_user_id": 53668426042
     },
     {
       "handle": "ucrrfc",
       "label": "Riverside Free Clinic at UCR",
-      "category": "service"
+      "category": "service",
+      "instagram_user_id": 37127539127
     },
     {
       "handle": "ucrs2p",
       "label": "Science Policy Graduate Student Association",
-      "category": "graduate-student-organization"
+      "category": "graduate-student-organization",
+      "instagram_user_id": 9943451129
     },
     {
       "handle": "ucrsaf",
       "label": "South Asian Federation - SAF",
-      "category": "cultural"
+      "category": "cultural",
+      "instagram_user_id": 2053647877
     },
     {
       "handle": "ucrsalsaclub",
       "label": "The Salsa Club at UCR",
-      "category": "recreational"
+      "category": "recreational",
+      "instagram_user_id": 263545293
     },
     {
       "handle": "ucrsdrc",
       "label": "Student Disability Resource Center (SDRC)",
-      "category": "campus-department"
+      "category": "campus-department",
+      "instagram_user_id": 7810595359
     },
     {
       "handle": "ucrsigmakappa",
       "label": "Sigma Kappa Sorority",
-      "category": "fraternity-sorority"
+      "category": "fraternity-sorority",
+      "instagram_user_id": 195884887
     },
     {
       "handle": "ucrsigmas",
       "label": "Phi Beta Sigma Fraternity, Inc.",
-      "category": "fraternity-sorority"
+      "category": "fraternity-sorority",
+      "instagram_user_id": 9160101529
     },
     {
       "handle": "ucrsmilesociety",
       "label": "Smile Society",
-      "category": "action-and-awareness"
+      "category": "action-and-awareness",
+      "instagram_user_id": 72129120408
     },
     {
       "handle": "ucrsnowclub",
@@ -2296,12 +2331,14 @@
     {
       "handle": "ucrsoe_scholarnetwork",
       "label": "Graduate Student Association for the Graduate School of Education",
-      "category": "mini-gsa"
+      "category": "mini-gsa",
+      "instagram_user_id": 58700367207
     },
     {
       "handle": "ucrspiritsquad",
       "label": "Highlanderettes",
-      "category": "recreational"
+      "category": "recreational",
+      "instagram_user_id": 70097738095
     },
     {
       "handle": "ucrsrc",
@@ -2312,7 +2349,8 @@
     {
       "handle": "ucrstratos",
       "label": "Stratos Associates",
-      "category": "academic-professional"
+      "category": "academic-professional",
+      "instagram_user_id": 76726115539
     },
     {
       "handle": "ucrstudentlife",
@@ -2323,12 +2361,14 @@
     {
       "handle": "ucrstudentvets",
       "label": "Veterans Services",
-      "category": "club"
+      "category": "club",
+      "instagram_user_id": 33212364834
     },
     {
       "handle": "ucrtgsa",
       "label": "Taiwanese Graduate Student Association",
-      "category": "graduate-student-organization"
+      "category": "graduate-student-organization",
+      "instagram_user_id": 44022118007
     },
     {
       "handle": "ucrthriftclub",
@@ -2339,27 +2379,26 @@
     {
       "handle": "ucrtrackclub",
       "label": "Track Club at UCR",
-      "category": "recreational"
+      "category": "recreational",
+      "instagram_user_id": 74654866530
     },
     {
       "handle": "ucrtzuching",
       "label": "The Tzu Chi Collegiate Association at UCR",
-      "category": "service"
-    },
-    {
-      "handle": "ucruhp",
-      "label": "United Health Pathways",
-      "category": "academic-professional"
+      "category": "service",
+      "instagram_user_id": 1092464560
     },
     {
       "handle": "ucrultimatefrisbee",
       "label": "Ultimate Frisbee Club at UCR",
-      "category": "recreational"
+      "category": "recreational",
+      "instagram_user_id": 55365908345
     },
     {
       "handle": "ucrvrx",
       "label": "Virtual Reality X",
-      "category": "service"
+      "category": "service",
+      "instagram_user_id": 72763106212
     },
     {
       "handle": "ucrvsa",
@@ -2370,17 +2409,20 @@
     {
       "handle": "ucrwaterpolo",
       "label": "Men's Club Water Polo at UCR",
-      "category": "recreational"
+      "category": "recreational",
+      "instagram_user_id": 10846427408
     },
     {
       "handle": "ucrwitl",
       "label": "Womxn In the Law",
-      "category": "academic-professional"
+      "category": "academic-professional",
+      "instagram_user_id": 54268207806
     },
     {
       "handle": "ucrwoof",
       "label": "Welfare Of Our Furry Friends",
-      "category": "service"
+      "category": "service",
+      "instagram_user_id": 26525502209
     },
     {
       "handle": "ucrwrc",
@@ -2389,39 +2431,34 @@
       "instagram_user_id": 3909601186
     },
     {
-      "handle": "ucrwrestlingclub",
-      "label": "Wrestling Club at UCR",
-      "category": "recreational"
-    },
-    {
       "handle": "uer_official_",
       "label": "La Union Estudiantil de la Raza (UER)",
-      "category": "fraternity-sorority"
-    },
-    {
-      "handle": "unheardcriescharityatucr",
-      "label": "Unheard Cries Charity",
-      "category": "service"
+      "category": "fraternity-sorority",
+      "instagram_user_id": 75578682580
     },
     {
       "handle": "unicef_ucr",
       "label": "United Nations International Children's Emergency Fund @ UCR",
-      "category": "service"
+      "category": "service",
+      "instagram_user_id": 37508549483
     },
     {
       "handle": "urc.bcoe",
       "label": "Undergraduate Research Club",
-      "category": "academic-professional"
+      "category": "academic-professional",
+      "instagram_user_id": 77225526408
     },
     {
       "handle": "warhammerucr",
       "label": "Warhammer Club at UCR",
-      "category": "recreational"
+      "category": "recreational",
+      "instagram_user_id": 72178937936
     },
     {
       "handle": "werdancersucr",
       "label": "We R\u2019 Dancers",
-      "category": "recreational"
+      "category": "recreational",
+      "instagram_user_id": 69581491551
     },
     {
       "handle": "wincucr",
@@ -2432,27 +2469,32 @@
     {
       "handle": "womeninfilm_ucr",
       "label": "Women in Film",
-      "category": "arts-and-expression"
+      "category": "arts-and-expression",
+      "instagram_user_id": 80761313537
     },
     {
       "handle": "wushuatucr",
       "label": "Wushu at UCR",
-      "category": "recreational"
+      "category": "recreational",
+      "instagram_user_id": 5430913757
     },
     {
       "handle": "xirhopoodles",
       "label": "Sigma Gamma Rho Sorority Inc.- Xi Rho Chapter",
-      "category": "fraternity-sorority"
+      "category": "fraternity-sorority",
+      "instagram_user_id": 580197809
     },
     {
       "handle": "yal_at_ucr",
       "label": "The Young Americans for Liberty at UCR",
-      "category": "action-and-awareness"
+      "category": "action-and-awareness",
+      "instagram_user_id": 64920815132
     },
     {
       "handle": "ydsaucr",
       "label": "Young Democratic Socialists of America at UC Riverside",
-      "category": "action-and-awareness"
+      "category": "action-and-awareness",
+      "instagram_user_id": 24333608276
     }
   ]
 }

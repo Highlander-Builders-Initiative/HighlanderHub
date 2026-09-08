@@ -71,15 +71,6 @@ class ResolveIdsTests(unittest.TestCase):
             encoding="utf-8",
         )
 
-    def test_parse_user_id_happy_path(self) -> None:
-        payload = {"data": {"user": {"username": "acm_ucr", "id": "10839758322"}}}
-        self.assertEqual(self.resolve_ids._parse_user_id(payload, "acm_ucr"), 10839758322)
-
-    def test_parse_user_id_mismatch(self) -> None:
-        payload = {"data": {"user": {"username": "other", "id": "1"}}}
-        with self.assertRaises(self.resolve_ids.ResolveError):
-            self.resolve_ids._parse_user_id(payload, "acm_ucr")
-
     def test_fills_missing_ids(self) -> None:
         accounts = self.resolve_ids.load_accounts(self.accounts_path)
 
@@ -219,40 +210,25 @@ class ResolveIdsTests(unittest.TestCase):
         with self.assertRaises(self.resolve_ids.ResolveError):
             self.resolve_ids._parse_search_user_id(payload, "aart.ucr")
 
-    def test_fetch_user_id_falls_back_to_search_on_400(self) -> None:
+    def test_fetch_user_id_uses_search_only(self) -> None:
         session = mock.Mock()
-        profile_resp = mock.Mock(
-            status_code=400,
-            text='{"message":"Asset asset://laser.provider/ig_business_category_subvertical has been deleted.","status":"fail"}',
-        )
         search_resp = mock.Mock(status_code=200)
         search_resp.json.return_value = {
-            "users": [{"user": {"username": "aart.ucr", "pk": "615000"}}]
+            "users": [{"user": {"username": "ucrbap", "pk": "13334671084"}}]
         }
-        session.get.side_effect = [profile_resp, search_resp]
-        self.assertEqual(self.resolve_ids.fetch_user_id(session, "aart.ucr"), 615000)
-        self.assertEqual(session.get.call_count, 2)
-
-    def test_fetch_user_id_falls_back_to_search_when_profile_omits_id(self) -> None:
-        session = mock.Mock()
-        profile_resp = mock.Mock(status_code=200)
-        profile_resp.json.return_value = {
-            "data": {"user": {"username": "activemindsucr"}}
-        }
-        search_resp = mock.Mock(status_code=200)
-        search_resp.json.return_value = {
-            "users": [{"user": {"username": "activemindsucr", "pk": "222"}}]
-        }
-        session.get.side_effect = [profile_resp, search_resp]
-        self.assertEqual(self.resolve_ids.fetch_user_id(session, "activemindsucr"), 222)
-
-    def test_fetch_user_id_does_not_search_on_404(self) -> None:
-        session = mock.Mock()
-        session.get.return_value = mock.Mock(status_code=404, text="")
-        with self.assertRaises(self.resolve_ids.ResolveError) as ctx:
-            self.resolve_ids.fetch_user_id(session, "abhinaya.ucr")
-        self.assertIn("404", str(ctx.exception))
+        session.get.return_value = search_resp
+        self.assertEqual(self.resolve_ids.fetch_user_id(session, "ucrbap"), 13334671084)
         self.assertEqual(session.get.call_count, 1)
+        self.assertEqual(session.get.call_args.args[0], self.resolve_ids.SEARCH_URL)
+
+    def test_fetch_user_id_fails_fast_on_search_429(self) -> None:
+        session = mock.Mock()
+        session.get.return_value = mock.Mock(status_code=429, text="rate limited")
+        with self.assertRaises(self.resolve_ids.ResolveError) as ctx:
+            self.resolve_ids.fetch_user_id(session, "ucrbap")
+        self.assertIn("429", str(ctx.exception))
+        self.assertEqual(session.get.call_count, 1)
+        self.assertEqual(session.get.call_args.args[0], self.resolve_ids.SEARCH_URL)
 
     def test_checkpoint_writes_filled_id_immediately(self) -> None:
         accounts = self.resolve_ids.load_accounts(self.accounts_path)
