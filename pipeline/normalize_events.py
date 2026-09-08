@@ -20,6 +20,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
+from category_inference import infer_hlink_category, infer_localist_category
 from classify import classify_content_kind, detect_free_food
 from config import RAW_DIR, ensure_dirs
 from db import delete_events_missing_from_ids, get_deleted_event_ids, upsert_batched
@@ -33,31 +34,8 @@ UCR_EVENTS_RAW = RAW_DIR / "ucr_events"
 HIGHLANDER_LINK_RAW = RAW_DIR / "highlander_link"
 STRUCTURED_EVENT_ID_PREFIXES = ["ucr_events_", "highlander_link_"]
 
-# Engage 'theme' is a single coarse bucket per event; map it onto our category
-# vocabulary. categoryNames are more specific but free-text, so they're fed
-# through the keyword fallback below.
-_HLINK_THEME_TO_CATEGORY = {
-    "Athletics": "sports",
-    "Cultural": "arts",
-    "Social": "social",
-    "Spirituality": "community",
-    "Fundraising": "community",
-    "ThoughtfulLearning": "academic",
-}
-
-# Heuristic keyword sets for category inference. Localist's own event_types are
-# the primary signal; these are fallbacks when types are missing/generic.
-_CATEGORY_KEYWORDS: list[tuple[str, list[str]]] = [
-    ("academic", ["lecture", "seminar", "colloquium", "symposium", "research", "thesis", "defense", "class"]),
-    ("career",   ["career", "internship", "workshop", "networking", "resume", "interview", "hiring", "recruit"]),
-    ("sports",   ["athletic", "basketball", "soccer", "baseball", "volleyball", "tennis", "football", "intramural"]),
-    ("arts",     ["concert", "recital", "exhibit", "exhibition", "gallery", "theater", "theatre", "performance", "film", "screening"]),
-    ("social",   ["mixer", "social", "party", "greek", "fraternity", "sorority", "kickback"]),
-    ("club",     ["club", "organization", "rso", "general meeting", "gbm"]),
-    ("community", ["community", "service", "volunteer", "outreach", "donate"]),
-]
-
 _HTML_TAG = re.compile(r"<[^>]+>")
+
 _WHITESPACE = re.compile(r"\s+")
 
 
@@ -79,16 +57,6 @@ def _filter_names(raw: dict[str, Any], key: str) -> list[str]:
         elif isinstance(item, str):
             out.append(item)
     return out
-
-
-def _infer_category(raw: dict[str, Any], blob: str) -> str:
-    type_names = " ".join(_filter_names(raw, "event_types")).lower()
-    topic_names = " ".join(_filter_names(raw, "event_topic")).lower()
-    haystack = " ".join([type_names, topic_names, blob.lower()])
-    for category, keywords in _CATEGORY_KEYWORDS:
-        if any(kw in haystack for kw in keywords):
-            return category
-    return "community"
 
 
 def _build_location(raw: dict[str, Any]) -> str:
@@ -247,16 +215,18 @@ def _to_event_row(
         return None
 
     blob = f"{title}\n{description}"
-    category = _infer_category(raw, blob)
+    event_types = _filter_names(raw, "event_types")
+    event_topics = _filter_names(raw, "event_topic")
+    category = infer_localist_category(
+        event_types=event_types,
+        event_topics=event_topics,
+        has_athletics=bool(_filter_names(raw, "event_athletics")),
+        title=title,
+        description=description,
+    )
 
     audiences = _filter_names(raw, "event_audience")
-    tags = sorted(
-        set(
-            _filter_names(raw, "event_types")
-            + _filter_names(raw, "event_topic")
-            + audiences
-        )
-    )
+    tags = sorted(set(event_types + event_topics + audiences))
     hashtag = raw.get("hashtag")
     if hashtag and isinstance(hashtag, str):
         tags.append(f"#{hashtag.lstrip('#')}")
@@ -340,12 +310,17 @@ def _to_event_row_hlink(raw: dict[str, Any], scraped_at: str) -> dict[str, Any] 
         ends_at = None
 
     benefits = raw.get("benefitNames") or []
-    theme = raw.get("theme")
-    category = _HLINK_THEME_TO_CATEGORY.get(theme) if isinstance(theme, str) else None
-    if not category:
-        # Fall back to keyword inference over categoryNames + title + body.
-        cat_blob = " ".join(raw.get("categoryNames") or [])
-        category = _infer_category({}, f"{cat_blob}\n{title}\n{description}")
+    category_names = [
+        category_name
+        for category_name in (raw.get("categoryNames") or [])
+        if isinstance(category_name, str)
+    ]
+    category = infer_hlink_category(
+        theme=raw.get("theme"),
+        category_names=category_names,
+        title=title,
+        description=description,
+    )
 
     has_free_food = (
         isinstance(benefits, list)
@@ -354,7 +329,7 @@ def _to_event_row_hlink(raw: dict[str, Any], scraped_at: str) -> dict[str, Any] 
 
     tags = sorted(
         {
-            *(t for t in (raw.get("categoryNames") or []) if isinstance(t, str)),
+            *category_names,
             *(t for t in benefits if isinstance(t, str)),
             *([raw["theme"]] if isinstance(raw.get("theme"), str) else []),
         }
