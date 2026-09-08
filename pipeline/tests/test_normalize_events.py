@@ -353,6 +353,13 @@ class NormalizeEventsTests(unittest.TestCase):
                 description_text="An evening concert in the gallery.",
             ),
         )
+        self.assertEqual(
+            "community",
+            self._localist_category(
+                title="Classical self-defense",
+                description_text="",
+            ),
+        )
 
     def test_keyword_fallback_scores_instead_of_taking_the_first_match(self) -> None:
         # One stray "research" in the body no longer outranks a title that
