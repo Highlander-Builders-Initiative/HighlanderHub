@@ -87,6 +87,14 @@ _OCR_DATE_RE = re.compile(
     r")\.?\s+(\d{1,2})(?:st|nd|rd|th)?\b",
     re.IGNORECASE,
 )
+# The override only understands dates without a printed year and Pacific wall
+# time without an explicit timezone. Leave richer expressions to extraction.
+_OCR_EXPLICIT_YEAR_RE = re.compile(r"\s*,?\s*(?:19|20)\d{2}\b")
+_OCR_TIMEZONE_RE = re.compile(
+    r"\b\d{1,2}(?::\d{2})?\s*[ap]\.?m\.?\s*[\[(]?\s*"
+    r"(?:[PECM][SD]?T|UTC|GMT|Pacific|Eastern|Central|Mountain)\b",
+    re.IGNORECASE,
+)
 _OCR_TIME_RANGE_RE = re.compile(
     r"\b(\d{1,2})(?::(\d{2}))?\s*([ap]\.?m\.?)"
     r"(?:\s*(?:-|to)\s*|\s+)"
@@ -153,8 +161,10 @@ def _read_json(path: Path) -> dict[str, Any]:
 def _write_cache(story_id: str, payload: dict[str, Any]) -> dict[str, Any]:
     EXTRACTED_DIR.mkdir(parents=True, exist_ok=True)
     path = _cache_path(story_id)
-    with path.open("w", encoding="utf-8") as f:
+    temporary = path.with_suffix(".json.tmp")
+    with temporary.open("w", encoding="utf-8") as f:
         json.dump(payload, f, indent=2, sort_keys=True)
+    temporary.replace(path)
     return payload
 
 
@@ -259,7 +269,7 @@ def _download_image(url: str | None) -> bytes:
     import requests
 
     resp = requests.get(url, timeout=10)
-    if resp.status_code in {403, 404, 410}:
+    if resp.status_code in {404, 410}:
         raise ImageExpired(f"image URL returned HTTP {resp.status_code}")
     resp.raise_for_status()
     return resp.content
@@ -417,6 +427,27 @@ def _gemini_extract(
     return json.loads(_strip_json_fence(text))
 
 
+def _repair_cached_flyer(
+    raw: dict[str, Any], cached: dict[str, Any]
+) -> dict[str, Any]:
+    """Retry a missing upload without repeating successful OCR or extraction."""
+    if (
+        cached.get("status") != "ok"
+        or cached.get("image_url")
+        or not raw.get("image_url")
+    ):
+        return cached
+    try:
+        image = _download_image(raw["image_url"])
+    except Exception as exc:  # noqa: BLE001 - preserve the usable extraction.
+        log.warning("extract %s: flyer recovery download failed: %s", raw.get("id"), exc)
+        return cached
+    image_url = _upload_story_flyer(raw, image)
+    if not image_url:
+        return cached
+    return _persist_terminal_cache(str(raw["id"]), {**cached, "image_url": image_url})
+
+
 def _process_story(raw: dict[str, Any], meta: dict[str, Any]) -> dict[str, Any]:
     story_id = str(raw.get("id") or "")
     handle = str(raw.get("handle") or "")
@@ -429,9 +460,18 @@ def _process_story(raw: dict[str, Any], meta: dict[str, Any]) -> dict[str, Any]:
 
     cache = _cache_path(story_id)
     if cache.exists():
-        cached = _read_json(cache)
-        log.debug("extract %s: cache %s", label, cached.get("status"))
-        return cached
+        try:
+            cached = _read_json(cache)
+        except (json.JSONDecodeError, UnicodeDecodeError, OSError) as exc:
+            log.warning("extract %s: unreadable cache: %s", label, exc)
+        else:
+            if (
+                isinstance(cached, dict)
+                and cached.get("status") in REMOTE_CACHE_TERMINAL_STATUSES
+            ):
+                log.debug("extract %s: cache %s", label, cached.get("status"))
+                return _repair_cached_flyer(raw, cached)
+            log.warning("extract %s: invalid cache payload; retrying", label)
 
     remote_cached = _load_remote_cache(story_id)
     if (
@@ -439,7 +479,7 @@ def _process_story(raw: dict[str, Any], meta: dict[str, Any]) -> dict[str, Any]:
         and remote_cached.get("status") in REMOTE_CACHE_TERMINAL_STATUSES
     ):
         log.info("extract %s: remote cache %s", label, remote_cached.get("status"))
-        return _write_cache(story_id, remote_cached)
+        return _repair_cached_flyer(raw, _write_cache(story_id, remote_cached))
 
     try:
         image = _download_image(raw.get("image_url"))
@@ -627,6 +667,12 @@ def _ocr_local_event_range(
 ) -> tuple[str, str] | None:
     ocr_text = cached.get("ocr_text")
     if not isinstance(ocr_text, str):
+        return None
+
+    if any(
+        _OCR_EXPLICIT_YEAR_RE.match(ocr_text, date.end())
+        for date in _OCR_DATE_RE.finditer(ocr_text)
+    ) or _OCR_TIMEZONE_RE.search(ocr_text):
         return None
 
     posted_at = _posted_at(raw)

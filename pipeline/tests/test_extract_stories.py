@@ -1170,7 +1170,7 @@ class ExtractStoriesTests(unittest.TestCase):
 
         self.assertEqual([row["id"] for row in filtered], ["ig_ucrwrc_20260531T1800Z"])
 
-    def test_filter_deleted_events_suppresses_duplicate_event_group(self) -> None:
+    def test_filter_deleted_events_preserves_other_instagram_accounts(self) -> None:
         rows = [
             {
                 "id": "ig_highlander_opps_20260531T1800Z",
@@ -1197,7 +1197,7 @@ class ExtractStoriesTests(unittest.TestCase):
 
         self.assertEqual(
             [row["id"] for row in filtered],
-            ["ig_ucrlibrary_20260601T0700Z"],
+            ["ig_ucrwrc_20260531T1800Z", "ig_ucrlibrary_20260601T0700Z"],
         )
 
     def test_delete_imported_event_ids_uses_locked_safe_delete(self) -> None:
