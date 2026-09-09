@@ -14,6 +14,7 @@ import json
 import logging
 import re
 from datetime import datetime, timezone
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -29,6 +30,7 @@ from config import (
 from classify import classify_content_kind, detect_free_food
 from discord_notify import notify_free_food_events
 from event_identity import dedupe_event_rows, suppress_tombstoned_event_groups
+from reshare import reshared_origin_handle, strip_byline
 from story_dates import (
     has_source_date,
     immediate_event_range,
@@ -203,6 +205,16 @@ def _load_account_meta() -> dict[str, dict[str, Any]]:
     return {a["handle"]: a for a in load_accounts()}
 
 
+@lru_cache(maxsize=1)
+def _known_handles() -> frozenset[str]:
+    """The crawl roster, used to tell a reshare byline from flyer prose."""
+    try:
+        return frozenset(_load_account_meta())
+    except Exception as exc:  # noqa: BLE001 - byline detection degrades gracefully.
+        log.warning("reshare: account roster unavailable: %s", exc)
+        return frozenset()
+
+
 def _iter_raw_stories(known_handles: set[str]) -> Iterable[dict[str, Any]]:
     if not RAW_DIR.exists():
         return
@@ -295,10 +307,19 @@ def _build_gemini_prompt(
     raw: dict[str, Any],
     meta: dict[str, Any],
     ocr_text: str,
+    known_handles: Iterable[str] = (),
 ) -> str:
     context = {
         "ocr_text": ocr_text,
         "instagram_handle": raw.get("handle"),
+        "reshared_from": _reshared_owner(raw) or reshared_origin_handle(
+            ocr_text, str(raw.get("handle") or ""), known_handles
+        ),
+        # The story renders a truncated caption; this is the full text when
+        # the scraper could reach the attached post.
+        "reshared_post_caption": (raw.get("reshared_post") or {}).get("caption")
+        if isinstance(raw.get("reshared_post"), dict)
+        else None,
         "account_label": meta.get("label"),
         "account_category": meta.get("category"),
         "story_caption": raw.get("caption"),
@@ -308,7 +329,14 @@ def _build_gemini_prompt(
     }
     return (
         "Extract a UC Riverside campus event from this Instagram story flyer. "
-        "Return JSON only. If the flyer is not advertising a specific event, "
+        "Return JSON only. When reshared_from is set the story reshares that "
+        "account's post, so the OCR begins with Instagram's byline and a "
+        "caption line prefixed by a handle. Those are app chrome: never use a "
+        "handle or a byline like 'a and b' as the title. Prefer "
+        "reshared_post_caption when it is present, since the story renders "
+        "that caption truncated; otherwise title the event from the caption "
+        "wording that is visible. "
+        "If the flyer is not advertising a specific event, "
         "set is_event to false and keep title and starts_at null. Informational "
         "tips, officer introductions, and seasonal spotlights are not events. "
         "Require a date in OCR or the story caption, including an explicit "
@@ -366,7 +394,7 @@ def _gemini_extract(
     )
     response = client.models.generate_content(
         model=GEMINI_MODEL,
-        contents=_build_gemini_prompt(raw, meta, ocr_text),
+        contents=_build_gemini_prompt(raw, meta, ocr_text, _known_handles()),
         config={
             "response_mime_type": "application/json",
             "response_schema": GEMINI_RESPONSE_SCHEMA,
@@ -555,37 +583,86 @@ def _instagram_event_id(handle: str, starts_at: str) -> str | None:
     return f"ig_{handle}_{start_slug}"
 
 
+def _reshared_owner(raw: dict[str, Any]) -> str | None:
+    """The post author recorded by the scraper, if the story reshares a post.
+
+    Authoritative when present — it comes from the story payload rather than
+    from reading a byline off the rendered image — but only newer stories
+    carry it, so callers fall back to the OCR byline.
+    """
+    post = raw.get("reshared_post")
+    if not isinstance(post, dict):
+        return None
+    owner = str(post.get("owner_username") or "").strip().lower()
+    return owner or None
+
+
+def _caption_fallback_title(description: str) -> str:
+    """Name an event whose flyer text was only reshare chrome.
+
+    A reshared photo post shows a truncated caption and nothing else, so there
+    is no printed title to read. The caption's opening clause is the closest
+    thing to one, and beats showing a bare Instagram handle.
+    """
+    opening = re.split(r"(?<=[.!?])\s|\s[-–—]\s|\n", description.strip(), maxsplit=1)
+    candidate = opening[0].strip() if opening else ""
+    candidate = candidate.rstrip(" .…").strip()
+    return candidate[:120] if len(candidate) >= 8 else ""
+
+
 def _to_event_row(
     raw: dict[str, Any],
     cached: dict[str, Any],
     account_meta: dict[str, Any],
     scraped_at: str,
-) -> tuple[dict[str, Any] | None, str | None]:
-    """Return the event row plus a prior event ID to retire, if any.
+    known_handles: Iterable[str] = (),
+) -> tuple[dict[str, Any] | None, set[str]]:
+    """Return the event row plus any prior event IDs to retire.
 
-    The superseded ID (derived from the LLM's pre-OCR timestamp) is surfaced
-    out-of-band so the row stays a clean DB record; the caller uses it to delete
-    the stale row when OCR refines the start time into a new ID or source text
-    provides no date. The caller retains IDs supported by another valid story.
+    Superseded IDs are surfaced out-of-band so the row stays a clean DB record;
+    the caller uses them to delete stale rows when OCR refines the start time
+    into a new ID, when source text provides no date, or when the story turns
+    out to reshare another account's post and the event re-keys onto that
+    account. The caller retains IDs supported by another valid story.
     """
     if cached.get("status") != "ok":
-        return None, None
+        return None, set()
     llm = cached.get("result") or {}
     if not isinstance(llm, dict) or not llm.get("is_event"):
-        return None, None
+        return None, set()
 
-    title = str(llm.get("title") or "").strip()
     description = str(llm.get("description") or "")
     tags = _clean_tags(llm.get("tags"))
     ocr_range = local_event_range(raw, cached)
     llm_starts_at = normalize_timestamptz(llm.get("starts_at"))
     llm_ends_at = normalize_timestamptz(llm.get("ends_at"))
+
+    # A reshared post carries the original author's byline, which the LLM
+    # reads as body text. Keep it out of the title, and key the event on the
+    # original author so every club that reshares one post lands on one row.
+    ocr_text = cached.get("ocr_text")
+    origin_handle = _reshared_owner(raw) or reshared_origin_handle(
+        ocr_text, str(raw.get("handle") or ""), known_handles
+    )
+    title = strip_byline(
+        str(llm.get("title") or ""),
+        ocr_text,
+        str(raw.get("handle") or ""),
+        known_handles,
+    )
+    if not title:
+        # The card showed only chrome and a truncated caption, so the LLM had
+        # no real title to find. The caption still names the event usefully.
+        title = _caption_fallback_title(description)
+
     if not has_source_date(raw, cached):
         log.info("extract %s: skipping event without a source date", raw.get("id"))
-        return None, (
-            _instagram_event_id(str(raw.get("handle") or ""), llm_starts_at)
-            if llm_starts_at else None
-        )
+        return None, {
+            event_id
+            for account in {str(raw.get("handle") or ""), origin_handle or ""}
+            if account and llm_starts_at
+            if (event_id := _instagram_event_id(account, llm_starts_at))
+        }
     if ocr_range is not None:
         starts_at, ends_at = ocr_range
     else:
@@ -593,7 +670,7 @@ def _to_event_row(
             raw, cached, llm_starts_at, llm_ends_at
         ) or (llm_starts_at, llm_ends_at)
     if not title or not starts_at:
-        return None, None
+        return None, set()
 
     if ends_at and datetime.fromisoformat(ends_at) <= datetime.fromisoformat(starts_at):
         log.info(
@@ -611,7 +688,7 @@ def _to_event_row(
             starts_at,
             ends_at,
         )
-        return None, None
+        return None, set()
 
     if was_stale_when_posted(raw, starts_at, ends_at):
         log.info(
@@ -619,7 +696,7 @@ def _to_event_row(
             raw.get("id"),
             starts_at,
         )
-        return None, None
+        return None, set()
 
     handle = str(raw.get("handle") or "")
     rsvp_url = _normalize_url(raw.get("story_cta_url")) or _normalize_url(
@@ -636,10 +713,13 @@ def _to_event_row(
 
     # Derive the event ID from (handle, starts_at) so multiple stories about
     # the same event (announcement flyer + "happening now" reminder) collapse
-    # into one row via upsert instead of becoming separate events.
-    event_id = _instagram_event_id(handle, starts_at)
+    # into one row via upsert instead of becoming separate events. For a
+    # reshare the identity account is whoever wrote the post, not whoever
+    # reshared it, so every club amplifying one post collapses too.
+    identity_handle = origin_handle or handle
+    event_id = _instagram_event_id(identity_handle, starts_at)
     if event_id is None:
-        return None, None
+        return None, set()
 
     row = {
         "id": event_id,
@@ -670,20 +750,30 @@ def _to_event_row(
         "scraped_at": scraped_at,
     }
 
-    superseded_event_id = (
-        _instagram_event_id(handle, llm_starts_at) if llm_starts_at else None
-    )
-    if superseded_event_id == event_id:
-        superseded_event_id = None
-    return row, superseded_event_id
+    # Retire IDs this story would have produced under an earlier reading:
+    # the LLM's pre-OCR start time, and — when the story turns out to be a
+    # reshare — the crawled account's own ID, which is where the duplicate
+    # rows live today.
+    superseded_ids = {
+        candidate
+        for account in {handle, identity_handle}
+        for start in {starts_at, llm_starts_at}
+        if account and start
+        if (candidate := _instagram_event_id(account, start))
+    }
+    superseded_ids.discard(event_id)
+    return row, superseded_ids
 
 
 def _collect_event_rows(
     processed: list[tuple[dict[str, Any], dict[str, Any]]],
     meta_by_handle: dict[str, dict[str, Any]],
     scraped_at: str,
-) -> tuple[list[dict[str, Any]], set[str]]:
+) -> tuple[list[dict[str, Any]], set[str], dict[str, set[str]]]:
     """Build event rows from the (raw, extraction) pairs produced this run.
+
+    Also returns, per surviving row, the IDs that row replaced, so an admin's
+    delete or lock on the older ID still binds after an event re-keys.
 
     Works off the in-memory results from _process_story instead of re-reading
     the raw archive and extraction cache from disk. _to_event_row already drops
@@ -691,21 +781,44 @@ def _collect_event_rows(
     """
     rows: list[dict[str, Any]] = []
     superseded_ids: set[str] = set()
+    retired_by: dict[str, set[str]] = {}
+    known_handles = set(meta_by_handle)
     for raw, cached in processed:
-        row, superseded_id = _to_event_row(
+        row, story_superseded_ids = _to_event_row(
             raw,
             cached,
             meta_by_handle.get(str(raw.get("handle") or ""), {}),
             scraped_at,
+            known_handles,
         )
         if row is not None:
             rows.append(row)
-        if superseded_id is not None:
-            superseded_ids.add(superseded_id)
-    return rows, superseded_ids
+            retired_by.setdefault(row["id"], set()).update(story_superseded_ids)
+        superseded_ids |= story_superseded_ids
+    return rows, superseded_ids, retired_by
 
 
-def _filter_locked_events(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _inherit_tombstones(
+    tombstoned_ids: set[str],
+    retired_by: dict[str, set[str]],
+) -> set[str]:
+    """Extend a tombstone set onto rows that replaced a tombstoned ID.
+
+    An admin who deleted or locked an event before it re-keyed (a reshare
+    moving onto the original author, or OCR refining the start time) expects
+    that decision to stick, so the successor row inherits it.
+    """
+    return tombstoned_ids | {
+        row_id
+        for row_id, replaced_ids in retired_by.items()
+        if replaced_ids & tombstoned_ids
+    }
+
+
+def _filter_locked_events(
+    rows: list[dict[str, Any]],
+    retired_by: dict[str, set[str]] | None = None,
+) -> list[dict[str, Any]]:
     if not rows:
         return []
 
@@ -715,6 +828,7 @@ def _filter_locked_events(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
         db_client = client()
         locked_res = db_client.table("events").select("id").eq("is_locked", True).execute()
         locked_ids = {row["id"] for row in getattr(locked_res, "data", []) or []}
+        locked_ids = _inherit_tombstones(locked_ids, retired_by or {})
         if locked_ids:
             log.info("Found %d manually locked events in database. Excluding from story crawler run.", len(locked_ids))
             rows = suppress_tombstoned_event_groups(rows, locked_ids)
@@ -724,13 +838,16 @@ def _filter_locked_events(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return rows
 
 
-def _filter_deleted_events(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _filter_deleted_events(
+    rows: list[dict[str, Any]],
+    retired_by: dict[str, set[str]] | None = None,
+) -> list[dict[str, Any]]:
     if not rows:
         return []
 
     from db import get_deleted_event_ids
 
-    deleted_ids = get_deleted_event_ids()
+    deleted_ids = _inherit_tombstones(get_deleted_event_ids(), retired_by or {})
     if deleted_ids:
         log.info(
             "Found %d admin-deleted events. Excluding from story crawler run.",
@@ -782,10 +899,12 @@ def main() -> None:
     )
 
     scraped_at = _utc_now()
-    rows, superseded_ids = _collect_event_rows(processed, meta_by_handle, scraped_at)
+    rows, superseded_ids, retired_by = _collect_event_rows(
+        processed, meta_by_handle, scraped_at
+    )
     current_ids = {row["id"] for row in rows} | superseded_ids
-    event_rows = _filter_locked_events(rows)
-    event_rows = _filter_deleted_events(event_rows)
+    event_rows = _filter_locked_events(rows, retired_by)
+    event_rows = _filter_deleted_events(event_rows, retired_by)
     event_rows = dedupe_event_rows(event_rows)
     deleted = _delete_imported_event_ids(
         current_ids - {row["id"] for row in event_rows}

@@ -215,7 +215,7 @@ class OcrBoundaryTests(unittest.TestCase):
                 row, prior_id = extract._to_event_row(raw, cached, {}, "2026-06-01T12:00:00Z")
                 self.assertEqual(start, row["starts_at"])
                 self.assertEqual(end, row["ends_at"])
-                self.assertIsNone(prior_id)
+                self.assertEqual(set(), prior_id)
 
 
 class StoryRefreshTests(unittest.TestCase):
