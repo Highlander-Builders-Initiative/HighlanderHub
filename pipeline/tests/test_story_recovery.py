@@ -23,6 +23,7 @@ class StoryRecoveryTests(unittest.TestCase):
         self.addCleanup(self.stack.close)
         self.directory = Path(self.stack.enter_context(tempfile.TemporaryDirectory()))
         self.stack.enter_context(patch.object(extract, "EXTRACTED_DIR", self.directory))
+        self.stack.enter_context(patch.object(extract, "_utc_now", return_value="2026-06-03T20:00:00+00:00"))
         self.remote = self.stack.enter_context(patch.object(extract, "_load_remote_cache", return_value=None))
         self.write_remote = self.stack.enter_context(patch.object(extract, "_write_remote_cache"))
         self.download = self.stack.enter_context(patch.object(extract, "_download_image", return_value=b"flyer"))
@@ -66,6 +67,66 @@ class StoryRecoveryTests(unittest.TestCase):
         self.assertIn("image_url", extract._process_story(self.raw, {}))
         self.vision.assert_not_called()
         self.gemini.assert_not_called()
+
+    def test_past_events_skip_recovery_from_local_and_remote_cache(self) -> None:
+        for source in ("local", "remote"):
+            for start, end in (
+                ("2026-06-02T18:00:00-07:00", "2026-06-02T21:00:00-07:00"),
+                ("2026-06-03T19:59:59Z", None),
+                ("2026-06-03T20:00:00Z", None),
+                ("2026-06-03T12:00:00-07:00", "2026-06-03T13:00:00-07:00"),
+                ("2026-06-02T18:00:00-07:00", "invalid"),
+            ):
+                with self.subTest(source=source, start=start, end=end):
+                    path = self.directory / "123.json"
+                    path.unlink(missing_ok=True)
+                    cached = {"status": "ok", "story_id": "123", "result": {
+                        "is_event": True, "starts_at": start, "ends_at": end,
+                    }}
+                    if source == "local":
+                        extract._write_cache("123", cached)
+                    else:
+                        self.remote.return_value = cached
+                    with self.assertNoLogs(extract.log, level="WARNING"):
+                        self.assertEqual(cached, extract._process_story(self.raw, {}))
+                    self.assertEqual(cached, json.loads(path.read_text()))
+        self.download.assert_not_called()
+        self.upload.assert_not_called()
+        self.vision.assert_not_called()
+        self.gemini.assert_not_called()
+        self.write_remote.assert_not_called()
+
+    def test_future_ongoing_and_unknown_dates_remain_recoverable(self) -> None:
+        for start, end in (
+            ("2026-06-03T20:00:01Z", None),
+            ("2026-06-02T18:00:00-07:00", "2026-06-04T18:00:00-07:00"),
+            ("2026-06-03T21:00:00Z", "2026-06-03T19:00:00Z"),
+            (None, None),
+            ("invalid", "invalid"),
+            ("2026-06-02T18:00:00", None),
+        ):
+            with self.subTest(start=start, end=end):
+                self.download.reset_mock()
+                cached = {"status": "ok", "story_id": "123", "result": {
+                    "is_event": True, "starts_at": start, "ends_at": end,
+                }}
+                result = extract._repair_cached_flyer(self.raw, cached)
+                self.assertEqual("https://example.com/durable.jpg", result["image_url"])
+                self.download.assert_called_once()
+
+    def test_recovery_uses_ocr_corrected_event_dates(self) -> None:
+        raw = {**self.raw, "posted_at": "2026-06-01T12:00:00Z"}
+        for text, start, recover in (
+            ("June 2 6PM-9PM", "2026-06-04T01:00:00Z", False),
+            ("June 3 6PM-9PM", "2026-06-03T01:00:00Z", True),
+        ):
+            with self.subTest(text=text):
+                self.download.reset_mock()
+                cached = {"status": "ok", "story_id": "123", "ocr_text": text,
+                          "result": {"is_event": True, "starts_at": start}}
+                result = extract._repair_cached_flyer(raw, cached)
+                self.assertEqual(recover, "image_url" in result)
+                self.assertEqual(int(recover), self.download.call_count)
 
     def test_corrupt_and_nonterminal_local_caches_recover_from_remote(self) -> None:
         remote = {"status": "not_event", "story_id": "123"}
