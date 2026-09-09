@@ -24,11 +24,18 @@ def _parse_instant(value: Any) -> datetime | None:
 
 
 def event_key(row: dict[str, Any]) -> str | None:
-    """Stable key for the same public event appearing from multiple sources."""
+    """Group title/start matches without erasing Instagram account identity."""
     title = _WHITESPACE.sub(" ", str(row.get("title") or "").casefold()).strip()
     starts_at = _parse_instant(row.get("starts_at"))
     if not title or starts_at is None:
         return None
+    # A generic title and time do not establish that two clubs posted the same
+    # event. Use the existing ID's account prefix, including anonymized hosts.
+    row_id = str(row.get("id") or "")
+    if row_id.startswith("ig_"):
+        return f"{row_id.rsplit('_', 1)[0]}|{title}|{starts_at.strftime('%Y%m%dT%H%MZ')}"
+    if row.get("source") == "instagram":
+        return None  # No stable account identity available for grouping.
     return f"{title}|{starts_at.strftime('%Y%m%dT%H%MZ')}"
 
 

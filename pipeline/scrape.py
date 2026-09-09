@@ -274,11 +274,27 @@ def _serialize_item(item: Any, handle: str) -> dict[str, Any]:
 
 
 def _write_item(item_dict: dict[str, Any], handle: str) -> bool:
-    """Write the item to raw/. Returns True if newly written, False if skipped."""
+    """Save new stories and refresh links on re-observation; count only new IDs."""
     out_dir = RAW_DIR / handle
     out_dir.mkdir(parents=True, exist_ok=True)
     path = out_dir / f"{item_dict['id']}.json"
     if path.exists():
+        try:
+            with path.open() as f:
+                saved = json.load(f)
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            saved = {}
+        if not isinstance(saved, dict):
+            saved = {}
+        updated = dict(saved or item_dict)
+        for field in ("story_cta_url", "image_url", "video_url"):
+            if item_dict.get(field):
+                updated[field] = item_dict[field]
+        if updated != saved:
+            temporary = path.with_suffix(".json.tmp")
+            with temporary.open("w") as f:
+                json.dump(updated, f, indent=2, sort_keys=True)
+            temporary.replace(path)
         return False
     with path.open("w") as f:
         json.dump(item_dict, f, indent=2, sort_keys=True)
