@@ -437,6 +437,21 @@ def _repair_cached_flyer(
         or not raw.get("image_url")
     ):
         return cached
+    result = cached.get("result")
+    if isinstance(result, dict):
+        starts_at, ends_at = _ocr_local_event_range(raw, cached) or (
+            _normalize_timestamptz(result.get("starts_at")),
+            _normalize_timestamptz(result.get("ends_at")),
+        )
+        # Match event-row handling of invalid ends and OCR-corrected dates.
+        if starts_at and ends_at and datetime.fromisoformat(ends_at) <= datetime.fromisoformat(starts_at):
+            ends_at = None
+        latest_event_time = ends_at or starts_at
+        if (
+            latest_event_time
+            and datetime.fromisoformat(latest_event_time) <= datetime.fromisoformat(_utc_now())
+        ):
+            return cached
     try:
         image = _download_image(raw["image_url"])
     except Exception as exc:  # noqa: BLE001 - preserve the usable extraction.
