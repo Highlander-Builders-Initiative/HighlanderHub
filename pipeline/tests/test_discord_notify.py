@@ -5,6 +5,7 @@ import os
 import sys
 import types
 import unittest
+from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -66,6 +67,10 @@ class DiscordNotifyTests(unittest.TestCase):
     def setUp(self) -> None:
         sys.modules.pop("discord_notify", None)
         self.discord_notify = importlib.import_module("discord_notify")
+        clock = patch.object(self.discord_notify, "datetime", wraps=datetime)
+        self.clock = clock.start()
+        self.clock.now.return_value = datetime(2026, 5, 20, tzinfo=timezone.utc)
+        self.addCleanup(clock.stop)
 
     def tearDown(self) -> None:
         sys.modules.pop("discord_notify", None)
@@ -230,6 +235,90 @@ class DiscordNotifyTests(unittest.TestCase):
         self.assertEqual("UCR Library", fields["Host"])
         self.assertEqual("Highlander Hub | Free food alert", embed["footer"]["text"])
         self.assertNotIn("instagram.com", str(payload))
+
+    def test_archived_events_never_reach_ledger_or_webhook(self) -> None:
+        self.clock.now.return_value = datetime(2026, 9, 8, tzinfo=timezone.utc)
+        rows = [
+            {
+                "id": f"archived-{day}",
+                "title": f"Archived meal {day}",
+                "has_free_food": True,
+                "starts_at": f"2026-06-{day:02d}T17:00:00-07:00",
+                "ends_at": f"2026-06-{day:02d}T19:00:00-07:00",
+            }
+            for day in range(1, 10)
+        ]
+        fake_db = types.SimpleNamespace(client=Mock(return_value=FakeClient(existing=[])))
+        with (
+            patch.dict(os.environ, {"DISCORD_WEBHOOK_URL": "https://discord.test"}),
+            patch.dict(sys.modules, {"db": fake_db}),
+            patch.object(self.discord_notify.requests, "post", return_value=types.SimpleNamespace(status_code=204)) as post,
+        ):
+            self.assertEqual(0, self.discord_notify.notify_free_food_events(iter(rows)))
+        fake_db.client.assert_not_called()
+        post.assert_not_called()
+
+    def test_notification_time_cutoffs(self) -> None:
+        self.clock.now.return_value = datetime(2026, 9, 8, 19, tzinfo=timezone.utc)
+        cases = [
+            ("ended", "2026-09-08T10:00:00-07:00", "2026-09-08T11:59:59-07:00", False),
+            ("ending now", "2026-09-08T10:00:00-07:00", "2026-09-08T12:00:00-07:00", False),
+            ("ongoing", "2026-09-08T10:00:00-07:00", "2026-09-08T12:00:01-07:00", True),
+            ("future", "2026-09-09T10:00:00-07:00", "2026-09-09T12:00:00-07:00", True),
+            ("past without end", "2026-09-08T18:59:59Z", None, False),
+            ("starting now without end", "2026-09-08T19:00:00Z", None, False),
+            ("future without end", "2026-09-08T19:00:01Z", None, True),
+            ("missing times", None, None, False),
+            ("invalid start", "invalid", None, False),
+            ("naive start", "2026-09-09T12:00:00", None, False),
+            ("date only", "2026-09-09", None, False),
+            ("invalid end", "2026-09-09T19:00:00Z", "invalid", False),
+            ("naive end", "2026-09-09T19:00:00Z", "2026-09-09T20:00:00", False),
+            ("empty end", "2026-09-09T19:00:00Z", "", False),
+        ]
+        rows = [
+            {"id": name, "title": name, "category": "free_food", "starts_at": start, "ends_at": end}
+            for name, start, end, _ in cases
+        ]
+        expected_ids = [name for name, _, _, eligible in cases if eligible]
+        fake_client = FakeClient(existing=[])
+        fake_db = types.SimpleNamespace(client=Mock(return_value=fake_client))
+        with (
+            patch.dict(os.environ, {"DISCORD_WEBHOOK_URL": "https://discord.test"}),
+            patch.dict(sys.modules, {"db": fake_db}),
+            patch.object(self.discord_notify.requests, "post", return_value=types.SimpleNamespace(status_code=204)) as post,
+            self.assertLogs("pipeline.discord_notify", level="INFO") as logs,
+        ):
+            self.assertEqual(len(expected_ids), self.discord_notify.notify_free_food_events(rows))
+        self.assertEqual(expected_ids, fake_client.requests[1][1])
+        self.assertEqual(expected_ids, [row["event_id"] for row in fake_client.upserted])
+        self.assertEqual(expected_ids, [call.kwargs["json"]["embeds"][0]["title"] for call in post.call_args_list])
+        for event_id in expected_ids:
+            self.assertTrue(any(f"event_id={event_id}" in line for line in logs.output))
+
+    def test_event_expiring_during_ledger_lookup_is_not_sent(self) -> None:
+        self.clock.now.side_effect = [
+            datetime(2026, 9, 8, 19, tzinfo=timezone.utc),
+            datetime(2026, 9, 8, 19, 0, 1, tzinfo=timezone.utc),
+        ]
+        row = {
+            "id": "expiring",
+            "title": "Lunch",
+            "has_free_food": True,
+            "starts_at": "2026-09-08T18:00:00Z",
+            "ends_at": "2026-09-08T19:00:01Z",
+        }
+        fake_client = FakeClient(existing=[])
+        fake_db = types.SimpleNamespace(client=Mock(return_value=fake_client))
+        with (
+            patch.dict(os.environ, {"DISCORD_WEBHOOK_URL": "https://discord.test"}),
+            patch.dict(sys.modules, {"db": fake_db}),
+            patch.object(self.discord_notify.requests, "post", return_value=types.SimpleNamespace(status_code=204)) as post,
+        ):
+            self.assertEqual(0, self.discord_notify.notify_free_food_events([row]))
+        self.assertTrue(fake_client.requests)
+        self.assertEqual([], fake_client.upserted)
+        post.assert_not_called()
 
 
 if __name__ == "__main__":
