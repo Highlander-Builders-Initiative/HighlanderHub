@@ -1,0 +1,92 @@
+[
+  {
+    "raw": {
+      "id": "3981290560932849507",
+      "handle": "ucrpse",
+      "posted_at": "2026-09-08T00:20:40Z",
+      "caption": null
+    },
+    "cached": {
+      "status": "ok",
+      "ocr_text": "ANPA\nit's our Secretary\u2193\u2193\nPSE ucrpse\nJOSHUA\nRHO\nPhone\nlove.\nwave to earth\nucrpse\n\u104b\nSECRETARY\nIntroducing PSE's Fall '26 Executive Board\nJoshua Rho @joshuarrho...",
+      "result": {
+        "category": "club",
+        "confidence": "high",
+        "description": "Introducing PSE's Fall '26 Executive Board. Joshua Rho @joshuarrho...",
+        "ends_at": null,
+        "is_event": true,
+        "is_free": true,
+        "location": "UCR",
+        "rsvp_required": false,
+        "rsvp_url": null,
+        "starts_at": "2026-09-08T00:00:00-07:00",
+        "tags": [
+          "executive board",
+          "fall '26"
+        ],
+        "title": "Introducing PSE's Fall '26 Executive Board"
+      }
+    }
+  },
+  {
+    "raw": {
+      "id": "3981849082952059415",
+      "handle": "ucrbusiness",
+      "posted_at": "2026-09-08T18:50:21Z",
+      "caption": null
+    },
+    "cached": {
+      "status": "ok",
+      "ocr_text": "UC\nRIVERSIDE\nCareer Center,\nucrcareercenter\n1\nPreparing\nfor\nInternship\nApplication\nSeason\nTips for success\nUCR Career Center\nucrcareercenter Internship application season is officially\nDon't open those portals without a solid game pl...\nhere!",
+      "result": {
+        "category": "career",
+        "confidence": "medium",
+        "description": "Tips for success with the UCR Career Center. Internship application season is officially here! Don't open those portals without a solid game plan...",
+        "ends_at": null,
+        "is_event": true,
+        "is_free": true,
+        "location": "UC Riverside",
+        "rsvp_required": false,
+        "rsvp_url": null,
+        "starts_at": "2026-09-09T00:00:00-07:00",
+        "tags": [
+          "internship",
+          "career",
+          "ucr",
+          "business"
+        ],
+        "title": "Preparing for Internship Application Season"
+      }
+    }
+  },
+  {
+    "raw": {
+      "id": "3981869587947997796",
+      "handle": "ucrbcoe",
+      "posted_at": "2026-09-08T19:31:05Z",
+      "caption": null
+    },
+    "cached": {
+      "status": "ok",
+      "ocr_text": "1\nPreparing\nfor\nInternship\nApplication\nSeason\nTips for success\nUCR Career Center\n@ucrcareercenter",
+      "result": {
+        "category": "career",
+        "confidence": "high",
+        "description": "Tips for success",
+        "ends_at": null,
+        "is_event": true,
+        "is_free": true,
+        "location": "UCR",
+        "rsvp_required": false,
+        "rsvp_url": null,
+        "starts_at": "2026-09-08T00:00:00-07:00",
+        "tags": [
+          "internship",
+          "career fair",
+          "job application"
+        ],
+        "title": "Preparing for Internship Application Season"
+      }
+    }
+  }
+]

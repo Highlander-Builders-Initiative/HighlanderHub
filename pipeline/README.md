@@ -141,6 +141,24 @@ results are cached first in `data/extracted/` and then in Supabase
 `story_extractions` for stateless CI runs, and Localist + HighlanderLink events
 are overwritten/pruned because they are mutable.
 
+A cached `ok` extraction records Gemini's response, not verified event quality.
+Instagram event mapping requires date evidence in OCR or the story caption;
+posting timestamps, model descriptions, tags, and confidence cannot supply it.
+A printed calendar date stands on its own. Immediacy words bind the event to
+`posted_at` instead of unlocking the model's clock: `now`/`rn` take the posting
+instant, `today`/`tonight`/`tomorrow` fix the day and leave the time to
+extraction, and a printed date outranks all of them. Calls to action (`apply
+now`, `applications are now open`) are not immediacy claims. Bare weekdays and
+bare `M/D` are too easy to read out of prose and room numbers, so they count
+only next to a clock time.
+
+Undated posts are skipped even from existing caches, and their prior event IDs
+enter the existing unlocked-row cleanup unless another accepted story supports
+the same ID. This is a minimum evidence check, not full semantic verification;
+unrecognized date expressions are conservatively skipped. Note the remaining
+gap: once source text supplies a calendar date, the model's own day is still
+trusted, so the mapper can still publish a day the flyer did not print.
+
 ## Schedule
 
 Stories live 24h, so 4–6× a day is a reasonable cadence. UCR events change
