@@ -192,6 +192,99 @@ class ClassifyContentKindTests(unittest.TestCase):
             ),
         )
 
+    def test_multi_week_program_pitch_is_an_application(self) -> None:
+        # Real row: ran Jul 27 and stayed in the feed into September because
+        # extraction gave it a 48-day ends_at. It is a program you enroll in,
+        # not an occasion with a start time.
+        self.assertEqual(
+            "student_application",
+            classify_content_kind(
+                "instagram",
+                title="HIGHLANDER EARLY START ACADEMY (HESA)",
+                description=(
+                    "7-week in-person summer program for incoming first year "
+                    "students. Students earn 8 - 10 units before starting their "
+                    "freshman Fall quarter. Financial Aid available for "
+                    "qualifying students."
+                ),
+            ),
+        )
+
+    def test_explicit_apply_call_with_program_noun_is_an_application(self) -> None:
+        self.assertEqual(
+            "student_application",
+            classify_content_kind(
+                "campus_website",
+                title="South China AI-Tech Immersion with UCR Business",
+                description=(
+                    "Join us for an 8-day business immersion in South China -- "
+                    "the program is open to all UCR graduate and undergraduate "
+                    "students. However, enrollment is limited -- please apply "
+                    "early to ensure your participation. Priority deadline: May 8."
+                ),
+                audiences=["Students"],
+            ),
+        )
+
+    def test_occasion_titles_stay_events_despite_program_vocabulary(self) -> None:
+        # Real rows the first draft of this rule swept up: each one is a
+        # gathering *about* a program, not a way into one.
+        cases = (
+            (
+                "CHASS F1RST Lunch & Learn for Campus Partners",
+                "Introduces campus partners to the programs and services "
+                "offered through CHASS F1RST.",
+            ),
+            (
+                "Fulbright Writing Drop-In Hours",
+                "Bring your Fulbright essay drafts to our open office hours. "
+                "Review the eligibility requirements before you attend.",
+            ),
+            (
+                "UCR Student Programs 10 Year Anniversary",
+                "UCR Student Programs. We will reopen at 12pm.",
+            ),
+        )
+        for title, description in cases:
+            with self.subTest(title=title):
+                self.assertEqual(
+                    "student_event",
+                    classify_content_kind(
+                        "instagram", title=title, description=description
+                    ),
+                )
+
+    def test_talk_about_applying_is_not_an_application(self) -> None:
+        # Bare "application" is not an application call; this is a tips talk.
+        self.assertEqual(
+            "student_event",
+            classify_content_kind(
+                "instagram",
+                title="Preparing for Internship Application Season",
+                description="Tips for success",
+            ),
+        )
+
+    def test_dated_cutoff_still_outranks_the_application_rule(self) -> None:
+        self.assertEqual(
+            "student_deadline",
+            classify_content_kind(
+                "instagram",
+                title="Research Fellowship Applications Due Friday",
+                description="Apply by 11:59pm for the 10-week summer program.",
+            ),
+        )
+
+    def test_anniversary_years_do_not_read_as_a_program_length(self) -> None:
+        self.assertEqual(
+            "student_event",
+            classify_content_kind(
+                "instagram",
+                title="Celebrating 25 Years of the Chicano Student Programs",
+                description="Join us for cake.",
+            ),
+        )
+
     def test_staff_training_about_students_is_not_student_content(self) -> None:
         self.assertEqual(
             "other",

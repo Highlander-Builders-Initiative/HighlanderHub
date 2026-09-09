@@ -48,6 +48,7 @@
       "enum": [
         "student_event",
         "student_deadline",
+        "student_application",
         "fundraiser",
         "other"
       ]
