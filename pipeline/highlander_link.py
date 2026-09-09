@@ -4,7 +4,10 @@ Writes one JSON file per event to data/raw/highlander_link/<id>.json.
 
 HighlanderLink events are mutable (descriptions get edited, locations change),
 so the raw file is overwritten every run — the latest fetch wins, same as the
-Localist scraper.
+Localist scraper. Also like Localist, the snapshot is buffered in memory and
+only flushed once the whole walk succeeds: a partial rewrite would leave the
+raw directory a mix of old and new events, which `run.py` cannot distinguish
+from a clean previous snapshot.
 
 The public Engage search endpoint backs the events page React app. No auth
 needed for `visibility=Public` events. It returns Azure Search-style results;
@@ -62,13 +65,11 @@ def _fetch_page(s: requests.Session, skip: int, ends_after: str) -> dict[str, An
     return r.json()
 
 
-def _write_event(event: dict[str, Any]) -> bool:
+def _write_event(event: dict[str, Any]) -> None:
     SOURCE_DIR.mkdir(parents=True, exist_ok=True)
     path = SOURCE_DIR / f"{event['id']}.json"
-    is_new = not path.exists()
     with path.open("w", encoding="utf-8") as f:
         json.dump(event, f, indent=2, sort_keys=True, ensure_ascii=False)
-    return is_new
 
 
 def _prune_missing_events(seen_ids: set[str]) -> int:
@@ -103,8 +104,8 @@ def _events_from_payload(payload: dict[str, Any]) -> list[dict[str, Any]]:
     return events
 
 
-def fetch_all() -> tuple[int, int]:
-    """Walk paginated results. Returns (total_events, new_events)."""
+def _collect_snapshot() -> dict[str, dict[str, Any]]:
+    """Walk every page into memory. Raises unless the full snapshot arrives."""
     s = _session()
     ends_after = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -119,33 +120,44 @@ def fetch_all() -> tuple[int, int]:
     pages = max(1, -(-total // PER_PAGE))
     log.info("HighlanderLink reports %d events across %d page(s)", total, pages)
 
-    seen = new = 0
-    seen_ids: set[str] = set()
+    events: dict[str, dict[str, Any]] = {}
 
-    def handle_payload(payload: dict[str, Any]) -> None:
-        nonlocal seen, new
-        for ev in _events_from_payload(payload):
-            seen += 1
-            seen_ids.add(str(ev["id"]))
-            if _write_event(ev):
-                new += 1
+    def absorb(payload: dict[str, Any], page: int) -> None:
+        entries = _events_from_payload(payload)
+        if not entries:
+            raise ValueError(f"HighlanderLink page {page} of {pages} came back empty")
+        for ev in entries:
+            events[str(ev["id"])] = ev
 
-    handle_payload(first)
+    absorb(first, 1)
     for page in range(1, pages):
         time.sleep(random.uniform(1.0, 2.0))
-        handle_payload(_fetch_page(s, skip=page * PER_PAGE, ends_after=ends_after))
+        absorb(_fetch_page(s, skip=page * PER_PAGE, ends_after=ends_after), page + 1)
 
-    if len(seen_ids) != total:
+    if len(events) != total:
         raise ValueError(
             "HighlanderLink snapshot incomplete: "
-            f"expected {total} unique events, got {len(seen_ids)}"
+            f"expected {total} unique events, got {len(events)}"
         )
+    return events
 
-    pruned = _prune_missing_events(seen_ids)
+
+def fetch_all() -> tuple[int, int]:
+    """Fetch a complete snapshot, then swap it in. Returns (total, new)."""
+    events = _collect_snapshot()
+
+    existing = (
+        {path.stem for path in SOURCE_DIR.glob("*.json")} if SOURCE_DIR.exists() else set()
+    )
+    for ev in events.values():
+        _write_event(ev)
+    new = len(set(events) - existing)
+
+    pruned = _prune_missing_events(set(events))
     if pruned:
         log.info("HighlanderLink events: pruned %d stale raw file(s)", pruned)
 
-    return seen, new
+    return len(events), new
 
 
 def main() -> None:
