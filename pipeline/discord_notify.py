@@ -50,6 +50,16 @@ def _parse_instant(value: Any) -> datetime | None:
     return dt
 
 
+def _event_has_not_ended(row: dict[str, Any], now: datetime) -> bool:
+    # Without an end time, only notify before the known start. An invalid
+    # explicit end must not fall back to a potentially misleading start.
+    cutoff = row.get("ends_at")
+    if cutoff is None:
+        cutoff = row.get("starts_at")
+    instant = _parse_instant(cutoff)
+    return instant is not None and instant > now
+
+
 def _key_text(value: Any) -> str:
     return _WHITESPACE.sub(" ", str(value or "").casefold()).strip()
 
@@ -168,6 +178,12 @@ def notify_free_food_events(rows: Iterable[dict[str, Any]]) -> int:
         if (row.get("has_free_food") or row.get("category") == "free_food")
         and _text(row.get("id"))
     ]
+    now = datetime.now(timezone.utc)
+    eligible = [row for row in candidates if _event_has_not_ended(row, now)]
+    skipped = len(candidates) - len(eligible)
+    if skipped:
+        log.info("Skipped %d free food alerts for ended or unverifiable events", skipped)
+    candidates = eligible
     if not candidates:
         return 0
 
@@ -212,7 +228,17 @@ def notify_free_food_events(rows: Iterable[dict[str, Any]]) -> int:
         notification_key = free_food_notification_key(row)
         if notification_key in queued_keys or event_id in existing_ids:
             continue
+        # Ledger queries and earlier webhook calls can take time.
+        if not _event_has_not_ended(row, datetime.now(timezone.utc)):
+            continue
         if _post_discord_payload(build_free_food_discord_payload(row)):
+            log.info(
+                "Sent free food Discord alert: event_id=%s title=%r starts_at=%s ends_at=%s",
+                event_id,
+                row.get("title"),
+                row.get("starts_at"),
+                row.get("ends_at"),
+            )
             queued_keys.add(notification_key)
             sent.append(
                 {
