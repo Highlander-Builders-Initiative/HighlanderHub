@@ -399,6 +399,7 @@ class ExtractStoriesTests(unittest.TestCase):
         }
         cached = {
             "status": "ok",
+            "ocr_text": "May 15",
             "image_url": "https://cdn.example/durable.jpg",
             "result": {
                 "is_event": True,
@@ -447,6 +448,7 @@ class ExtractStoriesTests(unittest.TestCase):
         }
         cached = {
             "status": "ok",
+            "ocr_text": "May 15",
             "result": {
                 "is_event": True,
                 "title": "Security Night Workshop",
@@ -474,6 +476,7 @@ class ExtractStoriesTests(unittest.TestCase):
         }
         cached = {
             "status": "ok",
+            "ocr_text": "May 15",
             "result": {
                 "is_event": True,
                 "title": "Security Night Workshop",
@@ -500,6 +503,7 @@ class ExtractStoriesTests(unittest.TestCase):
         }
         cached = {
             "status": "ok",
+            "ocr_text": "May 15",
             "result": {
                 "is_event": True,
                 "title": "Security Night Workshop",
@@ -529,7 +533,7 @@ class ExtractStoriesTests(unittest.TestCase):
         }
         cached = {
             "status": "ok",
-            "ocr_text": "WINC STUDY SESSION SOCIAL\nSANDWICHES AND BOBA WILL BE PROVIDED",
+            "ocr_text": "WINC STUDY SESSION SOCIAL\nJune 2\nSANDWICHES AND BOBA WILL BE PROVIDED",
             "result": {
                 "is_event": True,
                 "title": "WINC Study Session Social",
@@ -577,6 +581,7 @@ class ExtractStoriesTests(unittest.TestCase):
         }
         cached = {
             "status": "ok",
+            "ocr_text": "May 15",
             "result": {
                 "is_event": True,
                 "title": "Pizza Social",
@@ -604,6 +609,7 @@ class ExtractStoriesTests(unittest.TestCase):
         }
         cached = {
             "status": "ok",
+            "ocr_text": "May 15",
             "result": {
                 "is_event": True,
                 "title": "Opportunity Fair",
@@ -630,6 +636,7 @@ class ExtractStoriesTests(unittest.TestCase):
         }
         cached = {
             "status": "ok",
+            "ocr_text": "May 15",
             "result": {
                 "is_event": True,
                 "title": "Security Night Workshop",
@@ -653,6 +660,7 @@ class ExtractStoriesTests(unittest.TestCase):
         }
         cached = {
             "status": "ok",
+            "ocr_text": "May 15",
             "result": {
                 "is_event": True,
                 "title": "Security Night Workshop",
@@ -1004,6 +1012,7 @@ class ExtractStoriesTests(unittest.TestCase):
         }
         cached = {
             "status": "ok",
+            "ocr_text": "May 15",
             "result": {
                 "is_event": True,
                 "title": "Security Night Workshop",
@@ -1031,6 +1040,7 @@ class ExtractStoriesTests(unittest.TestCase):
         }
         cached = {
             "status": "ok",
+            "ocr_text": "May 15",
             "result": {
                 "is_event": True,
                 "title": "Security Night Workshop",
@@ -1058,7 +1068,7 @@ class ExtractStoriesTests(unittest.TestCase):
         }
         cached = {
             "status": "ok",
-            "ocr_text": "BIGGEST GYM RAT\nGamma Phi Beta Formal\n2016",
+            "ocr_text": "BIGGEST GYM RAT\nGamma Phi Beta Formal\nJanuary 1, 2016",
             "result": {
                 "is_event": True,
                 "title": "Gamma Phi Beta Formal",
@@ -1084,6 +1094,7 @@ class ExtractStoriesTests(unittest.TestCase):
         }
         cached = {
             "status": "ok",
+            "ocr_text": "May 12–16",
             "result": {
                 "is_event": True,
                 "title": "Security Week",
@@ -1109,6 +1120,7 @@ class ExtractStoriesTests(unittest.TestCase):
         }
         cached = {
             "status": "ok",
+            "ocr_text": "May 14",
             "result": {
                 "is_event": True,
                 "title": "Security Day",
@@ -1136,6 +1148,7 @@ class ExtractStoriesTests(unittest.TestCase):
         }
         cached = {
             "status": "ok",
+            "ocr_text": "May 15",
             "result": {
                 "is_event": True,
                 "title": "Security Night Workshop",

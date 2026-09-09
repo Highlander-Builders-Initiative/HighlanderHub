@@ -88,6 +88,7 @@ class SchemaContractTests(unittest.TestCase):
             },
             {
                 "status": "ok",
+                "ocr_text": "Security Night Workshop May 15",
                 "result": {
                     "is_event": True,
                     "title": "Security Night Workshop",

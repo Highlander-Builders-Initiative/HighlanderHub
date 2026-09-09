@@ -10,7 +10,7 @@ import base64
 import json
 import logging
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, time, timedelta, timezone
 from pathlib import Path
 from typing import Any, Iterable
 from zoneinfo import ZoneInfo
@@ -85,6 +85,45 @@ _OCR_DATE_RE = re.compile(
     r"jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?|tember)?|oct(?:ober)?|"
     r"nov(?:ember)?|dec(?:ember)?"
     r")\.?\s+(\d{1,2})(?:st|nd|rd|th)?\b",
+    re.IGNORECASE,
+)
+# Date evidence is broader than the deliberately narrow wall-time override.
+_OCR_DAY_MONTH_RE = re.compile(
+    r"\b(\d{1,2})(?:st|nd|rd|th)?\s+(" + "|".join(_MONTHS) + r")\b",
+    re.IGNORECASE,
+)
+_OCR_NUMERIC_DATE_RE = re.compile(
+    r"(?<![\w/.$])(?:\d{4}-)?(\d{1,2})([/.-])(\d{1,2})"
+    r"(?:\2(\d{4}|\d{2}))?(?![\w/])"
+)
+# Immediacy words bind the event to posted_at rather than unlocking a model
+# timestamp, so they need no corroborating time. "now"/"rn" claim the posting
+# instant; the rest claim a calendar day and leave the time to extraction.
+_OCR_NOW_RE = re.compile(r"\b(?:now|rn)\b", re.IGNORECASE)
+# "apply now" and "applications are now open" are calls to action, not claims
+# that an event is under way, and on club flyers they outnumber the real ones.
+_CTA_BEFORE_NOW_RE = re.compile(
+    r"\b(?:appl(?:y|ies|ication)s?|register|registration|sign\s*ups?|signup|"
+    r"donate|enroll|rsvp|order|shop|buy|vote|submit|nominate|follow|dm|"
+    r"available|are|open)\b(?:\s+\w+){0,2}\s*$",
+    re.IGNORECASE,
+)
+_CTA_AFTER_NOW_RE = re.compile(
+    r"\s*(?:accepting|available|open|hiring|recruiting)\b",
+    re.IGNORECASE,
+)
+_OCR_IMMEDIATE_DAY_RE = re.compile(
+    r"\b(?:today|tonight|tomorrow)\b", re.IGNORECASE
+)
+# A bare weekday is prose ("happy Friday", "Monday motivation") as often as it
+# is a date, so it only counts as evidence next to a clock time.
+_OCR_WEEKDAY_RE = re.compile(
+    r"\b(?:mon(?:day)?|tue(?:s(?:day)?)?|wed(?:nesday)?|thu(?:rs(?:day)?)?|"
+    r"fri(?:day)?|sat(?:urday)?|sun(?:day)?)\b",
+    re.IGNORECASE,
+)
+_OCR_CLOCK_TIME_RE = re.compile(
+    r"\b\d{1,2}(?::\d{2})?\s*[ap]\.?m\.?|\b\d{1,2}:\d{2}\b|\bnoon\b|\bmidnight\b",
     re.IGNORECASE,
 )
 # The override only understands dates without a printed year and Pacific wall
@@ -355,7 +394,11 @@ def _build_gemini_prompt(
     return (
         "Extract a UC Riverside campus event from this Instagram story flyer. "
         "Return JSON only. If the flyer is not advertising a specific event, "
-        "set is_event to false and keep title and starts_at null. Infer the "
+        "set is_event to false and keep title and starts_at null. Informational "
+        "tips, officer introductions, and seasonal spotlights are not events. "
+        "Require a date in OCR or the story caption, including an explicit "
+        "relative date such as tomorrow. Never use posted_at as the event date "
+        "when source text supplies no date; keep starts_at and ends_at null. Infer the "
         "year from posted_at when a date omits the year. UCR is in Riverside, "
         "California, so interpret flyer times as America/Los_Angeles local "
         "wall time unless the OCR explicitly gives another timezone. Do not "
@@ -637,6 +680,140 @@ def _ocr_date(ocr_text: str) -> tuple[int, int] | None:
     return next(iter(dates))
 
 
+def _source_date_texts(
+    raw: dict[str, Any],
+    cached: dict[str, Any],
+) -> Iterable[str]:
+    """OCR and caption text with handles and links stripped.
+
+    Model output and posting metadata are deliberately excluded: they are what
+    the date evidence is meant to check, not a source of it.
+    """
+    for value in (cached.get("ocr_text"), raw.get("caption")):
+        if isinstance(value, str):
+            yield re.sub(r"https?://\S+|www\.\S+|@[\w.]+", "", value)
+
+
+def _named_source_dates(text: str) -> set[tuple[int, int]]:
+    """Calendar days printed in the text, in any recognized order or notation."""
+    dates = _distinct_ocr_dates(text)
+    dates.update(
+        (_MONTHS[m.group(2).lower()], int(m.group(1)))
+        for m in _OCR_DAY_MONTH_RE.finditer(text)
+    )
+    for match in _OCR_NUMERIC_DATE_RE.finditer(text):
+        if not (match.group(4) or re.match(r"\d{4}-", match.group())):
+            # Without a year "1-2" is a time range and "5.62" a decimal, never
+            # a date. A bare "5/28" is a date only next to a clock time, so
+            # that "1/2 price" and room numbers stay out of the evidence.
+            if match.group(2) != "/" or not _OCR_CLOCK_TIME_RE.search(text):
+                continue
+        dates.add((int(match.group(1)), int(match.group(3))))
+    return {(month, day) for month, day in dates if _is_calendar_day(month, day)}
+
+
+def _is_calendar_day(month: int, day: int) -> bool:
+    try:
+        # A leap year keeps February 29 valid; the year itself is irrelevant.
+        datetime(2000, month, day)
+    except ValueError:
+        return False
+    return True
+
+
+def _claims_happening_now(text: str) -> bool:
+    """True when "now"/"rn" says an event is under way, not "apply now"."""
+    for match in _OCR_NOW_RE.finditer(text):
+        before = text[max(0, match.start() - 40) : match.start()]
+        after = text[match.end() : match.end() + 20]
+        if _CTA_BEFORE_NOW_RE.search(before) or _CTA_AFTER_NOW_RE.match(after):
+            continue
+        return True
+    return False
+
+
+def _has_source_date(raw: dict[str, Any], cached: dict[str, Any]) -> bool:
+    """Minimum date-evidence gate, independent of model confidence or API status.
+
+    Source text must print a calendar day, claim immediacy that binds to
+    posted_at, or corroborate a bare weekday with a clock time. This establishes
+    that source text supplies a date, not that every extracted detail is
+    correct. Keep model text and posting/extraction metadata out.
+    """
+    has_posting_context = _posted_at(raw) is not None
+    for text in _source_date_texts(raw, cached):
+        if _named_source_dates(text):
+            return True
+        if not has_posting_context:
+            continue
+        if _claims_happening_now(text) or _OCR_IMMEDIATE_DAY_RE.search(text):
+            return True
+        if _OCR_WEEKDAY_RE.search(text) and _OCR_CLOCK_TIME_RE.search(text):
+            return True
+    return False
+
+
+def _immediate_event_range(
+    raw: dict[str, Any],
+    cached: dict[str, Any],
+    llm_starts_at: str | None,
+    llm_ends_at: str | None,
+) -> tuple[str, str | None] | None:
+    """Bind an immediacy story to the day its source text actually claims.
+
+    "now"/"rn" mean the posting instant, so they replace the model's clock,
+    which commonly reports posted_at's UTC value as local time. "today",
+    "tonight" and "tomorrow" fix only the calendar day and leave the time to
+    extraction. Returning None means source text made no immediacy claim and
+    the model's timestamp stands.
+    """
+    posted_at = _posted_at(raw)
+    if posted_at is None or not llm_starts_at:
+        return None
+
+    claims_now = False
+    claimed_day: str | None = None
+    for text in _source_date_texts(raw, cached):
+        # A printed date outranks a passing "apply now" or "open today".
+        if _named_source_dates(text):
+            return None
+        claims_now = claims_now or _claims_happening_now(text)
+        match = _OCR_IMMEDIATE_DAY_RE.search(text)
+        if match is not None and claimed_day is None:
+            claimed_day = match.group(0).lower()
+
+    start = datetime.fromisoformat(llm_starts_at).astimezone(PACIFIC_TZ)
+    end = (
+        datetime.fromisoformat(llm_ends_at).astimezone(PACIFIC_TZ)
+        if llm_ends_at
+        else None
+    )
+
+    if claimed_day is not None:
+        shift = (
+            posted_at.date()
+            + timedelta(days=1 if claimed_day == "tomorrow" else 0)
+            - start.date()
+        )
+        start += shift
+        if end is not None:
+            end += shift
+        # Midnight is the model's "time unknown"; on the posting day itself the
+        # post time is the better estimate.
+        if start.time() == time(0, 0) and start.date() == posted_at.date():
+            start = posted_at
+    elif claims_now:
+        start = posted_at
+    else:
+        return None
+
+    if end is not None and end <= start:
+        end = None
+    return start.astimezone(timezone.utc).isoformat(), (
+        end.astimezone(timezone.utc).isoformat() if end is not None else None
+    )
+
+
 def _parse_ampm_time(
     hour: str,
     minute: str | None,
@@ -794,11 +971,12 @@ def _to_event_row(
     account_meta: dict[str, Any],
     scraped_at: str,
 ) -> tuple[dict[str, Any] | None, str | None]:
-    """Return the event row plus the prior event ID it supersedes, if any.
+    """Return the event row plus a prior event ID to retire, if any.
 
     The superseded ID (derived from the LLM's pre-OCR timestamp) is surfaced
     out-of-band so the row stays a clean DB record; the caller uses it to delete
-    the stale row when OCR refines the start time into a new ID.
+    the stale row when OCR refines the start time into a new ID or source text
+    provides no date. The caller retains IDs supported by another valid story.
     """
     if cached.get("status") != "ok":
         return None, None
@@ -812,11 +990,18 @@ def _to_event_row(
     ocr_range = _ocr_local_event_range(raw, cached)
     llm_starts_at = _normalize_timestamptz(llm.get("starts_at"))
     llm_ends_at = _normalize_timestamptz(llm.get("ends_at"))
-    if ocr_range is None:
-        starts_at = llm_starts_at
-        ends_at = llm_ends_at
-    else:
+    if not _has_source_date(raw, cached):
+        log.info("extract %s: skipping event without a source date", raw.get("id"))
+        return None, (
+            _instagram_event_id(str(raw.get("handle") or ""), llm_starts_at)
+            if llm_starts_at else None
+        )
+    if ocr_range is not None:
         starts_at, ends_at = ocr_range
+    else:
+        starts_at, ends_at = _immediate_event_range(
+            raw, cached, llm_starts_at, llm_ends_at
+        ) or (llm_starts_at, llm_ends_at)
     if not title or not starts_at:
         return None, None
 
