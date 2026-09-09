@@ -854,7 +854,7 @@ class ExtractStoriesTests(unittest.TestCase):
         self.assertEqual("2026-05-31T21:00:00+00:00", row["ends_at"])
 
     def test_ocr_time_range_parses_full_and_compact_meridiem_ranges(self) -> None:
-        parse = self.extract_stories._ocr_time_range
+        parse = importlib.import_module("story_dates").time_range
 
         self.assertEqual(((11, 0), (14, 0)), parse("11:00 AM 2:00 PM"))
         self.assertEqual(((13, 0), (14, 0)), parse("1-2 pm"))
@@ -926,7 +926,7 @@ class ExtractStoriesTests(unittest.TestCase):
                 "2027-01-08T21:00:00+00:00",
                 "2027-01-08T22:00:00+00:00",
             ),
-            self.extract_stories._ocr_local_event_range(raw, cached),
+            importlib.import_module("story_dates").local_event_range(raw, cached),
         )
 
     def test_event_row_keeps_full_pm_range_after_ocr_date(self) -> None:
