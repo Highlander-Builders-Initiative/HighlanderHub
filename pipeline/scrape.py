@@ -25,11 +25,13 @@ from instaloader.exceptions import (
 from accounts import uses_followed_accounts
 from config import (
     ACCOUNT_SOURCE,
+    DUMP_STORY_STRUCT,
     FOLLOWED_ACCOUNTS_FILE,
     IG_PASSWORD,
     IG_USERNAME,
     RAW_DIR,
     SESSION_FILE,
+    STRUCT_DUMP_DIR,
     ensure_dirs,
     load_curated_accounts,
     load_followed_accounts_cache,
@@ -220,6 +222,18 @@ def _dict_entries(value: Any) -> list[dict[str, Any]]:
     return [entry for entry in value if isinstance(entry, dict)]
 
 
+def _iphone_struct(item: Any) -> dict[str, Any] | None:
+    """Return the private iPhone payload instaloader stitched onto the item.
+
+    `Story.get_items()` has already fetched it, so reading costs no request.
+    """
+    try:
+        struct = item._iphone_struct
+    except (IPhoneSupportDisabledException, KeyError):
+        return None
+    return struct if isinstance(struct, dict) else None
+
+
 def _story_cta_url(item: Any) -> str | None:
     """Return the link a club attached to a story item, or None.
 
@@ -228,11 +242,8 @@ def _story_cta_url(item: Any) -> str | None:
     reading it costs no extra request. Instagram uses two shapes: the link
     sticker that replaced swipe-up in 2021, and the legacy swipe-up payload.
     """
-    try:
-        struct = item._iphone_struct
-    except (IPhoneSupportDisabledException, KeyError):
-        return None
-    if not isinstance(struct, dict):
+    struct = _iphone_struct(item)
+    if struct is None:
         return None
 
     for sticker in _dict_entries(struct.get("story_link_stickers")):
@@ -248,6 +259,81 @@ def _story_cta_url(item: Any) -> str | None:
                 return url
 
     return None
+
+
+# Top-level struct keys Instagram has used for a feed post attached to a
+# story. The private payload is undocumented and renames without notice, so
+# probe several and fall back to the OCR byline in `reshare` when none hit.
+_RESHARED_MEDIA_KEYS = (
+    "story_feed_media",
+    "feed_media",
+    "attached_media",
+    "reshared_media",
+)
+
+
+def _first_dict(value: Any) -> dict[str, Any] | None:
+    if isinstance(value, dict):
+        return value
+    entries = _dict_entries(value)
+    return entries[0] if entries else None
+
+
+def _reshared_post(item: Any) -> dict[str, Any] | None:
+    """Return the feed post this story reshares, or None.
+
+    A reshare is how most clubs promote an event we would otherwise miss, and
+    the attached post carries what the story image cannot: the original
+    author, a stable media ID shared by everyone who reshared it, and the full
+    caption (the story only renders a truncated one). Callers key event
+    identity on the author so N reshares of one post collapse to one event.
+    """
+    struct = _iphone_struct(item)
+    if struct is None:
+        return None
+
+    for key in _RESHARED_MEDIA_KEYS:
+        media = _first_dict(struct.get(key))
+        if not media:
+            continue
+        caption = media.get("caption")
+        owner = media.get("user") if isinstance(media.get("user"), dict) else {}
+        post = {
+            "source_key": key,
+            "media_id": str(media.get("media_id") or media.get("pk") or "") or None,
+            "shortcode": media.get("code") or media.get("media_code"),
+            "owner_username": owner.get("username"),
+            "caption": (
+                caption.get("text") if isinstance(caption, dict) else caption
+            ),
+        }
+        if any(post[field] for field in ("media_id", "shortcode", "owner_username")):
+            return post
+    return None
+
+
+def _dump_story_struct(item: Any, handle: str) -> None:
+    """Archive the raw private struct so its shape can be inspected offline.
+
+    Enabled with IG_DUMP_STORY_STRUCT=1. The reshare attachment keys above are
+    a best guess against an undocumented payload; a dump taken while a known
+    reshare is live is what confirms them.
+    """
+    if not DUMP_STORY_STRUCT:
+        return
+    struct = _iphone_struct(item)
+    if struct is None:
+        return
+    out_dir = STRUCT_DUMP_DIR / handle
+    out_dir.mkdir(parents=True, exist_ok=True)
+    path = out_dir / f"{item.mediaid}.json"
+    try:
+        with path.open("w", encoding="utf-8") as f:
+            json.dump(struct, f, indent=2, sort_keys=True, default=str)
+    except OSError as exc:
+        log.warning("struct dump failed for %s/%s: %s", handle, item.mediaid, exc)
+    else:
+        log.info("struct dump %s/%s: keys=%s", handle, item.mediaid, sorted(struct))
 
 
 def _serialize_item(item: Any, handle: str) -> dict[str, Any]:
@@ -268,6 +354,7 @@ def _serialize_item(item: Any, handle: str) -> dict[str, Any]:
         "caption": item.caption,
         "caption_mentions": list(getattr(item, "caption_mentions", []) or []),
         "story_cta_url": _story_cta_url(item),
+        "reshared_post": _reshared_post(item),
         # Best-effort link to view in browser (only works while story is live).
         "permalink": f"https://www.instagram.com/stories/{handle}/{item.mediaid}/",
     }
@@ -287,7 +374,7 @@ def _write_item(item_dict: dict[str, Any], handle: str) -> bool:
         if not isinstance(saved, dict):
             saved = {}
         updated = dict(saved or item_dict)
-        for field in ("story_cta_url", "image_url", "video_url"):
+        for field in ("story_cta_url", "image_url", "video_url", "reshared_post"):
             if item_dict.get(field):
                 updated[field] = item_dict[field]
         if updated != saved:
@@ -555,6 +642,7 @@ def scrape_chunk(
         story_seen = story_new = 0
         for item in items:
             story_seen += 1
+            _dump_story_struct(item, handle)
             if _write_item(_serialize_item(item, handle), handle):
                 story_new += 1
 

@@ -2,6 +2,7 @@
 
 Only title/description text establishes fundraising or student eligibility.
 Audience cohorts are evaluated separately; deadlines match the title only.
+Program applications are recognized last, so a dated cutoff still wins.
 """
 from __future__ import annotations
 
@@ -10,7 +11,13 @@ from typing import Iterable, Literal
 
 
 # Shared database/app contract.
-CONTENT_KINDS = ("student_event", "student_deadline", "fundraiser", "other")
+CONTENT_KINDS = (
+    "student_event",
+    "student_deadline",
+    "student_application",
+    "fundraiser",
+    "other",
+)
 AudienceStance = Literal["student", "restricted", "unspecified"]
 
 _STUDENT_ORIGINS = frozenset({"instagram", "highlander_link", "manual", "submission"})
@@ -23,6 +30,75 @@ _FUNDRAISER_TERMS = (
 _DEADLINE_TITLE_TERMS = (
     "deadline", "apply by", "register by", "closing date", "last day to",
     "applications due", "application due", "registration closes",
+)
+
+# A program you join, not an occasion you attend: multi-week academies,
+# fellowships, and cohorts recruit over a long window and have no single start
+# time, so they age badly in a chronological feed. Recognized two ways — the
+# post says how to apply, or it advertises a program-length commitment — and
+# vetoed by an occasion noun in the title, because a Lunch & Learn *about* a
+# program is still an event.
+_OCCASION_TITLE_PATTERN = re.compile(
+    r"""
+    \b(?:
+        workshop | seminar | webinar | session | sessions
+      | office\ hours | drop-?in | hours
+      | meeting | fair | expo | panel | mixer | social | reception
+      | lunch | luncheon | dinner | breakfast | brunch | bbq | barbecue
+      | party | anniversary | celebration | gala | festival | showcase
+      | orientation | open\ house | conference | summit | symposium
+      | talk | lecture | colloquium | tour | retreat | tabling
+      | game | match | concert | screening | performance | watch\ party
+    )\b
+    """,
+    re.IGNORECASE | re.VERBOSE,
+)
+
+# Unambiguous "you apply to join this" language. Bare "application" is
+# deliberately absent: "Preparing for Internship Application Season" is a tips
+# talk, not an application.
+_APPLICATION_CALL_PATTERN = re.compile(
+    r"""
+    (?:
+        applications?\ (?:are\ )?(?:now\ )?open
+      | (?:now\ )?accepting\ applications
+      | apply\ (?:now|today|here|online|early|by)
+      | how\ to\ apply
+      | application\ (?:deadline|window|period|portal|form)
+      | priority\ deadline
+      | enrollment\ is\ limited
+      | enroll\ (?:now|today)
+      | eligibility\ requirements
+      | admission\ requirements
+    )
+    """,
+    re.IGNORECASE | re.VERBOSE,
+)
+
+# The named thing you enroll in.
+_PROGRAM_NOUN_PATTERN = re.compile(
+    r"""
+    \b(?:
+        academy|academies
+      | fellowship | internship | apprenticeship | residency | practicum
+      | bootcamp | boot\ camp | cohort | immersion | intensive | program
+    )s?\b
+    """,
+    re.IGNORECASE | re.VERBOSE,
+)
+
+# "7-week in-person summer program", "10 month fellowship" — a printed span
+# next to the program noun. Years are excluded on purpose ("10 Year
+# Anniversary" is an event); the span must sit close to the noun so an
+# unrelated "6 weeks away" elsewhere in the blurb cannot pair with it.
+_PROGRAM_COMMITMENT_PATTERN = re.compile(
+    r"""
+    \b\d+\s*-?\s*(?:week|month)s?\b
+    [\w\s,&'\-]{0,40}?
+    \b(?:academy|fellowship|internship|apprenticeship|residency|bootcamp
+        |cohort|immersion|intensive|program)s?\b
+    """,
+    re.IGNORECASE | re.VERBOSE,
 )
 
 # Eligibility grammar is separate from the student-organization vocabulary.
@@ -100,6 +176,16 @@ def _audience_stance(audiences: Iterable) -> AudienceStance:
     return "restricted" if restricted and not open_to_all else "unspecified"
 
 
+def _is_program_application(title: str, text: str) -> bool:
+    """True when the text recruits for a program rather than announcing an event."""
+    # An occasion noun in the title settles it: this is something you attend.
+    if _OCCASION_TITLE_PATTERN.search(title):
+        return False
+    if _APPLICATION_CALL_PATTERN.search(text):
+        return bool(_PROGRAM_NOUN_PATTERN.search(text))
+    return bool(_PROGRAM_COMMITMENT_PATTERN.search(text))
+
+
 def classify_content_kind(
     origin: str,
     *,
@@ -130,4 +216,9 @@ def classify_content_kind(
     # Body text may mention a related cutoff without making this a deadline.
     if any(term in title for term in _DEADLINE_TITLE_TERMS):
         return "student_deadline"
+
+    # Checked after the cutoff so a dated "Applications Due Friday" stays a
+    # deadline; this catches the open-ended program pitch behind it.
+    if _is_program_application(title, text):
+        return "student_application"
     return "student_event"
