@@ -466,11 +466,11 @@ class ExtractStoriesTests(unittest.TestCase):
         assert row is not None
         self.assertEqual("https://lu.ma/hack-night-2026", row["rsvp_url"])
 
-    def test_event_row_keeps_story_cta_when_gemini_rsvp_is_invalid(self) -> None:
+    def test_event_row_uses_gemini_rsvp_when_story_cta_is_invalid(self) -> None:
         raw = {
             "id": "3894795737410658769",
             "handle": "cyber_ucr",
-            "story_cta_url": "https://lu.ma/hack-night-2026",
+            "story_cta_url": "mailto:club@example.com",
         }
         cached = {
             "status": "ok",
@@ -478,7 +478,7 @@ class ExtractStoriesTests(unittest.TestCase):
                 "is_event": True,
                 "title": "Security Night Workshop",
                 "starts_at": "2026-05-15T19:00:00-07:00",
-                "rsvp_url": "link in bio",
+                "rsvp_url": "https://forms.gle/securityNight",
             },
         }
 
@@ -491,7 +491,7 @@ class ExtractStoriesTests(unittest.TestCase):
 
         self.assertIsNotNone(row)
         assert row is not None
-        self.assertEqual("https://lu.ma/hack-night-2026", row["rsvp_url"])
+        self.assertEqual("https://forms.gle/securityNight", row["rsvp_url"])
 
     def test_event_row_uses_gemini_rsvp_when_story_has_no_cta(self) -> None:
         raw = {

@@ -148,12 +148,12 @@ no such property, and instaloader contains no `story_cta`,
 `story_link_stickers`, `webUri`, or `link_sticker` references anywhere, so the
 field has been `None` for all 690 archived stories.
 
-This is not a cosmetic gap. `extract_stories.py` resolves
-`rsvp_url = _normalize_url(llm.get("rsvp_url") or raw.get("story_cta_url"))`,
-so every published RSVP link has come from Gemini reading a URL out of OCR'd
+This was not a cosmetic gap. With link stickers missing and Gemini preferred
+by the mapper, every published RSVP link came from Gemini reading a URL out of OCR'd
 flyer pixels rather than from the link the club actually attached. Link
 stickers are ground truth; OCR'd URLs are the most error-prone field to
-recover from an image.
+recover from an image. The mapper now normalizes the CTA first, falling back
+to independently normalized Gemini output if the CTA is absent or invalid.
 
 The link is available at no extra request cost. `Story.get_items()` already
 fetches the iphone struct once per account and stitches each item's struct into
