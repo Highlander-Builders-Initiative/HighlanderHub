@@ -989,7 +989,7 @@ class ExtractStoriesTests(unittest.TestCase):
             },
         }
 
-        rows, superseded_ids = self.extract_stories._collect_event_rows(
+        rows, superseded_ids, _ = self.extract_stories._collect_event_rows(
             [(raw, cached)],
             {"wincucr": {"label": "Women in Computing at UCR"}},
             "2026-06-02T16:05:42+00:00",
