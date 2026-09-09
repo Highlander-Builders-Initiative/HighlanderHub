@@ -6,6 +6,11 @@ Unlike Instagram stories (which are immutable), Localist events are mutable —
 descriptions get edited, locations change, etc. We always overwrite the raw
 file so the on-disk copy reflects Localist's current state.
 
+The whole snapshot is buffered in memory and only flushed to disk once every
+page has been fetched and validated. A mid-walk failure must leave the previous
+snapshot untouched — `run.py` falls back to it, so a half-rewritten directory
+would silently mix months of partial scrapes together.
+
 Localist API reference: https://developer.localist.com/doc/api
 """
 from __future__ import annotations
@@ -57,14 +62,11 @@ def _fetch_page(s: requests.Session, page: int) -> dict[str, Any]:
     return r.json()
 
 
-def _write_event(event: dict[str, Any]) -> bool:
-    """Write event to raw/. Returns True if file is new, False if updated/unchanged."""
+def _write_event(event: dict[str, Any]) -> None:
     SOURCE_DIR.mkdir(parents=True, exist_ok=True)
     path = SOURCE_DIR / f"{event['id']}.json"
-    is_new = not path.exists()
     with path.open("w", encoding="utf-8") as f:
         json.dump(event, f, indent=2, sort_keys=True, ensure_ascii=False)
-    return is_new
 
 
 def _prune_missing_events(seen_ids: set[str]) -> int:
@@ -114,54 +116,104 @@ def _events_from_payload(payload: dict[str, Any]) -> list[dict[str, Any]]:
     return events
 
 
-def fetch_all() -> tuple[int, int]:
-    """Walk the paginated API. Returns (total_events, new_events)."""
-    s = _session()
-    first = _fetch_page(s, 1)
-    page_info = first.get("page")
+def _page_count(payload: dict[str, Any]) -> int:
+    """Number of pages in the result set.
+
+    Localist's `page.total` is the PAGE count, not the event count — page 9 of
+    9 comes back full and page 10 comes back empty. Dividing it by `page.size`
+    (as if it were an event count) floors to 1 and silently truncates the scrape
+    after a single page.
+    """
+    page_info = payload.get("page")
     if not isinstance(page_info, dict):
         raise ValueError("Localist response is missing page metadata")
     total = page_info.get("total")
-    size = page_info.get("size")
-    if (
-        not isinstance(total, int)
-        or isinstance(total, bool)
-        or total <= 0
-        or not isinstance(size, int)
-        or isinstance(size, bool)
-        or size <= 0
-    ):
+    if not isinstance(total, int) or isinstance(total, bool) or total <= 0:
         raise ValueError("Localist response has invalid or empty page metadata")
-    pages = max(1, -(-total // size))  # ceil
-    log.info("Localist reports %d events across %d page(s)", total, pages)
+    return total
 
-    seen = new = 0
-    seen_ids: set[str] = set()
 
-    def handle_payload(payload: dict[str, Any]) -> None:
-        nonlocal seen, new
-        for ev in _events_from_payload(payload):
-            seen += 1
-            seen_ids.add(str(ev["id"]))
-            if _write_event(ev):
-                new += 1
+def _instance_entries(event: dict[str, Any]) -> list[dict[str, Any]]:
+    entries = event.get("event_instances")
+    if not isinstance(entries, list):
+        return []
+    return [
+        entry
+        for entry in entries
+        if isinstance(entry, dict) and isinstance(entry.get("event_instance"), dict)
+    ]
 
-    handle_payload(first)
+
+def _merge_occurrence(prior: dict[str, Any], latest: dict[str, Any]) -> dict[str, Any]:
+    """Union two entries for the same event id.
+
+    Localist paginates by OCCURRENCE: a weekly event returns one entry per
+    session, and each entry carries only its own session in `event_instances`.
+    Last-write-wins would leave the raw file holding one arbitrary occurrence,
+    which is what `normalize_events` then turns into a single row for a series
+    that actually runs a dozen times. Every field but `event_instances` is
+    identical across the copies, so keep the newest copy and union the instances.
+    """
+    merged = dict(latest)
+    by_key: dict[str, dict[str, Any]] = {}
+    for source in (prior, latest):
+        for entry in _instance_entries(source):
+            inner = entry["event_instance"]
+            key = str(inner.get("id") or inner.get("start") or "")
+            if key:
+                by_key.setdefault(key, entry)
+    merged["event_instances"] = sorted(
+        by_key.values(),
+        key=lambda entry: str(entry["event_instance"].get("start") or ""),
+    )
+    return merged
+
+
+def _collect_snapshot() -> dict[str, dict[str, Any]]:
+    """Walk every page into memory. Raises unless the full snapshot arrives."""
+    s = _session()
+    first = _fetch_page(s, 1)
+    pages = _page_count(first)
+    log.info("Localist reports %d page(s) of events", pages)
+
+    events: dict[str, dict[str, Any]] = {}
+
+    def absorb(payload: dict[str, Any], page: int) -> None:
+        entries = _events_from_payload(payload)
+        if not entries:
+            raise ValueError(f"Localist page {page} of {pages} came back empty")
+        for ev in entries:
+            eid = str(ev["id"])
+            prior = events.get(eid)
+            events[eid] = ev if prior is None else _merge_occurrence(prior, ev)
+
+    absorb(first, 1)
     for page in range(2, pages + 1):
         # Polite jitter — Localist isn't IG, but no reason to hammer it.
         time.sleep(random.uniform(1.0, 2.0))
-        handle_payload(_fetch_page(s, page))
+        absorb(_fetch_page(s, page), page)
 
-    if len(seen_ids) != total:
-        raise ValueError(
-            f"Localist snapshot incomplete: expected {total} unique events, got {len(seen_ids)}"
-        )
+    if not events:
+        raise ValueError("Localist snapshot is empty")
+    return events
 
-    pruned = _prune_missing_events(seen_ids)
+
+def fetch_all() -> tuple[int, int]:
+    """Fetch a complete snapshot, then swap it in. Returns (total, new)."""
+    events = _collect_snapshot()
+
+    existing = (
+        {path.stem for path in SOURCE_DIR.glob("*.json")} if SOURCE_DIR.exists() else set()
+    )
+    for ev in events.values():
+        _write_event(ev)
+    new = len(set(events) - existing)
+
+    pruned = _prune_missing_events(set(events))
     if pruned:
         log.info("UCR events: pruned %d stale raw file(s)", pruned)
 
-    return seen, new
+    return len(events), new
 
 
 def main() -> None:
