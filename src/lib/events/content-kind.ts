@@ -11,6 +11,11 @@ export type { EventContentKind };
  * applied in `src/lib/events/index.ts`; `fundraiser` and `other` are never
  * public. This is the visibility predicate the plan asks app helpers to
  * mirror — classification itself lives in the pipeline.
+ *
+ * `student_application` is excluded on purpose: an open-ended program intake
+ * has no start time to sort by, so it reads as a stale event in a
+ * chronological feed. Adding it here is what would light up an Applications
+ * surface (grouped with `student_deadline`, which is the same errand).
  */
 export const PUBLIC_CONTENT_KINDS: EventContentKind[] = [
   "student_event",
@@ -26,6 +31,7 @@ export const SUBMITTABLE_CONTENT_KINDS: EventContentKind[] = [
 export const EVENT_CONTENT_KIND_LABELS: Record<EventContentKind, string> = {
   student_event: "Event",
   student_deadline: "Deadline",
+  student_application: "Application",
   fundraiser: "Fundraiser",
   other: "Other",
 };
@@ -68,4 +74,9 @@ export function coerceSubmittableContentKind(
 
 export function isDeadlineKind(value: unknown): boolean {
   return value === "student_deadline";
+}
+
+/** Kinds that represent an intake you apply to rather than a date you attend. */
+export function isApplicationKind(value: unknown): boolean {
+  return value === "student_application";
 }

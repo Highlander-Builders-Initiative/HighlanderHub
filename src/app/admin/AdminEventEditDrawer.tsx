@@ -122,12 +122,16 @@ export function AdminEventEditDrawer({
                 >
                   <option value="student_event">Event</option>
                   <option value="student_deadline">Deadline</option>
+                  <option value="student_application">
+                    Application (hidden from public)
+                  </option>
                   <option value="fundraiser">Fundraiser (hidden from public)</option>
                   <option value="other">Other (hidden from public)</option>
                 </select>
                 <p className="text-[11px] font-sans text-muted leading-normal">
                   Only Event and Deadline appear on the public feed. Use
-                  Fundraiser / Other to correct a misclassified import.
+                  Application / Fundraiser / Other to correct a misclassified
+                  import.
                 </p>
               </div>
 
