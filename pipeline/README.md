@@ -26,6 +26,7 @@ pipeline/
 ├── config.py              # paths + env-driven auth config
 ├── scrape.py              # IG ingest:        data/raw/<handle>/<story_id>.json
 ├── extract_stories.py     # IG OCR + LLM:     data/extracted/<story_id>.json
+├── story_dates.py         # what the flyer text says about day and time
 ├── ucr_events.py          # Localist ingest:  data/raw/ucr_events/<event_id>.json
 ├── highlander_link.py     # Engage ingest:    data/raw/highlander_link/<event_id>.json
 ├── normalize.py           # IG raw stories -> Supabase stories
@@ -142,6 +143,10 @@ results are cached first in `data/extracted/` and then in Supabase
 are overwritten/pruned because they are mutable.
 
 A cached `ok` extraction records Gemini's response, not verified event quality.
+`story_dates.py` owns every question of the form "what day and time does the
+source text support?", with one date vocabulary and two policies over it: the
+narrow `override_dates` the wall-time override can rebuild a timestamp from,
+and the broad `evidence_dates` that only has to prove a day was printed.
 Instagram event mapping requires date evidence in OCR or the story caption;
 posting timestamps, model descriptions, tags, and confidence cannot supply it.
 A printed calendar date stands on its own. Immediacy words bind the event to

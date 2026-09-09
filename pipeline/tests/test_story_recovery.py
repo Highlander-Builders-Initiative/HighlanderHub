@@ -14,6 +14,7 @@ import requests
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import extract_stories as extract
 import scrape
+import story_dates
 from event_identity import dedupe_event_rows, suppress_tombstoned_event_groups
 
 
@@ -197,7 +198,7 @@ class OcrBoundaryTests(unittest.TestCase):
             with self.subTest(text=text):
                 self.assertEqual(
                     ("2026-06-04T01:00:00+00:00", "2026-06-04T04:00:00+00:00"),
-                    extract._ocr_local_event_range(raw, {"ocr_text": text}),
+                    story_dates.local_event_range(raw, {"ocr_text": text}),
                 )
 
     def test_explicit_year_or_timezone_does_not_get_overridden(self) -> None:
@@ -210,7 +211,7 @@ class OcrBoundaryTests(unittest.TestCase):
         ):
             with self.subTest(text=text):
                 cached = {"status": "ok", "ocr_text": text, "result": {"is_event": True, "title": "GBM", "starts_at": start, "ends_at": end}}
-                self.assertIsNone(extract._ocr_local_event_range(raw, cached))
+                self.assertIsNone(story_dates.local_event_range(raw, cached))
                 row, prior_id = extract._to_event_row(raw, cached, {}, "2026-06-01T12:00:00Z")
                 self.assertEqual(start, row["starts_at"])
                 self.assertEqual(end, row["ends_at"])

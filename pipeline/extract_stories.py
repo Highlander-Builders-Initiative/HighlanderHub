@@ -3,6 +3,9 @@
 Reads raw story JSON from data/raw/<handle>/, runs OCR + Gemini extraction for
 uncached image stories, caches terminal results in data/extracted/, then writes
 event-shaped rows to Supabase.
+
+Date and time reasoning over flyer text lives in `story_dates`; this module
+assembles rows and owns caching, extraction and publishing.
 """
 from __future__ import annotations
 
@@ -10,10 +13,9 @@ import base64
 import json
 import logging
 import re
-from datetime import datetime, time, timedelta, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
-from zoneinfo import ZoneInfo
 
 from config import (
     EXTRACTED_DIR,
@@ -27,6 +29,14 @@ from config import (
 from classify import classify_content_kind, detect_free_food
 from discord_notify import notify_free_food_events
 from event_identity import dedupe_event_rows, suppress_tombstoned_event_groups
+from story_dates import (
+    has_source_date,
+    immediate_event_range,
+    local_event_range,
+    looks_like_schedule_grid,
+    normalize_timestamptz,
+    was_stale_when_posted,
+)
 from url_utils import normalize_http_url as _normalize_url
 
 log = logging.getLogger("pipeline.extract_stories")
@@ -52,101 +62,6 @@ REMOTE_CACHE_TERMINAL_STATUSES = {"ok", "not_event", "no_text", "image_expired"}
 DURABLE_FLYER_BUCKET = "event-flyers"
 # Instagram handles that must not appear as the public "hosted by" name on listings.
 _ANONYMIZED_HOST_HANDLES = frozenset({"highlander_opps"})
-PACIFIC_TZ = ZoneInfo("America/Los_Angeles")
-_MONTHS = {
-    "jan": 1,
-    "january": 1,
-    "feb": 2,
-    "february": 2,
-    "mar": 3,
-    "march": 3,
-    "apr": 4,
-    "april": 4,
-    "may": 5,
-    "jun": 6,
-    "june": 6,
-    "jul": 7,
-    "july": 7,
-    "aug": 8,
-    "august": 8,
-    "sep": 9,
-    "sept": 9,
-    "september": 9,
-    "oct": 10,
-    "october": 10,
-    "nov": 11,
-    "november": 11,
-    "dec": 12,
-    "december": 12,
-}
-_OCR_DATE_RE = re.compile(
-    r"\b("
-    r"jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|"
-    r"jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?|tember)?|oct(?:ober)?|"
-    r"nov(?:ember)?|dec(?:ember)?"
-    r")\.?\s+(\d{1,2})(?:st|nd|rd|th)?\b",
-    re.IGNORECASE,
-)
-# Date evidence is broader than the deliberately narrow wall-time override.
-_OCR_DAY_MONTH_RE = re.compile(
-    r"\b(\d{1,2})(?:st|nd|rd|th)?\s+(" + "|".join(_MONTHS) + r")\b",
-    re.IGNORECASE,
-)
-_OCR_NUMERIC_DATE_RE = re.compile(
-    r"(?<![\w/.$])(?:\d{4}-)?(\d{1,2})([/.-])(\d{1,2})"
-    r"(?:\2(\d{4}|\d{2}))?(?![\w/])"
-)
-# Immediacy words bind the event to posted_at rather than unlocking a model
-# timestamp, so they need no corroborating time. "now"/"rn" claim the posting
-# instant; the rest claim a calendar day and leave the time to extraction.
-_OCR_NOW_RE = re.compile(r"\b(?:now|rn)\b", re.IGNORECASE)
-# "apply now" and "applications are now open" are calls to action, not claims
-# that an event is under way, and on club flyers they outnumber the real ones.
-_CTA_BEFORE_NOW_RE = re.compile(
-    r"\b(?:appl(?:y|ies|ication)s?|register|registration|sign\s*ups?|signup|"
-    r"donate|enroll|rsvp|order|shop|buy|vote|submit|nominate|follow|dm|"
-    r"available|are|open)\b(?:\s+\w+){0,2}\s*$",
-    re.IGNORECASE,
-)
-_CTA_AFTER_NOW_RE = re.compile(
-    r"\s*(?:accepting|available|open|hiring|recruiting)\b",
-    re.IGNORECASE,
-)
-_OCR_IMMEDIATE_DAY_RE = re.compile(
-    r"\b(?:today|tonight|tomorrow)\b", re.IGNORECASE
-)
-# A bare weekday is prose ("happy Friday", "Monday motivation") as often as it
-# is a date, so it only counts as evidence next to a clock time.
-_OCR_WEEKDAY_RE = re.compile(
-    r"\b(?:mon(?:day)?|tue(?:s(?:day)?)?|wed(?:nesday)?|thu(?:rs(?:day)?)?|"
-    r"fri(?:day)?|sat(?:urday)?|sun(?:day)?)\b",
-    re.IGNORECASE,
-)
-_OCR_CLOCK_TIME_RE = re.compile(
-    r"\b\d{1,2}(?::\d{2})?\s*[ap]\.?m\.?|\b\d{1,2}:\d{2}\b|\bnoon\b|\bmidnight\b",
-    re.IGNORECASE,
-)
-# The override only understands dates without a printed year and Pacific wall
-# time without an explicit timezone. Leave richer expressions to extraction.
-_OCR_EXPLICIT_YEAR_RE = re.compile(r"\s*,?\s*(?:19|20)\d{2}\b")
-_OCR_TIMEZONE_RE = re.compile(
-    r"\b\d{1,2}(?::\d{2})?\s*[ap]\.?m\.?\s*[\[(]?\s*"
-    r"(?:[PECM][SD]?T|UTC|GMT|Pacific|Eastern|Central|Mountain)\b",
-    re.IGNORECASE,
-)
-_OCR_TIME_RANGE_RE = re.compile(
-    r"\b(\d{1,2})(?::(\d{2}))?\s*([ap]\.?m\.?)"
-    r"(?:\s*(?:-|to)\s*|\s+)"
-    r"(\d{1,2})(?::(\d{2}))?\s*([ap]\.?m\.?)\b",
-    re.IGNORECASE,
-)
-# Compact ranges like "1-2 pm" apply the trailing meridiem to both endpoints.
-_OCR_COMPACT_TIME_RANGE_RE = re.compile(
-    r"\b(\d{1,2})(?::(\d{2}))?\s*(?:-|to)\s*"
-    r"(\d{1,2})(?::(\d{2}))?\s*([ap]\.?m\.?)\b",
-    re.IGNORECASE,
-)
-
 GEMINI_RESPONSE_SCHEMA: dict[str, Any] = {
     "type": "object",
     "properties": {
@@ -482,9 +397,9 @@ def _repair_cached_flyer(
         return cached
     result = cached.get("result")
     if isinstance(result, dict):
-        starts_at, ends_at = _ocr_local_event_range(raw, cached) or (
-            _normalize_timestamptz(result.get("starts_at")),
-            _normalize_timestamptz(result.get("ends_at")),
+        starts_at, ends_at = local_event_range(raw, cached) or (
+            normalize_timestamptz(result.get("starts_at")),
+            normalize_timestamptz(result.get("ends_at")),
         )
         # Match event-row handling of invalid ends and OCR-corrected dates.
         if starts_at and ends_at and datetime.fromisoformat(ends_at) <= datetime.fromisoformat(starts_at):
@@ -630,331 +545,6 @@ def _bool_or_default(value: Any, default: bool) -> bool:
     return default
 
 
-def _normalize_timestamptz(value: Any) -> str | None:
-    if not isinstance(value, str):
-        return None
-
-    text = value.strip()
-    if not text:
-        return None
-    if text.endswith("Z"):
-        text = f"{text[:-1]}+00:00"
-
-    try:
-        parsed = datetime.fromisoformat(text)
-    except ValueError:
-        return None
-
-    if parsed.tzinfo is None or parsed.utcoffset() is None:
-        return None
-    return parsed.astimezone(timezone.utc).isoformat()
-
-
-def _posted_at(raw: dict[str, Any]) -> datetime | None:
-    posted_at = raw.get("posted_at")
-    if not isinstance(posted_at, str):
-        return None
-    text = posted_at.strip()
-    if text.endswith("Z"):
-        text = f"{text[:-1]}+00:00"
-    try:
-        parsed = datetime.fromisoformat(text)
-    except ValueError:
-        return None
-    if parsed.tzinfo is None or parsed.utcoffset() is None:
-        return None
-    return parsed.astimezone(PACIFIC_TZ)
-
-
-def _distinct_ocr_dates(ocr_text: str) -> set[tuple[int, int]]:
-    return {
-        (_MONTHS[match.group(1).lower().rstrip(".")], int(match.group(2)))
-        for match in _OCR_DATE_RE.finditer(ocr_text)
-    }
-
-
-def _ocr_date(ocr_text: str) -> tuple[int, int] | None:
-    dates = _distinct_ocr_dates(ocr_text)
-    if len(dates) != 1:
-        return None
-    return next(iter(dates))
-
-
-def _source_date_texts(
-    raw: dict[str, Any],
-    cached: dict[str, Any],
-) -> Iterable[str]:
-    """OCR and caption text with handles and links stripped.
-
-    Model output and posting metadata are deliberately excluded: they are what
-    the date evidence is meant to check, not a source of it.
-    """
-    for value in (cached.get("ocr_text"), raw.get("caption")):
-        if isinstance(value, str):
-            yield re.sub(r"https?://\S+|www\.\S+|@[\w.]+", "", value)
-
-
-def _named_source_dates(text: str) -> set[tuple[int, int]]:
-    """Calendar days printed in the text, in any recognized order or notation."""
-    dates = _distinct_ocr_dates(text)
-    dates.update(
-        (_MONTHS[m.group(2).lower()], int(m.group(1)))
-        for m in _OCR_DAY_MONTH_RE.finditer(text)
-    )
-    for match in _OCR_NUMERIC_DATE_RE.finditer(text):
-        if not (match.group(4) or re.match(r"\d{4}-", match.group())):
-            # Without a year "1-2" is a time range and "5.62" a decimal, never
-            # a date. A bare "5/28" is a date only next to a clock time, so
-            # that "1/2 price" and room numbers stay out of the evidence.
-            if match.group(2) != "/" or not _OCR_CLOCK_TIME_RE.search(text):
-                continue
-        dates.add((int(match.group(1)), int(match.group(3))))
-    return {(month, day) for month, day in dates if _is_calendar_day(month, day)}
-
-
-def _is_calendar_day(month: int, day: int) -> bool:
-    try:
-        # A leap year keeps February 29 valid; the year itself is irrelevant.
-        datetime(2000, month, day)
-    except ValueError:
-        return False
-    return True
-
-
-def _claims_happening_now(text: str) -> bool:
-    """True when "now"/"rn" says an event is under way, not "apply now"."""
-    for match in _OCR_NOW_RE.finditer(text):
-        before = text[max(0, match.start() - 40) : match.start()]
-        after = text[match.end() : match.end() + 20]
-        if _CTA_BEFORE_NOW_RE.search(before) or _CTA_AFTER_NOW_RE.match(after):
-            continue
-        return True
-    return False
-
-
-def _has_source_date(raw: dict[str, Any], cached: dict[str, Any]) -> bool:
-    """Minimum date-evidence gate, independent of model confidence or API status.
-
-    Source text must print a calendar day, claim immediacy that binds to
-    posted_at, or corroborate a bare weekday with a clock time. This establishes
-    that source text supplies a date, not that every extracted detail is
-    correct. Keep model text and posting/extraction metadata out.
-    """
-    has_posting_context = _posted_at(raw) is not None
-    for text in _source_date_texts(raw, cached):
-        if _named_source_dates(text):
-            return True
-        if not has_posting_context:
-            continue
-        if _claims_happening_now(text) or _OCR_IMMEDIATE_DAY_RE.search(text):
-            return True
-        if _OCR_WEEKDAY_RE.search(text) and _OCR_CLOCK_TIME_RE.search(text):
-            return True
-    return False
-
-
-def _immediate_event_range(
-    raw: dict[str, Any],
-    cached: dict[str, Any],
-    llm_starts_at: str | None,
-    llm_ends_at: str | None,
-) -> tuple[str, str | None] | None:
-    """Bind an immediacy story to the day its source text actually claims.
-
-    "now"/"rn" mean the posting instant, so they replace the model's clock,
-    which commonly reports posted_at's UTC value as local time. "today",
-    "tonight" and "tomorrow" fix only the calendar day and leave the time to
-    extraction. Returning None means source text made no immediacy claim and
-    the model's timestamp stands.
-    """
-    posted_at = _posted_at(raw)
-    if posted_at is None or not llm_starts_at:
-        return None
-
-    claims_now = False
-    claimed_day: str | None = None
-    for text in _source_date_texts(raw, cached):
-        # A printed date outranks a passing "apply now" or "open today".
-        if _named_source_dates(text):
-            return None
-        claims_now = claims_now or _claims_happening_now(text)
-        match = _OCR_IMMEDIATE_DAY_RE.search(text)
-        if match is not None and claimed_day is None:
-            claimed_day = match.group(0).lower()
-
-    start = datetime.fromisoformat(llm_starts_at).astimezone(PACIFIC_TZ)
-    end = (
-        datetime.fromisoformat(llm_ends_at).astimezone(PACIFIC_TZ)
-        if llm_ends_at
-        else None
-    )
-
-    if claimed_day is not None:
-        shift = (
-            posted_at.date()
-            + timedelta(days=1 if claimed_day == "tomorrow" else 0)
-            - start.date()
-        )
-        start += shift
-        if end is not None:
-            end += shift
-        # Midnight is the model's "time unknown"; on the posting day itself the
-        # post time is the better estimate.
-        if start.time() == time(0, 0) and start.date() == posted_at.date():
-            start = posted_at
-    elif claims_now:
-        start = posted_at
-    else:
-        return None
-
-    if end is not None and end <= start:
-        end = None
-    return start.astimezone(timezone.utc).isoformat(), (
-        end.astimezone(timezone.utc).isoformat() if end is not None else None
-    )
-
-
-def _parse_ampm_time(
-    hour: str,
-    minute: str | None,
-    meridiem: str,
-) -> tuple[int, int] | None:
-    hour_value = int(hour)
-    minute_value = int(minute or "0")
-    if not 1 <= hour_value <= 12 or not 0 <= minute_value <= 59:
-        return None
-
-    normalized = meridiem.lower().replace(".", "")
-    if normalized == "am":
-        hour_value = 0 if hour_value == 12 else hour_value
-    elif normalized == "pm":
-        hour_value = hour_value if hour_value == 12 else hour_value + 12
-    else:
-        return None
-    return hour_value, minute_value
-
-
-def _ocr_time_range(ocr_text: str) -> tuple[tuple[int, int], tuple[int, int]] | None:
-    full_matches = list(_OCR_TIME_RANGE_RE.finditer(ocr_text))
-    compact_matches = list(_OCR_COMPACT_TIME_RANGE_RE.finditer(ocr_text))
-    if len(full_matches) + len(compact_matches) != 1:
-        return None
-
-    if full_matches:
-        match = full_matches[0]
-        start = _parse_ampm_time(match.group(1), match.group(2), match.group(3))
-        end = _parse_ampm_time(match.group(4), match.group(5), match.group(6))
-    else:
-        match = compact_matches[0]
-        start = _parse_ampm_time(match.group(1), match.group(2), match.group(5))
-        end = _parse_ampm_time(match.group(3), match.group(4), match.group(5))
-    if start is None or end is None:
-        return None
-    return start, end
-
-
-def _ocr_local_event_range(
-    raw: dict[str, Any],
-    cached: dict[str, Any],
-) -> tuple[str, str] | None:
-    ocr_text = cached.get("ocr_text")
-    if not isinstance(ocr_text, str):
-        return None
-
-    if any(
-        _OCR_EXPLICIT_YEAR_RE.match(ocr_text, date.end())
-        for date in _OCR_DATE_RE.finditer(ocr_text)
-    ) or _OCR_TIMEZONE_RE.search(ocr_text):
-        return None
-
-    posted_at = _posted_at(raw)
-    date_parts = _ocr_date(ocr_text)
-    time_range = _ocr_time_range(ocr_text)
-    if posted_at is None or date_parts is None or time_range is None:
-        return None
-
-    month, day = date_parts
-    (start_hour, start_minute), (end_hour, end_minute) = time_range
-    try:
-        start = datetime(
-            posted_at.year,
-            month,
-            day,
-            start_hour,
-            start_minute,
-            tzinfo=PACIFIC_TZ,
-        )
-        end = datetime(
-            posted_at.year,
-            month,
-            day,
-            end_hour,
-            end_minute,
-            tzinfo=PACIFIC_TZ,
-        )
-    except ValueError:
-        return None
-
-    # A December story advertising January omits the year but means next year.
-    if start < posted_at - timedelta(days=180):
-        try:
-            start = start.replace(year=start.year + 1)
-            end = end.replace(year=end.year + 1)
-        except ValueError:
-            return None
-
-    if end <= start:
-        return None
-    return start.astimezone(timezone.utc).isoformat(), end.astimezone(
-        timezone.utc
-    ).isoformat()
-
-
-# Schedule flyers lay out multiple dates or time slots, while this extractor can
-# emit only one event row. Skip clear multi-event schedules instead of publishing
-# a made-up range that collapses every slot together.
-_GRID_MIN_DISTINCT_DATES = 3
-_GRID_MIN_TIME_RANGES = 3
-_SCHEDULE_HINT_RE = re.compile(r"\b(?:schedule|hours)\b", re.IGNORECASE)
-_STALE_EVENT_GRACE = timedelta(days=1)
-
-
-def _ocr_time_range_count(ocr_text: str) -> int:
-    return len(list(_OCR_TIME_RANGE_RE.finditer(ocr_text))) + len(
-        list(_OCR_COMPACT_TIME_RANGE_RE.finditer(ocr_text))
-    )
-
-
-def _looks_like_schedule_grid(
-    ocr_text: Any,
-    starts_at: str,
-    ends_at: str | None,
-) -> bool:
-    if not isinstance(ocr_text, str):
-        return False
-    if (
-        _SCHEDULE_HINT_RE.search(ocr_text)
-        and _ocr_time_range_count(ocr_text) >= _GRID_MIN_TIME_RANGES
-    ):
-        return True
-    if not ends_at or len(_distinct_ocr_dates(ocr_text)) < _GRID_MIN_DISTINCT_DATES:
-        return False
-    span = datetime.fromisoformat(ends_at) - datetime.fromisoformat(starts_at)
-    return span > timedelta(days=1)
-
-
-def _event_was_stale_when_posted(
-    raw: dict[str, Any],
-    starts_at: str,
-    ends_at: str | None,
-) -> bool:
-    posted_at = _posted_at(raw)
-    if posted_at is None:
-        return False
-    latest_event_time = datetime.fromisoformat(ends_at or starts_at)
-    return latest_event_time < posted_at - _STALE_EVENT_GRACE
-
-
 def _instagram_event_id(handle: str, starts_at: str) -> str | None:
     if not handle:
         return None
@@ -987,10 +577,10 @@ def _to_event_row(
     title = str(llm.get("title") or "").strip()
     description = str(llm.get("description") or "")
     tags = _clean_tags(llm.get("tags"))
-    ocr_range = _ocr_local_event_range(raw, cached)
-    llm_starts_at = _normalize_timestamptz(llm.get("starts_at"))
-    llm_ends_at = _normalize_timestamptz(llm.get("ends_at"))
-    if not _has_source_date(raw, cached):
+    ocr_range = local_event_range(raw, cached)
+    llm_starts_at = normalize_timestamptz(llm.get("starts_at"))
+    llm_ends_at = normalize_timestamptz(llm.get("ends_at"))
+    if not has_source_date(raw, cached):
         log.info("extract %s: skipping event without a source date", raw.get("id"))
         return None, (
             _instagram_event_id(str(raw.get("handle") or ""), llm_starts_at)
@@ -999,7 +589,7 @@ def _to_event_row(
     if ocr_range is not None:
         starts_at, ends_at = ocr_range
     else:
-        starts_at, ends_at = _immediate_event_range(
+        starts_at, ends_at = immediate_event_range(
             raw, cached, llm_starts_at, llm_ends_at
         ) or (llm_starts_at, llm_ends_at)
     if not title or not starts_at:
@@ -1014,7 +604,7 @@ def _to_event_row(
         )
         ends_at = None
 
-    if _looks_like_schedule_grid(cached.get("ocr_text"), starts_at, ends_at):
+    if looks_like_schedule_grid(cached.get("ocr_text"), starts_at, ends_at):
         log.info(
             "extract %s: skipping ambiguous multi-event schedule (%s -> %s)",
             raw.get("id"),
@@ -1023,7 +613,7 @@ def _to_event_row(
         )
         return None, None
 
-    if _event_was_stale_when_posted(raw, starts_at, ends_at):
+    if was_stale_when_posted(raw, starts_at, ends_at):
         log.info(
             "extract %s: skipping event already stale when story was posted (%s)",
             raw.get("id"),
