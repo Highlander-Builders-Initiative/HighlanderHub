@@ -28,13 +28,17 @@ class StoryDateEvidenceTests(unittest.TestCase):
         fixtures = json.loads(
             (Path(__file__).parent / "fixtures/undated_story_extractions.json").read_text()
         )
-        rows, retired = extract._collect_event_rows(
+        rows, retired, _ = extract._collect_event_rows(
             [(f["raw"], f["cached"]) for f in fixtures], {}, "2026-09-09T20:00:00Z"
         )
         self.assertEqual([], rows)
+        # ucrbusiness reshared a ucrcareercenter post, so both the crawled
+        # account's ID and the author-keyed one are retired: either may exist
+        # in the table from a run before or after the reshare re-key.
         self.assertEqual({
             "ig_ucrpse_20260908T0700Z",
             "ig_ucrbusiness_20260909T0700Z",
+            "ig_ucrcareercenter_20260909T0700Z",
             "ig_ucrbcoe_20260908T0700Z",
         }, retired)
 
@@ -96,7 +100,7 @@ class StoryDateEvidenceTests(unittest.TestCase):
                     {**self.cached, "ocr_text": text}, {}, "2026-09-09T20:00:00Z",
                 )
                 self.assertEqual("2026-09-08T18:00:00+00:00", row["starts_at"])
-                self.assertEqual("ig_club_20260909T1900Z", retired)
+                self.assertEqual({"ig_club_20260909T1900Z"}, retired)
 
     def test_today_and_tomorrow_bind_the_day_but_keep_the_model_time(self) -> None:
         for text, expected in (
@@ -195,8 +199,8 @@ class StoryDateEvidenceTests(unittest.TestCase):
             patch.object(extract, "_load_account_meta", return_value={"club": {}}),
             patch.object(extract, "_iter_raw_stories", return_value=[self.raw, self.raw]),
             patch.object(extract, "_process_story", side_effect=[self.cached, valid]),
-            patch.object(extract, "_filter_locked_events", side_effect=lambda rows: rows),
-            patch.object(extract, "_filter_deleted_events", side_effect=lambda rows: rows),
+            patch.object(extract, "_filter_locked_events", side_effect=lambda rows, retired=None: rows),
+            patch.object(extract, "_filter_deleted_events", side_effect=lambda rows, retired=None: rows),
             patch.object(extract, "_delete_imported_event_ids", return_value=0) as delete,
             patch.object(extract, "_upsert_events", return_value=1) as upsert,
             patch.object(extract, "notify_free_food_events", return_value=0),

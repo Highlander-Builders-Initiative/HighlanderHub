@@ -28,6 +28,16 @@ if load_dotenv is not None:
 DATA_DIR = ROOT / "data"
 RAW_DIR = DATA_DIR / "raw"
 EXTRACTED_DIR = DATA_DIR / "extracted"
+# Instagram's private story payload is undocumented, and the keys carrying a
+# reshared feed post are a best guess (see scrape._reshared_post). Set
+# IG_DUMP_STORY_STRUCT=1 for a run to archive the raw payload here and confirm
+# the real shape against a story known to reshare a post.
+STRUCT_DUMP_DIR = DATA_DIR / "struct_dumps"
+DUMP_STORY_STRUCT = os.environ.get("IG_DUMP_STORY_STRUCT", "").strip().lower() in {
+    "1",
+    "true",
+    "yes",
+}
 ACCOUNTS_FILE = ROOT / "accounts.json"
 FOLLOWED_ACCOUNTS_FILE = DATA_DIR / "followed_accounts.json"
 ACCOUNT_SOURCE = os.environ.get("PIPELINE_ACCOUNT_SOURCE", "followed").lower()
