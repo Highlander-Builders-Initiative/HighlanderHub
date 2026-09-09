@@ -439,6 +439,86 @@ class ExtractStoriesTests(unittest.TestCase):
         self.assertTrue(row["rsvp_required"])
         self.assertFalse(row["has_free_food"])
 
+    def test_event_row_prefers_story_cta_url_over_gemini_rsvp(self) -> None:
+        raw = {
+            "id": "3894795737410658768",
+            "handle": "cyber_ucr",
+            "story_cta_url": "https://lu.ma/hack-night-2026",
+        }
+        cached = {
+            "status": "ok",
+            "result": {
+                "is_event": True,
+                "title": "Security Night Workshop",
+                "starts_at": "2026-05-15T19:00:00-07:00",
+                "rsvp_url": "https://linktr.ee/wrong-from-ocr",
+            },
+        }
+
+        row, _ = self.extract_stories._to_event_row(
+            raw,
+            cached,
+            {"label": "UCR Cybersecurity Club", "category": "club"},
+            "2026-05-14T12:00:00+00:00",
+        )
+
+        self.assertIsNotNone(row)
+        assert row is not None
+        self.assertEqual("https://lu.ma/hack-night-2026", row["rsvp_url"])
+
+    def test_event_row_uses_gemini_rsvp_when_story_cta_is_invalid(self) -> None:
+        raw = {
+            "id": "3894795737410658769",
+            "handle": "cyber_ucr",
+            "story_cta_url": "mailto:club@example.com",
+        }
+        cached = {
+            "status": "ok",
+            "result": {
+                "is_event": True,
+                "title": "Security Night Workshop",
+                "starts_at": "2026-05-15T19:00:00-07:00",
+                "rsvp_url": "https://forms.gle/securityNight",
+            },
+        }
+
+        row, _ = self.extract_stories._to_event_row(
+            raw,
+            cached,
+            {"label": "UCR Cybersecurity Club", "category": "club"},
+            "2026-05-14T12:00:00+00:00",
+        )
+
+        self.assertIsNotNone(row)
+        assert row is not None
+        self.assertEqual("https://forms.gle/securityNight", row["rsvp_url"])
+
+    def test_event_row_uses_gemini_rsvp_when_story_has_no_cta(self) -> None:
+        raw = {
+            "id": "3894795737410658770",
+            "handle": "cyber_ucr",
+        }
+        cached = {
+            "status": "ok",
+            "result": {
+                "is_event": True,
+                "title": "Security Night Workshop",
+                "starts_at": "2026-05-15T19:00:00-07:00",
+                "rsvp_url": "https://forms.gle/securityNight",
+            },
+        }
+
+        row, _ = self.extract_stories._to_event_row(
+            raw,
+            cached,
+            {"label": "UCR Cybersecurity Club", "category": "club"},
+            "2026-05-14T12:00:00+00:00",
+        )
+
+        self.assertIsNotNone(row)
+        assert row is not None
+        self.assertEqual("https://forms.gle/securityNight", row["rsvp_url"])
+
     def test_cached_event_flags_free_food_without_touching_category(self) -> None:
         # A boba study session: the LLM picks a real category ("club"), and free
         # food is detected deterministically from the OCR text instead.
