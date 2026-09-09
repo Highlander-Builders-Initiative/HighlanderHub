@@ -786,7 +786,9 @@ def _to_event_row(
         return None, None
 
     handle = str(raw.get("handle") or "")
-    rsvp_url = _normalize_url(llm.get("rsvp_url") or raw.get("story_cta_url"))
+    rsvp_url = _normalize_url(raw.get("story_cta_url")) or _normalize_url(
+        llm.get("rsvp_url")
+    )
 
     # Accounts that asked not to be named publicly on scraped listings.
     if handle in _ANONYMIZED_HOST_HANDLES:
