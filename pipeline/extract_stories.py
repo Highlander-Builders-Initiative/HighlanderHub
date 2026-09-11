@@ -27,12 +27,13 @@ from config import (
     ensure_dirs,
     load_accounts,
 )
-from classify import classify_content_kind, detect_free_food
+from classify import classify_content_kind, detect_free_food, is_informational_notice
 from discord_notify import notify_free_food_events
 from event_identity import dedupe_event_rows, suppress_tombstoned_event_groups
 from flyer_qr import QR_SCAN_VERSION, qr_rsvp_urls
 from reshare import reshared_origin_handle, strip_byline
 from story_dates import (
+    align_printed_dates,
     has_source_date,
     immediate_event_range,
     is_single_session_reminder,
@@ -172,7 +173,7 @@ def _load_remote_cache(story_id: str) -> dict[str, Any] | None:
 
 def _write_remote_cache(payload: dict[str, Any]) -> None:
     status = payload.get("status")
-    if status not in REMOTE_CACHE_TERMINAL_STATUSES:
+    if status not in REMOTE_CACHE_TERMINAL_STATUSES | {"error"}:
         return
 
     row = {
@@ -203,6 +204,16 @@ def _persist_terminal_cache(story_id: str, payload: dict[str, Any]) -> dict[str,
     cached = _write_cache(story_id, payload)
     _write_remote_cache(cached)
     return cached
+
+
+def _persist_error(raw: dict[str, Any], stage: str, exc: Exception) -> dict[str, Any]:
+    """Keep retryable failures inspectable locally and in the remote result JSON."""
+    payload = {
+        "status": "error", "story_id": str(raw.get("id") or ""),
+        "handle": raw.get("handle"), "extracted_at": _utc_now(),
+        "result": {"stage": stage, "error": f"{type(exc).__name__}: {exc}"},
+    }
+    return _persist_terminal_cache(payload["story_id"], payload)
 
 
 def _load_account_meta() -> dict[str, dict[str, Any]]:
@@ -346,8 +357,12 @@ def _build_gemini_prompt(
         "Require a date in OCR or the story caption, including an explicit "
         "relative date such as tomorrow. Never use posted_at as the event date "
         "when source text supplies no date; keep starts_at and ends_at null. Infer the "
-        "year from posted_at when a date omits the year. UCR is in Riverside, "
-        "California, so interpret flyer times as America/Los_Angeles local "
+        "year from posted_at when a date omits the year. "
+        "A numeric layout explicitly labeled MONTH DAY YEAR gives those values "
+        "in that order; 11 07 26 means November 7, 2026. Dotted dates such as "
+        "10.31 beside an event clock mean October 31. Awareness observances, "
+        "resource reminders, and service closures are not gatherings. "
+        "UCR is in Riverside, California, so interpret flyer times as America/Los_Angeles local "
         "wall time unless the OCR explicitly gives another timezone. Do not "
         "change an explicit OCR date based on relative text like THIS SUNDAY "
         "or NEXT SUNDAY. Some flyers are weekly schedule grids with one column "
@@ -542,13 +557,13 @@ def _process_story(raw: dict[str, Any], meta: dict[str, Any]) -> dict[str, Any]:
         return _persist_terminal_cache(story_id, payload)
     except Exception as exc:  # noqa: BLE001 - per-story isolation.
         log.warning("extract %s: image download failed: %s", label, exc)
-        return {"status": "error", "error": str(exc)}
+        return _persist_error(raw, "download", exc)
 
     try:
         ocr_text = _vision_ocr(image)
     except Exception as exc:  # noqa: BLE001 - per-story isolation.
         log.warning("extract %s: Vision OCR failed: %s", label, exc)
-        return {"status": "error", "error": str(exc)}
+        return _persist_error(raw, "ocr", exc)
 
     if not ocr_text.strip():
         payload = {
@@ -564,7 +579,7 @@ def _process_story(raw: dict[str, Any], meta: dict[str, Any]) -> dict[str, Any]:
         result = _gemini_extract(raw, meta, ocr_text)
     except Exception as exc:  # noqa: BLE001 - per-story isolation.
         log.warning("extract %s: Gemini extraction failed: %s", label, exc)
-        return {"status": "error", "error": str(exc)}
+        return _persist_error(raw, "gemini", exc)
 
     status = "ok" if result.get("is_event") else "not_event"
     durable_image_url = _upload_story_flyer(raw, image) if status == "ok" else None
@@ -726,6 +741,9 @@ def _to_event_row(
         # no real title to find. The caption still names the event usefully.
         title = _caption_fallback_title(description)
 
+    if is_informational_notice(title, description, str(ocr_text or "")):
+        log.info("extract %s: skipping informational notice", raw.get("id"))
+        return None, prior_ids
     if not has_source_date(raw, cached):
         log.info("extract %s: skipping event without a source date", raw.get("id"))
         return None, prior_ids
@@ -737,6 +755,15 @@ def _to_event_row(
         ) or (llm_starts_at, llm_ends_at)
     if not title or not starts_at:
         return None, set()
+
+    supported_range = (
+        (starts_at, ends_at) if is_single_session_reminder(raw, cached, starts_at, ends_at)
+        else align_printed_dates(raw, cached, starts_at, ends_at)
+    )
+    if supported_range is None:
+        log.info("extract %s: skipping date unsupported by source", raw.get("id"))
+        return None, prior_ids
+    starts_at, ends_at = supported_range
 
     ends_at = midnight_end(ocr_text, starts_at, ends_at)
     if ends_at and datetime.fromisoformat(ends_at) <= datetime.fromisoformat(starts_at):
@@ -764,7 +791,7 @@ def _to_event_row(
             raw.get("id"),
             starts_at,
         )
-        return None, set()
+        return None, prior_ids
 
     qr_values = llm.get("_qr_urls")
     qr_urls = {url for value in (qr_values if isinstance(qr_values, list) else [])
@@ -776,9 +803,13 @@ def _to_event_row(
     )
 
     # Accounts that asked not to be named publicly on scraped listings.
-    if handle in _ANONYMIZED_HOST_HANDLES:
+    if handle in _ANONYMIZED_HOST_HANDLES or origin_handle in _ANONYMIZED_HOST_HANDLES:
         host = ""
         host_handle = None
+    elif origin_handle and origin_handle != handle:
+        origin_meta = known_handles.get(origin_handle, {}) if isinstance(known_handles, dict) else {}
+        host = origin_meta.get("label") or origin_handle
+        host_handle = origin_handle
     else:
         host = account_meta.get("label") or handle
         host_handle = handle
@@ -854,7 +885,7 @@ def _collect_event_rows(
     rows: list[dict[str, Any]] = []
     superseded_ids: set[str] = set()
     retired_by: dict[str, set[str]] = {}
-    known_handles = set(meta_by_handle)
+    known_handles = meta_by_handle
     # Share an observed author across copies of the same attached post. When
     # no copy identifies the author, every copy uses the stable media ID.
     owners_by_media: dict[str, set[str]] = {}
@@ -961,7 +992,7 @@ def _delete_imported_event_ids(ids: set[str]) -> int:
     return delete_unlocked_event_rows_by_ids(sorted(ids))
 
 
-def main() -> None:
+def main(*, notify: bool = True) -> None:
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
     )
@@ -993,16 +1024,22 @@ def main() -> None:
     event_rows = _filter_locked_events(rows, retired_by)
     event_rows = _filter_deleted_events(event_rows, retired_by)
     event_rows = dedupe_event_rows(event_rows)
+    written = _upsert_events(event_rows)
     deleted = _delete_imported_event_ids(
         current_ids - {row["id"] for row in event_rows}
     )
     if deleted:
         log.info("Deleted %d stale Instagram event rows from Supabase", deleted)
-    written = _upsert_events(event_rows)
     log.info("Wrote %d events to Supabase", written)
-    notified = notify_free_food_events(event_rows)
+    notified = notify_free_food_events(event_rows) if notify else 0
     if notified:
         log.info("Sent %d free food Discord notifications", notified)
+    failed = [str(raw.get("id")) for raw, cached in processed if cached.get("status") == "error"]
+    if failed:
+        raise RuntimeError(
+            f"{len(failed)} Instagram extraction(s) failed: {', '.join(failed)}; "
+            "successful events saved; error caches will retry next run"
+        )
 
 
 if __name__ == "__main__":

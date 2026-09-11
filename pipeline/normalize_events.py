@@ -79,6 +79,11 @@ def _build_host(raw: dict[str, Any]) -> str:
             val = custom.get(key)
             if val and isinstance(val, str) and val.strip():
                 return val.strip()
+    for field in ("groups", "departments"):
+        names = [item["name"].strip() for item in raw.get(field) or []
+                 if isinstance(item, dict) and isinstance(item.get("name"), str) and item["name"].strip()]
+        if names:
+            return ", ".join(names)
     # No real organizer field: Localist events fall back to their event_type
     # bucket ("Recreation", "Arts", "Seminars", …). Bare, these read as a host
     # AND collide with our category chip labels ("Arts", "Academic", "Social"),
@@ -435,7 +440,7 @@ def _locked_event_ids() -> set[str]:
         return set()
 
 
-def main(reconcile_prefixes: Iterable[str] = ()) -> None:
+def main(reconcile_prefixes: Iterable[str] = (), *, notify: bool = True) -> None:
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
     )
@@ -464,6 +469,7 @@ def main(reconcile_prefixes: Iterable[str] = ()) -> None:
 
     deduped = dedupe_event_rows(_filter_deleted_events(rows))
 
+    written = upsert_batched("events", deduped)
     deleted = 0
     for prefix in STRUCTURED_EVENT_ID_PREFIXES:
         if prefix not in verified_prefixes:
@@ -473,9 +479,8 @@ def main(reconcile_prefixes: Iterable[str] = ()) -> None:
     if deleted:
         log.info("Deleted %d stale structured event rows from Supabase", deleted)
 
-    written = upsert_batched("events", deduped)
     log.info("Wrote %d events to Supabase", written)
-    notified = notify_free_food_events(deduped)
+    notified = notify_free_food_events(deduped) if notify else 0
     if notified:
         log.info("Sent %d free food Discord notifications", notified)
 

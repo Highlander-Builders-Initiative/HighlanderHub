@@ -1,0 +1,355 @@
+{
+  "3983589040137507600": {
+    "raw": {
+      "caption": null,
+      "handle": "tpusa_at_ucr",
+      "id": "3983589040137507600",
+      "permalink": "https://www.instagram.com/stories/tpusa_at_ucr/3983589040137507600/",
+      "posted_at": "2026-09-11T04:27:20Z",
+      "reshared_post": {
+        "caption": null,
+        "media_id": "3983413828485231669",
+        "owner_username": null,
+        "shortcode": "DdH7cWgPbQ1",
+        "source_key": "story_feed_media"
+      }
+    },
+    "cached": {
+      "ocr_text": "YWA ywa.inlandempire\nwelcome\nYWAIE\nTUESDAY, SEPTEMBER 15\n6:30 PM\nDM FOR APT#\nywa.inlandempire WELCOME BACK!\nOur first meeting\nof the year is NEXT TUESDAY at 6:30pm!!! We are SO excited t...",
+      "result": {
+        "category": "club",
+        "confidence": "high",
+        "description": "Our first meeting\nof the year is NEXT TUESDAY at 6:30pm!!! We are SO excited t...",
+        "ends_at": null,
+        "is_event": true,
+        "is_free": true,
+        "location": "Riverside, California",
+        "rsvp_required": false,
+        "rsvp_url": null,
+        "starts_at": "2026-09-23T18:30:00-07:00",
+        "tags": [
+          "welcome back",
+          "meeting"
+        ],
+        "title": "YWAIE WELCOME BACK!"
+      },
+      "status": "ok",
+      "story_id": "3983589040137507600"
+    }
+  },
+  "3983470688672731198": {
+    "raw": {
+      "caption": null,
+      "handle": "ucriversideofficial",
+      "id": "3983470688672731198",
+      "permalink": "https://www.instagram.com/stories/ucriversideofficial/3983470688672731198/",
+      "posted_at": "2026-09-11T00:32:12Z",
+      "reshared_post": {
+        "caption": null,
+        "media_id": "3983454610698999617",
+        "owner_username": null,
+        "shortcode": "DdIEtz5mxdB",
+        "source_key": "story_feed_media"
+      }
+    },
+    "cached": {
+      "ocr_text": "11\nSAVE THE DATE\n07\n26\nMONTH\nDAY\nYEAR\nUNIVERSITY OF CALIFORNIA, RIVERSIDE\nHOMECOMING\n@ucrextension\nHOMECOMING.UCR.EDU",
+      "result": {
+        "category": "social",
+        "confidence": "high",
+        "description": "Save the date for UCR Homecoming.",
+        "ends_at": null,
+        "is_event": true,
+        "is_free": false,
+        "location": "Riverside, California",
+        "rsvp_required": false,
+        "rsvp_url": "https://homecoming.ucr.edu/",
+        "starts_at": "2026-07-26T00:00:00-07:00",
+        "tags": [
+          "homecoming",
+          "ucr"
+        ],
+        "title": "University of California, Riverside Homecoming"
+      },
+      "status": "ok",
+      "story_id": "3983470688672731198"
+    }
+  },
+  "3983345563378243344": {
+    "raw": {
+      "caption": null,
+      "handle": "hznupes",
+      "id": "3983345563378243344",
+      "permalink": "https://www.instagram.com/stories/hznupes/3983345563378243344/",
+      "posted_at": "2026-09-10T20:23:36Z",
+      "reshared_post": null
+    },
+    "cached": {
+      "ocr_text": "LOWEEN\n10.31\n10.31\nKAPPA\nAt The 320 Premier Hall\nBe Kareful What\nYou Wish Fort\n\u2022Tell Your\nFriends!\nADMIT ONE\nPJIPM-2AM\nTickets in Bio!\n\u2605\n\u05d8\u05d5\u05d5\u05e1\u05d4\nHALLOWE\nKAPPA\nHALLOWEEN\nPRESALES SOLD OUT!!\nKOME FIND YOUR\nFAVORITE NUPE ON\nCAMPUS FOR PHYSICAL\nTICKETS",
+      "result": {
+        "_qr_scan_version": 1,
+        "_qr_urls": [],
+        "category": "social",
+        "confidence": "high",
+        "description": "Be Kareful What You Wish For!",
+        "ends_at": "2026-11-01T02:00:00-07:00",
+        "is_event": true,
+        "is_free": false,
+        "location": "320 Premier Hall",
+        "rsvp_required": true,
+        "rsvp_url": "Tickets in Bio!",
+        "starts_at": "2026-10-31T21:00:00-07:00",
+        "tags": [
+          "halloween",
+          "party"
+        ],
+        "title": "Kappa Halloween"
+      },
+      "status": "ok",
+      "story_id": "3983345563378243344"
+    }
+  },
+  "3983302762182864922": {
+    "raw": {
+      "caption": null,
+      "handle": "ucr_caps",
+      "id": "3983302762182864922",
+      "permalink": "https://www.instagram.com/stories/ucr_caps/3983302762182864922/",
+      "posted_at": "2026-09-10T18:58:33Z",
+      "reshared_post": {
+        "caption": null,
+        "media_id": "3983267399491784784",
+        "owner_username": null,
+        "shortcode": "DdHaJh4GhBQ",
+        "source_key": "story_feed_media"
+      }
+    },
+    "cached": {
+      "ocr_text": "GLOWE RUN thewellucr\nUC RIVERSIDE\nThe Well\nNATIONAL\nSUICIDE PREVENTION WEEK\nHere are some reminders\nand resources\nthewellucr Today is World Suicide Prevention Day\nHere\nare some reminders and resources for you, Highlanders. R...",
+      "result": {
+        "category": "community",
+        "confidence": "high",
+        "description": "Here are some reminders and resources for you, Highlanders. R...",
+        "ends_at": null,
+        "is_event": true,
+        "is_free": true,
+        "location": "UC Riverside",
+        "rsvp_required": false,
+        "rsvp_url": null,
+        "starts_at": "2026-09-10T00:00:00-07:00",
+        "tags": [
+          "suicide prevention",
+          "resources",
+          "well-being"
+        ],
+        "title": "National Suicide Prevention Week"
+      },
+      "status": "ok",
+      "story_id": "3983302762182864922"
+    }
+  },
+  "3983965996258496964": {
+    "raw": {
+      "caption": null,
+      "handle": "cnasadvising",
+      "id": "3983965996258496964",
+      "permalink": "https://www.instagram.com/stories/cnasadvising/3983965996258496964/",
+      "posted_at": "2026-09-11T16:56:17Z",
+      "reshared_post": {
+        "caption": null,
+        "media_id": "3983227387542527111",
+        "owner_username": null,
+        "shortcode": "DdHRDR2FFyH",
+        "source_key": "story_feed_media"
+      }
+    },
+    "cached": {
+      "ocr_text": "UCR\nCounseling and\nPsychological Services\nucr_caps\nCounseling and\nUC RIVERSIDE | Psychological Services\nSUICIDE\nPREVENTION &\nAWARENESS\nWEEK\nSeptember 6th-12th\nucr_caps It's National Suicide Prevention & Awareness\nWeek-a time to raise awareness, promote hope, and no...",
+      "result": {
+        "category": "community",
+        "confidence": "high",
+        "description": "It's National Suicide Prevention & Awareness Week - a time to raise awareness, promote hope, and no...",
+        "ends_at": "2026-09-12T23:59:59-07:00",
+        "is_event": true,
+        "is_free": true,
+        "location": "UCR",
+        "rsvp_required": false,
+        "rsvp_url": null,
+        "starts_at": "2026-09-06T00:00:00-07:00",
+        "tags": [
+          "mental health",
+          "awareness",
+          "prevention"
+        ],
+        "title": "Suicide Prevention & Awareness Week"
+      },
+      "status": "ok",
+      "story_id": "3983965996258496964"
+    }
+  },
+  "3981812676561360917": {
+    "raw": {
+      "caption": null,
+      "handle": "ucriversideofficial",
+      "id": "3981812676561360917",
+      "permalink": "https://www.instagram.com/stories/ucriversideofficial/3981812676561360917/",
+      "posted_at": "2026-09-08T17:38:01Z"
+    },
+    "cached": {
+      "ocr_text": "lander\nFAMILY WEEKEND\nNOVEMBER 6-8, 2026\nRegistration Now Open!\nUC RIVERSIDE\nHighlander Family Network\n@highlanderfamilynetwork\n0000\n0000",
+      "result": {
+        "_qr_scan_version": 1,
+        "_qr_urls": [],
+        "category": "community",
+        "confidence": "high",
+        "description": "Highlander Family Network Family Weekend Registration Now Open! \nUC RIVERSIDE",
+        "ends_at": "2026-11-08T00:00:00-08:00",
+        "is_event": true,
+        "is_free": false,
+        "location": "UC Riverside",
+        "rsvp_required": true,
+        "rsvp_url": null,
+        "starts_at": "2026-11-06T00:00:00-08:00",
+        "tags": [
+          "family",
+          "weekend",
+          "ucr"
+        ],
+        "title": "Highlander Family Network Family Weekend"
+      },
+      "status": "ok",
+      "story_id": "3981812676561360917"
+    }
+  },
+  "3983911763883588438": {
+    "raw": {
+      "caption": null,
+      "handle": "ucrposc_academicadvising101",
+      "id": "3983911763883588438",
+      "permalink": "https://www.instagram.com/stories/ucrposc_academicadvising101/3983911763883588438/",
+      "posted_at": "2026-09-11T15:08:32Z",
+      "reshared_post": {
+        "caption": null,
+        "media_id": "3981793713827155080",
+        "owner_username": null,
+        "shortcode": "DdCLElJjQyI",
+        "source_key": "story_feed_media"
+      }
+    },
+    "cached": {
+      "ocr_text": "Highlander\nFAMILY WEEKEND\nNOVEMBER 6-8, 2026\nRegistration Now Open!\nUC RIVERSIDE\nHighlander Family Network\n@highlanderfamilynetwork",
+      "result": {
+        "_qr_scan_version": 1,
+        "_qr_urls": [],
+        "category": "community",
+        "confidence": "high",
+        "description": "Registration Now Open!",
+        "ends_at": "2026-11-08T23:59:59-08:00",
+        "is_event": true,
+        "is_free": false,
+        "location": "UC Riverside",
+        "rsvp_required": true,
+        "rsvp_url": null,
+        "starts_at": "2026-11-06T00:00:00-08:00",
+        "tags": [
+          "family weekend",
+          "registration"
+        ],
+        "title": "Highlander FAMILY WEEKEND"
+      },
+      "status": "ok",
+      "story_id": "3983911763883588438"
+    }
+  },
+  "3983424892589486822": {
+    "raw": {
+      "caption": null,
+      "handle": "ucrgradsuccess",
+      "id": "3983424892589486822",
+      "permalink": "https://www.instagram.com/stories/ucrgradsuccess/3983424892589486822/",
+      "posted_at": "2026-09-10T23:01:12Z",
+      "reshared_post": {
+        "caption": null,
+        "media_id": "3982655768029707125",
+        "owner_username": null,
+        "shortcode": "DdFPFHsEjt1",
+        "source_key": "story_feed_media"
+      }
+    },
+    "cached": {
+      "ocr_text": "UCR\nppacatucr\nPPAC\nUCR SCHOOL OF MEDICINE\nNATIONAL LATINO\nPHYSICIAN DAY\nJoin us for an inspiring day with lunch, music, dancing,\nand stories from local Latino physicians. Connect with\nthe community and celebrate our heritage.\nSATURDAY, OCTOBER 3RD\n10 AM - 2 PM\nUCR School of Medicine\nBuilding II, Room 104\nSCHEDULE\n10:00am Doors Open\n10:30am\nProgram Begins\n12:00pm Physician Share Out\n12:30pm - Lunch\n1:00pm\nExhibitor Fair\nFEATURING KEYNOTE SPEAKERS\nDR. MARGARITA LOEZA\nASSISTANT DEAN OF STUDENT AFFAIRS AND\nADMISSIONS AT CHARLES R. DREW\nUNIVERSITY OF MEDICINE AND SCIENCE.\nDR. DAVID HAYES-BAUTISTA\nDIRECTOR OF THE CENTER FOR STUDY OF\nLATINO HEALTH AND CULTURE AT UCLA.\n6% IS NOT ENOUGH\nREGISTER TODAY!\nUC\nRIVERSIDE\nNHHF\nNATIONAL HISPANIC HEALTH FOUNDATION\nUC RIVERSIDE\nSchool of Medicine\nKAISER PERMANENTE.\nChicano Student Programs\nKATHERINE FLORES, M.D.\nCO-DIRECTOR, CALIFORNIA HEALTH PROFESSIONS\nCONSORTIUM (CHPC) UCSF LATINX CENTER OF\nEXCELLENCE (LCOE) ASPIRING PHYSICIANS\nPROGRAM (APP), FACULTY LEAD, FRESNO.\nPHYSICIAN SHARE OUT\nDR. MICHAEL GALVEZ\nCO-FOUNDER OF THE NATIONAL LATINO\nPHYSICIAN DAY MOVEMENT.\nppacatucr You're invited! The UCR School of Medicine Office of\nDiversity, Equity, and Inclusion is excited to announce our 4th...",
+      "result": {
+        "_qr_scan_version": 1,
+        "_qr_urls": [
+          "https://ucriverside.az1.qualtrics.com/jfe/form/SV_2oB4kL1Q3OdKlH8"
+        ],
+        "category": "community",
+        "confidence": "high",
+        "description": "Join us for an inspiring day with lunch, music, dancing, and stories from local Latino physicians. Connect with the community and celebrate our heritage.\nFEATURING KEYNOTE SPEAKERS\nDR. MARGARITA LOEZA\nASSISTANT DEAN OF STUDENT AFFAIRS AND\nADMISSIONS AT CHARLES R. DREW\nUNIVERSITY OF MEDICINE AND SCIENCE.\nDR. DAVID HAYES-BAUTISTA\nDIRECTOR OF THE CENTER FOR STUDY OF\nLATINO HEALTH AND CULTURE AT UCLA.\nUC\nRIVERSIDE\nKAISER PERMANENTE.\nChicano Student Programs\nKATHERINE FLORES, M.D.\nCO-DIRECTOR, CALIFORNIA HEALTH PROFESSIONS\nCONSORTIUM (CHPC) UCSF LATINX CENTER OF\nEXCELLENCE (LCOE) ASPIRING PHYSICIANS\nPROGRAM (APP), FACULTY LEAD, FRESNO.\nPHYSICIAN SHARE OUT\nDR. MICHAEL GALVEZ\nCO-FOUNDER OF THE NATIONAL LATINO\nPHYSICIAN DAY MOVEMENT.",
+        "ends_at": "2026-10-03T14:00:00-07:00",
+        "is_event": true,
+        "is_free": false,
+        "location": "UCR School of Medicine Building II, Room 104",
+        "rsvp_required": true,
+        "rsvp_url": null,
+        "starts_at": "2026-10-03T10:00:00-07:00",
+        "tags": [
+          "latino",
+          "physician",
+          "health",
+          "heritage",
+          "diversity",
+          "inclusion"
+        ],
+        "title": "NATIONAL LATINO PHYSICIAN DAY"
+      },
+      "status": "ok",
+      "story_id": "3983424892589486822"
+    }
+  },
+  "3983471353925412424": {
+    "raw": {
+      "caption": null,
+      "handle": "cmsp_ucr",
+      "id": "3983471353925412424",
+      "permalink": "https://www.instagram.com/stories/cmsp_ucr/3983471353925412424/",
+      "posted_at": "2026-09-11T00:33:31Z",
+      "reshared_post": {
+        "caption": null,
+        "media_id": "3982655768029707125",
+        "owner_username": null,
+        "shortcode": "DdFPFHsEjt1",
+        "source_key": "story_feed_media"
+      }
+    },
+    "cached": {
+      "ocr_text": "\u8089\nUCR SCHOOL OF MEDICINE\nNATIONAL LATINO\nPHYSICIAN DAY\nJoin us for an inspiring day with lunch, music, dancing,\nand stories from local Latino physicians. Connect with\nthe community and celebrate our heritage.\nSATURDAY, OCTOBER 3RD\n10 AM - 2 PM\nUCR School of Medicine\nBuilding II, Room 104\nSCHEDULE\n10:00am Doors Open\n10:30am Program Begins\n12:00pm Physician Share Out\n12:30pm Lunch\n1:00pm Exhibitor Fair\nFEATURING KEYNOTE SPEAKERS\nDR. MARGARITA LOEZA\nASSISTANT DEAN OF STUDENT AFFAIRS AND\nADMISSIONS AT CHARLES R. DREW\nUNIVERSITY OF MEDICINE AND SCIENCE.\nDR. DAVID HAYES-BAUTISTA\nDIRECTOR OF THE CENTER FOR STUDY OF\nLATINO HEALTH AND CULTURE AT UCLA.\n6% IS NOT ENOUGH\nREGISTER TODAY!\nUC\nRIVERSIDE\nChicano Student Programs\nUC RIVERSIDE\nSchool of Medicine\n@ppacatucr\nNHHF\nNATIONAL HISPANIC HEALTH FOUNDATION\nKAISER PERMANENTE.\nKATHERINE FLORES, M.D.\nCO-DIRECTOR, CALIFORNIA HEALTH PROFESSIONS\nCONSORTIUM (CHPC) UCSF LATINX CENTER OF\nEXCELLENCE (LCOE) ASPIRING PHYSICIANS\nPROGRAM (APP), FACULTY LEAD, FRESNO.\nPHYSICIAN SHARE OUT\nDR. MICHAEL GALVEZ\nCO-FOUNDER OF THE NATIONAL LATINO\nPHYSICIAN DAY MOVEMENT.",
+      "result": {
+        "_qr_scan_version": 1,
+        "_qr_urls": [
+          "https://ucriverside.az1.qualtrics.com/jfe/form/SV_2oB4kL1Q3OdKlH8"
+        ],
+        "category": "academic",
+        "confidence": "high",
+        "description": "Join us for an inspiring day with lunch, music, dancing, and stories from local Latino physicians. Connect with the community and celebrate our heritage.",
+        "ends_at": "2026-10-03T14:00:00-07:00",
+        "is_event": true,
+        "is_free": true,
+        "location": "UCR School of Medicine Building II, Room 104",
+        "rsvp_required": true,
+        "rsvp_url": null,
+        "starts_at": "2026-10-03T10:00:00-07:00",
+        "tags": [
+          "medicine",
+          "latino",
+          "physician",
+          "heritage",
+          "community"
+        ],
+        "title": "National Latino Physician Day"
+      },
+      "status": "ok",
+      "story_id": "3983471353925412424"
+    }
+  }
+}

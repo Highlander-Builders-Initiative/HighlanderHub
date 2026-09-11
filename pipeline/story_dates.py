@@ -2,7 +2,8 @@
 
 Everything here answers one question: what day and time does the *source text*
 support? Callers assemble rows; this module decides what the flyer actually
-said. Model output, confidence and API status are deliberately not inputs.
+said. Model timestamps may be aligned to that evidence, but confidence and
+API status cannot establish it.
 
 There is one date vocabulary (`_scan_printed_dates`) and two policies over it:
 
@@ -152,6 +153,21 @@ _MONTH_NAME = "month_name"
 _DAY_MONTH = "day_month"
 _NUMERIC = "numeric"
 _NUMERIC_BARE = "numeric_bare"
+_LABELED = "labeled"
+
+
+def _labeled_date(text: str) -> tuple[int, int, int, tuple[int, int]] | None:
+    """Read separate month/day/year tiles only with their explicit labels."""
+    labels = re.search(r"\bMONTH\s+DAY\s+YEAR\b", text, re.IGNORECASE)
+    if not labels:
+        return None
+    numbers = list(re.finditer(r"(?m)^\s*(\d{1,4})\s*$", text[max(0, labels.start()-100):labels.start()]))
+    if len(numbers) != 3:
+        return None
+    month, day, year = (int(m.group(1)) for m in numbers)
+    if year < 100:
+        year += 2000
+    return month, day, year, (max(0, labels.start()-100), labels.end())
 
 
 def normalize_timestamptz(value: Any) -> str | None:
@@ -199,6 +215,10 @@ def _scan_printed_dates(text: str) -> Iterator[tuple[str, int, int, tuple[int, i
     Calendar validity is not checked here so that the override can keep
     applying its own.
     """
+    labeled = _labeled_date(text)
+    if labeled:
+        month, day, _, span = labeled
+        yield _LABELED, month, day, span
     for match in _OCR_DATE_RE.finditer(text):
         yield (
             _MONTH_NAME,
@@ -216,7 +236,7 @@ def _scan_printed_dates(text: str) -> Iterator[tuple[str, int, int, tuple[int, i
     for match in _OCR_NUMERIC_DATE_RE.finditer(text):
         if match.group(4) or re.match(r"\d{4}-", match.group()):
             form = _NUMERIC
-        elif match.group(2) == "/":
+        elif match.group(2) in {"/", "."}:
             form = _NUMERIC_BARE
         else:
             # Without a year "1-2" is a time range and "5.62" a decimal.
@@ -252,6 +272,8 @@ def _bare_date_is_corroborated(text: str, span: tuple[int, int]) -> bool:
     range is still a flyer that named its days.
     """
     start, end = span
+    if re.search(r"\b(?:room|suite|building|price|cost|reading)\s*$", text[max(0, start-20):start], re.IGNORECASE):
+        return False
     if re.match(r"\s*(?:price|off|cups?|tbsp|tsp|inches)\b", text[end:], re.IGNORECASE):
         return False
     if _OCR_CLOCK_TIME_RE.search(text):
@@ -537,6 +559,118 @@ def local_event_range(
     return start.astimezone(timezone.utc).isoformat(), end.astimezone(
         timezone.utc
     ).isoformat()
+
+
+def align_printed_dates(
+    raw: dict[str, Any], cached: dict[str, Any], starts_at: str, ends_at: str | None,
+) -> tuple[str, str | None] | None:
+    """Make the model's day agree with printed evidence, including single times.
+
+    Multiple printed days cannot pick an unrelated model day. A lone printed
+    day can repair it while preserving its wall time and overnight duration.
+    Relative reminders still use immediate_event_range, and ambiguous grids
+    are still rejected by the caller.
+    """
+    text = "\n".join(source_date_texts(raw, cached))
+    # An explicitly zoned event can fall on the previous Pacific day. Keep
+    # extraction's existing timezone handling instead of moving it a day.
+    if _OCR_TIMEZONE_RE.search(text):
+        return starts_at, ends_at
+    dates = evidence_dates(text)
+    if not dates:
+        return starts_at, ends_at
+    start = datetime.fromisoformat(starts_at).astimezone(PACIFIC_TZ)
+    end = datetime.fromisoformat(ends_at).astimezone(PACIFIC_TZ) if ends_at else None
+    posted = local_posted_at(raw)
+
+    # Month-name day ranges without a clock cover the entire last day.
+    span = re.search(_OCR_DATE_RE.pattern + r"\s*[-–—]\s*(\d{1,2})(?:st|nd|rd|th)?(?:\s*,?\s*((?:19|20)\d{2}))?\b", text, re.IGNORECASE)
+    if span and len(dates) == 1 and not _OCR_CLOCK_TIME_RE.search(text):
+        month = _MONTHS[span.group(1).lower().rstrip('.')]
+        first, last = int(span.group(2)), int(span.group(3))
+        year = int(span.group(4)) if span.group(4) else (posted or start).year
+        try:
+            first_day = datetime(year, month, first, tzinfo=PACIFIC_TZ)
+            last_day = datetime(year, month, last, 23, 59, 59, tzinfo=PACIFIC_TZ)
+        except ValueError:
+            return None
+        if first_day > last_day:
+            return None
+        return first_day.astimezone(timezone.utc).isoformat(), last_day.astimezone(timezone.utc).isoformat()
+
+    if len(dates) != 1:
+        # A continuous numeric window also supports days between its endpoints.
+        for match in _OCR_NUMERIC_RANGE_RE.finditer(text):
+            if (int(match[1]), int(match[2])) <= (start.month, start.day) <= (int(match[3]), int(match[4])):
+                return starts_at, ends_at
+        return (starts_at, ends_at) if (start.month, start.day) in dates else None
+
+    month, day = next(iter(dates))
+    years = set()
+    labeled = _labeled_date(text)
+    if labeled:
+        years.add(labeled[2])
+    for form, m, d, span in _scan_printed_dates(text):
+        if (m, d) != (month, day):
+            continue
+        token = text[span[0]:span[1]]
+        year_match = re.search(r"(?:^|[/.-])((?:19|20)\d{2})\b", token) if form == _NUMERIC else None
+        if form == _NUMERIC and not year_match:
+            year_match = re.search(r"[/.-](\d{2})$", token)
+        if form in {_MONTH_NAME, _DAY_MONTH}:
+            year_match = _OCR_EXPLICIT_YEAR_RE.match(text, span[1])
+        if year_match:
+            year = int(re.search(r"\d{2,4}", year_match.group()).group())
+            years.add(year + 2000 if year < 100 else year)
+    if len(years) > 1:
+        return None
+    year = next(iter(years)) if years else (posted or start).year
+    try:
+        corrected = start.replace(year=year, month=month, day=day)
+        if not years and posted and corrected < posted - timedelta(days=180):
+            corrected = corrected.replace(year=year+1)
+    except ValueError:
+        return None
+    printed_range = time_range(text)
+    if printed_range:
+        (hour, minute), (end_hour, end_minute) = printed_range
+        corrected = corrected.replace(hour=hour, minute=minute, second=0, microsecond=0)
+        end = corrected.replace(hour=end_hour, minute=end_minute)
+        if end <= corrected:
+            end += timedelta(days=1)
+            if end - corrected > timedelta(hours=12):
+                return None
+        return corrected.astimezone(timezone.utc).isoformat(), end.astimezone(timezone.utc).isoformat()
+    # A single clock may be repeated in the flyer and its caption. Do not
+    # mistake the sole legible END of an OCR-damaged range for the start.
+    clocks = list(_OCR_CLOCK_TIME_RE.finditer(text))
+    times = set()
+    printed_times = set()
+    for match in clocks:
+        parts = re.fullmatch(r"(\d{1,2})(?::(\d{2}))?\s*([ap]\.?m\.?)", match.group(), re.IGNORECASE)
+        if parts and (clock := _parse_ampm_time(*parts.groups())):
+            printed_times.add(clock)
+            if not re.search(r"[-–—]\s*$", text[:match.start()]):
+                times.add(clock)
+    if len(times) == 1 and not end:
+        hour, minute = next(iter(times))
+        corrected = corrected.replace(hour=hour, minute=minute, second=0, microsecond=0)
+    if end and corrected != start:
+        end += corrected - start
+    # An explicit printed end clock also fixes a model's stale UTC offset
+    # across the autumn DST change (02:00 on Nov 1 is standard time).
+    if end and local_event_range(raw, cached) is None:
+        result = cached.get('result') or {}
+        original_start = normalize_timestamptz(result.get('starts_at'))
+        original_end = normalize_timestamptz(result.get('ends_at'))
+        if original_start and original_end:
+            a = datetime.fromisoformat(result['starts_at'].replace('Z', '+00:00'))
+            b = datetime.fromisoformat(result['ends_at'].replace('Z', '+00:00'))
+            if (b.hour, b.minute) in printed_times:
+                end = datetime.combine(corrected.date() + (b.date()-a.date()), b.time(), tzinfo=PACIFIC_TZ)
+    if labeled and not clocks and not end and corrected.time() == time(0, 0):
+        end = corrected.replace(hour=23, minute=59, second=59)
+    return corrected.astimezone(timezone.utc).isoformat(), end.astimezone(timezone.utc).isoformat() if end else None
 
 
 def midnight_end(ocr_text: Any, starts_at: str, ends_at: str | None) -> str | None:

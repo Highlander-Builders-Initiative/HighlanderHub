@@ -17,6 +17,8 @@ Stages:
   4. **Instagram normalize** – rebuild `stories` rows from the on-disk
      archive. Extraction and story normalization always run using whatever is
      on disk, including after a scrape failure.
+  5. **Reconcile events** – merge corroborated cross-source duplicates, then
+     send eligible free-food alerts once the canonical listings are saved.
 
 Every run ends with a per-stage summary — printed to the log and appended to
 `data/run_history.jsonl`. Because stage failures are isolated, a dead source
@@ -29,6 +31,7 @@ from __future__ import annotations
 
 import json
 import logging
+from logging.handlers import RotatingFileHandler
 import sys
 import time
 from dataclasses import dataclass
@@ -38,6 +41,7 @@ import extract_stories
 import highlander_link
 import normalize
 import normalize_events
+import reconcile_events
 import scrape
 import ucr_events
 from config import DATA_DIR
@@ -141,13 +145,14 @@ def _run_stages(results: list[StageResult]) -> None:
         reconcile_prefixes.append("highlander_link_")
     _safe(
         "events.normalize",
-        lambda: normalize_events.main(reconcile_prefixes),
+        lambda: normalize_events.main(reconcile_prefixes, notify=False),
         results,
     )
     # Instagram extract/normalize always run using whatever is on disk.
     _safe("instagram.scrape", scrape.main, results)
-    _safe("instagram.extract", extract_stories.main, results)
+    _safe("instagram.extract", lambda: extract_stories.main(notify=False), results)
     _safe("instagram.normalize", normalize.main, results)
+    _safe("events.reconcile", reconcile_events.main, results)
 
 
 def main() -> None:
@@ -166,4 +171,9 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+        handlers=[logging.StreamHandler(), RotatingFileHandler(DATA_DIR / "run.log", maxBytes=5_000_000, backupCount=1)],
+    )
     main()

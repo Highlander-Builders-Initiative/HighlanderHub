@@ -148,8 +148,11 @@ class StoryRecoveryTests(unittest.TestCase):
     def test_download_error_does_not_create_terminal_cache(self) -> None:
         self.download.side_effect = [requests.HTTPError("403 Forbidden"), b"flyer"]
         self.assertEqual("error", extract._process_story(self.raw, {})["status"])
-        self.assertFalse((self.directory / "123.json").exists())
-        self.write_remote.assert_not_called()
+        error = json.loads((self.directory / "123.json").read_text())
+        self.assertEqual("error", error["status"])
+        self.assertEqual("download", error["result"]["stage"])
+        self.assertIn("403 Forbidden", error["result"]["error"])
+        self.write_remote.assert_called_once_with(error)
         self.assertEqual("ok", extract._process_story(self.raw, {})["status"])
 
 

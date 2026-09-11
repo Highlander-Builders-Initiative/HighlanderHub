@@ -146,3 +146,14 @@ def get_deleted_event_ids() -> set[str]:
         for row in getattr(res, "data", []) or []
         if row.get("event_id")
     }
+
+
+def get_imported_events() -> list[dict[str, Any]]:
+    """Read all imported rows with stable pagination, including admin locks."""
+    rows = []
+    for offset in range(0, 1_000_000, 1000):
+        batch = client().table("events").select("*").order("id").range(offset, offset+999).execute().data or []
+        rows.extend(row for row in batch if str(row.get("id", "")).startswith(("ig_", "ucr_events_", "highlander_link_")))
+        if len(batch) < 1000:
+            return rows
+    raise RuntimeError("Imported event pagination exceeded its safety limit")
