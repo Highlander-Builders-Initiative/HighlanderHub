@@ -269,6 +269,22 @@ def _to_event_rows(
 ) -> list[dict[str, Any]]:
     if _is_recurring_localist_event(raw):
         instances = _upcoming_instances(raw.get("event_instances"), now=now)
+        # Routine SRC series otherwise contribute hundreds of near-identical
+        # rows. Keep the next session; the source page carries the full schedule.
+        recreation_series = (
+            len(_extract_instances(raw.get("event_instances"))) >= 3
+            and any(
+                isinstance(department, dict)
+                and department.get("name", "").casefold() == "ucr recreation"
+                for department in raw.get("departments") or []
+            )
+            and "Recreation" in _filter_names(raw, "event_types")
+        )
+        if recreation_series:
+            instances = sorted(
+                instances,
+                key=lambda instance: _parse_iso(instance.get("start")) or datetime.max.replace(tzinfo=timezone.utc),
+            )[:1]
         if not instances:
             last_instance = _latest_instance(raw.get("event_instances"))
             if last_instance is not None:

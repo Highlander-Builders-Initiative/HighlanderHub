@@ -254,6 +254,65 @@ class ClassifyContentKindTests(unittest.TestCase):
                     ),
                 )
 
+    def test_booking_window_is_an_application_not_an_event(self) -> None:
+        # Real row: a 12-day window for booking a 1:1, published as a 9 AM
+        # event on the first day because the model had to guess an hour.
+        self.assertEqual(
+            "student_application",
+            classify_content_kind(
+                "instagram",
+                title="Highlander Consulting Group Board Member Coffee Chats",
+                description=(
+                    "Meet accomplished board members and gain valuable "
+                    "information on recruitment week. Limited slots."
+                ),
+                ocr_text=(
+                    "Select a slot to meet our accomplished board members\n"
+                    "BOOK YOUR APPOINTMENT NOW\nLimited slots from 9/21 - 10/02"
+                ),
+            ),
+        )
+
+    def test_flyer_text_supplies_the_application_call_the_caption_omits(self) -> None:
+        # Real row: the caption reads like a club pitch and only the flyer
+        # says how you get in.
+        self.assertEqual(
+            "student_application",
+            classify_content_kind(
+                "instagram",
+                title="California Medicine Scholars Program Application",
+                description=(
+                    "Join a supportive community of community college students "
+                    "aspiring towards careers in medicine."
+                ),
+                ocr_text="Scan QR code to apply! APPLICATION NOW OPEN!",
+            ),
+        )
+
+    def test_flyer_text_cannot_promote_a_fundraiser_or_strip_eligibility(self) -> None:
+        # OCR reaches the application check alone: donation lines and audience
+        # notes in a flyer's fine print must not reclassify the row.
+        self.assertEqual(
+            "student_event",
+            classify_content_kind(
+                "instagram",
+                title="General Meeting",
+                description="Our weekly meeting.",
+                ocr_text="Scan to donate! Proceeds support our chapter.",
+            ),
+        )
+
+    def test_an_occasion_title_still_beats_booking_language(self) -> None:
+        # Drop-in hours advertise slots too, and remain something you attend.
+        self.assertEqual(
+            "student_event",
+            classify_content_kind(
+                "instagram",
+                title="Advising Office Hours",
+                description="Book your appointment with an advisor.",
+            ),
+        )
+
     def test_talk_about_applying_is_not_an_application(self) -> None:
         # Bare "application" is not an application call; this is a tips talk.
         self.assertEqual(

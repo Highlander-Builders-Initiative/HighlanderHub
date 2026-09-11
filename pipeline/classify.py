@@ -2,7 +2,8 @@
 
 Only title/description text establishes fundraising or student eligibility.
 Audience cohorts are evaluated separately; deadlines match the title only.
-Program applications are recognized last, so a dated cutoff still wins.
+Program applications are recognized last, so a dated cutoff still wins, and
+they are the one check that also reads a flyer's OCR text.
 """
 from __future__ import annotations
 
@@ -85,6 +86,27 @@ _PROGRAM_NOUN_PATTERN = re.compile(
     )s?\b
     """,
     re.IGNORECASE | re.VERBOSE,
+)
+
+# A sign-up window, not an occasion: individually booked appointments.
+# Like a program intake it has no single start time, so a chronological feed
+# would date it to whichever hour the model guessed. The occasion-noun veto
+# still applies, which is what keeps "Office Hours" an event.
+_BOOKING_WINDOW_PATTERN = re.compile(
+    r"""
+    (?:
+        book\s+(?:your|a|an)\s+(?:appointment|slot|time|meeting|1:1)
+      | (?:select|choose|pick|reserve|claim|grab)\s+(?:a|your)\s+
+        (?:time\s+)?(?:slot|appointment)
+      | sign\s+up\s+for\s+a\s+(?:slot|time)
+    )
+    """,
+    re.IGNORECASE | re.VERBOSE,
+)
+
+_APPOINTMENT_CONTEXT_PATTERN = re.compile(
+    r"\b(?:appointments?|1:1|one[- ]on[- ]one|coffee\s+chats?)\b",
+    re.IGNORECASE,
 )
 
 # "7-week in-person summer program", "10 month fellowship" — a printed span
@@ -181,6 +203,9 @@ def _is_program_application(title: str, text: str) -> bool:
     # An occasion noun in the title settles it: this is something you attend.
     if _OCCASION_TITLE_PATTERN.search(title):
         return False
+    if (_BOOKING_WINDOW_PATTERN.search(text)
+            and _APPOINTMENT_CONTEXT_PATTERN.search(text)):
+        return True
     if _APPLICATION_CALL_PATTERN.search(text):
         return bool(_PROGRAM_NOUN_PATTERN.search(text))
     return bool(_PROGRAM_COMMITMENT_PATTERN.search(text))
@@ -193,10 +218,15 @@ def classify_content_kind(
     description: str = "",
     tags: Iterable = (),
     audiences: Iterable = (),
+    ocr_text: str = "",
 ) -> str:
     """Classify with fundraiser precedence, then eligibility, then title cutoff.
 
     Tags remain accepted for existing callers but never feed text matching.
+    `ocr_text` is read by the program-application check alone: a flyer prints
+    the sign-up mechanics ("select a slot", "limited slots") that the caption
+    leaves out, but reading it for fundraising or eligibility would promote
+    every donation line and audience note in a flyer's fine print.
     """
     title = (title or "").casefold()
     text = f"{title} {description or ''}".casefold()
@@ -219,6 +249,6 @@ def classify_content_kind(
 
     # Checked after the cutoff so a dated "Applications Due Friday" stays a
     # deadline; this catches the open-ended program pitch behind it.
-    if _is_program_application(title, text):
+    if _is_program_application(title, f"{text} {(ocr_text or '').casefold()}"):
         return "student_application"
     return "student_event"

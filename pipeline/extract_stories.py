@@ -30,16 +30,20 @@ from config import (
 from classify import classify_content_kind, detect_free_food
 from discord_notify import notify_free_food_events
 from event_identity import dedupe_event_rows, suppress_tombstoned_event_groups
+from flyer_qr import QR_SCAN_VERSION, qr_rsvp_urls
 from reshare import reshared_origin_handle, strip_byline
 from story_dates import (
     has_source_date,
     immediate_event_range,
+    is_single_session_reminder,
     local_event_range,
     looks_like_schedule_grid,
+    midnight_end,
     normalize_timestamptz,
     was_stale_when_posted,
 )
 from url_utils import normalize_http_url as _normalize_url
+from url_utils import normalize_rsvp_url
 
 log = logging.getLogger("pipeline.extract_stories")
 
@@ -413,6 +417,43 @@ def _gemini_extract(
     return json.loads(_strip_json_fence(text))
 
 
+def _add_qr_result(cached: dict[str, Any], image: bytes) -> dict[str, Any]:
+    result = cached.get("result")
+    if (cached.get("status") != "ok" or not isinstance(result, dict)
+            or not result.get("rsvp_required")
+            or result.get("_qr_scan_version") == QR_SCAN_VERSION):
+        return cached
+    try:
+        urls = qr_rsvp_urls(image)
+    except Exception as exc:  # noqa: BLE001 - QR recovery must not lose an event.
+        log.warning("extract %s: QR decoding failed: %s", cached.get("story_id"), exc)
+        return cached
+    # The result JSON survives both local and remote cache round trips.
+    return {**cached, "result": {
+        **result, "_qr_scan_version": QR_SCAN_VERSION, "_qr_urls": urls,
+    }}
+
+
+def _repair_cached_rsvp(raw: dict[str, Any], cached: dict[str, Any]) -> dict[str, Any]:
+    result = cached.get("result")
+    if (cached.get("status") != "ok" or not isinstance(result, dict)
+            or not result.get("rsvp_required")
+            or result.get("_qr_scan_version") == QR_SCAN_VERSION):
+        return cached
+    row, _ = _to_event_row(raw, cached, {}, _utc_now(), _known_handles())
+    if row is None or datetime.fromisoformat(row["ends_at"] or row["starts_at"]) <= datetime.fromisoformat(_utc_now()):
+        return cached
+    try:
+        image = _download_image(cached.get("image_url") or raw.get("image_url"))
+    except Exception as exc:  # noqa: BLE001 - retry transient failures next run.
+        log.warning("extract %s: QR flyer download failed: %s", raw.get("id"), exc)
+        return cached
+    repaired = _add_qr_result(cached, image)
+    if repaired == cached:
+        return cached
+    return _persist_terminal_cache(str(raw["id"]), repaired)
+
+
 def _repair_cached_flyer(
     raw: dict[str, Any], cached: dict[str, Any]
 ) -> dict[str, Any]:
@@ -429,6 +470,8 @@ def _repair_cached_flyer(
             normalize_timestamptz(result.get("starts_at")),
             normalize_timestamptz(result.get("ends_at")),
         )
+        if starts_at:
+            ends_at = midnight_end(cached.get("ocr_text"), starts_at, ends_at)
         # Match event-row handling of invalid ends and OCR-corrected dates.
         if starts_at and ends_at and datetime.fromisoformat(ends_at) <= datetime.fromisoformat(starts_at):
             ends_at = None
@@ -446,7 +489,8 @@ def _repair_cached_flyer(
     image_url = _upload_story_flyer(raw, image)
     if not image_url:
         return cached
-    return _persist_terminal_cache(str(raw["id"]), {**cached, "image_url": image_url})
+    repaired = _add_qr_result({**cached, "image_url": image_url}, image)
+    return _persist_terminal_cache(str(raw["id"]), repaired)
 
 
 def _process_story(raw: dict[str, Any], meta: dict[str, Any]) -> dict[str, Any]:
@@ -471,7 +515,7 @@ def _process_story(raw: dict[str, Any], meta: dict[str, Any]) -> dict[str, Any]:
                 and cached.get("status") in REMOTE_CACHE_TERMINAL_STATUSES
             ):
                 log.debug("extract %s: cache %s", label, cached.get("status"))
-                return _repair_cached_flyer(raw, cached)
+                return _repair_cached_rsvp(raw, _repair_cached_flyer(raw, cached))
             log.warning("extract %s: invalid cache payload; retrying", label)
 
     remote_cached = _load_remote_cache(story_id)
@@ -480,7 +524,9 @@ def _process_story(raw: dict[str, Any], meta: dict[str, Any]) -> dict[str, Any]:
         and remote_cached.get("status") in REMOTE_CACHE_TERMINAL_STATUSES
     ):
         log.info("extract %s: remote cache %s", label, remote_cached.get("status"))
-        return _repair_cached_flyer(raw, _write_cache(story_id, remote_cached))
+        return _repair_cached_rsvp(
+            raw, _repair_cached_flyer(raw, _write_cache(story_id, remote_cached))
+        )
 
     try:
         image = _download_image(raw.get("image_url"))
@@ -532,6 +578,7 @@ def _process_story(raw: dict[str, Any], meta: dict[str, Any]) -> dict[str, Any]:
     }
     if durable_image_url:
         payload["image_url"] = durable_image_url
+    payload = _add_qr_result(payload, image)
     log.info("extract %s: %s", label, status)
     return _persist_terminal_cache(story_id, payload)
 
@@ -597,6 +644,12 @@ def _reshared_owner(raw: dict[str, Any]) -> str | None:
     return owner or None
 
 
+def _reshared_media_identity(raw: dict[str, Any]) -> str | None:
+    post = raw.get("reshared_post")
+    media_id = str(post.get("media_id") or "") if isinstance(post, dict) else ""
+    return f"post_{media_id}" if re.fullmatch(r"\d+", media_id) else None
+
+
 def _caption_fallback_title(description: str) -> str:
     """Name an event whose flyer text was only reshare chrome.
 
@@ -644,6 +697,24 @@ def _to_event_row(
     origin_handle = _reshared_owner(raw) or reshared_origin_handle(
         ocr_text, str(raw.get("handle") or ""), known_handles
     )
+    handle = str(raw.get("handle") or "")
+    media_identity = _reshared_media_identity(raw)
+    identity_handle = origin_handle or media_identity or handle
+    legacy_range = immediate_event_range(
+        raw, cached, llm_starts_at, llm_ends_at, legacy=True
+    )
+    prior_starts = {
+        llm_starts_at,
+        ocr_range[0] if ocr_range else None,
+        legacy_range[0] if legacy_range else None,
+    }
+    identity_accounts = {handle, origin_handle, media_identity}
+    prior_ids = {
+        event_id
+        for account in identity_accounts if account
+        for start in prior_starts if start
+        if (event_id := _instagram_event_id(account, start))
+    }
     title = strip_byline(
         str(llm.get("title") or ""),
         ocr_text,
@@ -657,12 +728,7 @@ def _to_event_row(
 
     if not has_source_date(raw, cached):
         log.info("extract %s: skipping event without a source date", raw.get("id"))
-        return None, {
-            event_id
-            for account in {str(raw.get("handle") or ""), origin_handle or ""}
-            if account and llm_starts_at
-            if (event_id := _instagram_event_id(account, llm_starts_at))
-        }
+        return None, prior_ids
     if ocr_range is not None:
         starts_at, ends_at = ocr_range
     else:
@@ -672,6 +738,7 @@ def _to_event_row(
     if not title or not starts_at:
         return None, set()
 
+    ends_at = midnight_end(ocr_text, starts_at, ends_at)
     if ends_at and datetime.fromisoformat(ends_at) <= datetime.fromisoformat(starts_at):
         log.info(
             "extract %s: dropping invalid end time (%s <= %s)",
@@ -681,14 +748,15 @@ def _to_event_row(
         )
         ends_at = None
 
-    if looks_like_schedule_grid(cached.get("ocr_text"), starts_at, ends_at):
+    if (looks_like_schedule_grid(cached.get("ocr_text"), starts_at, ends_at)
+            and not is_single_session_reminder(raw, cached, starts_at, ends_at)):
         log.info(
             "extract %s: skipping ambiguous multi-event schedule (%s -> %s)",
             raw.get("id"),
             starts_at,
             ends_at,
         )
-        return None, set()
+        return None, prior_ids
 
     if was_stale_when_posted(raw, starts_at, ends_at):
         log.info(
@@ -698,9 +766,13 @@ def _to_event_row(
         )
         return None, set()
 
-    handle = str(raw.get("handle") or "")
-    rsvp_url = _normalize_url(raw.get("story_cta_url")) or _normalize_url(
-        llm.get("rsvp_url")
+    qr_values = llm.get("_qr_urls")
+    qr_urls = {url for value in (qr_values if isinstance(qr_values, list) else [])
+               if (url := normalize_rsvp_url(value))}
+    rsvp_url = (
+        normalize_rsvp_url(raw.get("story_cta_url"))
+        or (next(iter(qr_urls)) if len(qr_urls) == 1 else None)
+        or normalize_rsvp_url(llm.get("rsvp_url"), str(ocr_text or ""))
     )
 
     # Accounts that asked not to be named publicly on scraped listings.
@@ -716,7 +788,6 @@ def _to_event_row(
     # into one row via upsert instead of becoming separate events. For a
     # reshare the identity account is whoever wrote the post, not whoever
     # reshared it, so every club amplifying one post collapses too.
-    identity_handle = origin_handle or handle
     event_id = _instagram_event_id(identity_handle, starts_at)
     if event_id is None:
         return None, set()
@@ -736,6 +807,7 @@ def _to_event_row(
             title=title,
             description=description,
             tags=tags,
+            ocr_text=str(cached.get("ocr_text") or ""),
         ),
         "tags": tags,
         "source": "instagram",
@@ -754,10 +826,10 @@ def _to_event_row(
     # the LLM's pre-OCR start time, and — when the story turns out to be a
     # reshare — the crawled account's own ID, which is where the duplicate
     # rows live today.
-    superseded_ids = {
+    superseded_ids = prior_ids | {
         candidate
-        for account in {handle, identity_handle}
-        for start in {starts_at, llm_starts_at}
+        for account in identity_accounts
+        for start in {starts_at}
         if account and start
         if (candidate := _instagram_event_id(account, start))
     }
@@ -783,7 +855,22 @@ def _collect_event_rows(
     superseded_ids: set[str] = set()
     retired_by: dict[str, set[str]] = {}
     known_handles = set(meta_by_handle)
+    # Share an observed author across copies of the same attached post. When
+    # no copy identifies the author, every copy uses the stable media ID.
+    owners_by_media: dict[str, set[str]] = {}
     for raw, cached in processed:
+        media = _reshared_media_identity(raw)
+        owner = _reshared_owner(raw) or reshared_origin_handle(
+            cached.get("ocr_text"), str(raw.get("handle") or ""), known_handles
+        )
+        if media and owner:
+            owners_by_media.setdefault(media, set()).add(owner)
+    for raw, cached in processed:
+        owners = owners_by_media.get(_reshared_media_identity(raw), set())
+        if len(owners) == 1 and not _reshared_owner(raw):
+            raw = {**raw, "reshared_post": {
+                **raw["reshared_post"], "owner_username": next(iter(owners)),
+            }}
         row, story_superseded_ids = _to_event_row(
             raw,
             cached,

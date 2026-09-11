@@ -17,6 +17,12 @@ only durable record — keep it. Localist and HighlanderLink events are mutable
 (descriptions get edited or events disappear), so those scrapers overwrite
 current files and prune files absent from a completed source fetch.
 
+Recurring Localist series run by UCR Recreation with at least three instances
+contribute only their next ongoing/upcoming session. Other recurring events
+still expand into separate occurrences. The source link preserves access to
+the full recreation schedule; each successful run advances the selected
+session and reconciles old unlocked occurrence rows.
+
 ## Layout
 
 ```
@@ -153,9 +159,43 @@ A printed calendar date stands on its own. Immediacy words bind the event to
 `posted_at` instead of unlocking the model's clock: `now`/`rn` take the posting
 instant, `today`/`tonight`/`tomorrow` fix the day and leave the time to
 extraction, and a printed date outranks all of them. Calls to action (`apply
-now`, `applications are now open`) are not immediacy claims. Bare weekdays and
-bare `M/D` are too easy to read out of prose and room numbers, so they count
-only next to a clock time.
+now`, `applications are now open`, `book your appointment now`) are not
+immediacy claims. Bare weekdays and bare `M/D` are too easy to read out of
+prose and room numbers, so they need a corroborating neighbour: a clock time on
+the flyer, a second slash date across a range dash (`recruitment is
+10/8-10/11`), or — for `M/D` — a weekday printed beside it (`signups close
+Thursday (6/11)`).
+
+The weekday and date must form one expression; a nearby greeting or a fraction
+such as `1/2 price` does not qualify. `Apply today` is also a call to action,
+not evidence of an event happening today. Explicit evening-to-midnight ranges
+such as `September 19, 2026 5PM–12AM` end at midnight on the following day.
+
+Multi-day grids and weekday practice schedules are skipped when one event
+cannot represent the flyer. A clear `today` reminder for a single session can
+still use a reused schedule flyer. Skipped schedules and corrected timestamps
+retire their old row IDs, including IDs previously derived from posting time;
+admin locks/deletions continue to apply to replacement identities.
+
+Reshares use the original author when known, otherwise the attached post's
+`media_id`. Copies of the same post share observed author metadata during
+mapping, so missing OCR bylines do not create one event per resharing club.
+
+RSVP mapping rejects Instagram destinations and bare shortener homepages.
+Spaces inside a short link are removed only when the full spaced link is
+corroborated by an OCR line. QR codes are decoded locally from flyer images;
+their destinations are never fetched by the decoder. A valid story CTA wins,
+then a single QR destination, then the extracted URL. Multiple distinct QR
+destinations remain ambiguous. `rsvp_required` stays true when no usable link
+can be recovered.
+
+Upcoming cached RSVP flyers receive one QR scan without repeating OCR/Gemini.
+The scan version and destinations are stored inside the existing result JSON
+for both local and remote caches, including successful scans with no QR code.
+Download/decoder failures remain retryable. Install the updated requirements
+before running extraction. Content-kind mapping reads OCR for appointment and
+application signals, but limited capacity alone never makes an event an
+application. Text-only backfills skip Instagram unless explicitly requested.
 
 Undated posts are skipped even from existing caches, and their prior event IDs
 enter the existing unlocked-row cleanup unless another accepted story supports

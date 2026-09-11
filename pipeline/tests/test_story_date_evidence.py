@@ -146,6 +146,7 @@ class StoryDateEvidenceTests(unittest.TestCase):
         for text in (
             "Apply now for internships", "Register now for the fair",
             "Applications are now open", "Follow us rn", "Donate now",
+            "Book your appointment now", "Reserve your spot now", "Join now",
         ):
             with self.subTest(text=text):
                 row, _ = extract._to_event_row(
@@ -165,6 +166,47 @@ class StoryDateEvidenceTests(unittest.TestCase):
             {}, "2026-09-09T20:00:00Z",
         )
         self.assertIsNotNone(row)
+
+    def test_a_slash_date_range_corroborates_itself(self) -> None:
+        # "10/8-10/11" is a run of days; fractions do not come in ranges.
+        for text in (
+            "RECRUITMENT IS 10/8-10/11", "Limited slots from 9/21 - 10/02",
+            "Tabling 10/8 to 10/11",
+        ):
+            with self.subTest(text=text):
+                row, _ = extract._to_event_row(
+                    self.raw, {**self.cached, "ocr_text": text}, {},
+                    "2026-09-09T20:00:00Z",
+                )
+                self.assertIsNotNone(row)
+
+    def test_a_weekday_beside_a_slash_date_corroborates_it(self) -> None:
+        # Neither half is evidence alone, but printed together they name a day.
+        row, _ = extract._to_event_row(
+            self.raw,
+            {**self.cached, "ocr_text": "Signups close Thursday (6/11)"},
+            {}, "2026-09-09T20:00:00Z",
+        )
+        self.assertIsNotNone(row)
+        row, _ = extract._to_event_row(
+            self.raw,
+            {**self.cached, "ocr_text": "Happy Friday! Half off 1/2 price boba"},
+            {}, "2026-09-09T20:00:00Z",
+        )
+        self.assertIsNone(row)
+
+    def test_a_printed_slash_range_outranks_a_booking_cta(self) -> None:
+        # "BOOK ... NOW" is a call to action, so the printed run of days stands
+        # instead of collapsing the event onto the story's post time.
+        row, _ = extract._to_event_row(
+            self.raw,
+            {**self.cached, "ocr_text": (
+                "Board Member Coffee Chats\nBOOK YOUR APPOINTMENT NOW\n"
+                "Limited slots from 9/21 - 10/02"
+            )},
+            {}, "2026-09-09T20:00:00Z",
+        )
+        self.assertEqual("2026-09-09T19:00:00+00:00", row["starts_at"])
 
     def test_happening_now_reminders_keep_their_source_date(self) -> None:
         for text in ("Workshop starting NOW!", "Finals Refuel happening rn till 2pm!"):
