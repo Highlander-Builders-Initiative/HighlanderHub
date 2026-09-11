@@ -9,6 +9,19 @@ import unittest
 from pathlib import Path
 from unittest.mock import Mock, patch
 
+PIPELINE_ROOT = Path(__file__).resolve().parents[1]
+if str(PIPELINE_ROOT) not in sys.path:
+    sys.path.insert(0, str(PIPELINE_ROOT))
+
+STAGE_ORDER = [
+    "ucr_events.scrape",
+    "highlander_link.scrape",
+    "events.normalize",
+    "instagram.scrape",
+    "instagram.extract",
+    "instagram.normalize",
+]
+
 
 class RunMainTests(unittest.TestCase):
     def setUp(self) -> None:
@@ -81,17 +94,7 @@ class RunMainTests(unittest.TestCase):
             self.run.main()
 
         self.assertEqual(1, raised.exception.code)
-        self.assertEqual(
-            [
-                "instagram.scrape",
-                "ucr_events.scrape",
-                "highlander_link.scrape",
-                "instagram.extract",
-                "instagram.normalize",
-                "events.normalize",
-            ],
-            calls,
-        )
+        self.assertEqual(STAGE_ORDER, calls)
         self.fake_modules["normalize_events"].main.assert_called_once_with(
             ["ucr_events_", "highlander_link_"]
         )
@@ -122,17 +125,7 @@ class RunMainTests(unittest.TestCase):
 
         record = self._history()
         self.assertFalse(record["ok"])
-        self.assertEqual(
-            [
-                "instagram.scrape",
-                "ucr_events.scrape",
-                "highlander_link.scrape",
-                "instagram.extract",
-                "instagram.normalize",
-                "events.normalize",
-            ],
-            [s["name"] for s in record["stages"]],
-        )
+        self.assertEqual(STAGE_ORDER, [s["name"] for s in record["stages"]])
         broken = next(s for s in record["stages"] if s["name"] == "ucr_events.scrape")
         self.assertEqual("ValueError: page 2 exploded", broken["error"])
         self.assertTrue(
@@ -156,16 +149,58 @@ class RunMainTests(unittest.TestCase):
             2, len(self.history.read_text(encoding="utf-8").strip().splitlines())
         )
 
-    def test_summary_still_reported_when_a_stage_exits(self) -> None:
-        self.fake_modules["scrape"].main.side_effect = SystemExit(2)
+    def test_instagram_scrape_exit_does_not_skip_structured_pipeline(self) -> None:
+        self.fake_modules["scrape"].main.side_effect = SystemExit(
+            "Instagram credentials required"
+        )
 
         with self.assertRaises(SystemExit) as raised:
             self.run.main()
 
-        self.assertEqual(2, raised.exception.code)
+        self.assertEqual(1, raised.exception.code)
+        self.fake_modules["ucr_events"].main.assert_called_once()
+        self.fake_modules["highlander_link"].main.assert_called_once()
+        self.fake_modules["normalize_events"].main.assert_called_once_with(
+            ["ucr_events_", "highlander_link_"]
+        )
+        self.fake_modules["extract_stories"].main.assert_called_once()
+        self.fake_modules["normalize"].main.assert_called_once()
+
         record = self._history()
         self.assertFalse(record["ok"])
-        self.assertEqual(["instagram.scrape"], [s["name"] for s in record["stages"]])
+        self.assertEqual(STAGE_ORDER, [s["name"] for s in record["stages"]])
+        scrape_stage = next(
+            s for s in record["stages"] if s["name"] == "instagram.scrape"
+        )
+        self.assertEqual(
+            "SystemExit: Instagram credentials required", scrape_stage["error"]
+        )
+
+    def test_extract_exit_does_not_skip_structured_normalize(self) -> None:
+        self.fake_modules["extract_stories"].main.side_effect = SystemExit(
+            "Supabase env missing"
+        )
+
+        with self.assertRaises(SystemExit) as raised:
+            self.run.main()
+
+        self.assertEqual(1, raised.exception.code)
+        self.fake_modules["normalize_events"].main.assert_called_once_with(
+            ["ucr_events_", "highlander_link_"]
+        )
+        record = self._history()
+        names = [s["name"] for s in record["stages"]]
+        self.assertEqual(STAGE_ORDER, names)
+        self.assertLess(
+            names.index("events.normalize"), names.index("instagram.extract")
+        )
+        extract_stage = next(
+            s for s in record["stages"] if s["name"] == "instagram.extract"
+        )
+        self.assertEqual("SystemExit: Supabase env missing", extract_stage["error"])
+        self.assertTrue(
+            all(s["ok"] for s in record["stages"] if s["name"] != "instagram.extract")
+        )
 
     def test_history_failure_does_not_break_the_run(self) -> None:
         with patch.object(self.run, "RUN_HISTORY", Path("/nope/run_history.jsonl")):
