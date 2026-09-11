@@ -8,7 +8,14 @@ Three sources right now, hand-off to the Next.js app via Supabase tables:
 | events.ucr.edu (Localist) | `ucr_events.py` (JSON API) | `data/raw/ucr_events/` | `events` | `src/lib/events/index.ts` |
 | highlanderlink.ucr.edu (CampusLabs Engage) | `highlander_link.py` (JSON API) | `data/raw/highlander_link/` | `events` | `src/lib/events/index.ts` |
 
-`run.py` scrapes everything, extracts IG event rows, then normalizes. Failures
+`run.py` scrapes everything, extracts IG event rows, normalizes, then reconciles
+corroborated duplicates across sources. Its seventh stage prefers structured
+campus metadata while retaining a missing end date or RSVP link from a matching
+flyer. Matches require the same start instant plus a distinctive title and
+compatible host/location, or a shared registration link and related title.
+Generic meetings from different clubs stay separate. Locked rows win and
+deleted source identities suppress their duplicate group. Notifications run
+only after reconciliation in the combined runner. Failures
 in one source don't kill the others. IG raw files are the durable story archive;
 Localist and HighlanderLink raw files are the latest successful source snapshot.
 
@@ -199,10 +206,14 @@ application. Text-only backfills skip Instagram unless explicitly requested.
 
 Undated posts are skipped even from existing caches, and their prior event IDs
 enter the existing unlocked-row cleanup unless another accepted story supports
-the same ID. This is a minimum evidence check, not full semantic verification;
-unrecognized date expressions are conservatively skipped. Note the remaining
-gap: once source text supplies a calendar date, the model's own day is still
-trusted, so the mapper can still publish a day the flyer did not print.
+the same ID. This is not full semantic verification; unrecognized date
+expressions are conservatively skipped. A single printed calendar day now
+corrects the model's day even without a time range. An unrelated model day on
+a multi-date flyer is rejected. Corroborated dotted dates (`10.31` beside a
+clock) and separate numeric tiles explicitly labeled `MONTH DAY YEAR` are
+recognized; bare prices and room numbers remain excluded. Date-only month/day
+ranges include the entire last day. Awareness/resource posts and service
+closures are not student gatherings.
 
 ## Schedule
 
@@ -338,7 +349,11 @@ event.
 Terminal cache statuses (`image_expired`, `no_text`, `not_event`, `ok`) are
 not reprocessed on later runs. Transient download, Vision, Gemini, or remote
 cache failures are logged and retried on the next run; `error` is allowed in
-the database for diagnostics but is not replayed as a cache hit.
+the database for diagnostics but is not replayed as a cache hit. Download,
+Vision, and Gemini failures persist `result.stage` and `result.error` locally
+and remotely. Extraction saves successful items before raising a stage failure
+that names unsuccessful story IDs. Direct `run.py` calls also save a rotating
+`data/run.log`, so warning details survive a closed terminal.
 
 Run extraction by itself after a scrape:
 

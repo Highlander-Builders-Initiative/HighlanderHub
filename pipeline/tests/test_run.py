@@ -20,6 +20,7 @@ STAGE_ORDER = [
     "instagram.scrape",
     "instagram.extract",
     "instagram.normalize",
+    "events.reconcile",
 ]
 
 
@@ -32,6 +33,7 @@ class RunMainTests(unittest.TestCase):
             "normalize_events",
             "scrape",
             "ucr_events",
+            "reconcile_events",
         ]
         self.fake_modules = {
             name: types.SimpleNamespace(main=Mock(name=f"{name}.main"))
@@ -63,13 +65,13 @@ class RunMainTests(unittest.TestCase):
         calls: list[str] = []
 
         def succeeds(name: str):
-            def inner(*_args) -> None:
+            def inner(*_args, **_kwargs) -> None:
                 calls.append(name)
 
             return inner
 
         def fails(name: str):
-            def inner(*_args) -> None:
+            def inner(*_args, **_kwargs) -> None:
                 calls.append(name)
                 raise RuntimeError(f"{name} failed")
 
@@ -89,6 +91,7 @@ class RunMainTests(unittest.TestCase):
         self.fake_modules["normalize_events"].main.side_effect = fails(
             "events.normalize"
         )
+        self.fake_modules["reconcile_events"].main.side_effect = succeeds("events.reconcile")
 
         with self.assertRaises(SystemExit) as raised:
             self.run.main()
@@ -96,7 +99,7 @@ class RunMainTests(unittest.TestCase):
         self.assertEqual(1, raised.exception.code)
         self.assertEqual(STAGE_ORDER, calls)
         self.fake_modules["normalize_events"].main.assert_called_once_with(
-            ["ucr_events_", "highlander_link_"]
+            ["ucr_events_", "highlander_link_"], notify=False
         )
 
     def test_failed_structured_scrape_is_not_reconciled(self) -> None:
@@ -106,7 +109,7 @@ class RunMainTests(unittest.TestCase):
             self.run.main()
 
         self.fake_modules["normalize_events"].main.assert_called_once_with(
-            ["highlander_link_"]
+            ["highlander_link_"], notify=False
         )
 
     def test_summary_records_every_stage_and_names_the_broken_one(self) -> None:
@@ -121,7 +124,7 @@ class RunMainTests(unittest.TestCase):
         self.assertIn("ucr_events.scrape", summary)
         self.assertIn("FAILED", summary)
         self.assertIn("ValueError: page 2 exploded", summary)
-        self.assertIn("1 of 6 stages broken: ucr_events.scrape", summary)
+        self.assertIn("1 of 7 stages broken: ucr_events.scrape", summary)
 
         record = self._history()
         self.assertFalse(record["ok"])
@@ -139,7 +142,9 @@ class RunMainTests(unittest.TestCase):
         self.assertIn("run ok in", "\n".join(logged.output))
         record = self._history()
         self.assertTrue(record["ok"])
-        self.assertEqual(6, len(record["stages"]))
+        self.assertEqual(7, len(record["stages"]))
+        self.fake_modules["extract_stories"].main.assert_called_once_with(notify=False)
+        self.fake_modules["reconcile_events"].main.assert_called_once()
         self.assertFalse([s for s in record["stages"] if "error" in s])
 
     def test_history_is_appended_not_overwritten(self) -> None:
@@ -161,7 +166,7 @@ class RunMainTests(unittest.TestCase):
         self.fake_modules["ucr_events"].main.assert_called_once()
         self.fake_modules["highlander_link"].main.assert_called_once()
         self.fake_modules["normalize_events"].main.assert_called_once_with(
-            ["ucr_events_", "highlander_link_"]
+            ["ucr_events_", "highlander_link_"], notify=False
         )
         self.fake_modules["extract_stories"].main.assert_called_once()
         self.fake_modules["normalize"].main.assert_called_once()
@@ -186,7 +191,7 @@ class RunMainTests(unittest.TestCase):
 
         self.assertEqual(1, raised.exception.code)
         self.fake_modules["normalize_events"].main.assert_called_once_with(
-            ["ucr_events_", "highlander_link_"]
+            ["ucr_events_", "highlander_link_"], notify=False
         )
         record = self._history()
         names = [s["name"] for s in record["stages"]]

@@ -169,7 +169,8 @@ _OPEN_AUDIENCE_PHRASES = (
 # Free food is an independent attribute; preserve the existing caller contract.
 _FREE_FOOD_PATTERN = re.compile(
     r"\b(free food|free pizza|pizza provided|free snacks|snacks provided|"
-    r"refreshments|lunch provided|dinner provided|boba|free drinks)\b",
+    r"refreshments|lunch provided|dinner provided|boba|free drinks|"
+    r"free (?:kona ice|shaved ice|ice cream|teas?|treats))\b",
     re.IGNORECASE,
 )
 
@@ -177,6 +178,24 @@ _FREE_FOOD_PATTERN = re.compile(
 def detect_free_food(*texts: str | None) -> bool:
     """True when the supplied text blobs advertise free food."""
     return bool(_FREE_FOOD_PATTERN.search(" ".join(text for text in texts if text)))
+
+
+def is_informational_notice(title: str, description: str = "", ocr_text: str = "") -> bool:
+    """Recognize dated service notices and awareness/resource posts, not gatherings."""
+    if any(term in f"{title} {description}".casefold() for term in _FUNDRAISER_TERMS):
+        return False
+    if re.search(r"\b(?:closures?|closed|modified hours)\b", title, re.IGNORECASE):
+        return not _OCCASION_TITLE_PATTERN.search(title.replace("Hours", "").replace("hours", ""))
+    if not re.search(r"\b(?:awareness|prevention)\b.*\b(?:day|week|month)\b", title, re.IGNORECASE):
+        return False
+    if _OCCASION_TITLE_PATTERN.search(title):
+        return False
+    text = f"{description}\n{ocr_text}"
+    # Campaigns may advertise real timed activities; retain those.
+    if (_OCCASION_TITLE_PATTERN.search(text)
+            and re.search(r"\b\d{1,2}(?::\d{2})?\s*[ap]\.?m\b", text, re.IGNORECASE)):
+        return False
+    return True
 
 
 def _audience_stance(audiences: Iterable) -> AudienceStance:
@@ -230,6 +249,8 @@ def classify_content_kind(
     """
     title = (title or "").casefold()
     text = f"{title} {description or ''}".casefold()
+    if is_informational_notice(title, description, ocr_text):
+        return "other"
     if any(term in text for term in _FUNDRAISER_TERMS):
         return "fundraiser"
 

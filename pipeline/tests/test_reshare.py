@@ -166,8 +166,10 @@ class ReshareIdentityTests(unittest.TestCase):
         self.assertEqual("ig_bluejadeandjoel_20260926T0700Z", row["id"])
 
     def test_an_original_flyer_keeps_its_own_account_identity(self) -> None:
-        row, _ = self._row("swe.ucr", SWE_FLYER_OCR, "SWE X NSBE STUDY JAM")
-        self.assertEqual("ig_swe.ucr_20260926T0700Z", row["id"])
+        # Keep the synthetic model and flyer dates consistent: this test is
+        # about ownership, not publishing a stale May flyer in September.
+        row, _ = self._row("swe.ucr", SWE_FLYER_OCR.replace("5/29/2026", "9/26/2026"), "SWE X NSBE STUDY JAM")
+        self.assertEqual("ig_swe.ucr_20260926T2100Z", row["id"])
 
     def test_admin_delete_survives_the_re_key(self) -> None:
         retired = {"ig_bluejadeandjoel_20260926T0700Z": {"ig_ucrarts_20260926T0700Z"}}
