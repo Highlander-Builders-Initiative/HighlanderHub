@@ -4,16 +4,19 @@ Each source is independent. A failure in one shouldn't kill the others, so
 we log and keep going.
 
 Stages:
-  1. **Scrape** – fetch raw data from each source (Instagram stories,
-     UCR Events) and write it to disk.
-  2. **Extract** – run OCR + Vertex AI Gemini structured extraction on
+  1. **Structured scrape + normalize** – fetch Localist and HighlanderLink
+     snapshots, then upsert them. This finishes before Instagram extract so a
+     later Instagram timeout or `SystemExit` cannot strand a completed campus
+     snapshot. Stale-row reconciliation is enabled only for sources whose
+     current scrape completed.
+  2. **Instagram scrape** – fetch story JSON to disk.
+  3. **Extract** – run OCR + Vertex AI Gemini structured extraction on
      Instagram story images, upsert results into Supabase, and cache
      per-story outputs to avoid redundant API calls.  Note: this stage
      makes external API calls (Google Vision, Vertex AI Gemini) and incurs cost.
-  3. **Normalize** – convert raw on-disk archives into canonical event
-     rows and upsert them into Supabase. Normalization can reuse older raw
-     data after a scrape failure, but stale-row reconciliation is enabled
-     only for structured sources whose current scrape completed.
+  4. **Instagram normalize** – rebuild `stories` rows from the on-disk
+     archive. Extraction and story normalization always run using whatever is
+     on disk, including after a scrape failure.
 
 Every run ends with a per-stage summary — printed to the log and appended to
 `data/run_history.jsonl`. Because stage failures are isolated, a dead source
@@ -57,15 +60,12 @@ def _safe(name: str, fn, results: list[StageResult]) -> bool:
     started = time.monotonic()
     try:
         fn()
-    except SystemExit:
-        results.append(
-            StageResult(name, False, time.monotonic() - started, "SystemExit")
-        )
-        raise
-    except Exception as e:  # noqa: BLE001 — per-source isolation
+    except (Exception, SystemExit) as e:  # noqa: BLE001 — per-source isolation
         log.error("%s failed: %s", name, e, exc_info=True)
         results.append(
-            StageResult(name, False, time.monotonic() - started, f"{type(e).__name__}: {e}")
+            StageResult(
+                name, False, time.monotonic() - started, f"{type(e).__name__}: {e}"
+            )
         )
         return False
     results.append(StageResult(name, True, time.monotonic() - started))
@@ -132,13 +132,8 @@ def _report(results: list[StageResult], total_seconds: float) -> None:
 
 
 def _run_stages(results: list[StageResult]) -> None:
-    _safe("instagram.scrape", scrape.main, results)
     ucr_events_ok = _safe("ucr_events.scrape", ucr_events.main, results)
     highlander_link_ok = _safe("highlander_link.scrape", highlander_link.main, results)
-    # Extraction and normalization always run using whatever is on disk.
-    _safe("instagram.extract", extract_stories.main, results)
-    _safe("instagram.normalize", normalize.main, results)
-    # normalize_events handles both ucr_events and highlander_link.
     reconcile_prefixes = []
     if ucr_events_ok:
         reconcile_prefixes.append("ucr_events_")
@@ -149,6 +144,10 @@ def _run_stages(results: list[StageResult]) -> None:
         lambda: normalize_events.main(reconcile_prefixes),
         results,
     )
+    # Instagram extract/normalize always run using whatever is on disk.
+    _safe("instagram.scrape", scrape.main, results)
+    _safe("instagram.extract", extract_stories.main, results)
+    _safe("instagram.normalize", normalize.main, results)
 
 
 def main() -> None:
@@ -160,7 +159,7 @@ def main() -> None:
     try:
         _run_stages(results)
     finally:
-        # A stage that calls sys.exit shouldn't cost us the summary.
+        # KeyboardInterrupt / unexpected abort still gets a summary.
         _report(results, time.monotonic() - started)
     if not all(r.ok for r in results):
         sys.exit(1)
