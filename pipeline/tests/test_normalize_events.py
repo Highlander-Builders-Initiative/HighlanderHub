@@ -112,6 +112,27 @@ class NormalizeEventsTests(unittest.TestCase):
         self.assertEqual(rows[1]["ends_at"], "2026-06-21T12:00:00-07:00")
         self.assertNotIn("ucr_events_52310591390648", {row["id"] for row in rows})
 
+    def test_recreation_series_keeps_next_session_and_advances_after_it_ends(self) -> None:
+        raw = {
+            "id": 42, "title": "Power Yoga", "recurring": True,
+            "departments": [{"name": "UCR Recreation"}],
+            "filters": {"event_types": [{"name": "Recreation"}]},
+            "localist_url": "https://events.ucr.edu/event/power_yoga",
+            "event_instances": [
+                {"id": day, "start": f"2026-09-{day}T09:00:00-07:00",
+                 "end": f"2026-09-{day}T10:00:00-07:00"}
+                for day in (21, 22, 23)
+            ],
+        }
+        for now, expected in (("2026-09-21T09:30:00-07:00", 21), ("2026-09-21T10:01:00-07:00", 22)):
+            with self.subTest(now=now):
+                rows = self.normalize_events._to_event_rows(raw, now, now=datetime.fromisoformat(now))
+                self.assertEqual([f"ucr_events_42_{expected}"], [row["id"] for row in rows])
+                self.assertEqual(raw["localist_url"], rows[0]["source_url"])
+        raw["departments"] = [{"name": "UCR Athletics"}]
+        rows = self.normalize_events._to_event_rows(raw, now, now=datetime.fromisoformat("2026-09-20T10:00:00-07:00"))
+        self.assertEqual(3, len(rows))
+
     def test_localist_mapper_keeps_single_instance_events_canonical(self) -> None:
         rows = self.normalize_events._to_event_rows(
             {

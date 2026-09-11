@@ -68,6 +68,13 @@ _OCR_NUMERIC_DATE_RE = re.compile(
     r"(?<![\w/.$])(?:\d{4}-)?(\d{1,2})([/.-])(\d{1,2})"
     r"(?:\2(\d{4}|\d{2}))?(?![\w/])"
 )
+# Two slash dates across a range dash corroborate each other: "10/8-10/11" is
+# a run of days, never a pair of fractions.
+_OCR_NUMERIC_RANGE_RE = re.compile(
+    r"(?<![\w/.$])(\d{1,2})/(\d{1,2})\s*(?:[-\u2013\u2014]|to|thru|through)\s*"
+    r"(\d{1,2})/(\d{1,2})(?![\w/])",
+    re.IGNORECASE,
+)
 
 # --- immediacy ------------------------------------------------------------
 # Immediacy words bind the event to posted_at rather than unlocking a model
@@ -82,12 +89,22 @@ _CTA_BEFORE_NOW_RE = re.compile(
     r"available|are|open)\b(?:\s+\w+){0,2}\s*$",
     re.IGNORECASE,
 )
+_BOOKING_CTA_BEFORE_NOW_RE = re.compile(
+    r"\b(?:book|reserve|claim|secure|grab|purchase|schedule)\b"
+    r"(?:\s+\w+){0,2}\s*$|\bjoin\s*$",
+    re.IGNORECASE,
+)
 _CTA_AFTER_NOW_RE = re.compile(
     r"\s*(?:accepting|available|open|hiring|recruiting)\b",
     re.IGNORECASE,
 )
 _OCR_IMMEDIATE_DAY_RE = re.compile(
     r"\b(?:today|tonight|tomorrow)\b", re.IGNORECASE
+)
+_DAY_CTA_RE = re.compile(
+    r"\b(?:apply|applications?|register|registration|sign\s*ups?|donate|enroll|"
+    r"rsvp|order|shop|buy|vote|submit|nominate|follow|dm)\b(?:\s+\w+){0,2}\s*$",
+    re.IGNORECASE,
 )
 # A bare weekday is prose ("happy Friday", "Monday motivation") as often as it
 # is a date, so it only counts as evidence next to a clock time.
@@ -112,13 +129,13 @@ _OCR_TIMEZONE_RE = re.compile(
 )
 _OCR_TIME_RANGE_RE = re.compile(
     r"\b(\d{1,2})(?::(\d{2}))?\s*([ap]\.?m\.?)"
-    r"(?:\s*(?:-|to)\s*|\s+)"
+    r"(?:\s*(?:[-–—]|to)\s*|\s+)"
     r"(\d{1,2})(?::(\d{2}))?\s*([ap]\.?m\.?)\b",
     re.IGNORECASE,
 )
 # Compact ranges like "1-2 pm" apply the trailing meridiem to both endpoints.
 _OCR_COMPACT_TIME_RANGE_RE = re.compile(
-    r"\b(\d{1,2})(?::(\d{2}))?\s*(?:-|to)\s*"
+    r"\b(\d{1,2})(?::(\d{2}))?\s*(?:[-–—]|to)\s*"
     r"(\d{1,2})(?::(\d{2}))?\s*([ap]\.?m\.?)\b",
     re.IGNORECASE,
 )
@@ -128,7 +145,7 @@ _OCR_COMPACT_TIME_RANGE_RE = re.compile(
 # publishing a made-up range that collapses every slot together.
 _GRID_MIN_DISTINCT_DATES = 3
 _GRID_MIN_TIME_RANGES = 3
-_SCHEDULE_HINT_RE = re.compile(r"\b(?:schedule|hours)\b", re.IGNORECASE)
+_SCHEDULE_HINT_RE = re.compile(r"\b(?:schedule|hours|practice|times)\b", re.IGNORECASE)
 _STALE_EVENT_GRACE = timedelta(days=1)
 
 _MONTH_NAME = "month_name"
@@ -174,20 +191,28 @@ def local_posted_at(raw: dict[str, Any]) -> datetime | None:
     return parsed.astimezone(PACIFIC_TZ)
 
 
-def _scan_printed_dates(text: str) -> Iterator[tuple[str, int, int]]:
-    """Every date-shaped token in the text, tagged with its notation.
+def _scan_printed_dates(text: str) -> Iterator[tuple[str, int, int, tuple[int, int]]]:
+    """Every date-shaped token in the text, tagged with its notation and span.
 
-    This is the single vocabulary the policies below filter. Calendar validity
-    is not checked here so that the override can keep applying its own.
+    This is the single vocabulary the policies below filter. The span lets a
+    policy read a token's neighbours (see `_bare_date_is_corroborated`).
+    Calendar validity is not checked here so that the override can keep
+    applying its own.
     """
     for match in _OCR_DATE_RE.finditer(text):
         yield (
             _MONTH_NAME,
             _MONTHS[match.group(1).lower().rstrip(".")],
             int(match.group(2)),
+            match.span(),
         )
     for match in _OCR_DAY_MONTH_RE.finditer(text):
-        yield _DAY_MONTH, _MONTHS[match.group(2).lower()], int(match.group(1))
+        yield (
+            _DAY_MONTH,
+            _MONTHS[match.group(2).lower()],
+            int(match.group(1)),
+            match.span(),
+        )
     for match in _OCR_NUMERIC_DATE_RE.finditer(text):
         if match.group(4) or re.match(r"\d{4}-", match.group()):
             form = _NUMERIC
@@ -196,7 +221,7 @@ def _scan_printed_dates(text: str) -> Iterator[tuple[str, int, int]]:
         else:
             # Without a year "1-2" is a time range and "5.62" a decimal.
             continue
-        yield form, int(match.group(1)), int(match.group(3))
+        yield form, int(match.group(1)), int(match.group(3)), match.span()
 
 
 def _is_calendar_day(month: int, day: int) -> bool:
@@ -212,22 +237,60 @@ def override_dates(text: str) -> set[tuple[int, int]]:
     """Dates in the one notation the wall-time override can safely rebuild."""
     return {
         (month, day)
-        for form, month, day in _scan_printed_dates(text)
+        for form, month, day, _ in _scan_printed_dates(text)
         if form is _MONTH_NAME
     }
+
+
+def _bare_date_is_corroborated(text: str, span: tuple[int, int]) -> bool:
+    """Whether a bare "5/28" here reads as a date rather than a fraction.
+
+    Any one of three neighbours settles it: a clock time on the flyer, a second
+    slash date across a range dash ("recruitment is 10/8-10/11"), or a weekday
+    printed beside it ("signups close Thursday (6/11)"). A fraction or a room
+    number keeps none of that company, and a flyer that prints only a date
+    range is still a flyer that named its days.
+    """
+    start, end = span
+    if re.match(r"\s*(?:price|off|cups?|tbsp|tsp|inches)\b", text[end:], re.IGNORECASE):
+        return False
+    if _OCR_CLOCK_TIME_RE.search(text):
+        return True
+
+    for match in _OCR_NUMERIC_RANGE_RE.finditer(text):
+        if match.start() <= start and end <= match.end() and all(
+            _is_calendar_day(int(month), int(day))
+            for month, day in (
+                (match.group(1), match.group(2)),
+                (match.group(3), match.group(4)),
+            )
+        ):
+            return True
+
+    # A nearby greeting ("Happy Friday! 1/2 price boba") is not a date label.
+    for weekday in _OCR_WEEKDAY_RE.finditer(text):
+        if weekday.end() <= start:
+            between = text[weekday.end():start]
+        elif end <= weekday.start():
+            between = text[end:weekday.start()]
+        else:
+            continue
+        if len(between) <= 8 and re.fullmatch(r"[\s,().]*", between):
+            return True
+    return False
 
 
 def evidence_dates(text: str) -> set[tuple[int, int]]:
     """Calendar days the source text actually pins down.
 
     Any notation counts, but a bare "5/28" is as often a fraction or a room
-    number as a date, so it only counts next to a clock time.
+    number as a date, so it counts only when a neighbour corroborates it.
     """
-    corroborated = _OCR_CLOCK_TIME_RE.search(text) is not None
     return {
         (month, day)
-        for form, month, day in _scan_printed_dates(text)
-        if (form is not _NUMERIC_BARE or corroborated) and _is_calendar_day(month, day)
+        for form, month, day, span in _scan_printed_dates(text)
+        if _is_calendar_day(month, day)
+        and (form is not _NUMERIC_BARE or _bare_date_is_corroborated(text, span))
     }
 
 
@@ -253,15 +316,29 @@ def source_date_texts(
             yield re.sub(r"https?://\S+|www\.\S+|@[\w.]+", "", value)
 
 
-def claims_happening_now(text: str) -> bool:
+def claims_happening_now(text: str, *, legacy: bool = False) -> bool:
     """True when "now"/"rn" says an event is under way, not "apply now"."""
     for match in _OCR_NOW_RE.finditer(text):
         before = text[max(0, match.start() - 40) : match.start()]
         after = text[match.end() : match.end() + 20]
         if _CTA_BEFORE_NOW_RE.search(before) or _CTA_AFTER_NOW_RE.match(after):
             continue
+        if not legacy and _BOOKING_CTA_BEFORE_NOW_RE.search(before):
+            continue
         return True
     return False
+
+
+def _immediate_day(text: str, *, legacy: bool = False) -> str | None:
+    for match in _OCR_IMMEDIATE_DAY_RE.finditer(text):
+        before = text[max(0, match.start() - 40):match.start()]
+        if not legacy and (
+            _DAY_CTA_RE.search(before)
+            or _BOOKING_CTA_BEFORE_NOW_RE.search(before)
+        ):
+            continue
+        return match.group().lower()
+    return None
 
 
 def has_source_date(raw: dict[str, Any], cached: dict[str, Any]) -> bool:
@@ -278,7 +355,7 @@ def has_source_date(raw: dict[str, Any], cached: dict[str, Any]) -> bool:
             return True
         if not has_posting_context:
             continue
-        if claims_happening_now(text) or _OCR_IMMEDIATE_DAY_RE.search(text):
+        if claims_happening_now(text) or _immediate_day(text):
             return True
         if _OCR_WEEKDAY_RE.search(text) and _OCR_CLOCK_TIME_RE.search(text):
             return True
@@ -290,6 +367,8 @@ def immediate_event_range(
     cached: dict[str, Any],
     llm_starts_at: str | None,
     llm_ends_at: str | None,
+    *,
+    legacy: bool = False,
 ) -> tuple[str, str | None] | None:
     """Bind an immediacy story to the day its source text actually claims.
 
@@ -298,6 +377,9 @@ def immediate_event_range(
     "tonight" and "tomorrow" fix only the calendar day and leave the time to
     extraction. Returning None means source text made no immediacy claim and
     the model's timestamp stands.
+
+    `legacy` reconstructs the pre-fix timestamp only to retire old row IDs;
+    it must never supply a new event's date.
     """
     posted_at = local_posted_at(raw)
     if posted_at is None or not llm_starts_at:
@@ -307,12 +389,15 @@ def immediate_event_range(
     claimed_day: str | None = None
     for text in source_date_texts(raw, cached):
         # A printed date outranks a passing "apply now" or "open today".
-        if evidence_dates(text):
+        printed_dates = evidence_dates(text) if not legacy else {
+            (month, day) for form, month, day, _ in _scan_printed_dates(text)
+            if _is_calendar_day(month, day)
+            and (form != _NUMERIC_BARE or _OCR_CLOCK_TIME_RE.search(text))
+        }
+        if printed_dates:
             return None
-        claims_now = claims_now or claims_happening_now(text)
-        match = _OCR_IMMEDIATE_DAY_RE.search(text)
-        if match is not None and claimed_day is None:
-            claimed_day = match.group(0).lower()
+        claims_now = claims_now or claims_happening_now(text, legacy=legacy)
+        claimed_day = claimed_day or _immediate_day(text, legacy=legacy)
 
     start = datetime.fromisoformat(llm_starts_at).astimezone(PACIFIC_TZ)
     end = (
@@ -445,10 +530,65 @@ def local_event_range(
             return None
 
     if end <= start:
-        return None
+        if end_hour == 0 and end_minute == 0 and start_hour >= 12:
+            end += timedelta(days=1)
+        else:
+            return None
     return start.astimezone(timezone.utc).isoformat(), end.astimezone(
         timezone.utc
     ).isoformat()
+
+
+def midnight_end(ocr_text: Any, starts_at: str, ends_at: str | None) -> str | None:
+    """Repair a same-day midnight end only when the printed range confirms it.
+
+    This also handles yearful flyers, which the general wall-time override
+    deliberately leaves to extraction. Other reversed ranges remain invalid.
+    """
+    if not isinstance(ocr_text, str) or not ends_at:
+        return ends_at
+    start = datetime.fromisoformat(starts_at).astimezone(PACIFIC_TZ)
+    end = datetime.fromisoformat(ends_at).astimezone(PACIFIC_TZ)
+    if (end.date() != start.date() or end.time() != time(0, 0)
+            or start.hour < 12 or end > start):
+        return ends_at
+    if evidence_dates(ocr_text) != {(start.month, start.day)}:
+        return ends_at
+    for date in _OCR_DATE_RE.finditer(ocr_text):
+        year = _OCR_EXPLICIT_YEAR_RE.match(ocr_text, date.end())
+        if year and int(re.search(r"\d{4}", year.group()).group()) != start.year:
+            return ends_at
+    if time_range(ocr_text) != ((start.hour, start.minute), (0, 0)):
+        return ends_at
+    return (end + timedelta(days=1)).astimezone(timezone.utc).isoformat()
+
+
+def is_single_session_reminder(
+    raw: dict[str, Any], cached: dict[str, Any], starts_at: str, ends_at: str | None,
+) -> bool:
+    """A story can point to today's session on a reused schedule flyer."""
+    posted = local_posted_at(raw)
+    if posted is None:
+        return False
+    start = datetime.fromisoformat(starts_at).astimezone(PACIFIC_TZ)
+    if ends_at and datetime.fromisoformat(ends_at).astimezone(PACIFIC_TZ).date() != start.date():
+        return False
+    texts = list(source_date_texts(raw, cached))
+    if not any(
+        len(evidence_dates(text)) >= 2
+        or len({m.group().lower()[:3] for m in _OCR_WEEKDAY_RE.finditer(text)}) >= 2
+        for text in texts
+    ):
+        # "Today" does not pick one slot from a single-day room/time grid.
+        return False
+    for text in texts:
+        heading = "\n".join(text.splitlines()[:3])
+        if re.search(r"\b(?:cancelled|canceled|postponed)\b", heading, re.IGNORECASE):
+            continue
+        day = _immediate_day(heading)
+        if day and start.date() == posted.date() + timedelta(days=day == "tomorrow"):
+            return True
+    return False
 
 
 def looks_like_schedule_grid(
@@ -463,12 +603,27 @@ def looks_like_schedule_grid(
         and time_range_count(ocr_text) >= _GRID_MIN_TIME_RANGES
     ):
         return True
-    # Counted with the override's narrow reading: a grid is recognized by
-    # repeated "Month Day" headings, not by every date-shaped token.
-    if not ends_at or len(override_dates(ocr_text)) < _GRID_MIN_DISTINCT_DATES:
-        return False
-    span = datetime.fromisoformat(ends_at) - datetime.fromisoformat(starts_at)
-    return span > timedelta(days=1)
+    dates = evidence_dates(ocr_text)
+    clocks = len(list(_OCR_CLOCK_TIME_RE.finditer(ocr_text)))
+    if len(dates) >= _GRID_MIN_DISTINCT_DATES:
+        headings = sorted(
+            (span, (month, day)) for _, month, day, span in _scan_printed_dates(ocr_text)
+            if (month, day) in dates
+        )
+        dates_with_clocks = {
+            day for index, (span, day) in enumerate(headings)
+            if _OCR_CLOCK_TIME_RE.search(
+                ocr_text[span[1]:headings[index + 1][0][0] if index + 1 < len(headings) else len(ocr_text)]
+            )
+        }
+        # Extra "save the date" promotions below one event's clock do not
+        # turn that event into a grid. Multiple date/clock groups do.
+        if len(dates_with_clocks) >= 2:
+            return True
+        if ends_at and datetime.fromisoformat(ends_at) - datetime.fromisoformat(starts_at) > timedelta(days=1):
+            return True
+    weekdays = {m.group().lower()[:3] for m in _OCR_WEEKDAY_RE.finditer(ocr_text)}
+    return bool(_SCHEDULE_HINT_RE.search(ocr_text) and len(weekdays) >= 2 and clocks >= 2)
 
 
 def was_stale_when_posted(

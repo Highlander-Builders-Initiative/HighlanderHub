@@ -1,0 +1,693 @@
+{
+  "3982071674776379510": {
+    "raw": {
+      "id": "3982071674776379510",
+      "handle": "ucrhcg",
+      "posted_at": "2026-09-09T02:12:36Z",
+      "reshared_post": {
+        "caption": null,
+        "media_id": "3982070591184491705",
+        "owner_username": null,
+        "shortcode": "DdDKBrSFNS5",
+        "source_key": "story_feed_media"
+      }
+    },
+    "cached": {
+      "status": "ok",
+      "story_id": "3982071674776379510",
+      "ocr_text": "Link is in our bio!\nSign up fast before slots run out!\nHCG ucrhcg\nHCG\nHighlander\nConsulting\nGroup\nBoard\nMember\nCoffee\nChats\n1/\nDetails:\n• Select a slot to meet our accomplished board\nmembers and gain valuable information on\nrecruitment week\n• BOOK YOUR APPOINTMENT NOW\n• Limited slots from 9/21 - 10/02\n⚫ Link to sign up is in our bio!\nucrhcg Interested in learning more about HCG and/or\nRecruitment Week? Book your slot for a 1:1 with an HCG B...",
+      "result": {
+        "category": "career",
+        "confidence": "high",
+        "description": "Meet accomplished board members and gain valuable information on recruitment week. Limited slots.",
+        "ends_at": null,
+        "is_event": true,
+        "is_free": true,
+        "location": "Riverside, California",
+        "rsvp_required": true,
+        "rsvp_url": "Link to sign up is in our bio!",
+        "starts_at": "2026-09-21T09:00:00-07:00",
+        "tags": [
+          "recruitment",
+          "networking",
+          "mentorship"
+        ],
+        "title": "Highlander Consulting Group Board Member Coffee Chats"
+      }
+    }
+  },
+  "3982819621169405952": {
+    "raw": {
+      "id": "3982819621169405952",
+      "handle": "ucrbcoe",
+      "posted_at": "2026-09-10T02:58:38Z",
+      "reshared_post": {
+        "caption": null,
+        "media_id": "3982598736835624405",
+        "owner_username": null,
+        "shortcode": "DdFCHNQAb3V",
+        "source_key": "story_feed_media"
+      }
+    },
+    "cached": {
+      "status": "ok",
+      "story_id": "3982819621169405952",
+      "ocr_text": "UCR Division of\nUndergraduate Education\nDivision of Undergraduate Education\nWELCOME WEEK\nRESOURCE FAIR\nLearn more about:\nResearch Opportunities\nInternships\nPrestigious Scholarships\nAcademic Resources\nPPAC\nROTC and more!\n377\nSept. 22 2026 11AM-1PM\nPENTLAND HILLS BEAR CAVE\nO\n@ucr_ue\nGIVEAWAYS AND LUNCH PROVIDED TO\nSTUDENTS WHO ATTEND!",
+      "result": {
+        "category": "academic",
+        "confidence": "high",
+        "description": "Learn more about:\nResearch Opportunities\nInternships\nPrestigious Scholarships\nAcademic Resources\nPPAC\nROTC and more!\nGIVEAWAYS AND LUNCH PROVIDED TO\nSTUDENTS WHO ATTEND!",
+        "ends_at": "2026-09-22T13:00:00-07:00",
+        "is_event": true,
+        "is_free": true,
+        "location": "PENTLAND HILLS BEAR CAVE",
+        "rsvp_required": false,
+        "rsvp_url": null,
+        "starts_at": "2026-09-22T11:00:00-07:00",
+        "tags": [
+          "resource fair",
+          "research",
+          "internships",
+          "scholarships",
+          "academic resources",
+          "ROTC",
+          "giveaways",
+          "lunch"
+        ],
+        "title": "WELCOME WEEK RESOURCE FAIR"
+      }
+    }
+  },
+  "3983218921065494579": {
+    "raw": {
+      "id": "3983218921065494579",
+      "handle": "cnasadvising",
+      "posted_at": "2026-09-10T16:11:59Z",
+      "reshared_post": {
+        "caption": null,
+        "media_id": "3982598736835624405",
+        "owner_username": null,
+        "shortcode": "DdFCHNQAb3V",
+        "source_key": "story_feed_media"
+      }
+    },
+    "cached": {
+      "status": "ok",
+      "story_id": "3983218921065494579",
+      "ocr_text": "UCR\nDivision of\nUndergraduate Education\nDivision of Undergraduate Education\nWELCOME WEEK\nRESOURCE FAIR\nLearn more about:\nResearch Opportunities\nInternships\nPrestigious Scholarships\nAcademic Resources\nPPAC\nROTC and more!\nO\n@ucr_ue\nSept. 22 2026 11AM-1PM\nPENTLAND HILLS BEAR CAVE\nGIVEAWAYS AND LUNCH PROVIDED TO\nSTUDENTS WHO ATTEND!",
+      "result": {
+        "category": "academic",
+        "confidence": "high",
+        "description": "Learn more about: Research Opportunities Internships Prestigious Scholarships Academic Resources PPAC ROTC and more!",
+        "ends_at": "2026-09-22T13:00:00-07:00",
+        "is_event": true,
+        "is_free": true,
+        "location": "Pentland Hills Bear Cave",
+        "rsvp_required": false,
+        "rsvp_url": null,
+        "starts_at": "2026-09-22T11:00:00-07:00",
+        "tags": [
+          "resource fair",
+          "research",
+          "internships",
+          "scholarships",
+          "academic resources",
+          "ROTC"
+        ],
+        "title": "Welcome Week Resource Fair"
+      }
+    }
+  },
+  "3983255612447719308": {
+    "raw": {
+      "id": "3983255612447719308",
+      "handle": "thedirtylabucr",
+      "posted_at": "2026-09-10T17:24:53Z",
+      "reshared_post": {
+        "caption": null,
+        "media_id": "3982598736835624405",
+        "owner_username": null,
+        "shortcode": "DdFCHNQAb3V",
+        "source_key": "story_feed_media"
+      }
+    },
+    "cached": {
+      "status": "ok",
+      "story_id": "3983255612447719308",
+      "ocr_text": "UCR\nDivision of\nUndergraduate Education\nDivision of Undergraduate Education\nWELCOME WEEK\nRESOURCE FAIR\nLearn more about:\nResearch Opportunities\nInternships\nPrestigious Scholarships\nAcademic Resources\nPPAC\nROTC and more!\nO\n@ucr_ue\nSept. 22 2026 11AM-1PM\nPENTLAND HILLS BEAR CAVE\nGIVEAWAYS AND LUNCH PROVIDED TO\nSTUDENTS WHO ATTEND!",
+      "result": {
+        "category": "academic",
+        "confidence": "high",
+        "description": "Learn more about: Research Opportunities Internships Prestigious Scholarships Academic Resources PPAC ROTC and more!",
+        "ends_at": "2026-09-22T13:00:00-07:00",
+        "is_event": true,
+        "is_free": true,
+        "location": "PENTLAND HILLS BEAR CAVE",
+        "rsvp_required": false,
+        "rsvp_url": null,
+        "starts_at": "2026-09-22T11:00:00-07:00",
+        "tags": [
+          "ucr",
+          "undergraduate education",
+          "welcome week",
+          "resource fair",
+          "research",
+          "internships",
+          "scholarships",
+          "academic resources",
+          "rotc"
+        ],
+        "title": "WELCOME WEEK RESOURCE FAIR"
+      }
+    }
+  },
+  "3982733858780214639": {
+    "raw": {
+      "id": "3982733858780214639",
+      "handle": "impacto_ucr",
+      "posted_at": "2026-09-10T00:08:15Z",
+      "reshared_post": {
+        "caption": null,
+        "media_id": "3982622434003328849",
+        "owner_username": null,
+        "shortcode": "DdFHgC9RR9R",
+        "source_key": "story_feed_media"
+      }
+    },
+    "cached": {
+      "status": "ok",
+      "story_id": "3982733858780214639",
+      "ocr_text": "USTICE\nie_iyc and immigrantjusticeca\nImmigrant Justice In Action\nPATHWAYS TO\nGRADUATE SCHOOL\nfor Immigrant Students\nJoin us and hear directly from current and former\ngraduate students about their experience in grad school:\nfrom admissions to funding to graduation and beyond!\nOpen to all immigrant students and allied educators,\nstudent support staff, & community members!\n10.14.2026 AT 6:00 PM\nSCAN TO RSVP OR FOR\nMORE INFORMATION\nBIT.LY/GRAD PANEL26\nINLAND EMPIRE IMMIGRANT YOUTH COLLECTIVE\nie_iyc Are you an undocumented or immigrant student\nthat wants to pursue a graduate program? ...",
+      "result": {
+        "category": "academic",
+        "confidence": "high",
+        "description": "Join us and hear directly from current and former graduate students about their experience in grad school: from admissions to funding to graduation and beyond! Open to all immigrant students and allied educators, student support staff, & community members!",
+        "ends_at": null,
+        "is_event": true,
+        "is_free": true,
+        "location": "UCR",
+        "rsvp_required": true,
+        "rsvp_url": "BIT.LY/GRAD PANEL26",
+        "starts_at": "2026-10-14T18:00:00-07:00",
+        "tags": [
+          "immigrant students",
+          "graduate school",
+          "admissions",
+          "funding",
+          "education"
+        ],
+        "title": "PATHWAYS TO GRADUATE SCHOOL for Immigrant Students"
+      }
+    }
+  },
+  "3982688104342687256": {
+    "raw": {
+      "id": "3982688104342687256",
+      "handle": "poderatucr",
+      "posted_at": "2026-09-09T22:37:20Z",
+      "reshared_post": {
+        "caption": null,
+        "media_id": "3982622434003328849",
+        "owner_username": null,
+        "shortcode": "DdFHgC9RR9R",
+        "source_key": "story_feed_media"
+      }
+    },
+    "cached": {
+      "status": "ok",
+      "story_id": "3982688104342687256",
+      "ocr_text": "COLLECTIVE\nie_iyc and immigrantjusticeca\nImmigrant Justice In Action\nPATHWAYS TO\nGRADUATE SCHOOL\nfor Immigrant Students\nJoin us and hear directly from current and former\ngraduate students about their experience in grad school:\nfrom admissions to funding to graduation and beyond!\nOpen to all immigrant students and allied educators,\nstudent support staff, & community members!\n10.14.2026 AT 6:00 PM\nSCAN TO RSVP OR FOR\nMORE INFORMATION\nBIT.LY/GRAD PANEL26\nINLAND EMPIRE IMMIGRANT YOUTH COLLECTIVE\nie_iyc Are you an undocumented or immigrant student\nthat wants to pursue a graduate program? ...",
+      "result": {
+        "category": "academic",
+        "confidence": "high",
+        "description": "Join us and hear directly from current and former graduate students about their experience in grad school: from admissions to funding to graduation and beyond! Open to all immigrant students and allied educators, student support staff, & community members!",
+        "ends_at": null,
+        "is_event": true,
+        "is_free": true,
+        "location": "Riverside, California",
+        "rsvp_required": true,
+        "rsvp_url": "BIT.LY/GRADPANEL26",
+        "starts_at": "2026-10-14T18:00:00-07:00",
+        "tags": [
+          "immigrant students",
+          "graduate school",
+          "education"
+        ],
+        "title": "PATHWAYS TO GRADUATE SCHOOL for Immigrant Students"
+      }
+    }
+  },
+  "3983255452865768231": {
+    "raw": {
+      "id": "3983255452865768231",
+      "handle": "thedirtylabucr",
+      "posted_at": "2026-09-10T17:24:34Z",
+      "reshared_post": {
+        "caption": null,
+        "media_id": "3982622434003328849",
+        "owner_username": null,
+        "shortcode": "DdFHgC9RR9R",
+        "source_key": "story_feed_media"
+      }
+    },
+    "cached": {
+      "status": "ok",
+      "story_id": "3983255452865768231",
+      "ocr_text": "Immigrant Justice In Action\nPATHWAYS TO\nGRADUATE SCHOOL\nfor Immigrant Students\nJoin us and hear directly from current and former\ngraduate students about their experience in grad school:\nfrom admissions to funding to graduation and beyond!\nOpen to all immigrant students and allied educators,\nstudent support staff, & community members!\n10.14.2026 AT 6:00 PM\nSCAN TO RSVP OR FOR\nMORE INFORMATION\nBIT.LY/GRAD_PANEL26\nINLAND EMPIRE IMMIGRANT YOUTH COLLECTIVE\n@ie_iyc and immigrantjusticeca",
+      "result": {
+        "category": "academic",
+        "confidence": "high",
+        "description": "Join us and hear directly from current and former graduate students about their experience in grad school: from admissions to funding to graduation and beyond! Open to all immigrant students and allied educators, student support staff, & community members!",
+        "ends_at": null,
+        "is_event": true,
+        "is_free": true,
+        "location": "Riverside, California",
+        "rsvp_required": true,
+        "rsvp_url": "BIT.LY/GRAD_PANEL26",
+        "starts_at": "2026-10-14T18:00:00-07:00",
+        "tags": [
+          "immigrant students",
+          "graduate school",
+          "admissions",
+          "funding",
+          "education"
+        ],
+        "title": "Immigrant Justice In Action: Pathways to Graduate School for Immigrant Students"
+      }
+    }
+  },
+  "3982808608584563280": {
+    "raw": {
+      "id": "3982808608584563280",
+      "handle": "thewellucr",
+      "posted_at": "2026-09-10T02:36:46Z",
+      "reshared_post": {
+        "caption": null,
+        "media_id": "3982756646511388681",
+        "owner_username": null,
+        "shortcode": "DdFmBGGIygJ",
+        "source_key": "story_feed_media"
+      }
+    },
+    "cached": {
+      "status": "ok",
+      "story_id": "3982808608584563280",
+      "ocr_text": "R' Cycle Presents:\nCOMMUNITY CO-OP\nCRUISE\nSEPT.\n28TH, 2026\n6:30PM\nMEET UP:\nUCR Coffee Bean\nEnd Point:\nLolliCup ND1\nBEGINNER: 5 mi.\nBikes, scooters, and skateboards\nwelcome!\nFREE\n16 oz. Milk Tea\n(Riders only)\nAll Riders must have Lights & Helmet!\n@rcycle_coop\nMade possible by\nUCR HWS\nUCR Dining Services\nUCR Housing & Residential Services",
+      "result": {
+        "category": "community",
+        "confidence": "high",
+        "description": "Bikes, scooters, and skateboards welcome! All Riders must have Lights & Helmet! Free 16 oz. Milk Tea (Riders only)",
+        "ends_at": null,
+        "is_event": true,
+        "is_free": true,
+        "location": "UCR Coffee Bean",
+        "rsvp_required": false,
+        "rsvp_url": null,
+        "starts_at": "2026-09-28T18:30:00-07:00",
+        "tags": [
+          "rcycle_coop",
+          "UCR HWS",
+          "UCR Dining Services",
+          "UCR Housing & Residential Services"
+        ],
+        "title": "Community Co-op Cruise"
+      }
+    }
+  },
+  "3982841794136036299": {
+    "raw": {
+      "id": "3982841794136036299",
+      "handle": "ucr_triathlon",
+      "posted_at": "2026-09-10T03:42:41Z",
+      "reshared_post": {
+        "caption": null,
+        "media_id": "3982756646511388681",
+        "owner_username": null,
+        "shortcode": "DdFmBGGIygJ",
+        "source_key": "story_feed_media"
+      }
+    },
+    "cached": {
+      "status": "ok",
+      "story_id": "3982841794136036299",
+      "ocr_text": "R' Cycle Presents:\nCOMMUNITY CO-OP\nCRUISE\nSEPT.\n28TH, 2026\n6:30PM\nMEET UP:\nUCR Coffee Bean\nEnd Point:\nLolliCup ND1\nBEGINNER: 5 mi.\nBikes, scooters, and skateboards\nwelcome!\nFREE\n16 oz. Milk Tea\n(Riders only)\nAll Riders must have Lights & Helmet!\n@rcycle_coop\nMade possible by:\nUCR HWS\nUCR Dining Services\nUCR Housing & Residential Services",
+      "result": {
+        "category": "community",
+        "confidence": "high",
+        "description": "R' Cycle Presents:\nCOMMUNITY CO-OP\nCRUISE\nMEET UP:\nUCR Coffee Bean\nEnd Point:\nLolliCup ND1\nBEGINNER: 5 mi.\nBikes, scooters, and skateboards\nwelcome!\n16 oz. Milk Tea\n(Riders only)\nAll Riders must have Lights & Helmet!\n@rcycle_coop\nMade possible by:\nUCR HWS\nUCR Dining Services\nUCR Housing & Residential Services",
+        "ends_at": null,
+        "is_event": true,
+        "is_free": true,
+        "location": "UCR Coffee Bean",
+        "rsvp_required": false,
+        "rsvp_url": null,
+        "starts_at": "2026-09-28T18:30:00-07:00",
+        "tags": [
+          "cycling",
+          "community",
+          "ucr"
+        ],
+        "title": "COMMUNITY CO-OP CRUISE"
+      }
+    }
+  },
+  "3982866140879738392": {
+    "raw": {
+      "id": "3982866140879738392",
+      "handle": "newmancentercsf",
+      "posted_at": "2026-09-10T04:31:02Z",
+      "reshared_post": {
+        "caption": null,
+        "media_id": "3957956916109743225",
+        "owner_username": null,
+        "shortcode": "DbtfNhVBZR5",
+        "source_key": "story_feed_media"
+      }
+    },
+    "cached": {
+      "status": "ok",
+      "story_id": "3982866140879738392",
+      "ocr_text": "GALILEE\nGo Get Your Tickets For Galilee!!!!\ngalileefest, sbyoungcatholics, silentsium_band,\nseenandheard music, scottyvanhornband and\nsbvoc\nSBVOC PRESENTS\nGALILEE\nFAITH ART. MUSIC. ENCOUNTER\nA CATHOLIC MUSIC FESTIVAL\nSATURDAY, SEPTEMBER 19, 2026 5PM-12AM\nSERRA HOUSE OF FORMATION GRAND TERRACE, CA\nJESUS\nSILENTSIUM\nSCOTTY VAN HORN BAND\nSEEN AND HEARD\nEXPERIENCE MORE\nFOOD & DRINK VENDORS\nINTERACTIVE PRAYER EXPERIENCES\nMUSIC FESTIVAL\nART VENDORS\nCOMMUNITY BUILDING SOCIAL CORNERS\nHOLY SPIRIT VIBES\nCOMMUNITY BUILDING SOCIAL CORNERS\nPHOTO OPPS\nLIVE PODCASTS\nAND..\nHEALING\nFAITH ART MUSIC ENCOUNTER\ngalileefest Follow me to Galilee.",
+      "result": {
+        "category": "community",
+        "confidence": "high",
+        "description": "FAITH ART. MUSIC. ENCOUNTER\nA CATHOLIC MUSIC FESTIVAL\nFOOD & DRINK VENDORS\nINTERACTIVE PRAYER EXPERIENCES\nMUSIC FESTIVAL\nART VENDORS\nCOMMUNITY BUILDING SOCIAL CORNERS\nHOLY SPIRIT VIBES\nCOMMUNITY BUILDING SOCIAL CORNERS\nPHOTO OPPS\nLIVE PODCASTS\nAND..\nHEALING",
+        "ends_at": "2026-09-19T00:00:00-07:00",
+        "is_event": true,
+        "is_free": false,
+        "location": "SERRA HOUSE OF FORMATION GRAND TERRACE, CA",
+        "rsvp_required": true,
+        "rsvp_url": null,
+        "starts_at": "2026-09-19T17:00:00-07:00",
+        "tags": [
+          "music festival",
+          "faith",
+          "art",
+          "catholic",
+          "encounter",
+          "food",
+          "prayer",
+          "vendors",
+          "social",
+          "healing"
+        ],
+        "title": "GALILEE"
+      }
+    }
+  },
+  "3982663805918402695": {
+    "raw": {
+      "id": "3982663805918402695",
+      "handle": "ucr_mma",
+      "posted_at": "2026-09-09T21:49:04Z",
+      "reshared_post": {
+        "caption": null,
+        "media_id": "3940601345975286210",
+        "owner_username": null,
+        "shortcode": "Dav1AvESHnC",
+        "source_key": "story_feed_media"
+      }
+    },
+    "cached": {
+      "status": "ok",
+      "story_id": "3982663805918402695",
+      "ocr_text": "NEW SUMMER\nQUARTER PRACTICE\nTIMES\nWRITY\n161 E manfield st\nMonday-Wednesday\n8:00 pm:\nregular MMA practice\nThursday 8:00 pm:\nOpen mat\nFor the ppl who are on\ncampus, we're still\nopen",
+      "result": {
+        "category": "sports",
+        "confidence": "high",
+        "description": "regular MMA practice\nOpen mat",
+        "ends_at": null,
+        "is_event": true,
+        "is_free": false,
+        "location": "161 E manfield st",
+        "rsvp_required": false,
+        "rsvp_url": null,
+        "starts_at": "2026-09-15T20:00:00-07:00",
+        "tags": [
+          "MMA",
+          "practice",
+          "summer"
+        ],
+        "title": "NEW SUMMER QUARTER PRACTICE TIMES"
+      }
+    }
+  },
+  "3982538491137133079": {
+    "raw": {
+      "id": "3982538491137133079",
+      "handle": "ucriversideofficial",
+      "posted_at": "2026-09-09T17:40:05Z",
+      "reshared_post": {
+        "caption": null,
+        "media_id": "3982050528254055905",
+        "owner_username": null,
+        "shortcode": "DdDFduOPVXh",
+        "source_key": "story_feed_media"
+      }
+    },
+    "cached": {
+      "status": "ok",
+      "story_id": "3982538491137133079",
+      "ocr_text": "WELCOME\nWEEK\nUCR\nSTUDENTS\nONLY\nLIMIT 1 PER\nSTUDENT\nMonday, 9/21/2026\n9 AM-1 PM-FREE PLANT GIVEAWAY\n9 AM-1 PM-PLANT & SWAG SHOP\nTuesday, 9/22/2026\n9 AM-11 AM- FREE GUIDED TOURS\n9 AM-1 PM- PLANT & SWAG SHOP\nUCR\nBotanic\nGardens\nWednesday, 9/23/2026\n9 AM-1 PM-SCAVENGER HUNT\n9 AM-1 PM- PLANT & SWAG SHOP\n12 -3 PM- FREE KONA ICE\nNew and returning UCR students,\njoin us in the Botanic Gardens for activities\n@ucrbotanicgardens",
+      "result": {
+        "category": "social",
+        "confidence": "high",
+        "description": "New and returning UCR students, join us in the Botanic Gardens for activities",
+        "ends_at": "2026-09-23T15:00:00-07:00",
+        "is_event": true,
+        "is_free": true,
+        "location": "UCR Botanic Gardens",
+        "rsvp_required": false,
+        "rsvp_url": null,
+        "starts_at": "2026-09-21T09:00:00-07:00",
+        "tags": [
+          "welcome week",
+          "students",
+          "gardens",
+          "giveaway",
+          "tours",
+          "scavenger hunt",
+          "food"
+        ],
+        "title": "Welcome Week at UCR Botanic Gardens"
+      }
+    }
+  },
+  "3983255797651872521": {
+    "raw": {
+      "id": "3983255797651872521",
+      "handle": "thedirtylabucr",
+      "posted_at": "2026-09-10T17:25:14Z",
+      "reshared_post": {
+        "caption": null,
+        "media_id": "3982050528254055905",
+        "owner_username": null,
+        "shortcode": "DdDFduOPVXh",
+        "source_key": "story_feed_media"
+      }
+    },
+    "cached": {
+      "status": "ok",
+      "story_id": "3983255797651872521",
+      "ocr_text": "WELCOME\nWEEK\nUCR\nSTUDENTS\nONLY\nLIMIT 1 PER\nSTUDENT\nUCR\nBotanic\nGardens,\nMonday, 9/21/2026\n9 AM-1 PM-FREE PLANT GIVEAWAY\n9 AM-1 PM- PLANT & SWAG SHOP\nTuesday, 9/22/2026\n9 AM-11 AM- FREE GUIDED TOURS\n9 AM-1 PM- PLANT & SWAG SHOP\nWednesday, 9/23/2026\n9 AM-1 PM-SCAVENGER HUNT\n9 AM-1 PM- PLANT & SWAG SHOP\n12 -3 PM- FREE KONA ICE\nNew and returning UCR students,\njoin us in the Botanic Gardens for activities\n@ucrbotanicgardens",
+      "result": {
+        "category": "club",
+        "confidence": "high",
+        "description": "New and returning UCR students, join us in the Botanic Gardens for activities",
+        "ends_at": "2026-09-21T13:00:00-07:00",
+        "is_event": true,
+        "is_free": true,
+        "location": "UCR Botanic Gardens",
+        "rsvp_required": false,
+        "rsvp_url": null,
+        "starts_at": "2026-09-21T09:00:00-07:00",
+        "tags": [
+          "welcome week",
+          "plant giveaway",
+          "swag shop",
+          "guided tours",
+          "scavenger hunt",
+          "Kona Ice"
+        ],
+        "title": "Welcome Week at UCR Botanic Gardens"
+      }
+    }
+  },
+  "3983220415203469029": {
+    "raw": {
+      "id": "3983220415203469029",
+      "handle": "cnasadvising",
+      "posted_at": "2026-09-10T16:14:57Z",
+      "reshared_post": {
+        "caption": null,
+        "media_id": "3982505825688755714",
+        "owner_username": null,
+        "shortcode": "DdEs_LAGh4C",
+        "source_key": "story_feed_media"
+      }
+    },
+    "cached": {
+      "status": "ok",
+      "story_id": "3983220415203469029",
+      "ocr_text": "ucrsdrc\nSDRC BOOTCAMP\nJOIN US VIRTUALLY\nMONDAY,\nSEPTEMBER 21, 2026\n10:30AM-2:30PM\nLET THE SDRC HELP MAKE YOUR TRANSITION TO UCR,\nUCR\nAS A STUDENT WITH A DISABILITY, LESS STRESSFUL & MORE ENJOYABLE!!\nRSVP TO ATTEND!\nOnce you register, the Zoom\nlink will be provided.\nOCR\nStudents will have the\nopportunity to attend multiple\nsessions that will help\nprepare you to transition\n-OR- return to UCR.\nUCR\nStudent Disability\nResource Center\nucrsdrc Transitioning to a new learning environment as a\nstudent with a disability can present challenges. SDRC t...",
+      "result": {
+        "category": "academic",
+        "confidence": "high",
+        "description": "LET THE SDRC HELP MAKE YOUR TRANSITION TO UCR, AS A STUDENT WITH A DISABILITY, LESS STRESSFUL & MORE ENJOYABLE!! RSVP TO ATTEND! Once you register, the Zoom link will be provided. Students will have the opportunity to attend multiple sessions that will help prepare you to transition -OR- return to UCR.",
+        "ends_at": "2026-09-21T14:30:00-07:00",
+        "is_event": true,
+        "is_free": true,
+        "location": "Riverside, California",
+        "rsvp_required": true,
+        "rsvp_url": null,
+        "starts_at": "2026-09-21T10:30:00-07:00",
+        "tags": [
+          "student disability",
+          "transition",
+          "bootcamp"
+        ],
+        "title": "SDRC BOOTCAMP"
+      }
+    }
+  },
+  "3982580348213896675": {
+    "raw": {
+      "id": "3982580348213896675",
+      "handle": "ucrposc_academicadvising101",
+      "posted_at": "2026-09-09T19:03:14Z",
+      "reshared_post": {
+        "caption": null,
+        "media_id": "3981954539506151682",
+        "owner_username": null,
+        "shortcode": "DdCvo5vBLEC",
+        "source_key": "story_feed_media"
+      }
+    },
+    "cached": {
+      "status": "ok",
+      "story_id": "3982580348213896675",
+      "ocr_text": "ASUCR\nOffice of\nThe Executive Vice President\nHead Of Staff\nassist the EVP in managing\nLegislative Branch Operations\nmanage office communications\nwork with ASUCR senators,\nrepresentatives, and campus\ndepartments\n0074\n3\n09\nNCE\nEVENUE\n50005\n419.914\n55.900\n859\n58\nApply Today!\nINSA\n@asucrlegislative\norm 1040) 2008",
+      "result": {
+        "category": "academic",
+        "confidence": "high",
+        "description": "Assist the EVP in managing Legislative Branch Operations, manage office communications, work with ASUCR senators, representatives, and campus departments.",
+        "ends_at": null,
+        "is_event": true,
+        "is_free": true,
+        "location": "UCR",
+        "rsvp_required": true,
+        "rsvp_url": "https://www.instagram.com/asucrlegislative",
+        "starts_at": "2026-09-10T00:00:00-07:00",
+        "tags": [
+          "ASUCR",
+          "application",
+          "staff"
+        ],
+        "title": "Head Of Staff Application"
+      }
+    }
+  },
+  "3981747545054348909": {
+    "raw": {
+      "id": "3981747545054348909",
+      "handle": "cnasadvising",
+      "posted_at": "2026-09-08T15:28:37Z"
+    },
+    "cached": {
+      "status": "ok",
+      "story_id": "3981747545054348909",
+      "ocr_text": "GUAC Drop-In Advising starts at 10:00 AM today!\nNote: Since it is 2nd pass registration, wait times may be\nlonger. We recommend staying in the queue until you are\nnotified an advisor is ready to meet with you.\nCNAS: HOW ADVISING WORKS\nCNAS GUAC\nGENERAL UNDERGRAD ADVISING CHECK-INS\nDROP-IN ADVISING\nNeed quick help with general advising questions?\nThe CNAS Undergraduate Academic Advising Center is offering general drop-in advising\nvirtually. The advisor-on-call may not be an advisor for your major. These advising\ncheck-in sessions are meant for quick, general questions and will last only 5 minutes.\nTIPS FOR A SMOOTH AND\nSUCCESSFUL CNAS GUAC VISIT\n08:45\nRespond promptly when\nnotified.\nYou will receive an email\nand/or text when the\nadvisor-on-call is ready to\nmeet with you.\nPlan ahead & stay nearby.\nMake sure you have time set\naside. Be ready and near the\nadvising center for in-person\nadvising, or log in to Zoom\nfor virtual advising.\nDon't lose your spot.\nIf you miss your notification,\nyou'll be returned to the queue\nand will need to wait again to\nreceive another notification.\nSUMMER GUAC\nAUGUST 11 TO\nSEPTEMEBER 17,\n2026\nGUAC HOURS\nTUESDAY-\nTHURSDAY\nONLINE ONLY VIA ZOOM\n10:00 AM TO 3:00 PM\n(CLOSED FOR LUNCH 12-1:00 PM)",
+      "result": {
+        "category": "academic",
+        "confidence": "high",
+        "description": "Need quick help with general advising questions? The CNAS Undergraduate Academic Advising Center is offering general drop-in advising virtually. The advisor-on-call may not be an advisor for your major. These advising check-in sessions are meant for quick, general questions and will last only 5 minutes.",
+        "ends_at": "2026-09-08T15:00:00-07:00",
+        "is_event": true,
+        "is_free": true,
+        "location": "Online via Zoom",
+        "rsvp_required": false,
+        "rsvp_url": "https://cnasstudent.ucr.edu/how-advising-works?fbclid=PAcGRvZgJmZGlkFlDgeIOAlocyoaP0H0Fa4DR_pkkmVzhleHRuA2FlbQIxMQBzcnRjBmFwcF9pZA8xMjQwMjQ1NzQyODc0MTQAAaduKEz7d1p8ZtRxF1ulpMFdlIZ_9U47sYaYBBGPN5FfzTCe3Xqx4P-xTyDz4w_aem_uU-UCnpsbZczU8m-0iZqWQ",
+        "starts_at": "2026-09-08T10:00:00-07:00",
+        "tags": [
+          "advising",
+          "CNAS",
+          "GUAC",
+          "drop-in",
+          "virtual"
+        ],
+        "title": "GUAC Drop-In Advising"
+      }
+    }
+  },
+  "3911695212514710907": {
+    "raw": {
+      "id": "3911695212514710907",
+      "handle": "ucr_resed",
+      "posted_at": "2026-06-03T23:47:49Z"
+    },
+    "cached": {
+      "status": "ok",
+      "story_id": "3911695212514710907",
+      "ocr_text": "Today!! Come learn about the history\nof zines and make your own!!\nUC\nRIVERSIDE\nResidential Education\nPROGRAM ADVISORS\nFOR ACADEMICS PRESENTS...\nLINK UP\nWick\nFACULTY\n13 MAY 2026\nAT 7:00 PM\nPENTLAND HILLS\nBEARCAVE\nJOIN THE FACULTY IN\nRESIDENCE TO LEARN HOW\nTO ENGAGE WITH FACULTY!\nYOUR STORY\n19 MAY 2026\nAT 7:00 PM\nLOTHIAN GALLEY\nJOIN YOUR PROGRAM\nADVISORS ON NAVIGATING\nSELF-DOUBT IN ACADEMIA!\nALUMNI\n26 MAY 2026\nAT 7:00 PM\nNORTH DISTRICT 2\nROOM C114\nMEET FORMER STUDENTS ON\nTHEIR JOURNEY TO SUCCESS!\nYOUR\nZINNOREEK\nn\ne\n3 JUNE 2026\nAT 7:00 PM\nPENTLAND HILLS\nFOXHOLE\nMAKE ZINES ABOUT YOUR\nIDENTITY AND BACKGROUND!\nZines!\ned, sims_ucr, chass_ucr and honors_ucr",
+      "result": {
+        "category": "arts",
+        "confidence": "high",
+        "description": "Today!! Come learn about the history of zines and make your own!!\n\nMAKE ZINES ABOUT YOUR\nIDENTITY AND BACKGROUND!",
+        "ends_at": null,
+        "is_event": true,
+        "is_free": true,
+        "location": "PENTLAND HILLS FOXHOLE",
+        "rsvp_required": false,
+        "rsvp_url": null,
+        "starts_at": "2026-06-03T19:00:00-07:00",
+        "tags": [
+          "zines",
+          "identity",
+          "background",
+          "history"
+        ],
+        "title": "Zines! - Make Zines About Your Identity and Background!"
+      }
+    }
+  },
+  "3981981784413819767": {
+    "raw": {
+      "id": "3981981784413819767",
+      "handle": "newmancentercsf",
+      "posted_at": "2026-09-08T23:14:00Z",
+      "reshared_post": {
+        "caption": null,
+        "media_id": "3981951221312866116",
+        "owner_username": null,
+        "shortcode": "DdCu4nbSUdE",
+        "source_key": "story_feed_media"
+      }
+    },
+    "cached": {
+      "status": "ok",
+      "story_id": "3981981784413819767",
+      "ocr_text": "LIFELINE\nNET\nOCTOBER 17, 2026\n\"Give the Lord Glory and Honor\" Psalm 96:7b\nYoung Adult Focused (18-39)\nARCHIE\nLASALLE\nFRANCIS\nCABILDO\nSEEN\nFATHER\nAND\nARINZE\nHEARD\nEMCEE\nSPEAKER\nMUSICIAN\nCELEBRANT\nLOCATION\nCalifornia State University San Bernardino\n1577 Northpark Blvd W.\nSan Bernardino, CA 92407\nDETAILS\nLifeline is an encounter with Jesus Christ and an\nexperience of true community within the Church.\nEach event includes a dynamic speaker, praise\nand worship, and Adoration.\nSCHEDULE\nDoors open: 5:30 PM\nEvent: 6:00-9:00 PM\nCONTACT\nmichaeld@netusa.org\nnetusa.org/ca-events\nOTHER CALIFORNIA LIFELINE EVENTS!\nDECEMBER 5, 2026\nALI HOFFMAN | ALTA LOMA\nHIGH SCHOOL FOCUSED\nMARCH 13, 2027\nANGELA POWERS | PASADENA\nMIDDLE & HIGH SCHOOL FOCUSED\n@mdonaldson75, seenandheardmusic and\nfranciscabildomusic",
+      "result": {
+        "category": "community",
+        "confidence": "high",
+        "description": "Lifeline is an encounter with Jesus Christ and an experience of true community within the Church. Each event includes a dynamic speaker, praise and worship, and Adoration.",
+        "ends_at": "2026-10-17T21:00:00-07:00",
+        "is_event": true,
+        "is_free": false,
+        "location": "California State University San Bernardino, 1577 Northpark Blvd W., San Bernardino, CA 92407",
+        "rsvp_required": false,
+        "rsvp_url": "netusa.org/ca-events",
+        "starts_at": "2026-10-17T18:00:00-07:00",
+        "tags": [
+          "young adult",
+          "jesus christ",
+          "church",
+          "speaker",
+          "praise and worship",
+          "adoration"
+        ],
+        "title": "Lifeline Net"
+      }
+    }
+  }
+}

@@ -39,13 +39,14 @@ def event_key(row: dict[str, Any]) -> str | None:
     return f"{title}|{starts_at.strftime('%Y%m%dT%H%MZ')}"
 
 
-def _row_score(row: dict[str, Any]) -> tuple[int, int, int, int, int, int, str]:
+def _row_score(row: dict[str, Any]) -> tuple[int, int, int, int, int, int, int, str]:
     description = str(row.get("description") or "")
     host = str(row.get("host") or "").strip()
     return (
         1 if row.get("has_free_food") or row.get("category") == "free_food" else 0,
         1 if row.get("source") != "instagram" else 0,
         1 if host else 0,
+        1 if row.get("rsvp_url") else 0,
         len(description),
         1 if row.get("image_url") else 0,
         1 if row.get("source_url") else 0,

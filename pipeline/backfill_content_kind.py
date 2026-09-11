@@ -1,8 +1,8 @@
 """Re-run content-kind classification over rows already in Supabase.
 
-Classification happens at extraction time, so a change to classify.py only
-affects future scrapes — rows written under the old rules keep their old kind
-until something reclassifies them. This is that something.
+The normal pipeline reclassifies cached extractions during event mapping.
+This utility also updates stored rows using just their title and description,
+without fetching or processing source archives.
 
 Dry run by default; pass --apply to write. Rows with is_locked are never
 touched — that is the same contract the scraper honors for manual corrections.
@@ -15,11 +15,11 @@ kind the classifier change was about: an unscoped --apply also rewrites rows
 that drifted for unrelated reasons (an earlier rule change, a hand edit made
 before locking was routine), which is rarely what you want.
 
-Only title/description/source are available on the stored row, so Localist
-`audiences` are not in play here. That is the same input the pipeline uses for
-instagram/manual origins, but it means a campus_website row can classify
-differently than it did at import; rows whose kind was set by an audience
-signal are left alone unless --include-audience-origins is passed.
+Only title/description/source are available on the stored row, so neither
+Localist `audiences` nor a story's OCR text is in play here. A campus_website
+or instagram row can therefore classify differently than it did at import;
+rows whose kind was set by one of those missing signals are left alone unless
+--include-audience-origins or --include-flyer-origins is passed.
 """
 from __future__ import annotations
 
@@ -36,10 +36,16 @@ log = logging.getLogger("pipeline.backfill_content_kind")
 # calls, so they are skipped unless explicitly requested.
 AUDIENCE_ORIGINS = {"campus_website", "club_website"}
 
+# Origins whose classification reads the flyer's OCR text, which the events
+# table does not store either. A story classified `student_application` off
+# "select a slot" would look like a disagreement here and be reverted.
+FLYER_ORIGINS = {"instagram"}
+
 
 def plan(
     include_audience_origins: bool = False,
     to_kind: str | None = None,
+    include_flyer_origins: bool = False,
 ) -> list[dict]:
     rows = (
         client()
@@ -52,10 +58,10 @@ def plan(
     )
     changes = []
     for row in rows:
-        if (
-            not include_audience_origins
-            and row.get("source") in AUDIENCE_ORIGINS
-        ):
+        source = row.get("source")
+        if not include_audience_origins and source in AUDIENCE_ORIGINS:
+            continue
+        if not include_flyer_origins and source in FLYER_ORIGINS:
             continue
         kind = classify_content_kind(
             row.get("source") or "",
@@ -83,10 +89,17 @@ def main() -> None:
         action="store_true",
         help="also reclassify campus_website/club_website rows",
     )
+    parser.add_argument(
+        "--include-flyer-origins",
+        action="store_true",
+        help="also reclassify instagram rows, whose OCR text is not stored",
+    )
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 
-    changes = plan(args.include_audience_origins, args.to)
+    changes = plan(
+        args.include_audience_origins, args.to, args.include_flyer_origins
+    )
     if not changes:
         log.info("No rows need reclassifying.")
         return
