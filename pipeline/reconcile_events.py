@@ -126,9 +126,12 @@ def _tombstoned_candidates(deleted: set[str]) -> list[dict]:
         payload = record.get('last_complete_assessment') or record.get('assessment') or {}
         if payload.get('status') != 'complete' or 'result' not in payload:
             return True
-        rows, aliases = (publication.story_rows(raw, cached, payload, meta, now)
-                         if cached is not None else
-                         publication.structured_rows(raw, record['origin'], payload, now))
+        if key.startswith('instagram:post:'):
+            rows, aliases = publication.post_rows(raw, cached or {}, payload, meta, now)
+        elif cached is not None:
+            rows, aliases = publication.story_rows(raw, cached, payload, meta, now)
+        else:
+            rows, aliases = publication.structured_rows(raw, record['origin'], payload, now)
         identities = aliases | set(record.get('event_ids', [])) | set(record.get('known_event_ids', []))
         identities.update(row['id'] for row in rows)
         # Match the publication RPC: an override on any known source identity
@@ -148,6 +151,15 @@ def _tombstoned_candidates(deleted: set[str]) -> list[dict]:
             cached = ig._read_json(path)
             if not assessed_candidates(f"instagram:{raw['id']}", raw, cached):
                 pairs.append((raw, cached))
+    # Posts have no pre-assessment identity to fall back on, so an unregistered
+    # post simply contributes nothing here.
+    import extract_posts as igposts
+    import post_archive
+    for record in post_archive.iter_local_posts():
+        path = igposts._cache_path(str(record.get('media_id')))
+        if path.exists():
+            assessed_candidates(f"instagram:post:{record['media_id']}", record,
+                                igposts._read_json(path))
     # Compatibility for sources that have never entered assessed publication.
     # Registered sources must not fall back to the pre-assessment identities.
     rows, _, retired_by = ig._collect_event_rows(pairs, meta, now)

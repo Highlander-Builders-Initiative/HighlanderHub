@@ -997,15 +997,16 @@ def _delete_imported_event_ids(ids: set[str]) -> int:
     return delete_unlocked_event_rows_by_ids(sorted(ids))
 
 
-def main(*, notify: bool = True) -> None:
-    logging.basicConfig(
-        level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
-    )
-    ensure_dirs()
-    meta_by_handle = _load_account_meta()
+def extract_all(
+    meta_by_handle: dict[str, dict[str, Any]] | None = None,
+) -> list[tuple[dict[str, Any], dict[str, Any]]]:
+    """Read every archived story once, returning (raw, extraction) pairs.
 
-    # Process each story once and keep the (raw, extraction) pair in memory so
-    # event-row collection below doesn't re-read the whole archive from disk.
+    Kept separate from publication so the runner can extract both Instagram
+    channels before settling their shared event support in one transaction.
+    """
+    ensure_dirs()
+    meta_by_handle = _load_account_meta() if meta_by_handle is None else meta_by_handle
     processed: list[tuple[dict[str, Any], dict[str, Any]]] = []
     cache_hits = 0
     for raw in _iter_raw_stories(set(meta_by_handle.keys())):
@@ -1020,10 +1021,17 @@ def main(*, notify: bool = True) -> None:
         cache_hits,
         len(processed) - cache_hits,
     )
+    return processed
 
-    scraped_at = _utc_now()
+
+def main(*, notify: bool = True) -> None:
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
+    )
+    meta_by_handle = _load_account_meta()
+    processed = extract_all(meta_by_handle)
     from assessed_events import publish_stories
-    publish_stories(processed, meta_by_handle, scraped_at, notify=notify)
+    publish_stories(processed, meta_by_handle, _utc_now(), notify=notify)
 
 
 if __name__ == "__main__":
