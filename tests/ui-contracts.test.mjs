@@ -130,8 +130,6 @@ test("calendar loads its own month-range events outside feed pagination", () => 
 test("app routes expose loading UI while server data resolves", () => {
   const sharedLoading = read("src/components/ui/RouteLoadingPage.tsx");
   const routeLoaders = [
-    "src/app/loading.tsx",
-    "src/app/events/loading.tsx",
     "src/app/events/[id]/loading.tsx",
     "src/app/about/loading.tsx",
     "src/app/submit/loading.tsx",
@@ -144,6 +142,31 @@ test("app routes expose loading UI while server data resolves", () => {
     const source = read(route);
     assert.match(source, /RouteLoadingPage/);
   }
+
+  // The landing page has no loading route on purpose: it is the site's front
+  // door, and a full-page interstitial there reads as a stall, not as progress.
+  assert.equal(existsSync(sourceFile("src/app/loading.tsx")), false);
+});
+
+test("/events loading mirrors the live shell and skeletons only the feed", () => {
+  const loader = read("src/app/events/loading.tsx");
+  const skeleton = read("src/components/events/EventsBrowserSkeleton.tsx");
+  const browser = read("src/components/events/EventsBrowser.tsx");
+
+  // Same chrome as the real page, not the generic interstitial.
+  assert.match(loader, /EventsBrowserSkeleton/);
+  assert.doesNotMatch(loader, /RouteLoadingPage/);
+  assert.match(loader, /EVENTS_NAV_LINKS/);
+
+  // Fixed furniture renders for real: topics rail and calendar rail.
+  assert.match(skeleton, /EventsLeftRail/);
+  assert.match(skeleton, /EventsRightRail/);
+  assert.match(skeleton, /countsPending/);
+
+  // Same three-column grid as EventsBrowser, so nothing reflows on hydrate.
+  const grid = /lg:grid-cols-\[208px_minmax\(0,1fr\)_312px\]/;
+  assert.match(skeleton, grid);
+  assert.match(browser, grid);
 });
 
 test("app routes expose 500-level error boundaries", () => {
