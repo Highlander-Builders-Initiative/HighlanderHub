@@ -48,6 +48,7 @@ pipeline/
 ├── scrape_posts.py        # IG posts:         data/posts/<handle>/<media_id>.json
 ├── post_archive.py        # post archive I/O, free of Instaloader
 ├── extract_posts.py       # per-slide OCR:    data/post_extractions/<media_id>.json
+├── instagram_rows.py      # shared story/post event row policy
 ├── story_dates.py         # what the flyer text says about day and time
 ├── ucr_events.py          # Localist ingest:  data/raw/ucr_events/<event_id>.json
 ├── highlander_link.py     # Engage ingest:    data/raw/highlander_link/<event_id>.json
@@ -201,6 +202,9 @@ admin locks/deletions continue to apply to replacement identities.
 Reshares use the original author when known, otherwise the attached post's
 `media_id`. Copies of the same post share observed author metadata during
 mapping, so missing OCR bylines do not create one event per resharing club.
+The byline is kept out of the published title on both the assessed and legacy
+story paths; a title that was only chrome falls back to the caption's opening
+clause rather than showing a bare handle.
 
 RSVP mapping rejects Instagram destinations and bare shortener homepages.
 Spaces inside a short link are removed only when the full spaced link is
@@ -547,6 +551,15 @@ slide's OCR are separate `texts` fields (`caption`, `slide_1_ocr`,
 `slide_2_ocr`, …), so activity, date, and location evidence stays attributable
 to the slide that actually printed it. Caption-only evidence is allowed — a
 post with blank images can still announce an event.
+
+`make_update` dispatches by source-key prefix: `instagram:post:` for posts,
+`instagram:` for stories, and structured sources otherwise. Both Instagram
+adapters use `instagram_rows.py` for event IDs, host privacy, stale-at-posting
+checks, midnight repair, classification, free-food detection, and RSVP handling.
+Caption and OCR text both inform repairs and fallback categories; free food
+remains a separate `has_free_food` flag. Occurrences and schedules cite named
+locations in `location_evidence`, which also participates in carousel flyer
+selection. Assessment version 3 refreshes semantic decisions using saved text.
 
 **A post publishes exactly one occurrence.** A carousel holding a whole term's
 schedule cannot be turned into one listing without choosing a session on the

@@ -22,7 +22,7 @@ def rpc(name, arguments):
     return response
 
 client.rpc.side_effect = rpc
-text = "Drop-in advising September 15, 2026 Tuesday 10 AM-12 PM and 1 PM-3 PM."
+text = "Drop-in advising in HUB September 15, 2026 Tuesday 10 AM-12 PM and 1 PM-3 PM."
 raw = {"id": "123", "handle": "club", "posted_at": "2026-09-10T17:00:00Z"}
 cached = {"status": "ok", "ocr_text": text, "result": {
     "is_event": True, "title": "Advising", "starts_at": "2026-09-15T10:00:00-07:00",
@@ -38,6 +38,7 @@ with tempfile.TemporaryDirectory() as directory, \
     result = {"kind": "service_schedule", "date_role": "recurring_hours", "reason": "Printed advising hours",
               "activity_evidence": evidence, "date_evidence": evidence, "use_source_occurrences": False,
               "occurrences": [], "schedule": {"title": "Advising", "location": "HUB",
+              "location_evidence": [{"field": "ocr_text", "quote": "HUB"}],
               "first_day": "2026-09-15", "last_day": "2026-09-15", "weekdays": [1],
               "windows": [{"start": "10:00", "end": "12:00"}, {"start": "13:00", "end": "15:00"}]}}
     publication.record_review(src, result, reviewer="integration fixture")
@@ -81,7 +82,7 @@ with tempfile.TemporaryDirectory() as directory, \
                                  "caption": "Join ACM for a study jam"}}
     reshare_cached = {"status": "ok", "ocr_text": flyer, "result": {}}
     occurrence = {"title": "Study Jam", "starts_at": "2026-09-15T15:00:00-07:00",
-                  "ends_at": "2026-09-15T17:00:00-07:00", "all_day": False, "location": ""}
+                  "ends_at": "2026-09-15T17:00:00-07:00", "all_day": False, "location": "", "location_evidence": []}
     meta = {"acm.ucr": {"label": "ACM at UCR"}, "ieee.ucr": {"label": "IEEE at UCR"}}
 
     def review(source, field, *, kind="activity", start=None):

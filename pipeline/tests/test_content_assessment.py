@@ -37,6 +37,61 @@ class ContentAssessmentTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "absent"):
             assess.validate(result, src)
 
+    def test_location_citations_are_grounded_and_required_for_named_locations(self):
+        src = source("Workshop September 15, 2026, 3-5 PM in HUB 302")
+        result = decision(src)
+        occurrence = result["occurrences"][0]
+        occurrence["location"] = "HUB 302"
+        for citations in (None, [], [{"field": "ocr_text", "quote": "Invented room"}],
+                          [{"field": "missing_slide", "quote": "HUB 302"}]):
+            with self.subTest(citations=citations), self.assertRaises(ValueError):
+                occurrence["location_evidence"] = citations
+                assess.validate(result, src)
+        occurrence["location_evidence"] = [{"field": "ocr_text", "quote": "HUB 302"}]
+        self.assertEqual(result, assess.validate(result, src))
+
+    def test_caption_midnight_repair_precedes_duration_validation(self):
+        src = source()
+        src["texts"] = {"caption": "Workshop September 15, 2026, 9pm–12am"}
+        result = decision(source())
+        citations = [{"field": "caption", "quote": src["texts"]["caption"]}]
+        result.update(activity_evidence=citations, date_evidence=citations)
+        result["occurrences"][0].update(
+            starts_at="2026-09-15T21:00:00-07:00", ends_at="2026-09-15T00:00:00-07:00",
+            activity_evidence=citations, date_evidence=citations)
+        validated = assess.validate(result, src)
+        self.assertEqual("2026-09-16T00:00:00-07:00", validated["occurrences"][0]["ends_at"])
+
+    def test_midnight_end_requires_source_support_for_the_end_clock(self):
+        src = source("Workshop September 15, 2026, starts at 9pm")
+        result = decision(src)
+        result["occurrences"][0].update(starts_at="2026-09-15T21:00:00-07:00",
+                                        ends_at="2026-09-15T00:00:00-07:00")
+        before = copy.deepcopy(result)
+        with self.assertRaisesRegex(ValueError, "clock lacks source support"):
+            assess.validate(result, src)
+        self.assertEqual(before, result)
+
+    def test_midnight_normalization_does_not_fix_other_reversed_ranges(self):
+        src = source("Workshop September 15, 2026, starts 9pm, ends 8pm")
+        result = decision(src)
+        result["occurrences"][0].update(starts_at="2026-09-15T21:00:00-07:00",
+                                        ends_at="2026-09-15T20:00:00-07:00")
+        with self.assertRaisesRegex(ValueError, "duration"):
+            assess.validate(result, src)
+
+    def test_midnight_normalization_is_source_independent_and_uses_cited_clocks(self):
+        for origin in ("instagram", "localist", "highlander_link"):
+            for wording in ("9pm–12am", "starts at 9 PM and ends at midnight"):
+                with self.subTest(origin=origin, wording=wording):
+                    src = source(f"Workshop September 15, 2026, {wording}")
+                    src.update(origin=origin, source_key=f"{origin}:test")
+                    result = decision(src)
+                    result["occurrences"][0].update(starts_at="2026-09-15T21:00:00-07:00",
+                                                    ends_at="2026-09-15T00:00:00-07:00")
+                    validated = assess.validate(result, src)
+                    self.assertEqual("2026-09-16T00:00:00-07:00", validated["occurrences"][0]["ends_at"])
+
     def test_dates_and_metadata_cannot_establish_activity(self):
         src = source()
         src["texts"]["dates"] = "2026-09-15"
@@ -123,10 +178,11 @@ class ContentAssessmentTests(unittest.TestCase):
             assess.validate(result, src)
 
     def test_recurring_hours_expand_into_weekday_sessions_with_lunch_break(self):
-        src = source("Drop-in advising August 11 to September 17, 2026. Tuesday-Thursday, 10:00 AM to 3:00 PM, closed for lunch 12-1:00 PM.")
+        src = source("Drop-in advising on Zoom August 11 to September 17, 2026. Tuesday-Thursday, 10:00 AM to 3:00 PM, closed for lunch 12-1:00 PM.")
         result = decision(src, "service_schedule", "recurring_hours")
         result.update(occurrences=[], schedule={"first_day":"2026-08-11", "last_day":"2026-09-17", "weekdays":[1,2,3],
-                      "windows":[{"start":"10:00", "end":"12:00"},{"start":"13:00", "end":"15:00"}], "title":"Advising", "location":"Zoom"})
+                      "windows":[{"start":"10:00", "end":"12:00"},{"start":"13:00", "end":"15:00"}], "title":"Advising", "location":"Zoom",
+                      "location_evidence": [{"field": "ocr_text", "quote": "Zoom"}]})
         assess.validate(result, src)
         rows = assess.expand_schedule(result["schedule"], src, result)
         self.assertEqual(36, len(rows))
@@ -134,6 +190,11 @@ class ContentAssessmentTests(unittest.TestCase):
             a, b = map(datetime.fromisoformat, (row["starts_at"], row["ends_at"]))
             self.assertIn(a.weekday(), (1,2,3))
             self.assertEqual(2*3600, (b-a).total_seconds())
+            self.assertEqual(result["schedule"]["location_evidence"], row["location_evidence"])
+        valid = result["schedule"].pop("location_evidence")
+        with self.assertRaisesRegex(ValueError, "Missing source evidence"):
+            assess.validate(result, src)
+        result["schedule"]["location_evidence"] = valid
         result["schedule"]["weekdays"] = [1,3]
         with self.assertRaisesRegex(ValueError, "weekdays differ"):
             assess.validate(result, src)
@@ -145,7 +206,8 @@ class ContentAssessmentTests(unittest.TestCase):
             result.update(occurrences=[], schedule={
                 "first_day": "2026-09-01", "last_day": last, "weekdays": list(range(7)),
                 "windows": [{"start": "10:00", "end": "12:00"}, {"start": "13:00", "end": "15:00"}],
-                "title": "Gallery visits", "location": "Gallery"})
+                "title": "Gallery visits", "location": "Gallery",
+                "location_evidence": [{"field": "ocr_text", "quote": "Gallery"}]})
             with self.subTest(last=last):
                 if expected is None:
                     with self.assertRaisesRegex(ValueError, "exceeds 100"):

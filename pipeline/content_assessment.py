@@ -14,7 +14,7 @@ from datetime import date, datetime, time, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
-VERSION = 2
+VERSION = 3
 MAX_OCCURRENCES = 100
 MODEL = "gemini-2.5-flash-lite"
 KINDS = ("activity", "deadline", "application", "service_schedule", "announcement", "uncertain")
@@ -35,10 +35,11 @@ OCCURRENCE_SCHEMA = {
         "ends_at": {"type": "string", "nullable": True, "description": "ISO-8601 timestamp INCLUDING timezone offset, or null"},
         "all_day": {"type": "boolean"},
         "location": {"type": "string"},
+        "location_evidence": EVIDENCE_SCHEMA,
         "activity_evidence": EVIDENCE_SCHEMA,
         "date_evidence": EVIDENCE_SCHEMA,
     },
-    "required": ["title", "starts_at", "ends_at", "all_day", "location", "activity_evidence", "date_evidence"],
+    "required": ["title", "starts_at", "ends_at", "all_day", "location", "location_evidence", "activity_evidence", "date_evidence"],
 }
 SCHEMA = {
     "type": "object", "properties": {
@@ -61,7 +62,8 @@ SCHEMA = {
                     }, "required": ["start", "end"],
                 }},
                 "title": {"type": "string"}, "location": {"type": "string"},
-            }, "required": ["first_day", "last_day", "weekdays", "windows", "title", "location"],
+                "location_evidence": EVIDENCE_SCHEMA,
+            }, "required": ["first_day", "last_day", "weekdays", "windows", "title", "location", "location_evidence"],
         },
     },
     "required": ["kind", "date_role", "reason", "activity_evidence", "date_evidence", "use_source_occurrences", "occurrences", "schedule"],
@@ -93,7 +95,10 @@ never invent the substring 'September 18, 2026'. If unsure, quote the full field
 Activity evidence must describe the actual activity/action/service, not just a
 date. Date evidence must connect that activity/action to its dates. Never cite
 metadata (posted_at, audiences, origin) as activity evidence. Do not invent
-locations or clock times; use an empty location when absent. Respect explicit
+locations or clock times; use an empty location when absent. For each occurrence
+or schedule, cite the location's source field and exact quote in location_evidence;
+use [] when location is empty. Cite the slide that prints the location even when
+activity and date evidence come from the caption or another slide. Respect explicit
 years/timezones; otherwise use America/Los_Angeles and infer the year from
 posted_at. An explicit relative date may use posted_at to resolve it, but
 posted_at alone is never an event date. Date-only events start at local midnight
@@ -237,10 +242,17 @@ def validate_occurrence(item: dict, source: dict) -> None:
         raise ValueError("Occurrence requires a title")
     if not isinstance(item.get("all_day"), bool) or not isinstance(item.get("location"), str):
         raise ValueError("Invalid occurrence fields")
+    evidence_text(item.get("location_evidence", []), source, required=bool(item["location"].strip()))
     evidence_text(item.get("activity_evidence"), source, activity=True)
     text = evidence_text(item.get("date_evidence"), source)
     start = _instant(item.get("starts_at"))
     end = _instant(item["ends_at"]) if item.get("ends_at") else None
+    # Same-day midnight after an afternoon start denotes the following night
+    # boundary. This convention is independent of origin; the date, clock and
+    # duration checks below still require support in the cited source text.
+    if (end and not item["all_day"] and end.date() == start.date()
+            and end.time() == time(0) and start.hour >= 12):
+        end += timedelta(days=1)
     # Pacific is the campus default. Explicitly zoned sources may use their
     # named zone, but a model may not silently apply a winter offset in summer.
     explicit_zone = re.search(r"\b(?:[ECM][SD]?T|UTC|GMT|Eastern|Central|Mountain)\b", text, re.I)
@@ -269,9 +281,12 @@ def validate_occurrence(item: dict, source: dict) -> None:
             raise ValueError("All-day occurrences use midnight boundaries")
     elif not _clock_supported(start.time(), text) or (end and not _clock_supported(end.time(), text)):
         raise ValueError("Occurrence clock lacks source support")
+    if end and end != _instant(item["ends_at"]):
+        item["ends_at"] = end.isoformat()
 
 
 def expand_schedule(schedule: dict, source: dict, assessment: dict) -> list[dict]:
+    location_evidence = schedule.get("location_evidence", [])
     first, last = date.fromisoformat(schedule["first_day"]), date.fromisoformat(schedule["last_day"])
     text = evidence_text(assessment["date_evidence"], source)
     if not 0 <= (last - first).days <= 120 or not all(_day_supported(day, text, source) for day in (first, last)):
@@ -312,6 +327,7 @@ def expand_schedule(schedule: dict, source: dict, assessment: dict) -> list[dict
                 "ends_at": datetime.combine(day, end, PACIFIC).isoformat(),
                 "activity_evidence": assessment["activity_evidence"],
                 "date_evidence": assessment["date_evidence"],
+                "location_evidence": location_evidence,
             })
     return result
 
@@ -353,6 +369,10 @@ def validate(result: Any, source: dict) -> dict:
     if result["schedule"] is not None:
         if kind not in {"service_schedule", "activity"} or not isinstance(result["schedule"], dict):
             raise ValueError("Only activities or service schedules may recur")
+        schedule = result["schedule"]
+        if not isinstance(schedule.get("location"), str):
+            raise ValueError("Invalid schedule location")
+        evidence_text(schedule.get("location_evidence", []), source, required=bool(schedule["location"].strip()))
         expand_schedule(result["schedule"], source, result)
     return result
 

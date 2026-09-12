@@ -1259,7 +1259,7 @@ class ExtractStoriesTests(unittest.TestCase):
         )
 
     def test_bool_or_default_parses_common_llm_boolean_forms(self) -> None:
-        parse = self.extract_stories._bool_or_default
+        from instagram_rows import _bool_or_default as parse
 
         self.assertFalse(parse("false", True))
         self.assertTrue(parse("TRUE", False))
@@ -1270,7 +1270,7 @@ class ExtractStoriesTests(unittest.TestCase):
         self.assertFalse(parse("not a boolean", False))
 
     def test_normalize_url_only_allows_http_urls(self) -> None:
-        normalize = self.extract_stories._normalize_url
+        from url_utils import normalize_http_url as normalize
 
         self.assertEqual("https://lu.ma/example", normalize("lu.ma/example"))
         self.assertEqual("https://events.ucr.edu/foo", normalize("//events.ucr.edu/foo"))
