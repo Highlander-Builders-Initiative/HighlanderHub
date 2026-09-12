@@ -551,6 +551,15 @@ that post's support while another valid source keeps the event alive, errors
 retain prior support, and admin locks and tombstones remain authoritative
 inside the publication RPC.
 
+A post edited until it says nothing withdraws its listing the same way. Once a
+post has published a row, a `no_text` extraction — no caption and no printed
+text anywhere — publishes a complete assessment with no rows, so deleting a
+caption retires the listing exactly as replacing it with words that announce
+nothing does. Nothing is left to assess, so the withdrawal costs no model call.
+What a post *cannot be read* for is the opposite case and retains its support:
+`unsupported_media` is a limit of this reader and `no_media` a defect in the
+archived record, and neither says anything about the event.
+
 Apply `supabase/migrations/20260913000000_instagram_posts.sql` before the first
 post run. It adds `instagram_posts`, `post_extractions`, and
 `instagram_post_checkpoints` plus the `claim_post_activation` RPC. No change to

@@ -465,25 +465,45 @@ def post_updates(processed: list[tuple[dict, dict]], meta: dict, now: str,
                  registry: dict | None = None, stats: dict | None = None) -> list[dict]:
     """Build publication updates for collected posts.
 
-    Only a usable extraction (`ok`) and a retryable failure (`error`) produce an
-    update. A post this version cannot read — an over-long carousel, or one
-    with no text anywhere — emits nothing, so an earlier listing keeps its
-    support rather than being withdrawn by a media change that says nothing
-    about the event.
+    A usable extraction (`ok`) and a retryable failure (`error`) produce an
+    update, and so does a post whose text has been taken away: `no_text` on a
+    source that still supports a listing publishes the absence, because an
+    emptied caption is a content change and the listing it produced has no
+    evidence left. Removing the announcement must withdraw the same listing
+    whether the caption was replaced with other words or deleted outright.
+
+    A post this version could not read emits nothing, and an earlier listing
+    keeps its support: `unsupported_media` is a limit of this reader (an
+    over-long carousel) and `no_media` a defect in the archived record — a post
+    always has at least one slide — so neither says anything about the event.
     """
     registry = load_registry() if registry is None else registry
     updates = []
     for record, cached in processed:
         status = cached.get("status")
-        if status not in {"ok", "error"}:
+        if status not in {"ok", "error", "no_text"}:
             continue
         source = post_source(record, cached)
-        if status == "error":
+        prior = registry.get(source["source_key"])
+        if status == "no_text":
+            # Nothing is left to assess, so the withdrawal is published directly
+            # rather than asked of the model. Sources that never published stay
+            # silent: there is no listing for an absence to withdraw.
+            supported = sorted((prior or {}).get("event_ids") or [])
+            if not supported:
+                continue
+            log.info("post %s: caption and slide text removed; withdrawing %s",
+                     record.get("media_id"), ", ".join(supported))
+            updates.append({"source_key": source["source_key"], "origin": "instagram",
+                            "assessment": {"status": "complete",
+                                           "reason": "Source text was removed: the post has no caption and no printed text"},
+                            "rows": [], "known_event_ids": supported})
+        elif status == "error":
             updates.append({"source_key": source["source_key"], "origin": "instagram",
                             "assessment": {"status": "error", "error": "Post extraction failed"},
                             "rows": [], "known_event_ids": []})
         elif any(source["texts"].values()):
-            updates.append(make_update(source, record, cached, registry.get(source["source_key"]),
+            updates.append(make_update(source, record, cached, prior,
                                        meta, now, mapper=post_rows, stats=stats))
     return updates
 
