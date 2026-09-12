@@ -9,6 +9,7 @@ import { eventFlyerAlt, eventListLinkLabel } from "@/lib/events/a11y";
 import { isDeadlineKind } from "@/lib/events/content-kind";
 import { track } from "@/lib/analytics";
 import { saveEventFeedReturn } from "@/lib/events/feed-session";
+import { stashEventForDetail } from "@/lib/events/detail-handoff";
 import { EventListRowTimeColumn } from "@/components/events/EventListRowTimeColumn";
 import { SaveButton } from "@/components/events/SaveButton";
 
@@ -52,6 +53,7 @@ function EventCardComponent({
   const href = `/events/${event.id}`;
   const surface = compact ? "calendar_card" : "list_card";
   const onOpen = (clickEvent: MouseEvent<HTMLAnchorElement>) => {
+    stashEventForDetail(event);
     saveEventFeedReturn(href, {
       eventId: event.id,
       eventTop: clickEvent.currentTarget.getBoundingClientRect().top,

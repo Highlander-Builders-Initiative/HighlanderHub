@@ -1,7 +1,7 @@
 import { Footer } from "@/components/layout/Footer";
 import { Masthead } from "@/components/layout/Masthead";
 
-type LoadingVariant = "event" | "about" | "submit";
+type LoadingVariant = "about" | "submit";
 
 const copy: Record<
   LoadingVariant,
@@ -11,11 +11,6 @@ const copy: Record<
     body: string;
   }
 > = {
-  event: {
-    label: "Event",
-    title: "Loading event details",
-    body: "Fetching the date, host, location, and links.",
-  },
   about: {
     label: "About",
     title: "Loading Highlander Hub",
@@ -66,7 +61,7 @@ export function RouteLoadingPage({
   variant: LoadingVariant;
 }) {
   const content = copy[variant];
-  const isCompact = variant === "event" || variant === "submit";
+  const isCompact = variant === "submit";
 
   return (
     <main className="min-h-screen bg-canvas" aria-busy="true">
@@ -95,7 +90,7 @@ export function RouteLoadingPage({
           isCompact ? "max-w-3xl" : "max-w-7xl"
         }`}
       >
-        {variant === "event" || variant === "submit" ? (
+        {isCompact ? (
           <div className="rounded-xl border border-ink/15 bg-canvas p-6 sm:p-8">
             <LoadingBars count={6} />
           </div>
