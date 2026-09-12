@@ -72,10 +72,15 @@ def cached_assessment(source: dict, prior: dict | None = None, stats: dict | Non
             candidates.insert(0, json.loads(path.read_text()))
         except (ValueError, OSError):
             pass
+
+    def current(cached: object) -> bool:
+        """The entry was produced by this prompt version and this source text."""
+        return (isinstance(cached, dict) and cached.get("version") == semantic.VERSION
+                and cached.get("source_hash") == digest)
+
     for cached in candidates:
-        if (isinstance(cached, dict) and cached.get("version") == semantic.VERSION
+        if (current(cached)
                 and (cached.get("model") == semantic.MODEL or (cached.get("method") == "reviewed" and cached.get("reviewer")))
-                and cached.get("source_hash") == digest
                 and cached.get("status") == "complete"):
             try:
                 semantic.validate(cached.get("result"), source)
@@ -84,16 +89,30 @@ def cached_assessment(source: dict, prior: dict | None = None, stats: dict | Non
                 return cached
             except (ValueError, KeyError, TypeError):
                 pass
+        # A refused answer is a decision about this exact text, not an outage.
+        # Retrying it every run buys the same refusal, so it is kept until the
+        # source, prompt version or model changes -- each of which fails the
+        # match above and sends the source back to the model on its own.
+        if (current(cached) and cached.get("model") == semantic.MODEL
+                and cached.get("status") == "error" and cached.get("retryable") is False):
+            if stats is not None:
+                stats["rejections_skipped"] = stats.get("rejections_skipped", 0) + 1
+            return cached
     payload = {"version": semantic.VERSION, "model": semantic.MODEL, "source_hash": digest,
                "source": source, "assessed_at": datetime.now(timezone.utc).isoformat()}
     if stats is not None:
         stats["model_calls"] = stats.get("model_calls", 0) + 1
     try:
         payload.update(status="complete", result=semantic.assess(source))
+    except semantic.GroundingRejected as exc:
+        # The source was assessed and refused. Recorded as a decision so the
+        # next run is not spent earning the same refusal.
+        payload.update(status="error", error=f"{type(exc).__name__}: {exc}", retryable=False)
+        log.warning("Assessment refused for %s: %s", key, payload["error"])
     except Exception as exc:
         # A failed call never becomes a negative classification. Publication
         # preserves the previous support set and retries next run.
-        payload.update(status="error", error=f"{type(exc).__name__}: {exc}")
+        payload.update(status="error", error=f"{type(exc).__name__}: {exc}", retryable=True)
         log.warning("Assessment failed for %s: %s", key, payload["error"])
     return _save_assessment(payload)
 
