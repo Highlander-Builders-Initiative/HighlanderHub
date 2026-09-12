@@ -28,6 +28,12 @@ if load_dotenv is not None:
 DATA_DIR = ROOT / "data"
 RAW_DIR = DATA_DIR / "raw"
 EXTRACTED_DIR = DATA_DIR / "extracted"
+# Feed posts are a separate channel from stories and must never reach the
+# frontend `stories` table, so they get their own archive rather than another
+# subdirectory of RAW_DIR (which `normalize.py` walks wholesale).
+POSTS_DIR = DATA_DIR / "posts"
+POST_EXTRACTED_DIR = DATA_DIR / "post_extractions"
+POST_CHECKPOINTS_FILE = DATA_DIR / "post_checkpoints.json"
 # Instagram's private story payload is undocumented, and the keys carrying a
 # reshared feed post are a best guess (see scrape._reshared_post). Set
 # IG_DUMP_STORY_STRUCT=1 for a run to archive the raw payload here and confirm
@@ -120,6 +126,20 @@ def load_accounts() -> list[dict[str, Any]]:
     )
 
 
+# How far back a post scan re-walks the profile feed before trusting its
+# checkpoint. Instagram orders the feed by publication time, so a 7-day overlap
+# absorbs a late edit, a clock skew, and a run that was interrupted partway.
+try:
+    POST_OVERLAP_DAYS = int(os.environ.get("PIPELINE_POST_OVERLAP_DAYS", "7"))
+except ValueError:
+    POST_OVERLAP_DAYS = 7
+
+
 def ensure_dirs() -> None:
     RAW_DIR.mkdir(parents=True, exist_ok=True)
     EXTRACTED_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def ensure_post_dirs() -> None:
+    POSTS_DIR.mkdir(parents=True, exist_ok=True)
+    POST_EXTRACTED_DIR.mkdir(parents=True, exist_ok=True)
