@@ -510,11 +510,11 @@ on every fetch:
 A failed image download or an incomplete OCR is a **retryable error**, never a
 negative decision: the slides that succeeded are kept inside the error payload
 and matched by media key on retry, so a partial media failure costs only the
-slides that actually failed. Standalone videos and carousels mixing video with
-images are skipped as `unsupported_media` rather than assessed from their
-images alone — a caption saying "details in the video" would otherwise become a
-confidently wrong event. That status is terminal only for the current
-`EXTRACTION_VERSION`; bumping it re-opens those posts.
+slides that actually failed. Video slides use Instagram's cover JPEG — the same
+still stories already OCR as a flyer — so a Reel or a carousel mixing video
+with images is read, not skipped. An over-long carousel is skipped as
+`unsupported_media` rather than truncated. That status is terminal only while
+this version still cannot read the post.
 
 Only slides that can actually be chosen as the flyer are stored durably: the
 lead image, and any slide whose text can be cited as evidence.
@@ -535,16 +535,16 @@ reader's behalf, so multiple occurrences and recurring schedules are skipped
 with an explicit reason. Stories keep their existing multi-occurrence
 behaviour.
 
-A post and every story resharing it settle on one listing. The post is
-authoritative about its own author, so `run.py` extracts both channels and
-publishes them in a single transaction: the post teaches the reshares the
-author they could not read off the rendered image, and both key onto
-`ig_<author>_<start>`. The post also claims the reshare importer's fallback
-identity (`ig_post_<media_id>_<start>`) so a listing already created under it is
-reconciled rather than duplicated. Posts are ordered last in the batch, so a
-matched listing keeps the direct post permalink rather than a story link that
-stops resolving within a day. Two unrelated clubs announcing the same title at
-the same time still keep separate listings.
+A story that reshares a feed post is skipped before download, OCR, or a model
+call. The post is collected from the author's grid and is the single source
+for that media; re-reading the story embed would duplicate work and a second
+`source_assessments` row. Original story flyers (not reshares) are unchanged.
+
+Posts are ordered last in the Instagram publication batch so a listing that
+still has both a legacy reshare source and a post keeps the durable `/p/`
+permalink rather than a story link that stops resolving within a day. Two
+unrelated clubs announcing the same title at the same time still keep
+separate listings.
 
 Everything downstream is unchanged: caption corrections may replace or withdraw
 that post's support while another valid source keeps the event alive, errors
@@ -587,14 +587,14 @@ Read `/tmp/post-pilot.json` before enabling publication: each entry carries the
 assessment's quoted evidence next to the row it produced, so a wrong date or an
 invented activity is visible without querying the database. When it looks right,
 drop `--dry-run` (keep `--no-notify` for the first real run), then confirm the
-listings in the running site — flyer, permalink, date, host, and that a post and
-its reshares produced one card rather than several.
+listings in the running site — flyer, permalink, date, host, and that a post
+is not also published as a second card from a story resharing it.
 
 Performance and collection reliability have to be measured in that pilot; the
 architecture alone does not establish them.
 
 Out of scope in this version: historical backfill, comments, profile-link
-crawling, video processing, and any schedule change. A missing post or a failed
+crawling, and any schedule change. A missing post or a failed
 fetch never proves an event was cancelled.
 
 ## A note on Instagram's TOS

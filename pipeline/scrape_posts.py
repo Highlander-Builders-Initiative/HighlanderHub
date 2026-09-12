@@ -217,7 +217,8 @@ def _serialize_media(post: Any) -> list[dict[str, Any]]:
     entries: list[dict[str, Any]] = []
     if post.typename == "GraphSidecar":
         for index, node in enumerate(post.get_sidecar_nodes()):
-            url = None if node.is_video else node.display_url
+            # Video nodes still expose a JPEG cover; OCR that still, like stories.
+            url = node.display_url
             entries.append({
                 "index": index,
                 "is_video": bool(node.is_video),
@@ -226,11 +227,10 @@ def _serialize_media(post: Any) -> list[dict[str, Any]]:
             })
         if entries:
             return entries
-    url = None if post.is_video else post.url
+    url = post.url
     return [{
         "index": 0,
         "is_video": bool(post.is_video),
-        # A video's cover frame is not a flyer; this version does not read it.
         "image_url": url,
         "media_key": media_key(url) or f"{post.mediaid}_0",
     }]

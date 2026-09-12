@@ -443,6 +443,8 @@ def story_updates(processed: list[tuple[dict, dict]], meta: dict, now: str,
     owners = reshare_owners(processed, meta) if owners is None else owners
     updates = []
     for raw, cached in processed:
+        if ig._reshared_media_identity(raw):
+            continue
         candidates = owners.get(ig._reshared_media_identity(raw), set())
         if len(candidates) == 1 and not ig._reshared_owner(raw):
             raw = {**raw, "reshared_post": {**raw["reshared_post"], "owner_username": next(iter(candidates))}}
@@ -464,9 +466,10 @@ def post_updates(processed: list[tuple[dict, dict]], meta: dict, now: str,
     """Build publication updates for collected posts.
 
     Only a usable extraction (`ok`) and a retryable failure (`error`) produce an
-    update. A post this version cannot read — a video, or one with no text
-    anywhere — emits nothing, so an earlier listing keeps its support rather
-    than being withdrawn by a media change that says nothing about the event.
+    update. A post this version cannot read — an over-long carousel, or one
+    with no text anywhere — emits nothing, so an earlier listing keeps its
+    support rather than being withdrawn by a media change that says nothing
+    about the event.
     """
     registry = load_registry() if registry is None else registry
     updates = []
@@ -572,6 +575,8 @@ def main() -> None:
         if path.parent.name in {"ucr_events", "highlander_link"}:
             continue
         raw = ig._read_json(path)
+        if ig._reshared_media_identity(raw) and f"instagram:{raw.get('id')}" not in selected:
+            continue
         cache = ig._cache_path(str(raw.get("id")))
         if cache.exists():
             cached = ig._read_json(cache)
