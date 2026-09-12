@@ -187,7 +187,8 @@ def structured_rows(raw: dict, origin: str, payload: dict, now: str) -> tuple[li
     if not result["use_source_occurrences"] and fallback:
         for occurrence in assessment_occurrences(result, payload["source"]):
             stamp = datetime.fromisoformat(occurrence["starts_at"]).astimezone(timezone.utc).strftime("%Y%m%dT%H%MZ")
-            rows.append({**fallback, **{k: occurrence[k] for k in ("title", "starts_at", "ends_at", "location")},
+            rows.append({**fallback, **{k: occurrence[k] for k in ("title", "starts_at", "ends_at")},
+                         "location": occurrence["location"].strip() or fallback["location"],
                          "id": f"{fallback['id']}_{stamp}"})
     audiences = structured._filter_names(raw, "event_audience") if origin == "localist" else []
     public = []

@@ -833,7 +833,7 @@ def _to_event_row(
         "description": description,
         "starts_at": starts_at,
         "ends_at": ends_at,
-        "location": str(llm.get("location") or "").strip() or "UC Riverside",
+        "location": str(llm.get("location") or "").strip() or ("UC Riverside" if assessed_kind is None else ""),
         "host": host,
         "host_handle": host_handle,
         "category": _category(llm.get("category")),
