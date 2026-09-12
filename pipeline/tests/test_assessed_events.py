@@ -55,6 +55,38 @@ class AssessmentCacheTests(unittest.TestCase):
             self.assertEqual("complete", publication.cached_assessment(src)["status"])
             self.assertEqual(2, model.call_count)
 
+    def test_a_refused_assessment_is_not_paid_for_again_until_something_changes(self):
+        src = source()
+        refusal = semantic.GroundingRejected("Evidence quote 'x' is absent from field 'ocr_text'")
+        with patch.object(semantic, "assess", side_effect=refusal) as model:
+            first = publication.cached_assessment(src)
+            self.assertEqual("error", first["status"])
+            self.assertIs(False, first["retryable"])
+            stats = {}
+            self.assertEqual(first, publication.cached_assessment(src, stats=stats))
+            self.assertEqual(1, model.call_count)
+            self.assertEqual({"rejections_skipped": 1}, stats)
+            # A changed prompt, model or source text is new evidence, so the
+            # refusal expires exactly where a completed assessment would.
+            with patch.object(semantic, "VERSION", semantic.VERSION + 1):
+                publication.cached_assessment(src)
+            self.assertEqual(2, model.call_count)
+            with patch.object(semantic, "MODEL", "changed-model"):
+                publication.cached_assessment(src)
+            self.assertEqual(3, model.call_count)
+            changed = copy.deepcopy(src)
+            changed["texts"]["ocr_text"] += " Bring a notebook."
+            publication.cached_assessment(changed)
+            self.assertEqual(4, model.call_count)
+
+    def test_an_outage_stays_retryable_and_is_never_cached_as_a_refusal(self):
+        src = source()
+        with patch.object(semantic, "assess", side_effect=RuntimeError("unavailable")) as model:
+            failure = publication.cached_assessment(src)
+            self.assertIs(True, failure["retryable"])
+            publication.cached_assessment(src)
+            self.assertEqual(2, model.call_count)
+
     def test_reviewed_sources_never_call_model_and_expire_on_policy_change(self):
         src = source()
         reviewed = publication.record_review(src, decision(src), reviewer="fixture review")

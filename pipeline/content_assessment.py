@@ -21,6 +21,16 @@ KINDS = ("activity", "deadline", "application", "service_schedule", "announcemen
 DATE_ROLES = ("occurrence", "recurring_hours", "cutoff", "application_window", "observance", "notice_period", "none", "uncertain")
 PACIFIC = ZoneInfo("America/Los_Angeles")
 
+
+class GroundingRejected(ValueError):
+    """The model answered and validation refused the answer.
+
+    Distinct from a transport failure: the source was assessed, and at
+    temperature 0 the same prompt, model and text earn the same refusal. The
+    publication cache keeps it instead of paying for the same refusal again.
+    """
+
+
 EVIDENCE_SCHEMA = {
     "type": "array", "items": {
         "type": "object", "properties": {
@@ -398,7 +408,7 @@ def assess(source: dict) -> dict:
             return validate(parsed, source)
         except (ValueError, TypeError, KeyError) as exc:
             if attempt:
-                raise ValueError(f"Assessment failed validation after retry: {exc}") from exc
+                raise GroundingRejected(f"Assessment failed validation after retry: {exc}") from exc
             # One bounded schema/grounding repair. A transport failure is not a
             # decision and goes straight to the retryable error cache.
             prompt += ("\nYour previous response failed validation: " + str(exc)
