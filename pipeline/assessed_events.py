@@ -419,33 +419,14 @@ def _complete(updates: list[dict], *, notify: bool) -> None:
         raise RuntimeError(f"{len(failed)} source assessment(s) failed; previous listings retained: {', '.join(failed)}")
 
 
-def reshare_owners(processed: list[tuple[dict, dict]], meta: dict) -> dict[str, set[str]]:
-    """Map each reshared post's media identity to the authors observed for it.
-
-    Preserves the importer’s canonical identity even when one copy omits it.
-    """
-    import extract_stories as ig
-    owners: dict[str, set[str]] = {}
-    for raw, cached in processed:
-        media = ig._reshared_media_identity(raw)
-        owner = ig._reshared_owner(raw) or ig.reshared_origin_handle(cached.get("ocr_text"), raw.get("handle") or "", meta)
-        if media and owner:
-            owners.setdefault(media, set()).add(owner)
-    return owners
-
-
 def story_updates(processed: list[tuple[dict, dict]], meta: dict, now: str,
-                  registry: dict | None = None, owners: dict[str, set[str]] | None = None) -> list[dict]:
+                  registry: dict | None = None) -> list[dict]:
     import extract_stories as ig
     registry = load_registry() if registry is None else registry
-    owners = reshare_owners(processed, meta) if owners is None else owners
     updates = []
     for raw, cached in processed:
         if ig._reshared_media_identity(raw):
             continue
-        candidates = owners.get(ig._reshared_media_identity(raw), set())
-        if len(candidates) == 1 and not ig._reshared_owner(raw):
-            raw = {**raw, "reshared_post": {**raw["reshared_post"], "owner_username": next(iter(candidates))}}
         source = story_source(raw, cached)
         if cached.get("status") == "error":
             updates.append({"source_key": source["source_key"], "origin": "instagram",
@@ -520,21 +501,16 @@ def publish_instagram(stories: list[tuple[dict, dict]], posts: list[tuple[dict, 
                       meta: dict, now: str, *, notify: bool) -> None:
     """Publish both Instagram channels in one transaction and one alert pass.
 
-    Two things require this to be a single batch rather than two runs. A direct
-    post knows its author authoritatively, and teaching that author to the
-    reshares of the same media is what collapses "one event posted once and
-    reshared by four clubs" into one listing. And ordering posts last makes the
-    direct post win the shared row, so a matched listing links to the post
-    itself rather than to a story permalink that stops resolving in a day.
+    A post and a story that reshares it can land on one listing, because the
+    post claims both its author and its media identity (see `_post_identity`),
+    so the two channels have to settle that shared row together rather than in
+    two passes. Ordering posts last makes the direct post win it, so a matched
+    listing links to the post itself rather than to a story permalink that
+    stops resolving in a day.
     """
     registry = load_registry()
-    owners = reshare_owners(stories, meta)
-    for record, cached in posts:
-        owner, media_identity = _post_identity(record)
-        if owner:
-            owners.setdefault(media_identity, set()).add(owner)
     stats: dict[str, int] = {}
-    updates = story_updates(stories, meta, now, registry, owners)
+    updates = story_updates(stories, meta, now, registry)
     updates += post_updates(posts, meta, now, registry, stats)
     log.info("Instagram publication: %d story + %d post source(s); posts %s",
              len(stories), len(posts), dict(sorted(stats.items())) or "fully cached")

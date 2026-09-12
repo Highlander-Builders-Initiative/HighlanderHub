@@ -552,22 +552,6 @@ class PostAndReshareIdentityTests(unittest.TestCase):
                 "2026-09-11T12:00:00+00:00", registry={})
         self.assertEqual(["instagram:111"], [item["source_key"] for item in updates])
 
-    def test_publishing_both_channels_teaches_reshares_the_real_author(self):
-        story = {"id": "555", "handle": "ieee.ucr", "posted_at": "2026-09-10T18:00:00+00:00",
-                 "caption": None, "permalink": "https://www.instagram.com/stories/ieee.ucr/555/",
-                 "reshared_post": {"media_id": "700", "owner_username": None,
-                                   "caption": "Join ACM for a study jam"}}
-        seen: list = []
-        with patch.object(publication, "load_registry", return_value={}), \
-             patch.object(publication, "story_updates",
-                          side_effect=lambda processed, meta, now, registry, owners: seen.append(owners) or []), \
-             patch.object(publication, "post_updates", return_value=[]), \
-             patch.object(publication, "_complete"):
-            publication.publish_instagram([(story, {"ocr_text": ""})], [(self.record, self.cached)],
-                                          self.meta, "2026-09-11T12:00:00+00:00", notify=False)
-        # The direct post is the authority on who wrote it; the reshare inherits it.
-        self.assertEqual({"post_700": {"acm.ucr"}}, seen[0])
-
     def test_unrelated_clubs_sharing_a_title_and_time_stay_separate(self):
         from event_identity import dedupe_event_rows
         common = {"title": "General Meeting", "starts_at": "2026-09-15T22:00:00+00:00",
