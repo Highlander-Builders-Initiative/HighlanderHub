@@ -93,9 +93,21 @@ def load_local_checkpoints() -> dict[str, dict[str, Any]]:
 
 
 def write_local_checkpoints(checkpoints: dict[str, dict[str, Any]]) -> None:
+    """Merge the given rows into the local cache, leaving untouched ones alone.
+
+    Checkpoints are a keyed store, not a snapshot of one run. A pilot
+    (`--handle acm.ucr`) resolves a single account, and writing the file from
+    that run's handles would drop every other club's activation boundary — so
+    the next full run would either re-walk from activation and re-admit the
+    back catalogue, or re-activate at `now` and silently skip the interval the
+    lost row had already claimed. The durable store never deletes on upsert;
+    neither does this.
+    """
+    merged = load_local_checkpoints()
+    merged.update(checkpoints)
     _write_json(
         POST_CHECKPOINTS_FILE,
-        {"generated_at": _iso(_utc_now()), "accounts": checkpoints},
+        {"generated_at": _iso(_utc_now()), "accounts": merged},
     )
 
 
@@ -146,7 +158,8 @@ def resolve_checkpoints(
     and silently re-admit everything published since the real activation.
     """
     handles = sorted({handle for handle in handles if handle})
-    checkpoints = {handle: dict(load_local_checkpoints().get(handle, {})) for handle in handles}
+    local = load_local_checkpoints()
+    checkpoints = {handle: dict(local.get(handle, {})) for handle in handles}
     for handle, row in _load_remote_checkpoints().items():
         if handle not in checkpoints:
             continue

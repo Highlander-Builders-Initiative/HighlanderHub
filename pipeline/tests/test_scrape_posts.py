@@ -220,6 +220,25 @@ class RestartRecoveryTests(unittest.TestCase):
         # move it, and the run adopts what the store actually has.
         self.assertEqual("2026-09-01T00:00:00+00:00", resolved["acm.ucr"]["activated_at"])
 
+    def test_a_pilot_run_keeps_the_checkpoints_of_accounts_it_did_not_touch(self):
+        # `--handle acm.ucr` resolves one account. The file is a keyed store, so
+        # the other clubs' activation boundaries have to survive the write —
+        # losing one re-admits a back catalogue or silently skips an interval.
+        seeded = {
+            "acm.ucr": {"activated_at": "2026-06-01T00:00:00+00:00",
+                        "scanned_through": "2026-09-10T00:00:00+00:00"},
+            "ieee.ucr": {"activated_at": "2026-05-01T00:00:00+00:00",
+                         "scanned_through": "2026-09-10T00:00:00+00:00"},
+        }
+        scrape_posts.write_local_checkpoints(seeded)
+        with patch.object(scrape_posts, "_load_remote_checkpoints", return_value={}), \
+             patch.object(scrape_posts, "_claim_remote_activation", return_value={}):
+            resolved = scrape_posts.resolve_checkpoints(
+                ["acm.ucr"], instant("2026-09-11T12:00:00+00:00"))
+        # The run itself only carries the account it was asked for.
+        self.assertEqual(["acm.ucr"], sorted(resolved))
+        self.assertEqual(seeded, scrape_posts.load_local_checkpoints())
+
     def test_the_resume_point_is_the_older_of_local_and_remote_progress(self):
         scrape_posts.write_local_checkpoints({"acm.ucr": {
             "activated_at": "2026-06-01T00:00:00+00:00",
