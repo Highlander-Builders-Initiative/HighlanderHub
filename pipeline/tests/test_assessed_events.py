@@ -138,6 +138,28 @@ class SourcePublicationTests(unittest.TestCase):
             publish.assert_called_once_with(updates)
             notify.assert_not_called()
 
+    def test_notifications_use_only_rows_that_exist_after_publication(self):
+        requested = {"id":"ig_suppressed", "title":"Candidate", "has_free_food":True}
+        published = {"id":"ig_published", "title":"Stored", "has_free_food":True}
+        updates = [{"source_key":"instagram:a", "assessment":{"status":"complete"},
+                    "rows":[requested, published]}]
+        with patch.object(publication, "publish", return_value={"written":1}), \
+             patch("db.get_event_rows_by_ids", return_value=[published]) as resolve, \
+             patch("discord_notify.notify_free_food_events") as notify:
+            publication._complete(updates, notify=True)
+        resolve.assert_called_once_with(["ig_suppressed", "ig_published"])
+        notify.assert_called_once_with([published])
+
+    def test_notification_lookup_failure_does_not_fail_publication(self):
+        updates = [{"source_key":"instagram:a", "assessment":{"status":"complete"},
+                    "rows":[{"id":"ig_a"}]}]
+        with patch.object(publication, "publish", return_value={"written":1}), \
+             patch("db.get_event_rows_by_ids", side_effect=RuntimeError("unavailable")), \
+             patch("discord_notify.notify_free_food_events") as notify, \
+             self.assertLogs("pipeline.assessed_events", level="WARNING"):
+            publication._complete(updates, notify=True)
+        notify.assert_not_called()
+
     def test_unverified_missing_sources_are_not_retired(self):
         prior = {"localist:1":{"source_key":"localist:1", "origin":"localist", "event_ids":["ucr_events_1"]}}
         with patch.object(publication, "load_registry", return_value=prior), \
