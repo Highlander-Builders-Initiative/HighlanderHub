@@ -519,6 +519,38 @@ class PostAssessmentCostTests(unittest.TestCase):
         self.assertEqual(2, model.call_count)
 
 
+class RosterFilterTests(unittest.TestCase):
+    """An empty roster reads nothing; only an unreadable one reads everything."""
+
+    def archive(self, roster):
+        seen = []
+        with patch.object(posts, "ensure_post_dirs"), \
+             patch.object(posts, "hydrate_local_posts"), \
+             patch.object(posts, "iter_local_posts",
+                          side_effect=lambda handles=None: seen.append(handles) or []):
+            posts.extract_all(roster)
+        return seen[0]
+
+    def test_an_empty_handle_set_filters_to_nobody(self):
+        self.assertEqual(set(), self.archive(set()))
+
+    def test_named_handles_filter_to_those_accounts(self):
+        self.assertEqual({"acm.ucr"}, self.archive({"acm.ucr"}))
+
+    def test_no_handles_defers_to_the_roster(self):
+        with patch.object(posts, "_known_handles", return_value={"acm.ucr"}):
+            self.assertEqual({"acm.ucr"}, self.archive(None))
+
+    def test_an_empty_roster_reads_nothing(self):
+        with patch.object(posts, "_known_handles", return_value=set()):
+            self.assertEqual(set(), self.archive(None))
+
+    def test_an_unreadable_roster_falls_back_to_the_whole_archive(self):
+        with patch.object(posts, "load_accounts", side_effect=OSError("no accounts.json")):
+            self.assertIsNone(posts._known_handles())
+            self.assertIsNone(self.archive(None))
+
+
 class PilotDryRunTests(unittest.TestCase):
     def test_a_dry_run_assesses_and_maps_without_publishing_or_notifying(self):
         flyer = "Study Jam September 15, 2026 3 PM-5 PM"

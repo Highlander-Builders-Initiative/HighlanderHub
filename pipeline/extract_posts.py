@@ -25,7 +25,7 @@ from extract_stories import (
     _vision_ocr,
 )
 from flyer_qr import QR_SCAN_VERSION, qr_rsvp_urls
-from post_archive import iter_local_posts
+from post_archive import hydrate_local_posts, iter_local_posts
 
 log = logging.getLogger("pipeline.extract_posts")
 
@@ -410,21 +410,37 @@ def ordered_slides(cached: dict[str, Any]) -> list[dict[str, Any]]:
     return sorted(entries, key=lambda entry: entry.get("index", 0))
 
 
-def _known_handles() -> set[str]:
+def _known_handles() -> set[str] | None:
+    """The crawl roster, or None when it could not be read at all.
+
+    None means "do not filter", which is different from an empty roster: a
+    roster that failed to load says nothing about the archive, so extraction
+    falls back to reading all of it rather than silently going dark.
+    """
     try:
         return {account["handle"] for account in load_accounts() if account.get("handle")}
     except Exception as exc:  # noqa: BLE001 - fall back to the whole archive.
         log.warning("post extract: account roster unavailable: %s", exc)
-        return set()
+        return None
 
 
 def extract_all(handles: Iterable[str] | None = None) -> tuple[list[tuple[dict, dict]], Stats]:
-    """Read every archived post once. Returns (record, extraction) pairs."""
+    """Read every archived post once. Returns (record, extraction) pairs.
+
+    `handles` None leaves the roster to decide; a caller-supplied set filters
+    to exactly those accounts, and an empty one filters to none of them. An
+    empty roster must not widen into the whole archive: that would OCR, assess,
+    and publish every account ever crawled, including the ones dropped from
+    accounts.json on purpose.
+    """
     ensure_post_dirs()
+    # Extraction publishes whatever is on disk even when collection failed, so
+    # it restores the archive itself rather than trusting the collector to have.
+    hydrate_local_posts()
     stats = Stats()
     roster = set(handles) if handles is not None else _known_handles()
     processed: list[tuple[dict[str, Any], dict[str, Any]]] = []
-    for record in iter_local_posts(roster or None):
+    for record in iter_local_posts(roster):
         processed.append((record, process_post(record, stats)))
     stats["posts"] = len(processed)
     log.info("extract posts: %s", dict(sorted(stats.items())))
