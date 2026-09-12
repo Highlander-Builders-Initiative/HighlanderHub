@@ -517,6 +517,18 @@ def _process_story(raw: dict[str, Any], meta: dict[str, Any]) -> dict[str, Any]:
         log.warning("extract %s: missing story id", label)
         return {"status": "error", "error": "missing story id"}
 
+    reshared = _reshared_media_identity(raw)
+    if reshared:
+        # The feed post is collected and assessed on its own. Re-reading the
+        # story embed would duplicate OCR, a model call, and a second source.
+        log.info("extract %s: skipped reshare of %s", label, reshared)
+        return {
+            "status": "skipped_reshare",
+            "story_id": story_id,
+            "handle": handle,
+            "reshared_media": reshared,
+            "extracted_at": _utc_now(),
+        }
 
     cache = _cache_path(story_id)
     if cache.exists():

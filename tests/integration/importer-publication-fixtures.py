@@ -63,8 +63,7 @@ with tempfile.TemporaryDirectory() as directory, \
          patch("db.get_imported_events", return_value=[{"id": "ucr_events_456"}]):
         structured.main(["ucr_events_"], notify=False)
 
-    # A feed post, plus a story resharing it that never names the author. The
-    # post is the authority on who wrote it, so both must publish one row.
+    # A feed post is the source. A story resharing it is not published.
     flyer = "Study Jam September 15, 2026 3 PM-5 PM"
     post = {"media_id": "700", "handle": "acm.ucr", "owner_username": "acm.ucr",
             "shortcode": "CStudy", "permalink": "https://www.instagram.com/p/CStudy/",
@@ -96,14 +95,12 @@ with tempfile.TemporaryDirectory() as directory, \
         publication.record_review(source, body, reviewer="integration fixture")
 
     post_src = publication.post_source(post, post_cached)
-    reshare_src = publication.story_source(reshare, reshare_cached)
     review(post_src, "slide_1_ocr")
-    review(reshare_src, "ocr_text")
     publication.publish_instagram([(reshare, reshare_cached)], [(post, post_cached)],
                                   meta, "2026-09-11T19:00:00Z", notify=False)
 
-    # The club corrects the caption to say the session is cancelled; the post
-    # withdraws its support while the reshare keeps the listing alive.
+    # The club corrects the caption to say the session is cancelled; with the
+    # reshare skipped, the post is the only source and the listing withdraws.
     corrected = {**post, "caption": "Study jam is cancelled, see you next term"}
     corrected_src = publication.post_source(corrected, post_cached)
     review(corrected_src, "caption", kind="announcement")

@@ -34,9 +34,9 @@ log = logging.getLogger("pipeline.extract_posts")
 # A bump invalidates post extractions without touching story caches.
 EXTRACTION_VERSION = 1
 
-# Statuses that will not be reprocessed. `unsupported_media` is terminal only
-# for this EXTRACTION_VERSION: the version bump that teaches this module to
-# read video is what re-opens those posts.
+# Statuses that will not be reprocessed. `unsupported_media` stays terminal
+# only while `_readable_slides` still refuses the post (over-long carousels).
+# A prior video skip is reopened without bumping EXTRACTION_VERSION.
 TERMINAL_STATUSES = {"ok", "no_text", "unsupported_media", "no_media"}
 
 # How many slides of one carousel are read. Instagram allows 20; a carousel
@@ -211,22 +211,34 @@ def _upload_flyer(record: dict[str, Any], media_key: str, image: bytes) -> str |
 
 
 def _readable_slides(record: dict[str, Any]) -> tuple[list[dict[str, Any]], str | None]:
-    """The image slides to read, plus the reason this post cannot be read.
+    """The slides to read, plus the reason this post cannot be read.
 
-    Nothing is ever assessed from part of its media. Standalone videos and
-    carousels mixing video with images are skipped outright rather than read
-    from their images alone — a caption saying "details in the video" would
-    otherwise become a confidently wrong event — and an over-long carousel is
-    skipped rather than truncated to its first slides.
+    Video slides are the cover JPEG Instagram already exposes — the same still
+    stories use as a flyer. An over-long carousel is skipped rather than
+    truncated to its first slides, because reading a subset would assess part
+    of the evidence as if it were all of it.
     """
     media = [entry for entry in (record.get("media") or []) if isinstance(entry, dict)]
     if not media:
         return [], None
-    if any(entry.get("is_video") for entry in media):
-        return [], "This version does not read video posts"
     if len(media) > MAX_SLIDES:
         return [], f"Carousel has {len(media)} slides, more than the {MAX_SLIDES} this version reads"
     return media, None
+
+
+def _cached_decision_still_applies(record: dict[str, Any], payload: Any) -> bool:
+    """True when a terminal cache is still the decision for this record.
+
+    `unsupported_media` is only terminal while this version still cannot read
+    the post. A video skip from the previous policy is reopened once covers
+    are treated as slides; an over-long carousel stays skipped.
+    """
+    if not (isinstance(payload, dict) and payload.get("status") in TERMINAL_STATUSES
+            and payload.get("fingerprint") == fingerprint(record)):
+        return False
+    if payload.get("status") == "unsupported_media":
+        return _readable_slides(record)[1] is not None
+    return True
 
 
 def process_post(record: dict[str, Any], stats: Stats | None = None) -> dict[str, Any]:
@@ -241,10 +253,6 @@ def process_post(record: dict[str, Any], stats: Stats | None = None) -> dict[str
 
     digest = fingerprint(record)
 
-    def usable(payload: Any) -> bool:
-        return (isinstance(payload, dict) and payload.get("status") in TERMINAL_STATUSES
-                and payload.get("fingerprint") == digest)
-
     cached: dict[str, Any] | None = None
     path = _cache_path(media_id)
     if path.exists():
@@ -255,7 +263,7 @@ def process_post(record: dict[str, Any], stats: Stats | None = None) -> dict[str
         else:
             if isinstance(loaded, dict):
                 cached = loaded
-    if usable(cached):
+    if _cached_decision_still_applies(record, cached):
         stats.bump("cache_hits")
         log.debug("extract %s: cache %s", label, cached.get("status"))
         return cached
@@ -264,7 +272,7 @@ def process_post(record: dict[str, Any], stats: Stats | None = None) -> dict[str
     # this machine would otherwise pay for again — a lost `data/` directory, or
     # a slide another run already read.
     remote = _load_remote_cache(media_id)
-    if usable(remote):
+    if _cached_decision_still_applies(record, remote):
         stats.bump("cache_hits")
         log.info("extract %s: remote cache %s", label, remote.get("status"))
         return _write_cache(media_id, remote)

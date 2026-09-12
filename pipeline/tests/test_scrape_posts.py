@@ -420,6 +420,18 @@ class SerializationTests(PostArchiveTests):
             seen_at=instant("2026-09-11T12:00:00+00:00"),
         )
         self.assertTrue(record["has_video"])
+        self.assertTrue(record["media"][0]["is_video"])
+        self.assertTrue(record["media"][0]["image_url"])
+
+    def test_a_sidecar_video_keeps_its_cover_frame_url(self):
+        record = scrape_posts.serialize_post(
+            FakePost("700", "2026-09-11T09:00:00+00:00", images=2, video=True), "acm.ucr",
+            seen_at=instant("2026-09-11T12:00:00+00:00"),
+        )
+        self.assertFalse(record["media"][0]["is_video"])
+        self.assertTrue(record["media"][1]["is_video"])
+        self.assertTrue(record["media"][1]["image_url"])
+        self.assertEqual("700_1_n", record["media"][1]["media_key"])
 
 
 if __name__ == "__main__":

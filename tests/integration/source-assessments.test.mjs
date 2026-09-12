@@ -153,31 +153,23 @@ test('real importer RPC batches retire unsupported IDs while preserving a locked
   assert.deepEqual(await ids(), []);
 });
 
-test('a post and a story resharing it publish one listing, preferring the post link', async () => {
+test('a post publishes one listing; a story resharing it is not a second source', async () => {
   const [instagram] = importerBatches.slice(4);
   await reset();
   const written = await publish(instagram);
   assert.deepEqual(await ids(), ['ig_acm.ucr_20260915T2200Z']);
-  // Two sources, one event: the post named the author the reshare omitted.
-  assert.equal(instagram.length, 2);
-  assert.deepEqual(instagram.map(i => i.source_key), ['instagram:555', 'instagram:post:700']);
+  assert.deepEqual(instagram.map(i => i.source_key), ['instagram:post:700']);
   const row = (await db.query('select source_url, image_url, description from events')).rows[0];
   assert.equal(row.source_url, 'https://www.instagram.com/p/CStudy/');
   assert.equal(row.image_url, 'https://storage.example/700_0_n.jpg');
-  assert.equal(written.written, 2);
+  assert.equal(written.written, 1);
 });
 
-test('a corrected caption withdraws the post while another source keeps the listing', async () => {
+test('a corrected caption withdraws the post-supported listing', async () => {
   const [instagram, withdrawn] = importerBatches.slice(4);
   await reset();
   await publish(instagram);
   await publish(withdrawn);
-  // The reshare still supports it, so the event survives the post's withdrawal.
-  assert.deepEqual(await ids(), ['ig_acm.ucr_20260915T2200Z']);
-  const owners = (await db.query("select source_key from source_assessments where event_ids @> array['ig_acm.ucr_20260915T2200Z'] order by source_key")).rows;
-  assert.deepEqual(owners.map(r => r.source_key), ['instagram:555']);
-  // Once the reshare stops supporting it too, nothing is left holding it up.
-  await publish([update('555')]);
   assert.deepEqual(await ids(), []);
 });
 

@@ -146,18 +146,42 @@ class PostExtractionTests(unittest.TestCase):
         self.assertEqual("error", result["status"])
         self.assertNotIn(result["status"], posts.TERMINAL_STATUSES)
 
-    def test_videos_and_mixed_carousels_are_skipped_rather_than_half_read(self):
-        for label, media in (
-            ("standalone video", [{"index": 0, "is_video": True, "image_url": None, "media_key": "v0"}]),
-            ("mixed carousel", [
-                {"index": 0, "is_video": False, "image_url": "https://cdn.example/a.jpg", "media_key": "a"},
-                {"index": 1, "is_video": True, "image_url": None, "media_key": "b"},
-            ]),
-        ):
-            with self.subTest(label), self.ocr("text") as vision:
-                result = posts.process_post({**record(), "media": media})
-                self.assertEqual("unsupported_media", result["status"])
-                vision.assert_not_called()
+    def test_a_video_cover_frame_is_read_like_any_other_slide(self):
+        item = record(slides=1)
+        item["media"] = [{"index": 0, "is_video": True,
+                          "image_url": "https://cdn.example/v/t51/700_0_n.jpg?oh=sig",
+                          "media_key": "700_0_n"}]
+        item["has_video"] = True
+        with self.ocr("Study Jam September 15, 2026, 3-5 PM") as vision:
+            result = posts.process_post(item)
+        self.assertEqual("ok", result["status"])
+        vision.assert_called_once()
+        self.assertEqual("Study Jam September 15, 2026, 3-5 PM",
+                         result["images"][0]["ocr_text"])
+
+    def test_a_mixed_carousel_reads_image_slides_and_video_covers(self):
+        item = record(slides=2)
+        item["media"][1]["is_video"] = True
+        item["has_video"] = True
+        with self.ocr("", "Study Jam September 15") as vision:
+            result = posts.process_post(item)
+        self.assertEqual("ok", result["status"])
+        self.assertEqual(2, vision.call_count)
+
+    def test_a_cached_video_skip_is_reopened_once_covers_are_readable(self):
+        item = record(slides=1)
+        item["media"] = [{"index": 0, "is_video": True,
+                          "image_url": "https://cdn.example/cover.jpg",
+                          "media_key": "700_0_n"}]
+        stale = {"status": "unsupported_media", "fingerprint": posts.fingerprint(item),
+                 "result": {"reason": "This version does not read video posts"}}
+        with patch.object(posts, "_load_remote_cache", return_value=None), \
+             self.ocr("Study Jam September 15") as vision:
+            path = posts._cache_path(item["media_id"])
+            path.write_text(json.dumps(stale))
+            result = posts.process_post(item)
+        self.assertEqual("ok", result["status"])
+        vision.assert_called_once()
 
     def test_an_over_long_carousel_is_skipped_rather_than_truncated(self):
         item = record(slides=posts.MAX_SLIDES + 1)
@@ -398,6 +422,21 @@ class PostAndReshareIdentityTests(unittest.TestCase):
         reshare_identity = ig._instagram_event_id("post_700", row["starts_at"])
         self.assertIn(reshare_identity, known)
         self.assertEqual(ig._instagram_event_id("acm.ucr", row["starts_at"]), row["id"])
+
+    def test_a_reshare_story_is_not_published_as_its_own_source(self):
+        story = {"id": "555", "handle": "ieee.ucr", "posted_at": "2026-09-10T18:00:00+00:00",
+                 "caption": None, "permalink": "https://www.instagram.com/stories/ieee.ucr/555/",
+                 "reshared_post": {"media_id": "700", "owner_username": None,
+                                   "caption": "Join ACM for a study jam"}}
+        original = {"id": "111", "handle": "ieee.ucr", "posted_at": "2026-09-10T18:00:00+00:00",
+                    "caption": "our own flyer", "permalink": "https://www.instagram.com/stories/ieee.ucr/111/"}
+        cached = {"status": "ok", "ocr_text": "Study Jam September 15, 2026, 3-5 PM"}
+        with patch.object(publication, "make_update",
+                          side_effect=lambda source, *a, **k: {"source_key": source["source_key"]}):
+            updates = publication.story_updates(
+                [(story, cached), (original, cached)], self.meta,
+                "2026-09-11T12:00:00+00:00", registry={})
+        self.assertEqual(["instagram:111"], [item["source_key"] for item in updates])
 
     def test_publishing_both_channels_teaches_reshares_the_real_author(self):
         story = {"id": "555", "handle": "ieee.ucr", "posted_at": "2026-09-10T18:00:00+00:00",
