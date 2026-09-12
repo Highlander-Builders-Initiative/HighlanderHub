@@ -219,10 +219,10 @@ def hydrate_local_posts() -> int:
     overlap window happens to re-walk, and older posts still supporting live
     events silently stop being refreshed and reassessed.
 
-    Gap-filling, never overwriting. A local file is written before the mirror row
-    it produces, so it is at least as fresh; the mirror may restore a post but
-    must not decide the contents of one already on disk. A file too corrupt for
-    `iter_local_posts` to read counts as absent — replacing that is the point.
+    Gap-filling, never overwriting: a stale mirror must not undo a local caption
+    correction. This does not synchronize existing files from another machine
+    or an older backup. A file too corrupt for `iter_local_posts` to read counts
+    as absent — replacing that is the point.
 
     Best-effort: an unreadable mirror costs coverage, not the run. Nor can this
     re-admit history, since the mirror only ever holds posts that some scan

@@ -13,6 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import assessed_events as publication
 import content_assessment as semantic
 import extract_posts as posts
+import post_archive
 
 
 def record(caption="Study Jam on September 15, 2026, 3-5 PM", slides=2, media_id="700"):
@@ -241,6 +242,27 @@ class PostExtractionTests(unittest.TestCase):
             recovered = posts.process_post(item)
         vision.assert_not_called()
         self.assertEqual(original["fingerprint"], recovered["fingerprint"])
+
+    def test_extraction_restores_missing_raw_posts_and_reuses_their_durable_ocr(self):
+        item = {**record(), "posted_at": "2026-09-01T17:00:00+00:00"}
+        with self.ocr("", "Study Jam September 15"):
+            original = posts.process_post(item)
+        posts._cache_path(item["media_id"]).unlink()
+        mirrored = {"media_id": item["media_id"], "handle": item["handle"], "record": item}
+        with tempfile.TemporaryDirectory() as directory, \
+             patch.object(post_archive, "POSTS_DIR", Path(directory) / "posts"), \
+             patch.object(post_archive, "_mirrored_media_ids", return_value={item["media_id"]}), \
+             patch.object(post_archive, "_mirrored_rows", return_value=[mirrored]), \
+             patch.object(posts, "ensure_post_dirs"), \
+             patch.object(posts, "_load_remote_cache", return_value=original), \
+             patch.object(posts, "_download_image") as download, \
+             self.ocr("should not run") as vision:
+            processed, stats = posts.extract_all({item["handle"]})
+        self.assertEqual(1, stats["posts"])
+        self.assertEqual(item["media_id"], processed[0][0]["media_id"])
+        self.assertEqual(original, processed[0][1])
+        download.assert_not_called()
+        vision.assert_not_called()
 
     def test_a_carousel_repeating_one_image_reads_it_once(self):
         item = record(slides=2)
@@ -549,6 +571,18 @@ class RosterFilterTests(unittest.TestCase):
         with patch.object(posts, "load_accounts", side_effect=OSError("no accounts.json")):
             self.assertIsNone(posts._known_handles())
             self.assertIsNone(self.archive(None))
+
+    def test_an_empty_roster_does_not_process_posts_present_on_disk(self):
+        with tempfile.TemporaryDirectory() as directory, \
+             patch.object(post_archive, "POSTS_DIR", Path(directory)), \
+             patch.object(posts, "ensure_post_dirs"), \
+             patch.object(posts, "hydrate_local_posts"), \
+             patch.object(posts, "process_post") as process:
+            post_archive.write_post(record())
+            processed, stats = posts.extract_all(set())
+        self.assertEqual([], processed)
+        self.assertEqual(0, stats["posts"])
+        process.assert_not_called()
 
 
 class PilotDryRunTests(unittest.TestCase):

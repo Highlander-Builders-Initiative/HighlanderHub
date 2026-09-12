@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "pipeline"))
 import assessed_events as publication
+import extract_posts as posts
 import extract_stories as stories
 import normalize_events as structured
 
@@ -114,5 +115,26 @@ with tempfile.TemporaryDirectory() as directory, \
     review(other_src, "slide_1_ocr")
     publication.publish_instagram([], [(other, post_cached)], meta,
                                   "2026-09-11T21:00:00Z", notify=False)
+
+    # The post now has a blank slide and no caption. Run extraction through
+    # publication so the SQL test consumes the actual no_text withdrawal.
+    emptied = {**post, "caption": "", "media": [{
+        "index": 0, "is_video": False, "media_key": "blank",
+        "image_url": "https://cdn.example/blank.jpg"}]}
+    prior = {post_src["source_key"]: {
+        "event_ids": [item["id"] for item in batches[4][0]["rows"]]}}
+    with patch.object(posts, "POST_EXTRACTED_DIR", Path(directory) / "post_extractions"), \
+         patch.object(posts, "_load_remote_cache", return_value=None), \
+         patch.object(posts, "_write_remote_cache"), \
+         patch.object(posts, "_download_image", return_value=b"blank image"), \
+         patch.object(posts, "_vision_ocr", return_value=""), \
+         patch.object(posts, "qr_rsvp_urls", return_value=[]), \
+         patch.object(posts, "_upload_flyer", return_value=None), \
+         patch.object(publication, "load_registry", return_value=prior), \
+         patch.object(publication.semantic, "assess", side_effect=AssertionError("No text to assess")):
+        empty_cache = posts.process_post(emptied)
+        assert empty_cache["status"] == "no_text"
+        publication.publish_posts([(emptied, empty_cache)], "2026-09-11T22:00:00Z",
+                                  notify=False, meta=meta)
 
 print(json.dumps(batches))

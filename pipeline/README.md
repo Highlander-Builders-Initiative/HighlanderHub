@@ -469,9 +469,12 @@ Instaloader's `get_posts()`, reading photos and image carousels through
 Collection is **forward-only**. Before an account's first fetch the run records
 an `activated_at` timestamp, and nothing published before it is ever imported —
 including an old post the club pins to the top of its profile later. Activation
-is claimed through `claim_post_activation`, which inserts only when absent, so
-a rerun, a restored backup, or a lost `data/` directory cannot move the boundary
-and re-admit a club's back catalogue.
+is claimed through `claim_post_activation`, which inserts only when absent.
+If that claim fails, the local timestamp is retained and retried whenever the
+durable row is missing. Progress is mirrored only after the stored activation
+matches the scan's boundary. Losing `data/` recovers the durable activation;
+if both copies are lost before a claim succeeds, the original boundary cannot
+be recovered.
 
 Each run re-walks a seven-day overlap behind the last successful scan, bounded
 by activation. `Post.is_pinned` is documented upstream as "now likely returns
@@ -479,10 +482,12 @@ always false", so pinned entries are handled the way Instaloader's own
 downloader handles them: the first three entries never terminate a scan
 (`possibly_pinned=3`). They are still collected on their own merits.
 
-A checkpoint advances only after a scan completes **and** its raw writes reach
-Supabase. An interrupted scan keeps the items it already collected and re-walks
-the remaining interval next run. Authentication challenges and rate limits stop
-Instagram collection outright, record incomplete coverage, and retain every
+A scan walks to its date boundary or the end of the feed, with no fixed post
+count cutoff: a busy account must be able to pass the same newest-first prefix
+on its next run. A checkpoint advances only after a scan completes **and** its
+raw writes reach Supabase. An interrupted scan keeps the items it already
+collected locally and re-walks the interval next run. Authentication challenges
+and rate limits stop Instagram collection outright, record incomplete coverage, and retain every
 checkpoint — continuing would turn one throttle into a run-long pattern of
 rejected requests.
 
@@ -491,12 +496,14 @@ extraction restore it from that mirror before reading it. A machine that lost
 `data/` therefore gets back every post the mirror holds, not just the seven days
 the next scan re-walks — which is what keeps older posts still supporting live
 events being refreshed and reassessed. Restoring fills gaps only: a post already
-on disk is never overwritten, because the local file is written before the mirror
-row it produces and so is at least as fresh. It cannot re-admit history either,
+on disk is preserved so a stale mirror cannot undo a local caption correction.
+This restores missing files; it does not synchronize existing files from another
+machine or an older backup. It cannot re-admit history either,
 since the mirror only holds posts a scan already accepted past its activation
-boundary. The first run after a restore is slow rather than expensive — each
-restored post's extraction comes back from `post_extractions` one row at a time,
-so no OCR is paid for twice.
+boundary. Each restored post's extraction is looked up in `post_extractions`
+and reused when its fingerprint still matches. Missing or outdated extraction
+caches may require OCR again. Restore is best-effort: if the mirror is
+unavailable, the run has only its local archive and logs the reduced coverage.
 
 Posts outside the discovery overlap are re-fetched by shortcode only while the
 event they support has not ended; after that a club's edits cannot change a
