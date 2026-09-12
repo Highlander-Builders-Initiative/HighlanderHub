@@ -2,6 +2,9 @@
 // This executes the actual PostgreSQL migration in a disposable database.
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 
 const { PGlite } = await import(process.env.PGLITE_MODULE || '@electric-sql/pglite');
@@ -11,7 +14,7 @@ await db.exec('create role anon; create role authenticated; create role service_
 for (const name of ['20260513073310_init_schema.sql', '20260527000000_add_event_lock.sql',
   '20260529000000_deleted_events.sql', '20260530000000_event_content_kind.sql',
   '20260531000000_event_has_free_food.sql', '20260909000000_event_content_kind_application.sql',
-  '20260911000000_source_assessments.sql']) {
+  '20260911000000_source_assessments.sql', '20260912000000_source_assessment_fanout_overrides.sql']) {
   await db.exec(await readFile(new URL(name, migrations), 'utf8'));
 }
 
@@ -93,6 +96,56 @@ test('source fanout updates only its supported sessions', async () => {
   await publish([update('hours', [row('ig_morning'), row('ig_afternoon')])]);
   await publish([update('hours', [row('ig_afternoon')])]);
   assert.deepEqual(await ids(), ['ig_afternoon']);
+});
+
+for (const override of ['lock', 'tombstone']) {
+  test(`${override} on a morning session preserves its afternoon sibling`, async () => {
+    await reset();
+    await publish([update('hours', [row('ig_morning'), row('ig_afternoon')])]);
+    if (override === 'lock') {
+      await db.exec("update events set is_locked=true, title='Admin title' where id='ig_morning'");
+    } else {
+      await db.exec("insert into deleted_events(event_id) values ('ig_morning'); delete from events where id='ig_morning'");
+    }
+    for (const morning of ['ig_morning', 'ig_rekeyed_morning']) {
+      await publish([update('hours', [row(morning), row('ig_afternoon', { title: 'Updated afternoon' })])]);
+      assert.deepEqual(await ids(), override === 'lock' ? ['ig_afternoon', 'ig_morning'] : ['ig_afternoon']);
+      assert.equal((await db.query("select title from events where id='ig_afternoon'")).rows[0].title, 'Updated afternoon');
+    }
+    if (override === 'lock') {
+      assert.equal((await db.query("select title from events where id='ig_morning'")).rows[0].title, 'Admin title');
+    }
+    await publish([update('hours')]);
+    assert.deepEqual(await ids(), override === 'lock' ? ['ig_morning'] : []);
+  });
+}
+
+test('real importer RPC batches retire unsupported IDs while preserving a locked fanout session', async () => {
+  const root = fileURLToPath(new URL('../../', import.meta.url));
+  const venv = `${root}pipeline/.venv/bin/python`;
+  const python = process.env.PIPELINE_PYTHON || (existsSync(venv) ? venv : 'python3');
+  const [story, rejectedStory, calendar, vanishedCalendar] = JSON.parse(execFileSync(python,
+    [fileURLToPath(new URL('./importer-publication-fixtures.py', import.meta.url))],
+    { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }));
+  assert.equal(story[0].assessment.status, 'complete');
+  assert.equal(story[0].rows.length, 2);
+  const [morning, afternoon] = story[0].rows.map(r => r.id);
+  await reset();
+  await publish(story);
+  await db.query('update events set is_locked=true where id=$1', [morning]);
+  await publish(story);
+  assert.deepEqual(await ids(), [morning, afternoon].sort());
+  await publish(rejectedStory);
+  assert.deepEqual(await ids(), [morning]);
+
+  await reset();
+  await publish(story);
+  await publish(rejectedStory);
+  assert.deepEqual(await ids(), []);
+  await publish(calendar);
+  assert.deepEqual(await ids(), ['ucr_events_456']);
+  await publish(vanishedCalendar);
+  assert.deepEqual(await ids(), []);
 });
 
 test('deduplication transfers source support to the canonical event', async () => {

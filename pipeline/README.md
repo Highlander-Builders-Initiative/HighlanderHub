@@ -382,8 +382,14 @@ python evaluate_content_assessment.py --report /tmp/full-semantic-eval.json
 
 The root `npm test` also executes the actual publication SQL in disposable
 PGlite PostgreSQL, covering rollback, shared support, retries, rekeying, locks,
-tombstones, session fanout, and public-role access denial. Semantic evaluation
-uses the real model and is separate from deterministic contract tests.
+tombstones, session fanout, and public-role access denial. It also runs both
+Python importer entrypoints and applies their actual RPC payloads to PGlite,
+checking retirement with a locked sibling. Install `pipeline/requirements.txt`
+first; the test uses `pipeline/.venv/bin/python` when present, otherwise `python3`
+(or set `PIPELINE_PYTHON`). No network calls are made by these fixtures.
+Semantic evaluation uses the real model and is separate from deterministic
+contract tests. Explicit occurrences and expanded schedules share a 100-session
+limit; oversized schedules fail assessment rather than publishing a partial set.
 
 `extract_stories.py` turns raw IG story image flyers into `events` rows:
 
