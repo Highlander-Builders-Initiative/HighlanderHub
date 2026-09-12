@@ -157,3 +157,25 @@ def get_imported_events() -> list[dict[str, Any]]:
         if len(batch) < 1000:
             return rows
     raise RuntimeError("Imported event pagination exceeded its safety limit")
+
+
+def get_event_rows_by_ids(
+    ids: Iterable[str],
+    batch_size: int = 200,
+) -> list[dict[str, Any]]:
+    """Return the event rows that currently exist for the requested IDs."""
+    event_ids = list(dict.fromkeys(str(event_id) for event_id in ids if event_id))
+    if not event_ids:
+        return []
+    c = client()
+    rows: list[dict[str, Any]] = []
+    for i in range(0, len(event_ids), batch_size):
+        rows.extend(
+            c.table("events")
+            .select("*")
+            .in_("id", event_ids[i : i + batch_size])
+            .execute()
+            .data
+            or []
+        )
+    return rows

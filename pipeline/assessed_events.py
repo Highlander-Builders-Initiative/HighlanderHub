@@ -228,8 +228,20 @@ def _complete(updates: list[dict], *, notify: bool) -> None:
     result = publish(updates)
     log.info("Assessed publication: %s", result)
     if notify:
+        from db import get_event_rows_by_ids
         from discord_notify import notify_free_food_events
-        notify_free_food_events([row for item in updates if item["assessment"]["status"] == "complete" for row in item["rows"]])
+        candidate_ids = [
+            row["id"]
+            for item in updates
+            if item["assessment"]["status"] == "complete"
+            for row in item["rows"]
+        ]
+        try:
+            published_rows = get_event_rows_by_ids(candidate_ids)
+        except Exception as exc:  # noqa: BLE001 - notifications must not fail ingest.
+            log.warning("Could not resolve published rows for Discord notification: %s", exc)
+        else:
+            notify_free_food_events(published_rows)
     failed = [item["source_key"] for item in updates if item["assessment"]["status"] == "error"]
     if failed:
         raise RuntimeError(f"{len(failed)} source assessment(s) failed; previous listings retained: {', '.join(failed)}")
