@@ -75,6 +75,44 @@ class ContentAssessmentTests(unittest.TestCase):
             result["occurrences"][0].update(starts_at=start+"T00:00:00-07:00", ends_at=end+"T00:00:00-07:00", all_day=True)
             self.assertEqual(result, assess.validate(result, src))
 
+    def test_seasonal_hours_cannot_publish_as_one_timed_span(self):
+        # Every endpoint and clock below is printed, so evidence grounding
+        # alone accepts the blob; only the duration rule rejects it.
+        src = source("Drop-in advising. August 11 to September 17, 2026. Tuesday-Thursday, 10:00 AM to 3:00 PM.")
+        for kind in ("activity", "service_schedule"):
+            result = decision(src, kind)
+            result["occurrences"][0].update(starts_at="2026-08-11T10:00:00-07:00",
+                                            ends_at="2026-09-17T15:00:00-07:00")
+            with self.subTest(kind=kind), self.assertRaisesRegex(ValueError, "cannot exceed 24 hours"):
+                assess.validate(result, src)
+
+    def test_exhibition_visiting_hours_cannot_publish_as_one_timed_span(self):
+        src = source("Student Art Exhibition September 1-30, 2026. Visit the gallery daily 10 AM-5 PM.")
+        result = decision(src)
+        result["occurrences"][0].update(starts_at="2026-09-01T10:00:00-07:00",
+                                        ends_at="2026-09-30T17:00:00-07:00")
+        with self.assertRaisesRegex(ValueError, "cannot exceed 24 hours"):
+            assess.validate(result, src)
+
+    def test_overnight_session_keeps_its_unprinted_next_day_end(self):
+        src = source("Late night study jam September 15, 2026, 10 PM-2 AM")
+        result = decision(src)
+        result["occurrences"][0].update(starts_at="2026-09-15T22:00:00-07:00",
+                                        ends_at="2026-09-16T02:00:00-07:00")
+        self.assertEqual(result, assess.validate(result, src))
+
+    def test_recurring_hours_cannot_be_standalone_occurrences(self):
+        src = source("Drop-in advising August 11 to September 17, 2026. Tuesday-Thursday, 10:00 AM to 3:00 PM.")
+        result = decision(src, "service_schedule", "recurring_hours")
+        result["occurrences"][0].update(starts_at="2026-08-11T10:00:00-07:00",
+                                        ends_at="2026-08-11T15:00:00-07:00")
+        with self.assertRaisesRegex(ValueError, "bounded schedule"):
+            assess.validate(result, src)
+        # Establishing no pattern at all still publishes nothing, rather than
+        # failing the assessment and retaining the previous listings.
+        result.update(occurrences=[])
+        self.assertEqual(result, assess.validate(result, src))
+
     def test_relative_day_requires_explicit_source_evidence(self):
         src = source("Workshop tomorrow 3-5 PM")
         result = decision(src)
