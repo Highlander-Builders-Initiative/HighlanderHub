@@ -21,30 +21,79 @@ class AssessmentCacheTests(unittest.TestCase):
         self.cache.start()
         self.addCleanup(self.cache.stop)
 
-    def test_version_source_and_model_invalidate_semantics_without_touching_ocr(self):
+    def test_policy_and_model_changes_reuse_cache_but_source_edits_reassess(self):
         src = source()
         with patch.object(semantic, "assess", side_effect=lambda item: decision(item)) as model:
             first = publication.cached_assessment(src)
             self.assertEqual(first, publication.cached_assessment(src))
             self.assertEqual(1, model.call_count)
             with patch.object(semantic, "VERSION", semantic.VERSION+1):
-                publication.cached_assessment(src)
-            self.assertEqual(2, model.call_count)
+                self.assertEqual(first, publication.cached_assessment(src))
+            self.assertEqual(1, model.call_count)
             with patch.object(semantic, "MODEL", "changed-model"):
-                publication.cached_assessment(src)
-            self.assertEqual(3, model.call_count)
+                self.assertEqual(first, publication.cached_assessment(src))
+            self.assertEqual(1, model.call_count)
             changed = copy.deepcopy(src)
             changed["texts"]["ocr_text"] += " Bring a notebook."
             publication.cached_assessment(changed)
-            self.assertEqual(4, model.call_count)
+            self.assertEqual(2, model.call_count)
+            publication.cached_assessment(changed, refresh=True)
+            self.assertEqual(3, model.call_count)
 
-    def test_remote_assessment_is_revalidated_and_reused(self):
+    def test_rule_validation_changes_do_not_reassess_previously_accepted_sources(self):
         src = source()
         prior = {"status":"complete", "model":semantic.MODEL, "version":semantic.VERSION,
                  "source_hash":semantic.fingerprint(src), "source":src, "result":decision(src)}
-        with patch.object(semantic, "assess") as model:
+        with patch.object(semantic, "assess") as model, \
+             patch.object(semantic, "validate", side_effect=ValueError("New stricter rule")):
             self.assertEqual(prior, publication.cached_assessment(src, prior))
             model.assert_not_called()
+
+    def test_newer_remote_correction_wins_over_older_local_cache(self):
+        src = source()
+        old = {"status": "complete", "version": 3, "model": semantic.MODEL,
+               "source_hash": semantic.fingerprint(src), "source": src, "result": decision(src),
+               "assessed_at": "2026-09-11T23:00:00+00:00"}
+        publication._save_assessment(old)
+        corrected = {**old, "version": 4, "assessed_at": "2026-09-12T01:00:00+00:00",
+                     "result": {**old["result"], "kind": "application", "date_role": "none", "occurrences": []}}
+        with patch.object(semantic, "assess") as model:
+            self.assertEqual(corrected, publication.cached_assessment(src, corrected))
+            model.assert_not_called()
+
+    def test_hesa_reassesses_old_activity_and_retires_its_production_listing(self):
+        cases = json.loads((Path(__file__).parent / "fixtures/content_assessment_cases.json").read_text())
+        case = next(case for case in cases if case["name"] == "HESA program recruitment")
+        src = publication.story_source(case["raw"], case["cached"])
+        self.assertEqual(case["source"], src)
+        legacy_id = case["expected_known_event_ids"][0]
+        old = decision(src)
+        old["occurrences"][0].update(title="HIGHLANDER EARLY START ACADEMY (HESA)", all_day=True,
+            starts_at="2026-07-27T00:00:00-07:00", ends_at="2026-09-13T00:00:00-07:00")
+        prior = {"status": "complete", "model": semantic.MODEL, "version": 3,
+                 "source_hash": semantic.fingerprint(src), "source": src, "result": old}
+        # Reproduce the old publication before testing its retirement. The
+        # legacy classifier test alone never exercised this assessed path.
+        old_rows, _ = publication.story_rows(case["raw"], case["cached"], prior, {}, src["posted_at"])
+        self.assertEqual([(legacy_id, "student_event")], [(r["id"], r["content_kind"]) for r in old_rows])
+        publication._save_assessment(prior)
+        corrected = {**old, "kind": "application", "date_role": "program_duration", "occurrences": [],
+                     "reason": "Recruitment for a credit-bearing curriculum; the dates describe its term."}
+        semantic.validate(corrected, src)
+        extraction_before = copy.deepcopy(case["cached"])
+        with patch.object(semantic, "assess", return_value=corrected) as model, \
+             patch("extract_stories._gemini_extract", side_effect=AssertionError("Must reuse saved extraction")):
+            update = publication.make_update(src, case["raw"], case["cached"],
+                {"assessment": prior, "event_ids": [legacy_id]}, {}, "2026-09-12T12:00:00Z", refresh=True)
+            model.assert_called_once_with(src)
+            self.assertEqual("complete", update["assessment"]["status"])
+            self.assertEqual("application", update["assessment"]["result"]["kind"])
+            self.assertGreater(update["assessment"]["version"], 3)
+            self.assertEqual([], update["rows"])
+            self.assertIn(legacy_id, update["known_event_ids"])
+            self.assertEqual(update["assessment"], publication.cached_assessment(src, prior))
+            model.assert_called_once()
+        self.assertEqual(extraction_before, case["cached"])
 
     def test_failure_is_not_a_negative_decision_and_retries(self):
         src = source()
@@ -66,18 +115,19 @@ class AssessmentCacheTests(unittest.TestCase):
             self.assertEqual(first, publication.cached_assessment(src, stats=stats))
             self.assertEqual(1, model.call_count)
             self.assertEqual({"rejections_skipped": 1}, stats)
-            # A changed prompt, model or source text is new evidence, so the
-            # refusal expires exactly where a completed assessment would.
+            # Policy/model edits no longer reopen all refusals automatically.
             with patch.object(semantic, "VERSION", semantic.VERSION + 1):
                 publication.cached_assessment(src)
-            self.assertEqual(2, model.call_count)
+            self.assertEqual(1, model.call_count)
             with patch.object(semantic, "MODEL", "changed-model"):
                 publication.cached_assessment(src)
-            self.assertEqual(3, model.call_count)
+            self.assertEqual(1, model.call_count)
             changed = copy.deepcopy(src)
             changed["texts"]["ocr_text"] += " Bring a notebook."
             publication.cached_assessment(changed)
-            self.assertEqual(4, model.call_count)
+            self.assertEqual(2, model.call_count)
+            publication.cached_assessment(changed, refresh=True)
+            self.assertEqual(3, model.call_count)
 
     def test_an_outage_stays_retryable_and_is_never_cached_as_a_refusal(self):
         src = source()
@@ -87,14 +137,16 @@ class AssessmentCacheTests(unittest.TestCase):
             publication.cached_assessment(src)
             self.assertEqual(2, model.call_count)
 
-    def test_reviewed_sources_never_call_model_and_expire_on_policy_change(self):
+    def test_reviewed_sources_survive_policy_changes_until_explicit_refresh(self):
         src = source()
         reviewed = publication.record_review(src, decision(src), reviewer="fixture review")
         with patch.object(semantic, "assess", return_value=decision(src)) as model:
             self.assertEqual(reviewed, publication.cached_assessment(src))
             model.assert_not_called()
             with patch.object(semantic, "VERSION", semantic.VERSION+1):
-                publication.cached_assessment(src)
+                self.assertEqual(reviewed, publication.cached_assessment(src))
+            model.assert_not_called()
+            publication.cached_assessment(src, refresh=True)
             model.assert_called_once()
 
 

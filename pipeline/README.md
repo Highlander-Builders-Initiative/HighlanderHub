@@ -352,6 +352,13 @@ recurring hours become individual sessions, with printed breaks respected. A
 timed occurrence may not exceed 24 hours, so seasonal hours and daily visiting
 hours cannot publish as one continuous weeks-long span.
 
+Program recruitment (academies, fellowships, cohorts, and course-based programs)
+is application content even without explicit "apply now" wording. Printed term
+dates have the role `program_duration`; they are neither event occurrences nor
+an inferred application window. Separately advertised orientations, workshops,
+and application cutoffs retain their own activity/deadline dates. Conferences,
+retreats and exhibitions remain eligible as multi-day activities.
+
 `assessed_events.py` applies student eligibility and fundraising policy separately,
 then publishes student events/deadlines. Nonpublic decisions remain inspectable
 in `source_assessments`, alongside source text, evidence, reasons, version, model,
@@ -366,25 +373,38 @@ supports them. Admin locks and deleted identities constrain replacements. An
 assessment/API error preserves prior support and causes the stage to report a
 retryable failure. A successful `uncertain` decision stays unpublished.
 
-Semantic caches live in `data/assessments/` and the database. Changing the source
-text, assessment version, or model invalidates them without repeating OCR or
-image downloads. Bump `content_assessment.VERSION` when changing assessment
-semantics or the prompt after deployment. Source reviews recorded with
-`record_review` retain reviewer attribution and still expire on source/policy
-changes. Old `is_event` cache values are extraction hints, not publication gates.
+Semantic caches live in `data/assessments/` and the database. Automatic
+invalidation for policy/version/model changes is temporarily disabled. Saved
+decisions survive code and prompt edits; `content_assessment.VERSION` and the
+model name record how a decision was made, but do not trigger a rerun. Changed
+source text or an explicit `--refresh` can request a new assessment without
+repeating OCR or image downloads. The newest saved decision wins over an older
+local copy. Source reviews retain reviewer attribution and follow the same
+refresh policy. Old `is_event` values are extraction hints, not publication gates.
 
-Reassess existing saved evidence (dry run by default, no notifications):
+Regular imports skip sources whose known event occurrences have all finished
+before today's America/Los_Angeles date, including failed assessments awaiting
+retry. Today's events, ongoing multi-day events, and sources with future sessions
+remain eligible. Ends are exclusive, so an event ending at today's midnight
+finished yesterday. A post's upload date is not its event date; new sources with
+unknown event dates still receive their initial assessment. Structured sources
+use their current supplied dates so a rescheduled future event can be processed.
+
+Inspect existing saved evidence (today/future listings only, dry run by default,
+no notifications). To deliberately replace a saved decision, add `--refresh`:
 
 ```bash
-python assessed_events.py --active --report /tmp/assessment-report.json
-python assessed_events.py --source instagram:3977797394086504274 --report /tmp/one-source.json
-python assessed_events.py --active --apply
+python assessed_events.py --report /tmp/assessment-report.json
+python assessed_events.py --source instagram:3977797394086504274 --refresh --report /tmp/one-source.json
+python assessed_events.py --source instagram:3977797394086504274 --refresh --apply
 ```
 
 The initial migration of an existing feed should assess all sources supporting
 the affected event group together so legacy duplicates acquire ownership before
-cleanup. `--active` includes sources identifiable through legacy IDs or stored
-source URLs. Review the report before applying; failures are distinct from
+cleanup. Backfills always limit selection to listings on or after today's campus
+date, using registry ownership, legacy IDs, or stored source URLs. `--active` is
+retained for compatibility; it is no longer required. Neither `--source` nor
+`--refresh` bypasses the date limit. Review the report before applying; failures are distinct from
 intentional exclusions. The command reads saved source text and may call the
 configured Gemini service, but never scrapes, downloads media, runs OCR, or sends
 Discord notifications.
@@ -406,7 +426,12 @@ checking retirement with a locked sibling. Install `pipeline/requirements.txt`
 first; the test uses `pipeline/.venv/bin/python` when present, otherwise `python3`
 (or set `PIPELINE_PYTHON`). No network calls are made by these fixtures.
 Semantic evaluation uses the real model and is separate from deterministic
-contract tests. Explicit occurrences and expanded schedules share a 100-session
+contract tests; use `--fresh` to evaluate changed prompts instead of reusing old
+answers. Evaluation fixtures are independent of live-listing backfills and can
+exercise historical examples without publishing anything. The saved HESA
+regression also checks the production story mapper:
+no public event is emitted, and the old listing ID is supplied for reconciliation.
+Explicit occurrences and expanded schedules share a 100-session
 limit; oversized schedules fail assessment rather than publishing a partial set.
 
 `extract_stories.py` turns raw IG story image flyers into `events` rows:

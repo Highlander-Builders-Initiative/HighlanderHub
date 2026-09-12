@@ -107,6 +107,28 @@ class ContentAssessmentTests(unittest.TestCase):
             with self.subTest(kind=kind), self.assertRaisesRegex(ValueError, "publication choices"):
                 assess.validate(decision(src, kind, role), src)
 
+    def test_program_duration_is_nonpublic_and_cannot_be_an_activity_date(self):
+        src = source("Summer Scholars Academy: a 7-week program, July 27-September 12, 2026. Earn course credits.")
+        result = decision(src, "application", "program_duration")
+        result.update(occurrences=[], date_evidence=[{"field": "ocr_text", "quote": src["texts"]["ocr_text"]}])
+        self.assertEqual(result, assess.validate(result, src))
+        for kind in ("activity", "deadline", "service_schedule"):
+            with self.subTest(kind=kind), self.assertRaisesRegex(ValueError, "date role disagree"):
+                assess.validate({**result, "kind": kind}, src)
+        with self.assertRaisesRegex(ValueError, "publication choices"):
+            assess.validate({**result, "occurrences": decision(src)["occurrences"]}, src)
+        src["source_occurrences"] = [{"starts_at": "2026-07-27T00:00:00-07:00"}]
+        with self.assertRaisesRegex(ValueError, "publication choices"):
+            assess.validate({**result, "use_source_occurrences": True}, src)
+
+    def test_application_dates_require_evidence_but_undated_programs_are_valid(self):
+        src = source("Summer Scholars Academy. Incoming students earn course credits with financial aid available.")
+        result = {**decision(src, "application", "none"), "date_evidence": [], "occurrences": []}
+        self.assertEqual(result, assess.validate(result, src))
+        for role in ("program_duration", "application_window"):
+            with self.subTest(role=role), self.assertRaisesRegex(ValueError, "Missing source evidence"):
+                assess.validate({**result, "date_role": role}, src)
+
     def test_unsupported_day_year_clock_and_end_fail(self):
         src = source()
         for key, value in (("starts_at", "2026-09-16T15:00:00-07:00"),

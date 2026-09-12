@@ -275,5 +275,153 @@
       },
       "source_occurrences": []
     }
+  },
+  {
+    "name": "HESA program recruitment",
+    "expected_kind": "application",
+    "expected_date_role": "program_duration",
+    "expected_event_ids": [],
+    "expected_known_event_ids": [
+      "ig_highlander_opps_20260727T0700Z"
+    ],
+    "source": {
+      "source_key": "instagram:3910094662085282209",
+      "origin": "instagram",
+      "posted_at": "2026-06-01T18:47:07Z",
+      "texts": {
+        "ocr_text": "UC RIVERSIDE Academic Resource Center\nHIGHLANDER EARLY\nSTART ACADEMY (HESA)\n·\n7-week in-person summer program for\nincoming first year students\nJuly 27,2026 - September 12, 2026\nStudents earn 8 - 10 units before starting their freshman Fall quarter.\n⚫ HESA participants take 3 courses (starting with their Math or\nWriting placement)\nBenefits:\n•\nBuilds a stronger foundation in English or Math\n•\nPeer Mentor Support\n•HESA Scholarship\n•\nCommunity Building Activities\nEarn Units\nFinancial Aid available for qualifying students\nSpecialized Academic Support\nFinancial Aid & Housing are available\n(most students will have all fees covered through financial aid)\nVISIT US AT EARLYSTART.UCR.EDU\n@ucriversidearc",
+        "caption": "",
+        "post_caption": ""
+      },
+      "source_occurrences": []
+    },
+    "raw": {
+      "id": "3910094662085282209",
+      "handle": "highlander_opps",
+      "posted_at": "2026-06-01T18:47:07Z"
+    },
+    "cached": {
+      "status": "ok",
+      "ocr_text": "UC RIVERSIDE Academic Resource Center\nHIGHLANDER EARLY\nSTART ACADEMY (HESA)\n·\n7-week in-person summer program for\nincoming first year students\nJuly 27,2026 - September 12, 2026\nStudents earn 8 - 10 units before starting their freshman Fall quarter.\n⚫ HESA participants take 3 courses (starting with their Math or\nWriting placement)\nBenefits:\n•\nBuilds a stronger foundation in English or Math\n•\nPeer Mentor Support\n•HESA Scholarship\n•\nCommunity Building Activities\nEarn Units\nFinancial Aid available for qualifying students\nSpecialized Academic Support\nFinancial Aid & Housing are available\n(most students will have all fees covered through financial aid)\nVISIT US AT EARLYSTART.UCR.EDU\n@ucriversidearc",
+      "result": {
+        "category": "academic",
+        "confidence": "high",
+        "description": "7-week in-person summer program for incoming first year students. Students earn 8 - 10 units before starting their freshman Fall quarter. HESA participants take 3 courses (starting with their Math or Writing placement). Benefits: Builds a stronger foundation in English or Math, Peer Mentor Support, HESA Scholarship, Community Building Activities. Earn Units. Financial Aid available for qualifying students. Specialized Academic Support. Financial Aid & Housing are available (most students will have all fees covered through financial aid). VISIT US AT EARLYSTART.UCR.EDU",
+        "ends_at": "2026-09-12T23:59:59-07:00",
+        "is_event": true,
+        "is_free": false,
+        "location": "UC Riverside Academic Resource Center",
+        "rsvp_required": false,
+        "rsvp_url": "earlystart.ucr.edu",
+        "starts_at": "2026-07-27T00:00:00-07:00",
+        "tags": [
+          "summer program",
+          "first year students",
+          "units",
+          "math",
+          "writing",
+          "scholarship",
+          "financial aid",
+          "housing"
+        ],
+        "title": "HIGHLANDER EARLY START ACADEMY (HESA)"
+      }
+    }
+  },
+  {
+    "name": "fellowship term without apply wording",
+    "expected_kind": "application",
+    "expected_date_role": "program_duration",
+    "source": {
+      "source_key": "instagram:test-fellowship-term-without-apply-wording",
+      "origin": "instagram",
+      "posted_at": "2026-06-01T18:47:07Z",
+      "texts": {
+        "ocr_text": "Research Fellows: a 6-month fellowship for undergraduate students, October 1, 2026-March 31, 2027. Fellows complete a research curriculum with mentor support and receive a stipend. Learn more about eligibility on our website."
+      },
+      "source_occurrences": []
+    }
+  },
+  {
+    "name": "undated academy opportunity",
+    "expected_kind": "application",
+    "expected_date_role": "none",
+    "source": {
+      "source_key": "instagram:test-undated-academy-opportunity",
+      "origin": "instagram",
+      "posted_at": "2026-06-01T18:47:07Z",
+      "texts": {
+        "ocr_text": "Summer Scholars Academy. Incoming students take three credit-bearing courses before their first fall quarter. Peer mentors, financial aid and housing available. Visit our website to learn more."
+      },
+      "source_occurrences": []
+    }
+  },
+  {
+    "name": "HESA orientation during program recruitment",
+    "expected_kind": "activity",
+    "expected_date_role": "occurrence",
+    "source": {
+      "source_key": "instagram:test-HESA-orientation-during-program-recruitment",
+      "origin": "instagram",
+      "posted_at": "2026-06-01T18:47:07Z",
+      "texts": {
+        "ocr_text": "HESA Orientation July 25, 2026, 3-5 PM in the HUB. Meet your mentors and learn about your courses. HESA is a 7-week program running July 27-September 12, 2026; students earn 8-10 units. Registration required for orientation."
+      },
+      "source_occurrences": []
+    },
+    "expected_starts_at": [
+      "2026-07-25T15:00:00-07:00"
+    ]
+  },
+  {
+    "name": "workshop about fellowship applications",
+    "expected_kind": "activity",
+    "expected_date_role": "occurrence",
+    "source": {
+      "source_key": "instagram:test-workshop-about-fellowship-applications",
+      "origin": "instagram",
+      "posted_at": "2026-06-01T18:47:07Z",
+      "texts": {
+        "ocr_text": "Fellowship Application Workshop September 15, 2026, 3-5 PM in the HUB. Learn how to apply to our 6-month research fellowship. Fellowship participants earn course credits and receive a stipend."
+      },
+      "source_occurrences": []
+    },
+    "expected_starts_at": [
+      "2026-09-15T15:00:00-07:00"
+    ]
+  },
+  {
+    "name": "program cutoff with term dates",
+    "expected_kind": "deadline",
+    "expected_date_role": "cutoff",
+    "source": {
+      "source_key": "instagram:test-program-cutoff-with-term-dates",
+      "origin": "instagram",
+      "posted_at": "2026-06-01T18:47:07Z",
+      "texts": {
+        "ocr_text": "Summer Scholars Academy applications due July 1, 2026 at 5 PM. Submit your application online. The 7-week program runs July 27-September 12, 2026. Students earn 8-10 units."
+      },
+      "source_occurrences": []
+    },
+    "expected_starts_at": [
+      "2026-07-01T17:00:00-07:00"
+    ]
+  },
+  {
+    "name": "registered multi day retreat",
+    "expected_kind": "activity",
+    "expected_date_role": "occurrence",
+    "source": {
+      "source_key": "instagram:test-registered-multi-day-retreat",
+      "origin": "instagram",
+      "posted_at": "2026-06-01T18:47:07Z",
+      "texts": {
+        "ocr_text": "Student Leadership Retreat September 18-20, 2026. Three days of team-building, workshops and outdoor activities at the mountain lodge. Registration required; meals and housing included. All day."
+      },
+      "source_occurrences": []
+    },
+    "expected_starts_at": [
+      "2026-09-18T00:00:00-07:00"
+    ]
   }
 ]
