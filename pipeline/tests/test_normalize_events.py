@@ -19,6 +19,7 @@ class NormalizeEventsTests(unittest.TestCase):
     def setUp(self) -> None:
         fake_config = types.SimpleNamespace(
             RAW_DIR=PIPELINE_ROOT / "data" / "raw",
+            DATA_DIR=PIPELINE_ROOT / "data",
             ensure_dirs=Mock(),
         )
         fake_db = types.SimpleNamespace(
@@ -197,23 +198,22 @@ class NormalizeEventsTests(unittest.TestCase):
             self.normalize_events,
             "_collect_raw",
             side_effect=[[raw], []],
-        ):
+        ), patch("assessed_events.publish_structured") as publish:
             self.normalize_events.main(["ucr_events_"])
 
-        self.fake_db.upsert_batched.assert_called_once()
-        self.fake_db.delete_events_missing_from_ids.assert_called_once_with(
-            ["ucr_events_"],
-            ["ucr_events_52310591390648_9002"],
-        )
+        self.assertEqual([("localist", raw)], publish.call_args.args[0])
+        self.assertEqual({"ucr_events_"}, publish.call_args.args[1])
+        self.fake_db.upsert_batched.assert_not_called()
 
     def test_normalizer_does_not_reconcile_unverified_sources(self) -> None:
         with patch.object(
             self.normalize_events,
             "_collect_raw",
             side_effect=[[], []],
-        ):
+        ), patch("assessed_events.publish_structured") as publish:
             self.normalize_events.main()
 
+        self.assertEqual(set(), publish.call_args.args[1])
         self.fake_db.delete_events_missing_from_ids.assert_not_called()
 
     def test_verified_source_rejects_malformed_raw_cache(self) -> None:
@@ -237,14 +237,8 @@ class NormalizeEventsTests(unittest.TestCase):
         }
         self.fake_db.get_deleted_event_ids.return_value = {"ucr_events_123"}
 
-        with patch.object(
-            self.normalize_events,
-            "_collect_raw",
-            side_effect=[[raw], []],
-        ):
-            self.normalize_events.main()
-
-        self.fake_db.upsert_batched.assert_called_once_with("events", [])
+        row = self.normalize_events._to_event_row(raw, "2026-05-01T00:00:00Z")
+        self.assertEqual([], self.normalize_events._filter_deleted_events([row]))
 
     def test_normalizer_suppresses_deleted_duplicate_event_group(self) -> None:
         localist_raw = {
@@ -261,14 +255,9 @@ class NormalizeEventsTests(unittest.TestCase):
         }
         self.fake_db.get_deleted_event_ids.return_value = {"highlander_link_456"}
 
-        with patch.object(
-            self.normalize_events,
-            "_collect_raw",
-            side_effect=[[localist_raw], [hlink_raw]],
-        ):
-            self.normalize_events.main()
-
-        self.fake_db.upsert_batched.assert_called_once_with("events", [])
+        rows = [self.normalize_events._to_event_row(localist_raw, "2026-05-01T00:00:00Z"),
+                self.normalize_events._to_event_row_hlink(hlink_raw, "2026-05-01T00:00:00Z")]
+        self.assertEqual([], self.normalize_events._filter_deleted_events(rows))
 
     def test_normalizer_dedupes_same_title_and_start_across_sources(self) -> None:
         localist_raw = {
@@ -286,14 +275,10 @@ class NormalizeEventsTests(unittest.TestCase):
             "benefitNames": ["Free Food"],
         }
 
-        with patch.object(
-            self.normalize_events,
-            "_collect_raw",
-            side_effect=[[localist_raw], [hlink_raw]],
-        ):
-            self.normalize_events.main()
-
-        rows = self.fake_db.upsert_batched.call_args.args[1]
+        rows = self.normalize_events.dedupe_event_rows([
+            self.normalize_events._to_event_row(localist_raw, "2026-05-01T00:00:00Z"),
+            self.normalize_events._to_event_row_hlink(hlink_raw, "2026-05-01T00:00:00Z"),
+        ])
         self.assertEqual(1, len(rows))
         self.assertEqual("highlander_link_456", rows[0]["id"])
         # Free food is now its own attribute; category stays the real type.

@@ -684,6 +684,8 @@ def _to_event_row(
     account_meta: dict[str, Any],
     scraped_at: str,
     known_handles: Iterable[str] = (),
+    *,
+    assessed_kind: str | None = None,
 ) -> tuple[dict[str, Any] | None, set[str]]:
     """Return the event row plus any prior event IDs to retire.
 
@@ -741,13 +743,15 @@ def _to_event_row(
         # no real title to find. The caption still names the event usefully.
         title = _caption_fallback_title(description)
 
-    if is_informational_notice(title, description, str(ocr_text or "")):
+    if assessed_kind is None and is_informational_notice(title, description, str(ocr_text or "")):
         log.info("extract %s: skipping informational notice", raw.get("id"))
         return None, prior_ids
-    if not has_source_date(raw, cached):
+    if assessed_kind is None and not has_source_date(raw, cached):
         log.info("extract %s: skipping event without a source date", raw.get("id"))
         return None, prior_ids
-    if ocr_range is not None:
+    if assessed_kind is not None:
+        starts_at, ends_at = llm_starts_at, llm_ends_at
+    elif ocr_range is not None:
         starts_at, ends_at = ocr_range
     else:
         starts_at, ends_at = immediate_event_range(
@@ -757,7 +761,7 @@ def _to_event_row(
         return None, set()
 
     supported_range = (
-        (starts_at, ends_at) if is_single_session_reminder(raw, cached, starts_at, ends_at)
+        (starts_at, ends_at) if assessed_kind is not None or is_single_session_reminder(raw, cached, starts_at, ends_at)
         else align_printed_dates(raw, cached, starts_at, ends_at)
     )
     if supported_range is None:
@@ -775,7 +779,7 @@ def _to_event_row(
         )
         ends_at = None
 
-    if (looks_like_schedule_grid(cached.get("ocr_text"), starts_at, ends_at)
+    if (assessed_kind is None and looks_like_schedule_grid(cached.get("ocr_text"), starts_at, ends_at)
             and not is_single_session_reminder(raw, cached, starts_at, ends_at)):
         log.info(
             "extract %s: skipping ambiguous multi-event schedule (%s -> %s)",
@@ -839,6 +843,7 @@ def _to_event_row(
             description=description,
             tags=tags,
             ocr_text=str(cached.get("ocr_text") or ""),
+            assessed_kind=assessed_kind,
         ),
         "tags": tags,
         "source": "instagram",
@@ -1017,29 +1022,8 @@ def main(*, notify: bool = True) -> None:
     )
 
     scraped_at = _utc_now()
-    rows, superseded_ids, retired_by = _collect_event_rows(
-        processed, meta_by_handle, scraped_at
-    )
-    current_ids = {row["id"] for row in rows} | superseded_ids
-    event_rows = _filter_locked_events(rows, retired_by)
-    event_rows = _filter_deleted_events(event_rows, retired_by)
-    event_rows = dedupe_event_rows(event_rows)
-    written = _upsert_events(event_rows)
-    deleted = _delete_imported_event_ids(
-        current_ids - {row["id"] for row in event_rows}
-    )
-    if deleted:
-        log.info("Deleted %d stale Instagram event rows from Supabase", deleted)
-    log.info("Wrote %d events to Supabase", written)
-    notified = notify_free_food_events(event_rows) if notify else 0
-    if notified:
-        log.info("Sent %d free food Discord notifications", notified)
-    failed = [str(raw.get("id")) for raw, cached in processed if cached.get("status") == "error"]
-    if failed:
-        raise RuntimeError(
-            f"{len(failed)} Instagram extraction(s) failed: {', '.join(failed)}; "
-            "successful events saved; error caches will retry next run"
-        )
+    from assessed_events import publish_stories
+    publish_stories(processed, meta_by_handle, scraped_at, notify=notify)
 
 
 if __name__ == "__main__":

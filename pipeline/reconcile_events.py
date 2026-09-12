@@ -167,7 +167,7 @@ def _inherit_notifications(rows: list[dict], updates: list[dict], removed: set[s
 
 
 def main(*, notify: bool = True) -> None:
-    from db import client, delete_unlocked_event_rows_by_ids, get_deleted_event_ids, get_imported_events
+    from db import client, get_deleted_event_ids, get_imported_events
     from discord_notify import notify_free_food_events
     rows = get_imported_events()
     updates, removed = plan(rows, _tombstoned_candidates(get_deleted_event_ids()), now=datetime.now(timezone.utc))
@@ -181,7 +181,15 @@ def main(*, notify: bool = True) -> None:
         if len(query.execute().data or []) != 1:
             raise RuntimeError(f"Canonical event changed during reconciliation: {row['id']}")
     _inherit_notifications(rows, updates, removed)
-    deleted = delete_unlocked_event_rows_by_ids(sorted(removed)) if removed else 0
+    removals = []
+    for event_id in sorted(removed):
+        matches = [r for r in rows if r['id'] not in removed and same_event(original[event_id], r)]
+        removals.append({
+            'id': event_id,
+            'replacement_id': matches[0]['id'] if len(matches) == 1 else None,
+            'updated_at': original[event_id].get('updated_at'),
+        })
+    deleted = client().rpc('remap_assessed_event_sources', {'removals': removals}).execute().data if removals else 0
     log.info('Reconciled %d canonical updates and %d duplicate/deleted rows', len(updates), deleted)
     if notify:
         canonical = {r['id']:r for r in rows if r['id'] not in removed}

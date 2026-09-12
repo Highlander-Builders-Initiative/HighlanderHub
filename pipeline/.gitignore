@@ -1,5 +1,7 @@
 data/raw/
 data/extracted/
+data/assessments/
+data/assessment-report.json
 data/followed_accounts.json
 data/followed_accounts.tmp
 data/run_history.jsonl
