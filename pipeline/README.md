@@ -5,8 +5,14 @@ Three sources right now, hand-off to the Next.js app via Supabase tables:
 | Source | Scraper | Raw | Table | App reader |
 | --- | --- | --- | --- | --- |
 | Instagram stories | `scrape.py` ([instaloader](https://github.com/instaloader/instaloader)) + `extract_stories.py` | `data/raw/<handle>/` | `stories`, `events` | `src/lib/events/index.ts` |
+| Instagram posts | `scrape_posts.py` + `extract_posts.py` | `data/posts/<handle>/` | `events` | `src/lib/events/index.ts` |
 | events.ucr.edu (Localist) | `ucr_events.py` (JSON API) | `data/raw/ucr_events/` | `events` | `src/lib/events/index.ts` |
 | highlanderlink.ucr.edu (CampusLabs Engage) | `highlander_link.py` (JSON API) | `data/raw/highlander_link/` | `events` | `src/lib/events/index.ts` |
+
+Instagram posts are a second channel over the same account list and the same
+daily run. They are collected forward-only from each account's activation
+timestamp, publish through the same assessment/reconciliation boundary as
+stories, and never enter the frontend's `stories` table.
 
 `run.py` scrapes everything, extracts IG event rows, normalizes, then reconciles
 corroborated duplicates across sources. Its seventh stage prefers structured
@@ -37,8 +43,11 @@ pipeline/
 ├── accounts.json          # IG handles to monitor (edit me)
 ├── resolve_ids.py         # fills instagram_user_id for handles added by hand
 ├── config.py              # paths + env-driven auth config
-├── scrape.py              # IG ingest:        data/raw/<handle>/<story_id>.json
+├── scrape.py              # IG stories:       data/raw/<handle>/<story_id>.json
 ├── extract_stories.py     # IG OCR + LLM:     data/extracted/<story_id>.json
+├── scrape_posts.py        # IG posts:         data/posts/<handle>/<media_id>.json
+├── post_archive.py        # post archive I/O, free of Instaloader
+├── extract_posts.py       # per-slide OCR:    data/post_extractions/<media_id>.json
 ├── story_dates.py         # what the flyer text says about day and time
 ├── ucr_events.py          # Localist ingest:  data/raw/ucr_events/<event_id>.json
 ├── highlander_link.py     # Engage ingest:    data/raw/highlander_link/<event_id>.json
@@ -48,6 +57,9 @@ pipeline/
 ├── requirements.txt
 ├── data/raw/              # gitignored; per-item JSON
 ├── data/extracted/        # gitignored; per-story extraction cache
+├── data/posts/            # gitignored; per-post record
+├── data/post_extractions/ # gitignored; per-post slide OCR cache
+├── data/post_checkpoints.json  # gitignored; activation + scan progress
 └── output/                # gitignored; legacy local dumps
 ```
 
@@ -142,7 +154,9 @@ GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json
 
 ```bash
 python run.py                # scrape all sources + extract + normalize all
-python scrape.py             # IG ingest only
+python scrape.py             # IG story ingest only
+python scrape_posts.py       # IG post ingest only (--handle to limit a pilot)
+python extract_posts.py      # per-slide OCR + publish (--dry-run to inspect first)
 python extract_stories.py    # OCR + Gemini extraction from existing IG raw files
 python ucr_events.py         # UCR events ingest only (no auth needed)
 python highlander_link.py    # HighlanderLink ingest only (no auth needed)
@@ -444,6 +458,172 @@ from events
 where source = 'instagram'
 order by scraped_at desc;
 ```
+
+## Instagram post collection
+
+Posts are the other half of how a club announces an event, and unlike stories
+they do not expire. `scrape_posts.py` walks each account's feed with
+Instaloader's `get_posts()`, reading photos and image carousels through
+`get_sidecar_nodes()`.
+
+Collection is **forward-only**. Before an account's first fetch the run records
+an `activated_at` timestamp, and nothing published before it is ever imported —
+including an old post the club pins to the top of its profile later. Activation
+is claimed through `claim_post_activation`, which inserts only when absent.
+If that claim fails, the local timestamp is retained and retried whenever the
+durable row is missing. Progress is mirrored only after the stored activation
+matches the scan's boundary. Losing `data/` recovers the durable activation;
+if both copies are lost before a claim succeeds, the original boundary cannot
+be recovered.
+
+Each run re-walks a seven-day overlap behind the last successful scan, bounded
+by activation. `Post.is_pinned` is documented upstream as "now likely returns
+always false", so pinned entries are handled the way Instaloader's own
+downloader handles them: the first three entries never terminate a scan
+(`possibly_pinned=3`). They are still collected on their own merits.
+
+A scan walks to its date boundary or the end of the feed, with no fixed post
+count cutoff: a busy account must be able to pass the same newest-first prefix
+on its next run. A checkpoint advances only after a scan completes **and** its
+raw writes reach Supabase. An interrupted scan keeps the items it already
+collected locally and re-walks the interval next run. Authentication challenges
+and rate limits stop Instagram collection outright, record incomplete coverage, and retain every
+checkpoint — continuing would turn one throttle into a run-long pattern of
+rejected requests.
+
+The local archive is a cache of `instagram_posts`, and both collection and
+extraction restore it from that mirror before reading it. A machine that lost
+`data/` therefore gets back every post the mirror holds, not just the seven days
+the next scan re-walks — which is what keeps older posts still supporting live
+events being refreshed and reassessed. Restoring fills gaps only: a post already
+on disk is preserved so a stale mirror cannot undo a local caption correction.
+This restores missing files; it does not synchronize existing files from another
+machine or an older backup. It cannot re-admit history either,
+since the mirror only holds posts a scan already accepted past its activation
+boundary. Each restored post's extraction is looked up in `post_extractions`
+and reused when its fingerprint still matches. Missing or outdated extraction
+caches may require OCR again. Restore is best-effort: if the mirror is
+unavailable, the run has only its local archive and logs the reduced coverage.
+
+Posts outside the discovery overlap are re-fetched by shortcode only while the
+event they support has not ended; after that a club's edits cannot change a
+listing that is already over. Those requests are deduplicated against whatever
+discovery already fetched this run. Requests stay sequential under Instaloader's
+rate controller — the optimization here is avoiding repeated collection, OCR and
+model work, not fetching harder.
+
+### Per-slide extraction
+
+`extract_posts.py` reads each image once and caches the result under a
+signature-free media key derived from the CDN path. The extraction fingerprint
+covers the caption, publication context, ordered media identities, and
+`EXTRACTION_VERSION` — deliberately not the signed URL, which Instagram rotates
+on every fetch:
+
+* An unchanged rerun makes **zero** OCR and model calls.
+* A refreshed CDN URL alone changes nothing and costs nothing.
+* A caption edit expires the assessment but reuses every image's OCR.
+* A replaced or added slide reads only that slide.
+* A carousel repeating one image reads it once.
+
+A failed image download or an incomplete OCR is a **retryable error**, never a
+negative decision: the slides that succeeded are kept inside the error payload
+and matched by media key on retry, so a partial media failure costs only the
+slides that actually failed. Video slides use Instagram's cover JPEG — the same
+still stories already OCR as a flyer — so a Reel or a carousel mixing video
+with images is read, not skipped. An over-long carousel is skipped as
+`unsupported_media` rather than truncated. That status is terminal only while
+this version still cannot read the post.
+
+Only slides that can actually be chosen as the flyer are stored durably: the
+lead image, and any slide whose text can be cited as evidence.
+
+### Publication
+
+Post sources are assessed by the same `content_assessment` validator as every
+other source, under a namespaced key `instagram:post:<media_id>` with
+`origin="instagram"` and the existing public event shape. The caption and each
+slide's OCR are separate `texts` fields (`caption`, `slide_1_ocr`,
+`slide_2_ocr`, …), so activity, date, and location evidence stays attributable
+to the slide that actually printed it. Caption-only evidence is allowed — a
+post with blank images can still announce an event.
+
+**A post publishes exactly one occurrence.** A carousel holding a whole term's
+schedule cannot be turned into one listing without choosing a session on the
+reader's behalf, so multiple occurrences and recurring schedules are skipped
+with an explicit reason. Stories keep their existing multi-occurrence
+behaviour.
+
+A story that reshares a feed post is skipped before download, OCR, or a model
+call. The post is collected from the author's grid and is the single source
+for that media; re-reading the story embed would duplicate work and a second
+`source_assessments` row. Original story flyers (not reshares) are unchanged.
+
+Posts are ordered last in the Instagram publication batch so a listing that
+still has both a legacy reshare source and a post keeps the durable `/p/`
+permalink rather than a story link that stops resolving within a day. Two
+unrelated clubs announcing the same title at the same time still keep
+separate listings.
+
+Everything downstream is unchanged: caption corrections may replace or withdraw
+that post's support while another valid source keeps the event alive, errors
+retain prior support, and admin locks and tombstones remain authoritative
+inside the publication RPC.
+
+A post edited until it says nothing withdraws its listing the same way. Once a
+post has published a row, a `no_text` extraction — no caption and no printed
+text anywhere — publishes a complete assessment with no rows, so deleting a
+caption retires the listing exactly as replacing it with words that announce
+nothing does. Nothing is left to assess, so the withdrawal costs no model call.
+What a post *cannot be read* for is the opposite case and retains its support:
+`unsupported_media` is a limit of this reader and `no_media` a defect in the
+archived record, and neither says anything about the event.
+
+Apply `supabase/migrations/20260913000000_instagram_posts.sql` before the first
+post run. It adds `instagram_posts`, `post_extractions`, and
+`instagram_post_checkpoints` plus the `claim_post_activation` RPC. No change to
+`source_assessments` or `reconcile_source_assessments` is needed — posts reuse
+both.
+
+### Rolling it out
+
+Collection and extraction report as separate pipeline stages
+(`instagram.posts.scrape`, `instagram.posts.extract`, `instagram.publish`), so
+a failure is attributable and archived posts are still processed after a
+collection failure. Counters for discovered, refreshed, unchanged, skipped,
+failed, OCR calls, cache hits, and stage duration land in the run summary and
+`data/run_history.jsonl`. The daily schedule is unchanged.
+
+Run a pilot on a few real accounts with publication and notifications disabled
+before enabling post publication, and inspect the source evidence and generated
+rows first:
+
+```bash
+# Collect only these accounts, and activate only these accounts.
+python scrape_posts.py --handle acm.ucr --handle ieee.ucr
+
+# OCR + assess them, publishing nothing and notifying nobody. The report holds
+# the source evidence and the event rows that *would* have been written.
+python extract_posts.py --handle acm.ucr --handle ieee.ucr \
+  --dry-run --report /tmp/post-pilot.json
+
+# Re-inspect one source after a fix, still without publishing.
+python assessed_events.py --source instagram:post:<media_id> --report /tmp/post.json
+```
+
+Read `/tmp/post-pilot.json` before enabling publication: each entry carries the
+assessment's quoted evidence next to the row it produced, so a wrong date or an
+invented activity is visible without querying the database. When it looks right,
+drop `--dry-run` (keep `--no-notify` for the first real run), then confirm the
+listings in the running site — flyer, permalink, date, host, and that a post
+is not also published as a second card from a story resharing it.
+
+Performance and collection reliability have to be measured in that pilot; the
+architecture alone does not establish them.
+
+Out of scope in this version: historical backfill, comments, profile-link
+crawling, and any schedule change. A missing post or a failed
+fetch never proves an event was cancelled.
 
 ## A note on Instagram's TOS
 

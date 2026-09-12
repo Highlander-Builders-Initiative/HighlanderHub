@@ -10,6 +10,7 @@ import argparse
 import hashlib
 import json
 import logging
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -60,7 +61,7 @@ def load_registry() -> dict[str, dict]:
     raise RuntimeError("Source assessment pagination exceeded its safety limit")
 
 
-def cached_assessment(source: dict, prior: dict | None = None) -> dict:
+def cached_assessment(source: dict, prior: dict | None = None, stats: dict | None = None) -> dict:
     key = source["source_key"]
     path = _cache_path(key)
     digest = semantic.fingerprint(source)
@@ -77,11 +78,15 @@ def cached_assessment(source: dict, prior: dict | None = None) -> dict:
                 and cached.get("status") == "complete"):
             try:
                 semantic.validate(cached.get("result"), source)
+                if stats is not None:
+                    stats["assessment_cache_hits"] = stats.get("assessment_cache_hits", 0) + 1
                 return cached
             except (ValueError, KeyError, TypeError):
                 pass
     payload = {"version": semantic.VERSION, "model": semantic.MODEL, "source_hash": digest,
                "source": source, "assessed_at": datetime.now(timezone.utc).isoformat()}
+    if stats is not None:
+        stats["model_calls"] = stats.get("model_calls", 0) + 1
     try:
         payload.update(status="complete", result=semantic.assess(source))
     except Exception as exc:
@@ -98,6 +103,30 @@ def story_source(raw: dict, cached: dict) -> dict:
              "post_caption": post.get("caption") or ""}
     return {"source_key": f"instagram:{raw['id']}", "origin": "instagram",
             "posted_at": raw.get("posted_at"), "texts": texts, "source_occurrences": []}
+
+
+# Carousel slides are numbered from 1 in the source text so a citation names a
+# specific image. Keeping each slide in its own field is what makes activity,
+# date, and location evidence attributable to the slide that actually printed it.
+_SLIDE_FIELD = re.compile(r"^slide_(\d+)_ocr$")
+_RSVP_TERMS = re.compile(
+    r"\b(rsvp|registration|register|sign[-\s]?ups?|tickets?|reserve your|"
+    r"limited (?:spots|slots|seats)|link in bio)\b", re.I)
+_CAPTION_URL = re.compile(r"https?://[^\s<>\"')\]]+", re.I)
+
+
+def post_source(record: dict, cached: dict) -> dict:
+    """A feed post as assessable source text: caption plus per-slide OCR.
+
+    A post with no printed text at all is still assessable — the caption can
+    carry the whole announcement — so an empty slide set is not a refusal here.
+    """
+    import extract_posts as posts
+    texts = {"caption": record.get("caption") or ""}
+    for slide in posts.ordered_slides(cached):
+        texts[f"slide_{int(slide.get('index', 0)) + 1}_ocr"] = slide.get("ocr_text") or ""
+    return {"source_key": f"instagram:post:{record['media_id']}", "origin": "instagram",
+            "posted_at": record.get("posted_at"), "texts": texts, "source_occurrences": []}
 
 
 def structured_source(raw: dict, origin: str) -> dict:
@@ -172,6 +201,147 @@ def _disambiguate(rows: list[dict]) -> list[dict]:
             if len(titles[row["id"]]) > 1 else row for row in rows]
 
 
+def _post_identity(record: dict) -> tuple[str, str]:
+    """The two identities a post can be keyed on.
+
+    The author is the canonical one, and is exactly what `extract_stories`
+    resolves for a story that reshares this post — so a post and every reshare
+    of it land on one row. The media identity is the reshare importer's
+    fallback for when no copy names the author; a direct post claims it too, so
+    a listing created under that fallback is reconciled rather than duplicated.
+    """
+    owner = str(record.get("owner_username") or record.get("handle") or "").strip().lower()
+    return owner, f"post_{record['media_id']}"
+
+
+def _evidence_slides(result: dict, occurrence: dict) -> list[int]:
+    """Zero-based indices of the slides cited as evidence, in slide order."""
+    found: set[int] = set()
+    for evidence in (result.get("activity_evidence"), result.get("date_evidence"),
+                     occurrence.get("activity_evidence"), occurrence.get("date_evidence")):
+        for item in evidence or []:
+            match = _SLIDE_FIELD.match(str((item or {}).get("field") or "")) if isinstance(item, dict) else None
+            if match:
+                found.add(int(match.group(1)) - 1)
+    return sorted(found)
+
+
+def _caption_rsvp_url(caption: str) -> str | None:
+    from url_utils import normalize_rsvp_url
+    for candidate in _CAPTION_URL.findall(caption or ""):
+        # A link at the end of a sentence keeps the sentence's punctuation.
+        normalized = normalize_rsvp_url(candidate.rstrip(".,;:!?\"'"))
+        if normalized:
+            return normalized
+    return None
+
+
+def post_rows(record: dict, cached: dict, payload: dict, meta: dict, now: str) -> tuple[list[dict], set[str]]:
+    """Map one assessed post to at most one published event row.
+
+    Posts carry a single announcement by design: a club posting a whole term's
+    schedule as one carousel cannot be turned into one listing without choosing
+    a session for the reader. Those are skipped with a reason rather than
+    guessed at. Stories keep their own multi-occurrence behaviour.
+    """
+    import extract_posts as posts
+    import extract_stories as ig
+    from category_inference import infer_category_from_text
+    from classify import detect_free_food
+    from story_dates import midnight_end, normalize_timestamptz
+    from url_utils import normalize_http_url, normalize_rsvp_url
+
+    known: set[str] = set()
+    if payload["status"] != "complete":
+        return [], known
+    result = payload["result"]
+    occurrences = assessment_occurrences(result, payload["source"])
+    if not occurrences:
+        return [], known
+    if len(occurrences) > 1:
+        log.info("post %s: skipping %d occurrences; a post publishes exactly one event",
+                 record.get("media_id"), len(occurrences))
+        return [], known
+
+    occurrence = occurrences[0]
+    owner, media_identity = _post_identity(record)
+    starts_at = normalize_timestamptz(occurrence.get("starts_at"))
+    ends_at = normalize_timestamptz(occurrence.get("ends_at"))
+    title = str(occurrence.get("title") or "").strip()
+    if not starts_at or not title:
+        return [], known
+
+    slides = posts.ordered_slides(cached)
+    by_index = {int(slide.get("index", position)): slide
+                for position, slide in enumerate(slides)}
+    ocr_text = "\n".join(str(slide.get("ocr_text") or "") for slide in slides)
+    caption = str(record.get("caption") or "")
+
+    ends_at = midnight_end(ocr_text, starts_at, ends_at)
+    if ends_at and datetime.fromisoformat(ends_at) <= datetime.fromisoformat(starts_at):
+        ends_at = None
+
+    # Both identities are claimed so an admin override, a corrected date, or a
+    # reshare-created row all resolve onto this post's listing.
+    for account in (owner, media_identity):
+        event_id = ig._instagram_event_id(account, starts_at)
+        if event_id:
+            known.add(event_id)
+    event_id = ig._instagram_event_id(owner, starts_at)
+    if event_id is None:
+        return [], known
+
+    content_kind = classify_content_kind("instagram", title=title, description=caption,
+                                         ocr_text=ocr_text, assessed_kind=result["kind"])
+    if content_kind not in {"student_event", "student_deadline"}:
+        return [], known
+
+    # The flyer is the first slide whose text was actually cited. A caption-only
+    # event has no cited slide, so the post's lead image represents it.
+    cited = [index for index in _evidence_slides(result, occurrence) if index in by_index]
+    flyer = by_index.get(cited[0]) if cited else (slides[0] if slides else {})
+
+    qr_urls = set()
+    for slide in slides:
+        for value in slide.get("qr_urls") or []:
+            normalized = normalize_rsvp_url(value)
+            if normalized:
+                qr_urls.add(normalized)
+    # One unambiguous QR destination, else a link the caption states outright.
+    rsvp_url = (next(iter(qr_urls)) if len(qr_urls) == 1 else None) or _caption_rsvp_url(caption)
+
+    if owner in ig._ANONYMIZED_HOST_HANDLES or record.get("handle") in ig._ANONYMIZED_HOST_HANDLES:
+        host, host_handle = "", None
+    else:
+        account_meta = meta.get(owner) or meta.get(record.get("handle")) or {}
+        host, host_handle = account_meta.get("label") or owner, owner
+
+    row = {
+        "id": event_id,
+        "title": title[:200],
+        "description": caption,
+        "starts_at": starts_at,
+        "ends_at": ends_at,
+        "location": str(occurrence.get("location") or "").strip(),
+        "host": host,
+        "host_handle": host_handle,
+        "category": infer_category_from_text(title, caption),
+        "content_kind": content_kind,
+        "tags": [],
+        "source": "instagram",
+        "source_url": normalize_http_url(record.get("permalink")),
+        "image_url": normalize_http_url((flyer or {}).get("image_url")),
+        # Campus club postings are free unless a source says otherwise, which is
+        # the same default the story importer applies.
+        "is_free": True,
+        "has_free_food": detect_free_food(ocr_text, title, caption),
+        "rsvp_required": bool(rsvp_url) or bool(_RSVP_TERMS.search(f"{caption}\n{ocr_text}")),
+        "rsvp_url": rsvp_url,
+        "scraped_at": now,
+    }
+    return [row], known
+
+
 def structured_rows(raw: dict, origin: str, payload: dict, now: str) -> tuple[list[dict], set[str]]:
     import normalize_events as structured
     mapper = structured._to_event_row if origin == "localist" else structured._to_event_row_hlink
@@ -200,11 +370,15 @@ def structured_rows(raw: dict, origin: str, payload: dict, now: str) -> tuple[li
     return _disambiguate(public), known
 
 
-def make_update(source: dict, raw: dict, cached: dict | None, prior: dict | None, meta: dict, now: str) -> dict:
-    payload = cached_assessment(source, (prior or {}).get("assessment"))
+def make_update(source: dict, raw: dict, cached: dict | None, prior: dict | None, meta: dict,
+                now: str, mapper=None, stats: dict | None = None) -> dict:
+    payload = cached_assessment(source, (prior or {}).get("assessment"), stats)
     try:
-        rows, known = (story_rows(raw, cached, payload, meta, now) if source["origin"] == "instagram"
-                       else structured_rows(raw, source["origin"], payload, now))
+        if mapper is not None:
+            rows, known = mapper(raw, cached, payload, meta, now)
+        else:
+            rows, known = (story_rows(raw, cached, payload, meta, now) if source["origin"] == "instagram"
+                           else structured_rows(raw, source["origin"], payload, now))
     except Exception as exc:
         payload = {**payload, "status": "error", "error": f"Mapping failed: {type(exc).__name__}: {exc}"}
         rows, known = [], set()
@@ -247,19 +421,30 @@ def _complete(updates: list[dict], *, notify: bool) -> None:
         raise RuntimeError(f"{len(failed)} source assessment(s) failed; previous listings retained: {', '.join(failed)}")
 
 
-def publish_stories(processed: list[tuple[dict, dict]], meta: dict, now: str, *, notify: bool) -> None:
+def reshare_owners(processed: list[tuple[dict, dict]], meta: dict) -> dict[str, set[str]]:
+    """Map each reshared post's media identity to the authors observed for it.
+
+    Preserves the importer’s canonical identity even when one copy omits it.
+    """
     import extract_stories as ig
-    registry = load_registry()
-    updates = []
-    # Share the original author across reshares of the same attached post,
-    # preserving the importer’s canonical identity even when one copy omits it.
     owners: dict[str, set[str]] = {}
     for raw, cached in processed:
         media = ig._reshared_media_identity(raw)
         owner = ig._reshared_owner(raw) or ig.reshared_origin_handle(cached.get("ocr_text"), raw.get("handle") or "", meta)
         if media and owner:
             owners.setdefault(media, set()).add(owner)
+    return owners
+
+
+def story_updates(processed: list[tuple[dict, dict]], meta: dict, now: str,
+                  registry: dict | None = None, owners: dict[str, set[str]] | None = None) -> list[dict]:
+    import extract_stories as ig
+    registry = load_registry() if registry is None else registry
+    owners = reshare_owners(processed, meta) if owners is None else owners
+    updates = []
     for raw, cached in processed:
+        if ig._reshared_media_identity(raw):
+            continue
         candidates = owners.get(ig._reshared_media_identity(raw), set())
         if len(candidates) == 1 and not ig._reshared_owner(raw):
             raw = {**raw, "reshared_post": {**raw["reshared_post"], "owner_username": next(iter(candidates))}}
@@ -269,6 +454,89 @@ def publish_stories(processed: list[tuple[dict, dict]], meta: dict, now: str, *,
                             "assessment": {"status": "error", "error": "Source extraction failed"}, "rows": [], "known_event_ids": []})
         elif any(source["texts"].values()):
             updates.append(make_update(source, raw, cached, registry.get(source["source_key"]), meta, now))
+    return updates
+
+
+def publish_stories(processed: list[tuple[dict, dict]], meta: dict, now: str, *, notify: bool) -> None:
+    _complete(story_updates(processed, meta, now), notify=notify)
+
+
+def post_updates(processed: list[tuple[dict, dict]], meta: dict, now: str,
+                 registry: dict | None = None, stats: dict | None = None) -> list[dict]:
+    """Build publication updates for collected posts.
+
+    A usable extraction (`ok`) and a retryable failure (`error`) produce an
+    update, and so does a post whose text has been taken away: `no_text` on a
+    source that still supports a listing publishes the absence, because an
+    emptied caption is a content change and the listing it produced has no
+    evidence left. Removing the announcement must withdraw the same listing
+    whether the caption was replaced with other words or deleted outright.
+
+    A post this version could not read emits nothing, and an earlier listing
+    keeps its support: `unsupported_media` is a limit of this reader (an
+    over-long carousel) and `no_media` a defect in the archived record — a post
+    always has at least one slide — so neither says anything about the event.
+    """
+    registry = load_registry() if registry is None else registry
+    updates = []
+    for record, cached in processed:
+        status = cached.get("status")
+        if status not in {"ok", "error", "no_text"}:
+            continue
+        source = post_source(record, cached)
+        prior = registry.get(source["source_key"])
+        if status == "no_text":
+            # Nothing is left to assess, so the withdrawal is published directly
+            # rather than asked of the model. Sources that never published stay
+            # silent: there is no listing for an absence to withdraw.
+            supported = sorted((prior or {}).get("event_ids") or [])
+            if not supported:
+                continue
+            log.info("post %s: caption and slide text removed; withdrawing %s",
+                     record.get("media_id"), ", ".join(supported))
+            updates.append({"source_key": source["source_key"], "origin": "instagram",
+                            "assessment": {"status": "complete",
+                                           "reason": "Source text was removed: the post has no caption and no printed text"},
+                            "rows": [], "known_event_ids": supported})
+        elif status == "error":
+            updates.append({"source_key": source["source_key"], "origin": "instagram",
+                            "assessment": {"status": "error", "error": "Post extraction failed"},
+                            "rows": [], "known_event_ids": []})
+        elif any(source["texts"].values()):
+            updates.append(make_update(source, record, cached, prior,
+                                       meta, now, mapper=post_rows, stats=stats))
+    return updates
+
+
+def publish_posts(processed: list[tuple[dict, dict]], now: str, *, notify: bool,
+                  meta: dict | None = None) -> None:
+    import extract_stories as ig
+    _complete(post_updates(processed, meta if meta is not None else ig._load_account_meta(), now),
+              notify=notify)
+
+
+def publish_instagram(stories: list[tuple[dict, dict]], posts: list[tuple[dict, dict]],
+                      meta: dict, now: str, *, notify: bool) -> None:
+    """Publish both Instagram channels in one transaction and one alert pass.
+
+    Two things require this to be a single batch rather than two runs. A direct
+    post knows its author authoritatively, and teaching that author to the
+    reshares of the same media is what collapses "one event posted once and
+    reshared by four clubs" into one listing. And ordering posts last makes the
+    direct post win the shared row, so a matched listing links to the post
+    itself rather than to a story permalink that stops resolving in a day.
+    """
+    registry = load_registry()
+    owners = reshare_owners(stories, meta)
+    for record, cached in posts:
+        owner, media_identity = _post_identity(record)
+        if owner:
+            owners.setdefault(media_identity, set()).add(owner)
+    stats: dict[str, int] = {}
+    updates = story_updates(stories, meta, now, registry, owners)
+    updates += post_updates(posts, meta, now, registry, stats)
+    log.info("Instagram publication: %d story + %d post source(s); posts %s",
+             len(stories), len(posts), dict(sorted(stats.items())) or "fully cached")
     _complete(updates, notify=notify)
 
 
@@ -327,11 +595,24 @@ def main() -> None:
         if path.parent.name in {"ucr_events", "highlander_link"}:
             continue
         raw = ig._read_json(path)
+        if ig._reshared_media_identity(raw) and f"instagram:{raw.get('id')}" not in selected:
+            continue
         cache = ig._cache_path(str(raw.get("id")))
         if cache.exists():
             cached = ig._read_json(cache)
             if cached.get("status") in {"ok", "not_event"}:
                 sources.append((story_source(raw, cached), raw, cached))
+    import extract_posts as igposts
+    import post_archive
+    # Reassessment names a source by key, so the post it names has to be on disk
+    # — restore anything this machine is missing before deciding it is unknown.
+    post_archive.hydrate_local_posts()
+    for record in post_archive.iter_local_posts():
+        path = igposts._cache_path(str(record.get("media_id")))
+        if path.exists():
+            cached = igposts._read_json(path)
+            if cached.get("status") == "ok":
+                sources.append((post_source(record, cached), record, cached))
     for origin, directory in (("localist", structured.UCR_EVENTS_RAW), ("highlander_link", structured.HIGHLANDER_LINK_RAW)):
         for raw in structured._collect_raw(directory):
             sources.append((structured_source(raw, origin), raw, None))
@@ -342,22 +623,30 @@ def main() -> None:
             continue
         if not any(source["texts"].values()):
             continue
+        is_post = key.startswith("instagram:post:")
+        mapper = post_rows if is_post else None
         if args.active:
             prior_ids = set(registry.get(key, {}).get("event_ids", []))
             empty = {"status": "error"}
-            _, legacy_ids = (story_rows(raw, cached, empty, meta, now.isoformat()) if cached is not None
-                             else structured_rows(raw, source["origin"], empty, now.isoformat()))
-            story_id = str(raw.get("id"))
-            url_match = source["origin"] == "instagram" and any(f"/{story_id}/" in (row.get("source_url") or "") for row in active)
+            if is_post:
+                _, legacy_ids = post_rows(raw, cached, empty, meta, now.isoformat())
+            elif cached is not None:
+                _, legacy_ids = story_rows(raw, cached, empty, meta, now.isoformat())
+            else:
+                _, legacy_ids = structured_rows(raw, source["origin"], empty, now.isoformat())
+            item_id = str(raw.get("media_id") if is_post else raw.get("id"))
+            marker = f"/p/{raw.get('shortcode')}/" if is_post else f"/{item_id}/"
+            url_match = source["origin"] == "instagram" and any(marker in (row.get("source_url") or "") for row in active)
             if not (active_ids & (prior_ids | legacy_ids)) and not url_match:
                 continue
         log.info("Assessing %s", key)
-        update = make_update(source, raw, cached, registry.get(key), meta, now.isoformat())
+        update = make_update(source, raw, cached, registry.get(key), meta, now.isoformat(), mapper=mapper)
         # Bootstrap ownership using actual stored source URLs, including rows
         # generated by legacy versions whose identity cannot be reconstructed.
         if source["origin"] == "instagram":
+            marker = f"/p/{raw.get('shortcode')}/" if is_post else f"/{raw['id']}/"
             update["known_event_ids"] = sorted(set(update["known_event_ids"]) | {
-                row["id"] for row in existing if f"/{raw['id']}/" in (row.get("source_url") or "")})
+                row["id"] for row in existing if marker in (row.get("source_url") or "")})
         updates.append(update)
     missing = selected - {item["source_key"] for item in updates}
     if missing:

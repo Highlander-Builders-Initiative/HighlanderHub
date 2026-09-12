@@ -57,6 +57,35 @@ class ExtractStoriesTests(unittest.TestCase):
             vision.assert_not_called()
             gemini.assert_not_called()
 
+    def test_a_story_resharing_a_feed_post_skips_download_ocr_and_gemini(self) -> None:
+        raw = {
+            "id": "555",
+            "handle": "ieee.ucr",
+            "is_video": False,
+            "image_url": "https://cdn.example/reshare.jpg",
+            "permalink": "https://www.instagram.com/stories/ieee.ucr/555/",
+            "reshared_post": {"media_id": "700", "owner_username": "acm.ucr",
+                              "caption": "Join ACM for a study jam"},
+        }
+
+        with tempfile.TemporaryDirectory() as tmp:
+            extracted_dir = Path(tmp)
+            with patch.object(self.extract_stories, "EXTRACTED_DIR", extracted_dir):
+                with patch.object(self.extract_stories, "_load_remote_cache", return_value=None):
+                    with patch.object(self.extract_stories, "_download_image") as download:
+                        with patch.object(self.extract_stories, "_vision_ocr") as vision:
+                            with patch.object(self.extract_stories, "_gemini_extract") as gemini:
+                                with patch.object(self.extract_stories, "_write_remote_cache") as remote:
+                                    result = self.extract_stories._process_story(raw, {})
+
+        self.assertEqual("skipped_reshare", result["status"])
+        self.assertEqual("post_700", result["reshared_media"])
+        self.assertFalse((extracted_dir / "555.json").exists())
+        download.assert_not_called()
+        vision.assert_not_called()
+        gemini.assert_not_called()
+        remote.assert_not_called()
+
     def test_no_ocr_text_is_cached_without_calling_gemini(self) -> None:
         raw = {
             "id": "3894795737410658766",
