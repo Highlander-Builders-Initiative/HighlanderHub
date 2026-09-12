@@ -34,7 +34,13 @@ class SchemaContractTests(unittest.TestCase):
             GOOGLE_CLOUD_PROJECT="test-project",
             GOOGLE_CLOUD_LOCATION="global",
             GOOGLE_VISION_API_KEY="test",
+            POSTS_DIR=PIPELINE_ROOT / "data" / "posts",
+            POST_EXTRACTED_DIR=PIPELINE_ROOT / "data" / "post_extractions",
+            POST_CHECKPOINTS_FILE=PIPELINE_ROOT / "data" / "post_checkpoints.json",
+            POST_OVERLAP_DAYS=7,
+            DATA_DIR=PIPELINE_ROOT / "data",
             ensure_dirs=lambda: None,
+            ensure_post_dirs=lambda: None,
             load_accounts=lambda: [],
         )
         cls._saved_modules = {
@@ -103,6 +109,34 @@ class SchemaContractTests(unittest.TestCase):
         self.assertIsNotNone(row)
         assert row is not None
         self._assert_row_matches_schema(row, self.event_keys, self.event_required)
+
+    def test_assessed_post_event_row_keys(self) -> None:
+        import assessed_events as publication
+
+        flyer = "Study Jam September 15, 2026 3 PM-5 PM"
+        record = {
+            "media_id": "700",
+            "handle": "acm.ucr",
+            "owner_username": "acm.ucr",
+            "permalink": "https://www.instagram.com/p/CStudy/",
+            "posted_at": "2026-09-10T17:00:00+00:00",
+            "caption": "Join ACM for a study jam",
+        }
+        cached = {"status": "ok", "images": [
+            {"media_key": "700_0_n", "index": 0, "ocr_text": flyer, "qr_urls": [],
+             "image_url": "https://storage.example/700_0_n.jpg"}]}
+        source = publication.post_source(record, cached)
+        cited = [{"field": "slide_1_ocr", "quote": flyer}]
+        payload = {"status": "complete", "source": source, "result": {
+            "kind": "activity", "date_role": "occurrence", "reason": "Flyer announces a study jam.",
+            "activity_evidence": cited, "date_evidence": cited,
+            "use_source_occurrences": False, "schedule": None,
+            "occurrences": [{"title": "Study Jam", "starts_at": "2026-09-15T15:00:00-07:00",
+                             "ends_at": "2026-09-15T17:00:00-07:00", "all_day": False,
+                             "location": "", "activity_evidence": cited, "date_evidence": cited}]}}
+        rows, _known = publication.post_rows(record, cached, payload, {}, "2026-09-11T12:00:00+00:00")
+        self.assertEqual(1, len(rows))
+        self._assert_row_matches_schema(rows[0], self.event_keys, self.event_required)
 
     def test_normalize_events_localist_row_keys(self) -> None:
         row = self.normalize_events._to_event_row(

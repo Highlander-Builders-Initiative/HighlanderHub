@@ -18,7 +18,10 @@ STAGE_ORDER = [
     "highlander_link.scrape",
     "events.normalize",
     "instagram.scrape",
+    "instagram.posts.scrape",
     "instagram.extract",
+    "instagram.posts.extract",
+    "instagram.publish",
     "instagram.normalize",
     "events.reconcile",
 ]
@@ -28,16 +31,46 @@ class RunMainTests(unittest.TestCase):
     def setUp(self) -> None:
         self.stage_names = [
             "extract_stories",
+            "extract_posts",
             "highlander_link",
             "normalize",
             "normalize_events",
             "scrape",
+            "scrape_posts",
             "ucr_events",
             "reconcile_events",
+            "assessed_events",
         ]
         self.fake_modules = {
             name: types.SimpleNamespace(main=Mock(name=f"{name}.main"))
             for name in self.stage_names
+        }
+        # The Instagram channels are extracted separately and published
+        # together, so the runner calls these rather than a module `main`.
+        self.fake_modules["extract_stories"]._load_account_meta = Mock(
+            name="extract_stories._load_account_meta", return_value={"acm.ucr": {}}
+        )
+        self.fake_modules["extract_stories"].extract_all = Mock(
+            name="extract_stories.extract_all", return_value=[]
+        )
+        self.fake_modules["extract_posts"].extract_all = Mock(
+            name="extract_posts.extract_all", return_value=([], {})
+        )
+        self.fake_modules["assessed_events"].publish_instagram = Mock(
+            name="assessed_events.publish_instagram"
+        )
+        # Stage name -> the mock the runner actually invokes for it.
+        self.stage_mocks = {
+            "ucr_events.scrape": self.fake_modules["ucr_events"].main,
+            "highlander_link.scrape": self.fake_modules["highlander_link"].main,
+            "events.normalize": self.fake_modules["normalize_events"].main,
+            "instagram.scrape": self.fake_modules["scrape"].main,
+            "instagram.posts.scrape": self.fake_modules["scrape_posts"].main,
+            "instagram.extract": self.fake_modules["extract_stories"].extract_all,
+            "instagram.posts.extract": self.fake_modules["extract_posts"].extract_all,
+            "instagram.publish": self.fake_modules["assessed_events"].publish_instagram,
+            "instagram.normalize": self.fake_modules["normalize"].main,
+            "events.reconcile": self.fake_modules["reconcile_events"].main,
         }
         self.module_patch = patch.dict(sys.modules, self.fake_modules)
         self.module_patch.start()
@@ -77,14 +110,14 @@ class RunMainTests(unittest.TestCase):
 
             return inner
 
+        for stage, mock in self.stage_mocks.items():
+            mock.side_effect = succeeds(stage)
         self.fake_modules["scrape"].main.side_effect = succeeds("instagram.scrape")
         self.fake_modules["ucr_events"].main.side_effect = succeeds("ucr_events.scrape")
         self.fake_modules["highlander_link"].main.side_effect = succeeds(
             "highlander_link.scrape"
         )
-        self.fake_modules["extract_stories"].main.side_effect = fails(
-            "instagram.extract"
-        )
+        self.stage_mocks["instagram.extract"].side_effect = fails("instagram.extract")
         self.fake_modules["normalize"].main.side_effect = succeeds(
             "instagram.normalize"
         )
@@ -124,7 +157,7 @@ class RunMainTests(unittest.TestCase):
         self.assertIn("ucr_events.scrape", summary)
         self.assertIn("FAILED", summary)
         self.assertIn("ValueError: page 2 exploded", summary)
-        self.assertIn("1 of 7 stages broken: ucr_events.scrape", summary)
+        self.assertIn(f"1 of {len(STAGE_ORDER)} stages broken: ucr_events.scrape", summary)
 
         record = self._history()
         self.assertFalse(record["ok"])
@@ -142,8 +175,10 @@ class RunMainTests(unittest.TestCase):
         self.assertIn("run ok in", "\n".join(logged.output))
         record = self._history()
         self.assertTrue(record["ok"])
-        self.assertEqual(7, len(record["stages"]))
-        self.fake_modules["extract_stories"].main.assert_called_once_with(notify=False)
+        self.assertEqual(len(STAGE_ORDER), len(record["stages"]))
+        self.fake_modules["extract_stories"].extract_all.assert_called_once()
+        self.fake_modules["extract_posts"].extract_all.assert_called_once()
+        self.fake_modules["assessed_events"].publish_instagram.assert_called_once()
         self.fake_modules["reconcile_events"].main.assert_called_once()
         self.assertFalse([s for s in record["stages"] if "error" in s])
 
@@ -168,7 +203,8 @@ class RunMainTests(unittest.TestCase):
         self.fake_modules["normalize_events"].main.assert_called_once_with(
             ["ucr_events_", "highlander_link_"], notify=False
         )
-        self.fake_modules["extract_stories"].main.assert_called_once()
+        self.fake_modules["extract_stories"].extract_all.assert_called_once()
+        self.fake_modules["extract_posts"].extract_all.assert_called_once()
         self.fake_modules["normalize"].main.assert_called_once()
 
         record = self._history()
@@ -182,7 +218,7 @@ class RunMainTests(unittest.TestCase):
         )
 
     def test_extract_exit_does_not_skip_structured_normalize(self) -> None:
-        self.fake_modules["extract_stories"].main.side_effect = SystemExit(
+        self.fake_modules["extract_stories"].extract_all.side_effect = SystemExit(
             "Supabase env missing"
         )
 

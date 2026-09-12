@@ -1,5 +1,8 @@
 data/raw/
 data/extracted/
+data/posts/
+data/post_extractions/
+data/post_checkpoints.json
 data/assessments/
 data/assessment-report.json
 data/followed_accounts.json
