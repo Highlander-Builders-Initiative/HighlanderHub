@@ -14,7 +14,8 @@ from datetime import date, datetime, time, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
-VERSION = 1
+VERSION = 2
+MAX_OCCURRENCES = 100
 MODEL = "gemini-2.5-flash-lite"
 KINDS = ("activity", "deadline", "application", "service_schedule", "announcement", "uncertain")
 DATE_ROLES = ("occurrence", "recurring_hours", "cutoff", "application_window", "observance", "notice_period", "none", "uncertain")
@@ -303,6 +304,8 @@ def expand_schedule(schedule: dict, source: dict, assessment: dict) -> list[dict
         if day.weekday() not in weekdays:
             continue
         for start, end in parsed:
+            if len(result) >= MAX_OCCURRENCES:
+                raise ValueError(f"Schedule exceeds {MAX_OCCURRENCES} occurrences")
             result.append({
                 "title": schedule["title"], "location": schedule["location"], "all_day": False,
                 "starts_at": datetime.combine(day, start, PACIFIC).isoformat(),
@@ -326,7 +329,7 @@ def validate(result: Any, source: dict) -> dict:
     publishable = kind in {"activity", "deadline", "service_schedule"}
     evidence_text(result["activity_evidence"], source, required=publishable, activity=True)
     evidence_text(result["date_evidence"], source, required=publishable)
-    if type(result["use_source_occurrences"]) is not bool or not isinstance(result["occurrences"], list) or len(result["occurrences"]) > 100:
+    if type(result["use_source_occurrences"]) is not bool or not isinstance(result["occurrences"], list) or len(result["occurrences"]) > MAX_OCCURRENCES:
         raise ValueError("Invalid occurrence collection")
     choices = sum(bool(result[k]) for k in ("use_source_occurrences", "occurrences", "schedule"))
     if choices > 1 or (not publishable and choices):

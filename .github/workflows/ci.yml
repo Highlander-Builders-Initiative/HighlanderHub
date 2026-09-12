@@ -36,6 +36,15 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pipeline/requirements.txt
+
+      - name: Install importer integration dependencies
+        run: pip install -r pipeline/requirements.txt
+
       - name: Contract tests
         run: npm test
 

@@ -138,6 +138,24 @@ class ContentAssessmentTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "weekdays differ"):
             assess.validate(result, src)
 
+    def test_schedule_expansion_shares_the_explicit_occurrence_budget(self):
+        for last, expected in (("2026-10-20", 100), ("2026-10-21", None)):
+            src = source(f"Gallery visits September 1 to October {last[-2:]}, 2026. Daily 10 AM-12 PM and 1 PM-3 PM.")
+            result = decision(src, "service_schedule", "recurring_hours")
+            result.update(occurrences=[], schedule={
+                "first_day": "2026-09-01", "last_day": last, "weekdays": list(range(7)),
+                "windows": [{"start": "10:00", "end": "12:00"}, {"start": "13:00", "end": "15:00"}],
+                "title": "Gallery visits", "location": "Gallery"})
+            with self.subTest(last=last):
+                if expected is None:
+                    with self.assertRaisesRegex(ValueError, "exceeds 100"):
+                        assess.validate(result, src)
+                    with self.assertRaisesRegex(ValueError, "exceeds 100"):
+                        assess.expand_schedule(result["schedule"], src, result)
+                else:
+                    assess.validate(result, src)
+                    self.assertEqual(expected, len(assess.expand_schedule(result["schedule"], src, result)))
+
     def test_semantic_kind_is_independent_of_audience_and_fundraising(self):
         self.assertEqual("other", classify_content_kind("instagram", title="National Service Dog Month", assessed_kind="announcement"))
         self.assertEqual("student_event", classify_content_kind("instagram", title="Awareness Week", assessed_kind="activity"))
