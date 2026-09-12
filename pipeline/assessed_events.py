@@ -40,8 +40,8 @@ def _save_assessment(payload: dict) -> dict:
 def record_review(source: dict, result: dict, *, reviewer: str) -> dict:
     """Record an explicit source review without pretending a model ran.
 
-    Reviewed decisions still validate, and expire when source text or assessment
-    policy changes. This is useful for curated regressions and sensitive sources.
+    Reviewed decisions still validate, and expire when source text changes or a
+    refresh is explicitly requested. This is useful for curated regressions.
     """
     if not reviewer.strip():
         raise ValueError("Review requires attribution")
@@ -62,39 +62,40 @@ def load_registry() -> dict[str, dict]:
     raise RuntimeError("Source assessment pagination exceeded its safety limit")
 
 
-def cached_assessment(source: dict, prior: dict | None = None, stats: dict | None = None) -> dict:
-    key = source["source_key"]
-    path = _cache_path(key)
-    digest = semantic.fingerprint(source)
+def _assessment_candidates(source: dict, prior: dict | None) -> list[dict]:
+    path = _cache_path(source["source_key"])
     candidates = [prior or {}]
     if path.exists():
         try:
             candidates.insert(0, json.loads(path.read_text()))
         except (ValueError, OSError):
             pass
+    # A stale local file must not replace a newer correction in the registry.
+    return sorted((item for item in candidates if isinstance(item, dict)),
+                  key=lambda item: item.get("assessed_at") or "", reverse=True)
 
-    def current(cached: object) -> bool:
-        """The entry was produced by this prompt version and this source text."""
-        return (isinstance(cached, dict) and cached.get("version") == semantic.VERSION
-                and cached.get("source_hash") == digest)
 
-    for cached in candidates:
-        if (current(cached)
-                and (cached.get("model") == semantic.MODEL or (cached.get("method") == "reviewed" and cached.get("reviewer")))
-                and cached.get("status") == "complete"):
-            try:
-                semantic.validate(cached.get("result"), source)
-                if stats is not None:
-                    stats["assessment_cache_hits"] = stats.get("assessment_cache_hits", 0) + 1
-                return cached
-            except (ValueError, KeyError, TypeError):
-                pass
+def cached_assessment(source: dict, prior: dict | None = None, stats: dict | None = None,
+                      *, refresh: bool = False) -> dict:
+    """Reuse source-matched decisions until an explicit refresh or text change.
+
+    Version and model are provenance only while automatic policy invalidation
+    is paused. Do not revalidate old decisions under new rules here: a small
+    validator change must not silently trigger a paid archive-wide rerun.
+    Newly generated/reviewed decisions still pass semantic validation.
+    """
+    key = source["source_key"]
+    digest = semantic.fingerprint(source)
+    for cached in [] if refresh else _assessment_candidates(source, prior):
+        if cached.get("source_hash") != digest:
+            continue
+        if cached.get("status") == "complete" and isinstance(cached.get("result"), dict):
+            if stats is not None:
+                stats["assessment_cache_hits"] = stats.get("assessment_cache_hits", 0) + 1
+            return cached
         # A refused answer is a decision about this exact text, not an outage.
-        # Retrying it every run buys the same refusal, so it is kept until the
-        # source, prompt version or model changes -- each of which fails the
-        # match above and sends the source back to the model on its own.
-        if (current(cached) and cached.get("model") == semantic.MODEL
-                and cached.get("status") == "error" and cached.get("retryable") is False):
+        # Keep it until the text changes or a refresh is explicitly requested.
+        if cached.get("status") == "error" and cached.get("retryable") is False:
             if stats is not None:
                 stats["rejections_skipped"] = stats.get("rejections_skipped", 0) + 1
             return cached
@@ -115,6 +116,49 @@ def cached_assessment(source: dict, prior: dict | None = None, stats: dict | Non
         payload.update(status="error", error=f"{type(exc).__name__}: {exc}", retryable=True)
         log.warning("Assessment failed for %s: %s", key, payload["error"])
     return _save_assessment(payload)
+
+
+def _event_relevance(row: dict, now: str) -> bool | None:
+    """Today/future in campus time; None means no usable event date is known."""
+    value = row.get("ends_at") or row.get("starts_at")
+    if not isinstance(value, str) or not value:
+        return None
+    try:
+        instant = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        if instant.tzinfo is None:
+            instant = instant.replace(tzinfo=semantic.PACIFIC)
+        today = datetime.fromisoformat(now.replace("Z", "+00:00")).astimezone(semantic.PACIFIC).replace(
+            hour=0, minute=0, second=0, microsecond=0)
+        # Ends are exclusive: an event ending at today's midnight finished
+        # yesterday. An event starting at that midnight belongs to today.
+        return instant > today if row.get("ends_at") else instant >= today
+    except ValueError:
+        return None
+
+
+def _source_is_past(source: dict, cached: dict | None, prior: dict | None, now: str) -> bool:
+    """Skip known finished sources before any semantic call, including retries.
+
+    Structured sources supply their latest dates (including reschedules).
+    Instagram uses the last assessment, then legacy extraction dates. A post's
+    upload timestamp is never used as its event date. Undated/new content still
+    needs its first assessment to establish what it describes.
+    """
+    dates = source.get("source_occurrences") or []
+    if not dates:
+        previous = (prior or {}).get("last_complete_assessment") or (prior or {}).get("assessment")
+        for candidate in _assessment_candidates(source, previous):
+            result = candidate.get("result") or {}
+            dates = result.get("occurrences") or []
+            if result.get("use_source_occurrences"):
+                dates = candidate.get("source", {}).get("source_occurrences") or []
+            if result.get("schedule"):
+                dates = [{"starts_at": result["schedule"].get("last_day")}]
+            if dates:
+                break
+    if not dates and isinstance((cached or {}).get("result"), dict):
+        dates = [cached["result"]]
+    return bool(dates) and all(_event_relevance(row, now) is False for row in dates)
 
 
 def story_source(raw: dict, cached: dict) -> dict:
@@ -319,8 +363,13 @@ def structured_rows(raw: dict, origin: str, payload: dict, now: str) -> tuple[li
 
 
 def make_update(source: dict, raw: dict, cached: dict | None, prior: dict | None, meta: dict,
-                now: str, stats: dict | None = None) -> dict:
-    payload = cached_assessment(source, (prior or {}).get("assessment"), stats)
+                now: str, stats: dict | None = None, *, refresh: bool = False) -> dict | None:
+    if _source_is_past(source, cached, prior, now):
+        if stats is not None:
+            stats["past_sources_skipped"] = stats.get("past_sources_skipped", 0) + 1
+        log.debug("Skipping finished source %s", source["source_key"])
+        return None
+    payload = cached_assessment(source, (prior or {}).get("assessment"), stats, refresh=refresh)
     try:
         if source["source_key"].startswith("instagram:post:"):
             rows, known = post_rows(raw, cached, payload, meta, now)
@@ -402,7 +451,9 @@ def story_updates(processed: list[tuple[dict, dict]], meta: dict, now: str,
             updates.append({"source_key": source["source_key"], "origin": "instagram",
                             "assessment": {"status": "error", "error": "Source extraction failed"}, "rows": [], "known_event_ids": []})
         elif any(source["texts"].values()):
-            updates.append(make_update(source, raw, cached, registry.get(source["source_key"]), meta, now))
+            update = make_update(source, raw, cached, registry.get(source["source_key"]), meta, now)
+            if update is not None:
+                updates.append(update)
     return updates
 
 
@@ -452,8 +503,9 @@ def post_updates(processed: list[tuple[dict, dict]], meta: dict, now: str,
                             "assessment": {"status": "error", "error": "Post extraction failed"},
                             "rows": [], "known_event_ids": []})
         elif any(source["texts"].values()):
-            updates.append(make_update(source, record, cached, prior,
-                                       meta, now, stats=stats))
+            update = make_update(source, record, cached, prior, meta, now, stats=stats)
+            if update is not None:
+                updates.append(update)
     return updates
 
 
@@ -492,10 +544,13 @@ def publish_instagram(stories: list[tuple[dict, dict]], posts: list[tuple[dict, 
 def publish_structured(raws: list[tuple[str, dict]], verified_prefixes: set[str], now: str, *, notify: bool) -> None:
     registry = load_registry()
     updates = []
+    present = set()
     for origin, raw in raws:
         source = structured_source(raw, origin)
-        updates.append(make_update(source, raw, None, registry.get(source["source_key"]), {}, now))
-    present = {item["source_key"] for item in updates}
+        present.add(source["source_key"])
+        update = make_update(source, raw, None, registry.get(source["source_key"]), {}, now)
+        if update is not None:
+            updates.append(update)
     verified_origins = {origin for prefix, origin in (("ucr_events_", "localist"), ("highlander_link_", "highlander_link")) if prefix in verified_prefixes}
     # Bootstrap vanished legacy sources as well. Before the first assessed run
     # their IDs exist only in events, and a complete source snapshot must still
@@ -519,7 +574,7 @@ def publish_structured(raws: list[tuple[str, dict]], verified_prefixes: set[str]
 
 
 def main() -> None:
-    """Backfill saved source text; default dry-run, no scrape/OCR/notifications."""
+    """Backfill today's/future listings; default dry-run, no scrape/OCR/notifications."""
     import extract_stories as ig
     import normalize_events as structured
     from db import get_imported_events
@@ -527,7 +582,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--apply", action="store_true")
     parser.add_argument("--source", action="append", help="source key, e.g. instagram:3977797394086504274")
-    parser.add_argument("--active", action="store_true", help="reassess sources supporting currently visible imported listings")
+    parser.add_argument("--active", action="store_true", help="compatibility flag; backfills always select today's/future listings")
+    parser.add_argument("--refresh", action="store_true", help="explicitly replace cached decisions for the selected today's/future listings")
     parser.add_argument("--report", type=Path, default=DATA_DIR / "assessment-report.json")
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO)
@@ -535,7 +591,7 @@ def main() -> None:
     now = datetime.now(timezone.utc)
     meta = ig._load_account_meta()
     existing = get_imported_events()
-    active = [row for row in existing if (structured._parse_iso(row.get("ends_at") or row.get("starts_at")) or now) >= now]
+    active = [row for row in existing if _event_relevance(row, now.isoformat()) is True]
     active_ids = {row["id"] for row in active}
     selected = set(args.source or [])
     sources = []
@@ -566,29 +622,35 @@ def main() -> None:
         for raw in structured._collect_raw(directory):
             sources.append((structured_source(raw, origin), raw, None))
     updates = []
+    usable = set()
+    skipped = 0
     for source, raw, cached in sources:
         key = source["source_key"]
         if selected and key not in selected:
             continue
         if not any(source["texts"].values()):
             continue
+        usable.add(key)
         is_post = key.startswith("instagram:post:")
-        if args.active:
-            prior_ids = set(registry.get(key, {}).get("event_ids", []))
-            empty = {"status": "error"}
-            if is_post:
-                _, legacy_ids = post_rows(raw, cached, empty, meta, now.isoformat())
-            elif cached is not None:
-                _, legacy_ids = story_rows(raw, cached, empty, meta, now.isoformat())
-            else:
-                _, legacy_ids = structured_rows(raw, source["origin"], empty, now.isoformat())
-            item_id = str(raw.get("media_id") if is_post else raw.get("id"))
-            marker = f"/p/{raw.get('shortcode')}/" if is_post else f"/{item_id}/"
-            url_match = source["origin"] == "instagram" and any(marker in (row.get("source_url") or "") for row in active)
-            if not (active_ids & (prior_ids | legacy_ids)) and not url_match:
-                continue
+        prior_ids = set(registry.get(key, {}).get("event_ids", []))
+        empty = {"status": "error"}
+        if is_post:
+            _, legacy_ids = post_rows(raw, cached, empty, meta, now.isoformat())
+        elif cached is not None:
+            _, legacy_ids = story_rows(raw, cached, empty, meta, now.isoformat())
+        else:
+            _, legacy_ids = structured_rows(raw, source["origin"], empty, now.isoformat())
+        item_id = str(raw.get("media_id") if is_post else raw.get("id"))
+        marker = f"/p/{raw.get('shortcode')}/" if is_post else f"/{item_id}/"
+        url_match = source["origin"] == "instagram" and any(marker in (row.get("source_url") or "") for row in active)
+        if not (active_ids & (prior_ids | legacy_ids)) and not url_match:
+            skipped += 1
+            continue
         log.info("Assessing %s", key)
-        update = make_update(source, raw, cached, registry.get(key), meta, now.isoformat())
+        update = make_update(source, raw, cached, registry.get(key), meta, now.isoformat(), refresh=args.refresh)
+        if update is None:
+            skipped += 1
+            continue
         # Bootstrap ownership using actual stored source URLs, including rows
         # generated by legacy versions whose identity cannot be reconstructed.
         if source["origin"] == "instagram":
@@ -596,7 +658,7 @@ def main() -> None:
             update["known_event_ids"] = sorted(set(update["known_event_ids"]) | {
                 row["id"] for row in existing if marker in (row.get("source_url") or "")})
         updates.append(update)
-    missing = selected - {item["source_key"] for item in updates}
+    missing = selected - usable
     if missing:
         raise RuntimeError(f"Requested sources have no usable saved evidence: {sorted(missing)}")
     args.report.parent.mkdir(parents=True, exist_ok=True)
@@ -604,6 +666,7 @@ def main() -> None:
     log.info("%s: %d sources; %d assessed rows; %d errors; report %s",
              "Applying" if args.apply else "Dry run", len(updates), sum(len(item["rows"]) for item in updates),
              sum(item["assessment"]["status"] == "error" for item in updates), args.report)
+    log.info("Skipped %d sources without a listing on or after today's campus date", skipped)
     if args.apply:
         _complete(updates, notify=False)
 

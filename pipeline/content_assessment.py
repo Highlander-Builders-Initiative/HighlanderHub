@@ -14,11 +14,12 @@ from datetime import date, datetime, time, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
-VERSION = 3
+# Recorded for provenance; policy changes currently do not invalidate caches.
+VERSION = 4
 MAX_OCCURRENCES = 100
 MODEL = "gemini-2.5-flash-lite"
 KINDS = ("activity", "deadline", "application", "service_schedule", "announcement", "uncertain")
-DATE_ROLES = ("occurrence", "recurring_hours", "cutoff", "application_window", "observance", "notice_period", "none", "uncertain")
+DATE_ROLES = ("occurrence", "recurring_hours", "cutoff", "application_window", "program_duration", "observance", "notice_period", "none", "uncertain")
 PACIFIC = ZoneInfo("America/Los_Angeles")
 
 
@@ -85,10 +86,11 @@ calendar placement, a printed date, and an old model's guesses do not establish
 that an activity exists. Decide what someone can actually attend or do.
 
 Kinds: activity (including all-day and multi-day activities), deadline (a dated
-action cutoff), application (an enrollment/recruitment window), service_schedule
+action cutoff), application (a program opportunity, enrollment/recruitment pitch,
+or application/booking window), service_schedule
 (recurring availability), announcement (observance, awareness/resource notice,
 greeting, closure, or other information), uncertain (insufficient evidence).
-Dates have roles: occurrence, recurring_hours, cutoff, application_window,
+Dates have roles: occurrence, recurring_hours, cutoff, application_window, program_duration,
 observance, notice_period, none, uncertain. A closure uses notice_period.
 A month/week named in a notice is an observance,
 not one continuous activity. National Service Dog Month and a general Suicide
@@ -98,8 +100,33 @@ dates, not the campaign span. Exact clock times are optional for all-day events.
 An application or booking window is not an occasion. Fundraising and audience
 eligibility are separate downstream policies, not reasons to invent an event.
 
+For program-related sources, apply these rules IN ORDER to the advertised action:
+1. A separately advertised orientation, info session, workshop, graduation or
+other occasion is activity/occurrence. This takes precedence over background
+program details. A 'Fellowship Application Workshop' is a workshop, even if it
+explains how to apply and mentions fellowship credits/stipends. Extract the
+occasion's date and time; never classify its date as an application window.
+2. An explicit action cutoff ('applications due', 'apply by', 'deadline') is
+deadline/cutoff, even when the same flyer describes the program and its term.
+Extract the cutoff as a deadline occurrence, not the program's start/end dates.
+3. Otherwise, a pitch for an academy, fellowship, internship, cohort, or
+course-based program is application content, even without 'apply now' wording.
+A curriculum, course credits or placement requirements distinguish enrollment
+in a program from attending an occasion. Its term dates are program_duration,
+NOT a continuous all-day activity and NOT an application_window. An application
+window must explicitly describe when applications/enrollment are accepted.
+Use date_role=none when neither term nor application-window dates are supplied.
+Registration requirements, benefits, housing or a long duration alone do not
+make an activity an application: conferences, retreats, festivals and exhibitions
+can be genuine multi-day activities. Decide from what the source advertises,
+not just the word 'program' or the length of its date range.
+
 Give a short reason and exact supporting quotes with field names from `texts`.
-Quotes must be literal substrings (whitespace may differ). Do not expand a date
+The evidence `field` is a direct text key such as ocr_text, caption, slide_1_ocr,
+title or description, never the parent object 'texts'. Quotes must be literal
+substrings (whitespace may differ). Use short continuous OCR fragments or replace
+line breaks with spaces; do not put literal backslash-n characters in quotes.
+Do not expand a date
 range inside a quote: for 'September 18-20, 2026', quote that entire range,
 never invent the substring 'September 18, 2026'. If unsure, quote the full field.
 Activity evidence must describe the actual activity/action/service, not just a
@@ -120,7 +147,7 @@ as 2026-09-15T15:00:00-07:00. Never return timezone-naive timestamps.
 Deadlines MUST return one occurrence at the cutoff timestamp (ends_at=null),
 with evidence of the action and cutoff, even though they are not gatherings.
 Allowed kind/role pairs: activity/occurrence; deadline/cutoff;
-application/application_window or none; service_schedule/recurring_hours or
+application/application_window or program_duration or none; service_schedule/recurring_hours or
 occurrence; announcement/observance or notice_period or none; uncertain/any.
 
 For structured sources, source_occurrences are authoritative occurrence fields,
@@ -348,18 +375,23 @@ def validate(result: Any, source: dict) -> dict:
     kind, role = result["kind"], result["date_role"]
     if kind not in KINDS or role not in DATE_ROLES or not isinstance(result["reason"], str) or not result["reason"].strip():
         raise ValueError("Invalid assessment decision")
-    roles = {"activity": {"occurrence"}, "deadline": {"cutoff"}, "application": {"application_window", "none"},
+    roles = {"activity": {"occurrence"}, "deadline": {"cutoff"}, "application": {"application_window", "program_duration", "none"},
              "service_schedule": {"recurring_hours", "occurrence"}, "announcement": {"observance", "notice_period", "none"}, "uncertain": set(DATE_ROLES)}
     if role not in roles[kind]:
         raise ValueError("Content kind and date role disagree")
     publishable = kind in {"activity", "deadline", "service_schedule"}
     evidence_text(result["activity_evidence"], source, required=publishable, activity=True)
-    evidence_text(result["date_evidence"], source, required=publishable)
+    if role in {"application_window", "program_duration"} and not result["date_evidence"]:
+        raise ValueError(f"Missing source evidence for {role}; an undated program must use kind=application, date_role=none and date_evidence=[]")
+    evidence_text(result["date_evidence"], source,
+                  required=publishable or role in {"application_window", "program_duration"})
     if type(result["use_source_occurrences"]) is not bool or not isinstance(result["occurrences"], list) or len(result["occurrences"]) > MAX_OCCURRENCES:
         raise ValueError("Invalid occurrence collection")
     choices = sum(bool(result[k]) for k in ("use_source_occurrences", "occurrences", "schedule"))
     if choices > 1 or (not publishable and choices):
-        raise ValueError("Incompatible publication choices")
+        raise ValueError("Incompatible publication choices: use only one of source occurrences, explicit occurrences, or schedule. "
+                         "With a schedule, set occurrences=[] and use_source_occurrences=false. "
+                         "For nonpublic content, set occurrences=[], schedule=null and use_source_occurrences=false")
     if kind in {"activity", "deadline"} and not choices:
         raise ValueError("Activity or deadline requires a supported occurrence")
     # Recurring availability is a bounded pattern, never loose sessions: the
