@@ -588,12 +588,53 @@ class PostUpdateBatchTests(unittest.TestCase):
             (record(media_id="3"), {"status": "unsupported_media", "images": []}),
             (record(media_id="4"), {"status": "no_text", "images": []}),
         ]
+        # Nothing here has published before, so a text-free post has no listing
+        # to withdraw and says nothing at all.
         with patch.object(publication, "make_update",
                           side_effect=lambda source, *a, **k: {"source_key": source["source_key"]}):
             updates = publication.post_updates(processed, {}, "2026-09-11T12:00:00+00:00", registry={})
         self.assertEqual(["instagram:post:1", "instagram:post:2"],
                          [item["source_key"] for item in updates])
         self.assertEqual("error", updates[1]["assessment"]["status"])
+
+    def supporting_registry(self, *event_ids):
+        """A registry as the publication RPC leaves it for a published post."""
+        return {"instagram:post:700": {
+            "source_key": "instagram:post:700", "origin": "instagram",
+            "event_ids": list(event_ids), "known_event_ids": list(event_ids)}}
+
+    def test_removing_a_posts_text_withdraws_the_listing_it_published(self):
+        # Deleting a caption is the same editorial act as replacing it with
+        # words that announce nothing, and must withdraw the same listing.
+        # Nothing is left to assess, so no model call stands between the two.
+        processed = [(record(caption=""), {"status": "no_text", "images": []})]
+        with patch.object(publication, "make_update") as assessed:
+            updates = publication.post_updates(
+                processed, {}, "2026-09-11T12:00:00+00:00",
+                registry=self.supporting_registry("ig_acm.ucr_20260915T2200Z"))
+        assessed.assert_not_called()
+        self.assertEqual(["instagram:post:700"], [item["source_key"] for item in updates])
+        self.assertEqual("complete", updates[0]["assessment"]["status"])
+        self.assertEqual([], updates[0]["rows"])
+        # The identity the row was published under is what the RPC retires.
+        self.assertEqual(["ig_acm.ucr_20260915T2200Z"], updates[0]["known_event_ids"])
+
+    def test_text_removed_from_a_post_that_published_nothing_stays_silent(self):
+        processed = [(record(caption=""), {"status": "no_text", "images": []})]
+        for registry in (self.supporting_registry(), {}):
+            with self.subTest(registry=registry):
+                self.assertEqual([], publication.post_updates(
+                    processed, {}, "2026-09-11T12:00:00+00:00", registry=registry))
+
+    def test_a_post_this_version_cannot_read_keeps_the_listing_it_published(self):
+        # An over-long carousel and a record without slides are limits of the
+        # reader and of the archive, not the club withdrawing the announcement.
+        for status in ("unsupported_media", "no_media"):
+            with self.subTest(status=status):
+                self.assertEqual([], publication.post_updates(
+                    [(record(), {"status": status, "images": []})], {},
+                    "2026-09-11T12:00:00+00:00",
+                    registry=self.supporting_registry("ig_acm.ucr_20260915T2200Z")))
 
     def test_posts_are_published_after_stories_so_the_post_link_wins(self):
         with patch.object(publication, "load_registry", return_value={}), \
