@@ -173,6 +173,26 @@ test('a corrected caption withdraws the post-supported listing', async () => {
   assert.deepEqual(await ids(), []);
 });
 
+for (const retainedBy of [null, 'other source', 'admin lock']) {
+  test(`a no_text extraction removes post support, preserving ${retainedBy || 'no unsupported listing'}`, async () => {
+    const [instagram, , , emptied] = importerBatches.slice(4);
+    const event = instagram[0].rows[0];
+    await reset();
+    await publish(instagram);
+    if (retainedBy === 'other source') {
+      await publish([update('another', [event])]);
+    } else if (retainedBy === 'admin lock') {
+      await db.query('update events set is_locked=true where id=$1', [event.id]);
+    }
+    await publish(emptied);
+    assert.deepEqual(await ids(), retainedBy ? [event.id] : []);
+    const source = (await db.query('select event_ids, assessment from source_assessments where source_key=$1',
+      [instagram[0].source_key])).rows[0];
+    assert.deepEqual(source.event_ids, []);
+    assert.equal(source.assessment.status, 'complete');
+  });
+}
+
 test('an unrelated club posting the same title and time keeps its own listing', async () => {
   const [instagram, , otherClub] = importerBatches.slice(4);
   await reset();

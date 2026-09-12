@@ -175,12 +175,20 @@ class OverlapAndCheckpointTests(PostArchiveTests):
         # ...and the checkpoint did not advance, so the rest is retried.
         self.assertEqual("2026-09-10T00:00:00+00:00", checkpoint["scanned_through"])
 
-    def test_a_scan_that_stops_early_is_reported_incomplete(self):
-        posts = [FakePost(str(900 - n), f"2026-09-{11 - n % 10:02d}T09:00:00+00:00")
-                 for n in range(scrape_posts.MAX_POSTS_PER_ACCOUNT + 5)]
-        result = self.scan(posts, {"activated_at": "2026-01-01T00:00:00+00:00"})
-        self.assertFalse(result.complete)
-        self.assertEqual(scrape_posts.MAX_POSTS_PER_ACCOUNT, result.scanned)
+    def test_a_busy_feed_reaches_the_boundary_beyond_sixty_posts(self):
+        now = instant("2026-09-11T12:00:00+00:00")
+        posts = [FakePost(str(900 - n), (now - timedelta(hours=n)).isoformat())
+                 for n in range(80)]
+        posts.append(FakePost("100", "2026-09-01T00:00:00+00:00"))
+        checkpoint = {"activated_at": "2026-09-01T00:00:00+00:00",
+                      "scanned_through": "2026-09-10T00:00:00+00:00"}
+        # A second newest-first walk must not get stuck on the same 60 posts.
+        for _ in range(2):
+            result = self.scan(posts, checkpoint)
+            self.assertTrue(result.complete)
+            self.assertEqual([str(900 - n) for n in range(80)], result.media_ids)
+        self.assertEqual(80, len(list(post_archive.iter_local_posts())))
+        self.assertEqual(80, len(self.remote_writes.call_args.args[0]))
 
     def test_durable_write_failure_prevents_the_checkpoint_from_advancing(self):
         self.remote_writes.side_effect = RuntimeError("supabase unavailable")
@@ -220,6 +228,49 @@ class RestartRecoveryTests(unittest.TestCase):
         # move it, and the run adopts what the store actually has.
         self.assertEqual("2026-09-01T00:00:00+00:00", resolved["acm.ucr"]["activated_at"])
 
+    def test_a_failed_claim_is_retried_with_the_original_local_activation(self):
+        first = instant("2026-09-01T00:00:00+00:00")
+        stored = {"acm.ucr": {"activated_at": first.isoformat()}}
+        with patch.object(scrape_posts, "_load_remote_checkpoints", return_value={}), \
+             patch.object(scrape_posts, "_claim_remote_activation",
+                          side_effect=[{}, {}, stored]) as claim:
+            for day in (0, 1, 2):
+                resolved = scrape_posts.resolve_checkpoints(["acm.ucr"], first + timedelta(days=day))
+                self.assertEqual(first.isoformat(), resolved["acm.ucr"]["activated_at"])
+        self.assertEqual(
+            [[{"handle": "acm.ucr", "activated_at": first.isoformat()}]] * 3,
+            [call.args[0] for call in claim.call_args_list])
+        # Once the retry is durable, losing the local file preserves the boundary.
+        scrape_posts.POST_CHECKPOINTS_FILE.unlink()
+        with patch.object(scrape_posts, "_load_remote_checkpoints", return_value=stored), \
+             patch.object(scrape_posts, "_claim_remote_activation", return_value={}):
+            restored = scrape_posts.resolve_checkpoints(["acm.ucr"], first + timedelta(days=3))
+        self.assertEqual(first.isoformat(), restored["acm.ucr"]["activated_at"])
+
+    def test_a_retry_adopts_the_durable_boundary_and_progress_after_a_read_failure(self):
+        scrape_posts.write_local_checkpoints({"acm.ucr": {
+            "activated_at": "2026-09-10T00:00:00+00:00"}})
+        stored = {"acm.ucr": {"activated_at": "2026-06-01T00:00:00+00:00",
+                              "scanned_through": "2026-09-09T00:00:00+00:00"}}
+        with patch.object(scrape_posts, "_load_remote_checkpoints", return_value={}), \
+             patch.object(scrape_posts, "_claim_remote_activation", return_value=stored):
+            resolved = scrape_posts.resolve_checkpoints(["acm.ucr"], instant("2026-09-11T12:00:00+00:00"))
+        self.assertEqual(stored, resolved)
+
+    def test_progress_from_a_different_activation_cannot_skip_the_durable_interval(self):
+        for through in (None, "2026-09-02T00:00:00+00:00"):
+            with self.subTest(remote_through=through):
+                scrape_posts.write_local_checkpoints({"acm.ucr": {
+                    "activated_at": "2026-09-10T00:00:00+00:00",
+                    "scanned_through": "2026-09-11T00:00:00+00:00"}})
+                stored = {"acm.ucr": {"activated_at": "2026-06-01T00:00:00+00:00",
+                                      "scanned_through": through}}
+                with patch.object(scrape_posts, "_load_remote_checkpoints", return_value=stored), \
+                     patch.object(scrape_posts, "_claim_remote_activation", return_value={}):
+                    resolved = scrape_posts.resolve_checkpoints(
+                        ["acm.ucr"], instant("2026-09-11T12:00:00+00:00"))
+                self.assertEqual(through, resolved["acm.ucr"].get("scanned_through"))
+
     def test_a_pilot_run_keeps_the_checkpoints_of_accounts_it_did_not_touch(self):
         # `--handle acm.ucr` resolves one account. The file is a keyed store, so
         # the other clubs' activation boundaries have to survive the write —
@@ -238,6 +289,9 @@ class RestartRecoveryTests(unittest.TestCase):
         # The run itself only carries the account it was asked for.
         self.assertEqual(["acm.ucr"], sorted(resolved))
         self.assertEqual(seeded, scrape_posts.load_local_checkpoints())
+        resolved["acm.ucr"]["scanned_through"] = "2026-09-11T12:00:00+00:00"
+        scrape_posts.write_local_checkpoints(resolved)
+        self.assertEqual(seeded["ieee.ucr"], scrape_posts.load_local_checkpoints()["ieee.ucr"])
 
     def test_the_resume_point_is_the_older_of_local_and_remote_progress(self):
         scrape_posts.write_local_checkpoints({"acm.ucr": {
@@ -249,6 +303,33 @@ class RestartRecoveryTests(unittest.TestCase):
              patch.object(scrape_posts, "_claim_remote_activation", return_value={}):
             resolved = scrape_posts.resolve_checkpoints(["acm.ucr"], instant("2026-09-11T12:00:00+00:00"))
         self.assertEqual("2026-09-05T00:00:00+00:00", resolved["acm.ucr"]["scanned_through"])
+
+
+class CheckpointWriteTests(unittest.TestCase):
+    def test_progress_cannot_overwrite_an_unconfirmed_or_conflicting_activation(self):
+        local = {"acm.ucr": {"activated_at": "2026-09-10T00:00:00+00:00",
+                             "scanned_through": "2026-09-11T12:00:00+00:00"}}
+        for claimed in ({}, {"acm.ucr": {"activated_at": "2026-06-01T00:00:00+00:00"}}):
+            with self.subTest(claimed=claimed), \
+                 patch.object(scrape_posts, "_claim_remote_activation", return_value=claimed), \
+                 patch.dict(sys.modules, {"db": SimpleNamespace(upsert_batched=Mock())}):
+                writer = sys.modules["db"].upsert_batched
+                scrape_posts._write_remote_checkpoints(local)
+                writer.assert_not_called()
+
+    def test_progress_is_written_only_for_accounts_with_the_same_durable_boundary(self):
+        local = {"acm.ucr": {"activated_at": "2026-09-01T00:00:00+00:00",
+                             "scanned_through": "2026-09-11T12:00:00+00:00"},
+                 "ieee.ucr": {"activated_at": "2026-09-02T00:00:00+00:00"}}
+        claimed = {"acm.ucr": {"activated_at": "2026-09-01T00:00:00Z"}}
+        writer = Mock()
+        with patch.object(scrape_posts, "_claim_remote_activation", return_value=claimed) as claim, \
+             patch.dict(sys.modules, {"db": SimpleNamespace(upsert_batched=writer)}):
+            scrape_posts._write_remote_checkpoints(local)
+        self.assertEqual(2, len(claim.call_args.args[0]))
+        rows = writer.call_args.args[1]
+        self.assertEqual(["acm.ucr"], [row["handle"] for row in rows])
+        self.assertEqual(local["acm.ucr"]["scanned_through"], rows[0]["scanned_through"])
 
 
 class FakeMirror:
@@ -380,6 +461,19 @@ class ArchiveRestoreTests(unittest.TestCase):
         self.assertEqual([(0, 1), (2, 3)], mirror.ranges)
         self.assertEqual(3, len(list(post_archive.iter_local_posts())))
 
+    def test_a_restored_post_outside_the_overlap_remains_available_for_live_event_refresh(self):
+        self.hydrate(FakeMirror([self.mirror_row("700")]))
+        now = instant("2026-09-20T12:00:00+00:00")
+        rows = [{"source_key": "instagram:post:700", "event_ids": ["ig_future"]}]
+        client = Mock()
+        client.return_value.table.return_value.select.return_value.like.return_value.execute.return_value.data = rows
+        with patch.dict(sys.modules, {"db": SimpleNamespace(
+                client=client, get_event_rows_by_ids=lambda ids: [
+                    {"id": "ig_future", "starts_at": "2026-09-25T22:00:00+00:00"}])}):
+            eligible = scrape_posts.refresh_candidates(now)
+        self.assertEqual(["700"], list(eligible))
+        self.assertEqual("C700", eligible["700"]["shortcode"])
+
 
 class CollectionRunTests(PostArchiveTests):
     """The collector entrypoint end to end, with Instagram mocked out."""
@@ -435,6 +529,27 @@ class CollectionRunTests(PostArchiveTests):
         self.assertTrue((self.root / "posts" / "acm.ucr" / "900.json").exists())
         self.assertEqual("complete",
                          scrape_posts.load_local_checkpoints()["acm.ucr"]["last_status"])
+
+    def test_a_busy_account_catches_up_and_advances_only_after_durable_writes(self):
+        now = instant("2026-09-11T12:00:00+00:00")
+        feed = [FakePost(str(900 - n), (now - timedelta(hours=n)).isoformat())
+                for n in range(80)]
+        for durable in (False, True):
+            with self.subTest(durable=durable):
+                scrape_posts.write_local_checkpoints({"acm.ucr": {
+                    "activated_at": "2026-09-01T00:00:00+00:00",
+                    "scanned_through": "2026-09-10T00:00:00+00:00"}})
+                self.remote_writes.side_effect = None if durable else RuntimeError("mirror unavailable")
+                with patch.object(scrape_posts, "_utc_now", return_value=now):
+                    if durable:
+                        self.run_main([{"handle": "acm.ucr"}], {"acm.ucr": feed})
+                    else:
+                        with self.assertRaises(RuntimeError):
+                            self.run_main([{"handle": "acm.ucr"}], {"acm.ucr": feed})
+                saved = scrape_posts.load_local_checkpoints()["acm.ucr"]
+                self.assertEqual(now.isoformat() if durable else "2026-09-10T00:00:00+00:00",
+                                 saved["scanned_through"])
+                self.assertEqual(80, len(self.remote_writes.call_args.args[0]))
 
     def test_a_rate_limit_stops_collection_and_keeps_every_checkpoint(self):
         scrape_posts.write_local_checkpoints({

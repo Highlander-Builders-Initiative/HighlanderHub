@@ -18,7 +18,7 @@ import logging
 import random
 import time
 from datetime import datetime, timedelta, timezone
-from typing import Any, NamedTuple
+from typing import Any, Iterable, NamedTuple
 
 import instaloader
 from instaloader.exceptions import (
@@ -69,10 +69,6 @@ POSSIBLY_PINNED = 3
 # the per-account cadence from looking metronomic on top of it.
 ACCOUNT_SLEEP_RANGE = (3.0, 9.0)
 
-# A scan walks pages until it reaches this boundary. Bounded so one account
-# with a deep feed and a broken checkpoint cannot spend the whole run.
-MAX_POSTS_PER_ACCOUNT = 60
-
 
 class InstagramPostsBlocked(RuntimeError):
     """Authentication challenge or rate limit: stop collecting this run."""
@@ -98,11 +94,9 @@ def write_local_checkpoints(checkpoints: dict[str, dict[str, Any]]) -> None:
 
     Checkpoints are a keyed store, not a snapshot of one run. A pilot
     (`--handle acm.ucr`) resolves a single account, and writing the file from
-    that run's handles would drop every other club's activation boundary — so
-    the next full run would either re-walk from activation and re-admit the
-    back catalogue, or re-activate at `now` and silently skip the interval the
-    lost row had already claimed. The durable store never deletes on upsert;
-    neither does this.
+    that run's handles would drop every other club's activation boundary. If
+    the durable row is also missing, re-activation at `now` silently skips the
+    interval the lost row had already claimed.
     """
     merged = load_local_checkpoints()
     merged.update(checkpoints)
@@ -156,17 +150,31 @@ def resolve_checkpoints(
 
     The durable row wins for `activated_at`: it is the boundary that keeps
     history out, and a machine that lost `data/` must not re-activate at today
-    and silently re-admit everything published since the real activation.
+    and silently skip everything published since the real activation.
     """
     handles = sorted({handle for handle in handles if handle})
     local = load_local_checkpoints()
     checkpoints = {handle: dict(local.get(handle, {})) for handle in handles}
-    for handle, row in _load_remote_checkpoints().items():
-        if handle not in checkpoints:
-            continue
+    remote = _load_remote_checkpoints()
+    # A local activation is not proof that its insert-only claim succeeded.
+    # Retry absent durable rows using the original local boundary, even when
+    # the read failed: the claim returns any existing row without moving it.
+    unconfirmed = [handle for handle in handles
+                   if _parse_instant((remote.get(handle) or {}).get("activated_at")) is None]
+    remote.update(_claim_remote_activation([
+        {"handle": handle,
+         "activated_at": _iso(_parse_instant(checkpoints[handle].get("activated_at")) or now)}
+        for handle in unconfirmed
+    ]))
+    for handle in handles:
+        row = remote.get(handle) or {}
+        local_activation = _parse_instant(checkpoints[handle].get("activated_at"))
         remote_activation = _parse_instant(row.get("activated_at"))
-        if remote_activation is not None:
-            checkpoints[handle]["activated_at"] = _iso(remote_activation)
+        checkpoints[handle]["activated_at"] = _iso(remote_activation or local_activation or now)
+        if remote_activation is not None and remote_activation != local_activation:
+            # Progress under a different activation does not establish coverage
+            # of the durable interval. Resume from the durable progress alone.
+            checkpoints[handle].pop("scanned_through", None)
         local_through = _parse_instant(checkpoints[handle].get("scanned_through"))
         remote_through = _parse_instant(row.get("scanned_through"))
         # The older of the two is the only safe resume point: whichever side
@@ -175,23 +183,16 @@ def resolve_checkpoints(
         if through is not None:
             checkpoints[handle]["scanned_through"] = _iso(through)
 
-    fresh = [handle for handle in handles if not checkpoints[handle].get("activated_at")]
-    claimed = _claim_remote_activation(
-        [{"handle": handle, "activated_at": _iso(now)} for handle in fresh]
-    )
-    for handle in fresh:
-        stored = _parse_instant((claimed.get(handle) or {}).get("activated_at"))
-        checkpoints[handle]["activated_at"] = _iso(stored or now)
-        if handle in claimed:
-            log.info("post collection activated for %s at %s", handle, checkpoints[handle]["activated_at"])
-        else:
-            # Activation could not be made durable. Record it locally so the
-            # run still refuses history, and re-claim on the next run.
+    for handle in unconfirmed:
+        if _parse_instant((remote.get(handle) or {}).get("activated_at")) is None:
             log.warning(
                 "%s: activation is local-only this run (durable store unavailable); "
                 "the boundary will be confirmed on the next successful run",
                 handle,
             )
+        else:
+            log.info("post collection activation confirmed for %s at %s",
+                     handle, checkpoints[handle]["activated_at"])
     write_local_checkpoints(checkpoints)
     return checkpoints
 
@@ -331,6 +332,8 @@ def scan_account(
 
     Raw writes are made durable before the caller advances the checkpoint, so
     an interrupted scan keeps what it collected and re-walks the rest next run.
+    The date boundary limits the walk; a fixed post count would repeatedly stop
+    a busy account at the same newest-first prefix without ever catching up.
     """
     handle = account["handle"]
     # `scan_boundary` is the single owner of the activation invariant: it never
@@ -357,15 +360,6 @@ def scan_account(
         record = serialize_post(post, handle, seen_at=now)
         records.append(record)
         counts[write_post(record)] += 1
-        if scanned >= MAX_POSTS_PER_ACCOUNT:
-            log.warning(
-                "%s: stopped after %d posts without reaching %s; the remaining "
-                "interval is retried next run",
-                handle,
-                scanned,
-                boundary.date(),
-            )
-            break
     else:
         complete = True
 
@@ -593,10 +587,26 @@ def _write_remote_checkpoints(checkpoints: dict[str, dict[str, Any]]) -> None:
     ]
     if not rows:
         return
+    # A failed read/claim at startup may have left a local-only boundary. Never
+    # let this upsert replace an older durable activation, or publish progress
+    # from a scan that did not cover the durable interval.
+    claimed = _claim_remote_activation([
+        {"handle": row["handle"], "activated_at": row["activated_at"]} for row in rows
+    ])
+    confirmed = []
+    for row in rows:
+        activation = _parse_instant((claimed.get(row["handle"]) or {}).get("activated_at"))
+        if activation is not None and activation == _parse_instant(row["activated_at"]):
+            confirmed.append(row)
+        else:
+            log.warning("%s: durable activation unconfirmed or different; retaining remote progress",
+                        row["handle"])
+    if not confirmed:
+        return
     try:
         from db import upsert_batched
 
-        upsert_batched("instagram_post_checkpoints", rows, on_conflict="handle")
+        upsert_batched("instagram_post_checkpoints", confirmed, on_conflict="handle")
     except (Exception, SystemExit) as exc:  # noqa: BLE001 - local cache remains usable.
         log.warning("post checkpoints: remote write failed: %s", exc)
 
