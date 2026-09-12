@@ -8,9 +8,15 @@ type Props = {
   category: CategoryValue;
   onCategoryChange: (cat: CategoryValue) => void;
   counts: Map<CategoryValue, number>;
+  countsPending?: boolean;
 };
 
-export function EventsLeftRail({ category, onCategoryChange, counts }: Props) {
+export function EventsLeftRail({
+  category,
+  onCategoryChange,
+  counts,
+  countsPending = false,
+}: Props) {
   return (
     <div className={GLASS_PANEL_CLASS}>
       <p className="px-3 pb-2 text-[12px] font-medium text-muted">Topics</p>
@@ -20,6 +26,7 @@ export function EventsLeftRail({ category, onCategoryChange, counts }: Props) {
         category={category}
         onCategoryChange={onCategoryChange}
         counts={counts}
+        countsPending={countsPending}
       />
     </div>
   );

@@ -1,7 +1,7 @@
 import { Footer } from "@/components/layout/Footer";
 import { Masthead } from "@/components/layout/Masthead";
 
-type LoadingVariant = "home" | "events" | "event" | "about" | "submit";
+type LoadingVariant = "event" | "about" | "submit";
 
 const copy: Record<
   LoadingVariant,
@@ -11,16 +11,6 @@ const copy: Record<
     body: string;
   }
 > = {
-  home: {
-    label: "Highlander Hub",
-    title: "Loading campus events",
-    body: "Getting the latest UCR listings ready.",
-  },
-  events: {
-    label: "Events",
-    title: "Loading events",
-    body: "Building the browseable event feed.",
-  },
   event: {
     label: "Event",
     title: "Loading event details",
@@ -105,17 +95,7 @@ export function RouteLoadingPage({
           isCompact ? "max-w-3xl" : "max-w-7xl"
         }`}
       >
-        {variant === "events" ? (
-          <div className="grid gap-6 md:grid-cols-[260px_1fr]">
-            <aside className="rounded-xl border border-ink/15 bg-canvas p-5">
-              <LoadingBars count={5} />
-            </aside>
-            <div className="space-y-4">
-              <LoadingCards />
-              <LoadingCards />
-            </div>
-          </div>
-        ) : variant === "event" || variant === "submit" ? (
+        {variant === "event" || variant === "submit" ? (
           <div className="rounded-xl border border-ink/15 bg-canvas p-6 sm:p-8">
             <LoadingBars count={6} />
           </div>
