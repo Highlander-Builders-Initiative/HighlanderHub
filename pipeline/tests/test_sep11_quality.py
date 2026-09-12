@@ -125,14 +125,12 @@ class September11QualityTests(unittest.TestCase):
              patch.object(extract, '_load_account_meta', return_value={'tpusa_at_ucr':{}}), \
              patch.object(extract, '_iter_raw_stories', return_value=[f['raw'], {'id':'failed'}]), \
              patch.object(extract, '_process_story', side_effect=[f['cached'], {'status':'error'}]), \
-             patch.object(extract, '_filter_locked_events', side_effect=lambda rows,*_:rows), \
-             patch.object(extract, '_filter_deleted_events', side_effect=lambda rows,*_:rows), \
-             patch.object(extract, '_delete_imported_event_ids', return_value=0), \
-             patch.object(extract, '_upsert_events', return_value=1) as upsert, \
+             patch('assessed_events.publish_stories', side_effect=RuntimeError('1 source assessment(s) failed')) as publish, \
              patch.object(extract, 'notify_free_food_events') as notify:
-            with self.assertRaisesRegex(RuntimeError, '1 Instagram extraction.*failed'):
+            with self.assertRaisesRegex(RuntimeError, '1 source assessment.*failed'):
                 extract.main(notify=False)
-            self.assertEqual('2026-09-16T01:30:00+00:00', upsert.call_args.args[0][0]['starts_at'])
+            self.assertEqual(2, len(publish.call_args.args[0]))
+            self.assertFalse(publish.call_args.kwargs['notify'])
             notify.assert_not_called()
 
 

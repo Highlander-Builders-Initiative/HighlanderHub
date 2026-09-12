@@ -448,41 +448,20 @@ def main(reconcile_prefixes: Iterable[str] = (), *, notify: bool = True) -> None
     scraped_at = datetime.now(timezone.utc).isoformat()
     verified_prefixes = set(reconcile_prefixes)
 
-    rows: list[dict[str, Any]] = []
+    raws: list[tuple[str, dict[str, Any]]] = []
     for raw in _collect_raw(
         UCR_EVENTS_RAW,
         require_complete="ucr_events_" in verified_prefixes,
     ):
-        rows.extend(_to_event_rows(raw, scraped_at))
+        raws.append(("localist", raw))
     for raw in _collect_raw(
         HIGHLANDER_LINK_RAW,
         require_complete="highlander_link_" in verified_prefixes,
     ):
-        row = _to_event_row_hlink(raw, scraped_at)
-        if row is not None:
-            rows.append(row)
+        raws.append(("highlander_link", raw))
 
-    locked_ids = _locked_event_ids()
-    if locked_ids:
-        log.info("Found %d manually locked events in database. Excluding from scraper run.", len(locked_ids))
-        rows = suppress_tombstoned_event_groups(rows, locked_ids)
-
-    deduped = dedupe_event_rows(_filter_deleted_events(rows))
-
-    written = upsert_batched("events", deduped)
-    deleted = 0
-    for prefix in STRUCTURED_EVENT_ID_PREFIXES:
-        if prefix not in verified_prefixes:
-            continue
-        keep_ids = sorted(r["id"] for r in deduped if r["id"].startswith(prefix))
-        deleted += delete_events_missing_from_ids([prefix], keep_ids)
-    if deleted:
-        log.info("Deleted %d stale structured event rows from Supabase", deleted)
-
-    log.info("Wrote %d events to Supabase", written)
-    notified = notify_free_food_events(deduped) if notify else 0
-    if notified:
-        log.info("Sent %d free food Discord notifications", notified)
+    from assessed_events import publish_structured
+    publish_structured(raws, verified_prefixes, scraped_at, notify=notify)
 
 
 if __name__ == "__main__":

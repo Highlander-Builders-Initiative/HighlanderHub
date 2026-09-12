@@ -324,6 +324,65 @@ event.
 
 ## Instagram story extraction
 
+Imported content now passes through `content_assessment.py` before publication.
+Instagram OCR/captions and structured campus listings use the same typed decision:
+activity, deadline, application, service schedule, announcement, or uncertain.
+The decision records the role of its dates and exact source evidence. Awareness
+observances are announcements; real workshops or vigils during a campaign remain
+activities. All-day and multi-day activities remain supported. Explicit bounded
+recurring hours become individual sessions, with printed breaks respected.
+
+`assessed_events.py` applies student eligibility and fundraising policy separately,
+then publishes student events/deadlines. Nonpublic decisions remain inspectable
+in `source_assessments`, alongside source text, evidence, reasons, version, model,
+and the IDs each source supports. The last successful assessment is retained
+after a failed reassessment. The frontend's existing end-time visibility policy
+continues to keep real ongoing events visible.
+
+Apply `supabase/migrations/20260911000000_source_assessments.sql` before running
+the new importers. Its service-role-only RPC atomically updates source ownership,
+saves current rows, and removes obsolete imported rows only when no other source
+supports them. Admin locks and deleted identities constrain replacements. An
+assessment/API error preserves prior support and causes the stage to report a
+retryable failure. A successful `uncertain` decision stays unpublished.
+
+Semantic caches live in `data/assessments/` and the database. Changing the source
+text, assessment version, or model invalidates them without repeating OCR or
+image downloads. Bump `content_assessment.VERSION` when changing assessment
+semantics or the prompt after deployment. Source reviews recorded with
+`record_review` retain reviewer attribution and still expire on source/policy
+changes. Old `is_event` cache values are extraction hints, not publication gates.
+
+Reassess existing saved evidence (dry run by default, no notifications):
+
+```bash
+python assessed_events.py --active --report /tmp/assessment-report.json
+python assessed_events.py --source instagram:3977797394086504274 --report /tmp/one-source.json
+python assessed_events.py --active --apply
+```
+
+The initial migration of an existing feed should assess all sources supporting
+the affected event group together so legacy duplicates acquire ownership before
+cleanup. `--active` includes sources identifiable through legacy IDs or stored
+source URLs. Review the report before applying; failures are distinct from
+intentional exclusions. The command reads saved source text and may call the
+configured Gemini service, but never scrapes, downloads media, runs OCR, or sends
+Discord notifications.
+
+Verification:
+
+```bash
+python -m unittest discover -s tests
+python evaluate_content_assessment.py --synthetic --report /tmp/semantic-eval.json
+# Include saved-source regressions in a live model evaluation only when authorized:
+python evaluate_content_assessment.py --report /tmp/full-semantic-eval.json
+```
+
+The root `npm test` also executes the actual publication SQL in disposable
+PGlite PostgreSQL, covering rollback, shared support, retries, rekeying, locks,
+tombstones, session fanout, and public-role access denial. Semantic evaluation
+uses the real model and is separate from deterministic contract tests.
+
 `extract_stories.py` turns raw IG story image flyers into `events` rows:
 
 1. Walks `data/raw/<handle>/*.json` for handles in `accounts.json`.

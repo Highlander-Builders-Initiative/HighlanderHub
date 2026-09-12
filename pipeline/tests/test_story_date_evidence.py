@@ -222,37 +222,26 @@ class StoryDateEvidenceTests(unittest.TestCase):
                 )
                 self.assertIsNotNone(row)
 
-    def test_main_sends_unsupported_id_to_existing_cleanup_without_publishing(self) -> None:
+    def test_main_routes_cached_source_to_assessment_before_publication(self) -> None:
         with (
             patch.object(extract, "ensure_dirs"),
             patch.object(extract, "_load_account_meta", return_value={"club": {}}),
             patch.object(extract, "_iter_raw_stories", return_value=[self.raw]),
             patch.object(extract, "_process_story", return_value=self.cached),
-            patch.object(extract, "_delete_imported_event_ids", return_value=1) as delete,
-            patch.object(extract, "_upsert_events", return_value=0) as upsert,
-            patch.object(extract, "notify_free_food_events", return_value=0) as notify,
+            patch("assessed_events.publish_stories") as publish,
+            patch.object(extract, "_upsert_events") as upsert,
         ):
             extract.main()
-        delete.assert_called_once_with({"ig_club_20260909T1900Z"})
-        upsert.assert_called_once_with([])
-        notify.assert_called_once_with([])
+        self.assertEqual([(self.raw, self.cached)], publish.call_args.args[0])
+        upsert.assert_not_called()
 
     def test_cleanup_keeps_a_valid_story_sharing_the_rejected_event_id(self) -> None:
         valid = {**self.cached, "ocr_text": "Workshop September 9 at noon"}
-        with (
-            patch.object(extract, "ensure_dirs"),
-            patch.object(extract, "_load_account_meta", return_value={"club": {}}),
-            patch.object(extract, "_iter_raw_stories", return_value=[self.raw, self.raw]),
-            patch.object(extract, "_process_story", side_effect=[self.cached, valid]),
-            patch.object(extract, "_filter_locked_events", side_effect=lambda rows, retired=None: rows),
-            patch.object(extract, "_filter_deleted_events", side_effect=lambda rows, retired=None: rows),
-            patch.object(extract, "_delete_imported_event_ids", return_value=0) as delete,
-            patch.object(extract, "_upsert_events", return_value=1) as upsert,
-            patch.object(extract, "notify_free_food_events", return_value=0),
-        ):
-            extract.main()
-        delete.assert_called_once_with(set())
-        self.assertEqual(["ig_club_20260909T1900Z"], [r["id"] for r in upsert.call_args.args[0]])
+        rows, retired, _ = extract._collect_event_rows(
+            [(self.raw, self.cached), (self.raw, valid)], {"club": {}}, "2026-09-09T20:00:00Z"
+        )
+        self.assertEqual(set(), retired - {row["id"] for row in rows})
+        self.assertEqual(["ig_club_20260909T1900Z"], [row["id"] for row in rows])
 
 
 if __name__ == "__main__":

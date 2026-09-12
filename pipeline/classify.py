@@ -238,6 +238,7 @@ def classify_content_kind(
     tags: Iterable = (),
     audiences: Iterable = (),
     ocr_text: str = "",
+    assessed_kind: str | None = None,
 ) -> str:
     """Classify with fundraiser precedence, then eligibility, then title cutoff.
 
@@ -249,7 +250,9 @@ def classify_content_kind(
     """
     title = (title or "").casefold()
     text = f"{title} {description or ''}".casefold()
-    if is_informational_notice(title, description, ocr_text):
+    if assessed_kind in {"announcement", "uncertain"}:
+        return "other"
+    if assessed_kind is None and is_informational_notice(title, description, ocr_text):
         return "other"
     if any(term in text for term in _FUNDRAISER_TERMS):
         return "fundraiser"
@@ -263,6 +266,15 @@ def classify_content_kind(
                 and not _STUDENT_ELIGIBILITY.search(text)
                 and not _STUDENT_ORG_PATTERN.search(text)):
             return "other"
+
+    # A source-grounded assessment establishes content type independently of
+    # audience and fundraising. The legacy heuristics below only serve old
+    # callers; production imports assess the source before publishing.
+    if assessed_kind is not None:
+        return {
+            "activity": "student_event", "service_schedule": "student_event",
+            "deadline": "student_deadline", "application": "student_application",
+        }.get(assessed_kind, "other")
 
     # Body text may mention a related cutoff without making this a deadline.
     if any(term in title for term in _DEADLINE_TITLE_TERMS):
