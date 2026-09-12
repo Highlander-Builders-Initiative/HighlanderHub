@@ -7,7 +7,6 @@ export type Club = {
 };
 
 const ALL_CLUBS: Club[] = (accountsData.accounts as Club[])
-  .filter((a) => a.category === "club")
   .map((a) => ({ handle: a.handle, label: a.label, category: a.category }))
   .sort((a, b) => a.label.localeCompare(b.label));
 
@@ -30,8 +29,11 @@ export function searchClubs(query: string, limit = 8): Club[] {
 }
 
 export function clubInitials(label: string): string {
+  const skip = new Set(["at", "of", "de", "the", "and", "for", "in"]);
   const cleaned = label.replace(/[@_.]/g, " ").trim();
-  const parts = cleaned.split(/\s+/).filter(Boolean);
+  const parts = cleaned
+    .split(/\s+/)
+    .filter((p) => p && !skip.has(p.toLowerCase()) && !/^\d+$/.test(p));
   if (parts.length === 0) return "?";
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return (parts[0][0] + parts[1][0]).toUpperCase();
