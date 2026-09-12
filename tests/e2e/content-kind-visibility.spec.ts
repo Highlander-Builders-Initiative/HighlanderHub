@@ -33,7 +33,7 @@ test("deadline detail uses reminder-oriented copy", async ({ page }) => {
   await page.goto("/events/e2e-student-deadline");
 
   await expect(
-    page.getByRole("heading", {
+    page.getByRole("dialog").getByRole("heading", {
       name: "E2E Deadline: Scholarship Applications Due",
     })
   ).toBeVisible();

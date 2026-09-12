@@ -7,6 +7,7 @@ import { relativeDay } from "@/lib/dates";
 import { eventFlyerAlt, eventTileLinkLabel } from "@/lib/events/a11y";
 import { track } from "@/lib/analytics";
 import { saveEventFeedReturn } from "@/lib/events/feed-session";
+import { stashEventForDetail } from "@/lib/events/detail-handoff";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -71,9 +72,12 @@ export function FlyerTile({
   return (
     <Link
       href={href}
+      // Opens as an overlay (@modal intercepted route); the page keeps its place.
+      scroll={false}
       onMouseEnter={() => router.prefetch(href)}
       onFocus={() => router.prefetch(href)}
       onClick={(clickEvent) => {
+        stashEventForDetail(event);
         saveEventFeedReturn(href, {
           eventId: event.id,
           eventTop: clickEvent.currentTarget.getBoundingClientRect().top,

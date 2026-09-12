@@ -1,9 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Masthead } from "@/components/layout/Masthead";
-import { Footer } from "@/components/layout/Footer";
 import {
-  EVENT_DETAIL_MAIN_CLASS,
   EventDetailView,
 } from "@/components/events/EventDetailView";
 import { getEventById } from "@/lib/events";
@@ -134,16 +131,14 @@ export default async function EventDetailPage({
     : null;
 
   return (
-    <main className={EVENT_DETAIL_MAIN_CLASS}>
+    <>
       {structuredData && (
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: jsonLdHtml(structuredData) }}
         />
       )}
-      <Masthead />
-      <EventDetailView event={event} />
-      <Footer />
-    </main>
+      <EventDetailView event={event} variant="modal" />
+    </>
   );
 }

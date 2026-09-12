@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { categoryFilterButton } from "./events-browser-helpers";
+import { waitForEventsBrowserHydration } from "./events-browser-helpers";
 
 async function readScrollY(page: Page) {
   return page.evaluate(() => window.scrollY);
@@ -35,22 +35,13 @@ async function waitForNoLoadError(page: Page) {
   );
 }
 
-async function clickUntilPressed(page: Page, name: string) {
-  const button = categoryFilterButton(page, name);
-  await expect
-    .poll(async () => {
-      await button.click();
-      return button.getAttribute("aria-pressed");
-    })
-    .toBe("true");
+function eventOverlayHeading(page: Page) {
+  return page.getByRole("dialog").getByRole("heading", {
+    name: "E2E Test: Highlander Hub Showcase",
+  });
 }
 
-async function waitForEventsBrowserHydration(page: Page) {
-  await clickUntilPressed(page, "Social");
-  await clickUntilPressed(page, "All");
-}
-
-test("event detail returns to the prior scroll position", async ({ page }) => {
+test("event overlay closes back to the prior scroll position", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 480 });
   await page.goto("/events");
   await page.addStyleTag({
@@ -74,12 +65,7 @@ test("event detail returns to the prior scroll position", async ({ page }) => {
   ]);
   const firstSavedTop = await readSavedEventTop(page);
   expect(firstSavedTop).not.toBeNull();
-  await expect(
-    page.getByRole("heading", {
-      level: 1,
-      name: "E2E Test: Highlander Hub Showcase",
-    })
-  ).toBeVisible();
+  await expect(eventOverlayHeading(page)).toBeVisible();
 
   await Promise.all([page.waitForURL("**/events"), page.goBack()]);
   await expect(
@@ -95,17 +81,21 @@ test("event detail returns to the prior scroll position", async ({ page }) => {
   ]);
   const secondSavedTop = await readSavedEventTop(page);
   expect(secondSavedTop).not.toBeNull();
-  await expect(
-    page.getByRole("heading", {
-      level: 1,
-      name: "E2E Test: Highlander Hub Showcase",
-    })
-  ).toBeVisible();
+  await expect(eventOverlayHeading(page)).toBeVisible();
 
   await Promise.all([
     page.waitForURL("**/events"),
-    page.getByRole("button", { name: /Back/i }).click(),
+    page
+      .getByRole("dialog")
+      .getByRole("button", { name: "Close event" })
+      .click(),
   ]);
+  // Closing onto the still-mounted list spends the return marker.
+  await expect
+    .poll(() =>
+      page.evaluate(() => sessionStorage.getItem("highlanderhub.returnScroll"))
+    )
+    .toBeNull();
   await expect(
     page.getByLabel(/Search events/i)
   ).toBeVisible();

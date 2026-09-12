@@ -7,6 +7,7 @@ import { DAY_WINDOWS, type DayWindow } from "@/types/events-feed";
 
 const FEED_SESSION_KEY = "highlanderhub.eventFeed";
 const RETURN_SCROLL_KEY = "highlanderhub.returnScroll";
+const RETURN_HISTORY_KEY = "highlanderhubEventReturn";
 const FEED_SESSION_TTL_MS = 10 * 60 * 1000;
 
 export type SavedEventFeedSnapshot = {
@@ -46,20 +47,21 @@ function currentPath() {
   return `${window.location.pathname}${window.location.search}`;
 }
 
+function isSavedScrollPosition(value: unknown): value is SavedScrollPosition {
+  if (!value || typeof value !== "object") return false;
+  const saved = value as Partial<SavedScrollPosition>;
+  return typeof saved.path === "string" &&
+    typeof saved.scrollY === "number" &&
+    typeof saved.detailPath === "string";
+}
+
 function readSavedScrollPositionRaw() {
   const raw = window.sessionStorage.getItem(RETURN_SCROLL_KEY);
   if (!raw) return null;
 
   try {
-    const parsed = JSON.parse(raw) as Partial<SavedScrollPosition>;
-    if (
-      typeof parsed.path !== "string" ||
-      typeof parsed.scrollY !== "number" ||
-      typeof parsed.detailPath !== "string"
-    ) {
-      return null;
-    }
-    return parsed as SavedScrollPosition;
+    const parsed: unknown = JSON.parse(raw);
+    return isSavedScrollPosition(parsed) ? parsed : null;
   } catch {
     return null;
   }
@@ -227,6 +229,29 @@ export function getSavedReturnPath() {
   if (!saved || saved.detailPath !== currentPath()) return null;
 
   return saved.path;
+}
+
+/**
+ * Keep the origin on the detail's own history entry. Closing spends the session
+ * marker, but Forward must be able to reinstate it before another refresh/back.
+ * Preserve Next's router state when adding our metadata.
+ */
+export function syncEventFeedReturnHistory() {
+  if (typeof window === "undefined") return;
+  const saved = readSavedScrollPositionRaw();
+  if (saved?.detailPath === currentPath()) {
+    window.history.replaceState(
+      { ...window.history.state, [RETURN_HISTORY_KEY]: saved },
+      "",
+      window.location.href
+    );
+    return;
+  }
+
+  const previous: unknown = window.history.state?.[RETURN_HISTORY_KEY];
+  if (isSavedScrollPosition(previous) && previous.detailPath === currentPath()) {
+    window.sessionStorage.setItem(RETURN_SCROLL_KEY, JSON.stringify(previous));
+  }
 }
 
 export function saveEventFeedReturn(

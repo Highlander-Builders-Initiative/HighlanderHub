@@ -16,13 +16,20 @@ import { isDeadlineKind } from "@/lib/events/content-kind";
 import type { CampusEvent } from "@/types/event";
 
 /**
- * Body of /events/[id], between the masthead and footer. Shared by the server
- * page and the route's loading state (which renders it straight from a list
- * card's handoff), so both paint identical markup. No "use client": it stays a
+ * Body of /events/[id]. Shared by the server page, the route's loading state
+ * (which renders it straight from a list card's handoff), and the @modal
+ * overlay, so all of them paint identical markup. No "use client": it stays a
  * server component under page.tsx.
  *
- * Layout classes the skeleton must mirror are exported below.
+ * `variant="page"` sits between the masthead and footer. `variant="modal"`
+ * sits inside EventModal's scrolling panel: no Back link (the shell has a close
+ * button), a tighter grid, and an action bar that sticks to the panel instead
+ * of the viewport.
+ *
+ * Layout classes the skeletons must mirror are exported below.
  */
+
+export type EventDetailVariant = "page" | "modal";
 
 export const EVENT_DETAIL_MAIN_CLASS =
   "relative min-h-screen bg-canvas pb-28 md:pb-0";
@@ -38,6 +45,19 @@ export const EVENT_DETAIL_TILE_CLASS =
   "flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border border-ink/15 bg-canvas";
 export const EVENT_DETAIL_MOBILE_BAR_CLASS =
   "fixed inset-x-0 bottom-0 z-30 border-t border-ink/10 bg-canvas/95 px-4 py-3 backdrop-blur md:hidden";
+
+/** The overlay's dialog is labelled by the event title. */
+export const EVENT_MODAL_TITLE_ID = "event-modal-title";
+export const EVENT_MODAL_CONTAINER_CLASS =
+  "relative px-5 pb-8 pt-5 sm:px-8 sm:pb-10 sm:pt-8";
+export const EVENT_MODAL_FLYER_GRID_CLASS =
+  "mt-6 grid grid-cols-1 gap-8 md:mt-8 md:grid-cols-[minmax(0,15rem)_minmax(0,1fr)] md:gap-10";
+export const EVENT_MODAL_ASIDE_CLASS =
+  "order-2 space-y-6 md:order-1 md:sticky md:top-8 md:self-start";
+// Sticky, not fixed: the panel's open animation leaves a transform on it,
+// which would make a fixed bar position against the panel anyway.
+export const EVENT_MODAL_MOBILE_BAR_CLASS =
+  "sticky bottom-0 z-10 border-t border-ink/10 bg-canvas px-4 py-3 md:hidden";
 
 const SOURCE_LABELS: Record<CampusEvent["source"], string> = {
   instagram: "Instagram",
@@ -64,7 +84,14 @@ export function LocationPinIcon() {
   );
 }
 
-export function EventDetailView({ event }: { event: CampusEvent }) {
+export function EventDetailView({
+  event,
+  variant = "page",
+}: {
+  event: CampusEvent;
+  variant?: EventDetailVariant;
+}) {
+  const isModal = variant === "modal";
   const safeRsvpUrl = normalizeHttpUrl(event.rsvpUrl);
   const safeSourceUrl = normalizeHttpUrl(event.sourceUrl);
   const primaryUrl = safeRsvpUrl ?? safeSourceUrl;
@@ -75,6 +102,8 @@ export function EventDetailView({ event }: { event: CampusEvent }) {
   const showHostedBy = Boolean(event.host || event.hostHandle);
   const isDeadline = isDeadlineKind(event.contentKind);
   const calendarLabel = isDeadline ? "Add reminder" : "Add to calendar";
+  // The overlay sits on a page that already has its own h1.
+  const Title = isModal ? "h2" : "h1";
 
   return (
     <>
@@ -84,26 +113,33 @@ export function EventDetailView({ event }: { event: CampusEvent }) {
       {event.imageUrl && (
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 h-[40vh] overflow-hidden sm:h-[36vh]"
+          className={`pointer-events-none absolute inset-x-0 top-0 overflow-hidden ${
+            isModal ? "h-64 sm:h-72" : "h-[40vh] sm:h-[36vh]"
+          }`}
         >
           <EventFlyerImage
             src={event.imageUrl}
             alt=""
             fill
-            sizes="100vw"
+            sizes={isModal ? "(max-width: 768px) 100vw, 56rem" : "100vw"}
             className="scale-125 object-cover opacity-45 blur-3xl"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-canvas/40 via-canvas/75 to-canvas" />
         </div>
       )}
 
-      <div className={EVENT_DETAIL_CONTAINER_CLASS}>
-        <EventBackButton />
+      <div
+        className={
+          isModal ? EVENT_MODAL_CONTAINER_CLASS : EVENT_DETAIL_CONTAINER_CLASS
+        }
+      >
+        {!isModal && <EventBackButton />}
 
-        <article className="mt-7 md:mt-10">
+        <article className={isModal ? undefined : "mt-7 md:mt-10"}>
           {/* Header: pills + title sit full-bleed across both columns for
-              editorial impact, regardless of whether the flyer rail renders. */}
-          <header>
+              editorial impact, regardless of whether the flyer rail renders.
+              In the overlay, right padding clears the close button. */}
+          <header className={isModal ? "pr-12" : undefined}>
             <div className="flex flex-wrap items-center gap-2">
               {isDeadline && (
                 <span className="inline-flex items-center rounded-full bg-coral/12 px-2.5 py-0.5 text-[12px] font-medium text-deep-coral">
@@ -128,23 +164,42 @@ export function EventDetailView({ event }: { event: CampusEvent }) {
               )}
             </div>
 
-            <h1 className="mt-5 max-w-3xl font-display text-[34px] font-semibold leading-[1.05] tracking-[-0.025em] text-ink sm:text-[44px]">
+            <Title
+              id={isModal ? EVENT_MODAL_TITLE_ID : undefined}
+              className={`mt-5 max-w-3xl font-display font-semibold leading-[1.05] tracking-[-0.025em] text-ink ${
+                isModal ? "text-[28px] sm:text-[36px]" : "text-[34px] sm:text-[44px]"
+              }`}
+            >
               {event.title}
-            </h1>
+            </Title>
           </header>
 
           <div
-            className={hasImage ? EVENT_DETAIL_FLYER_GRID_CLASS : "mt-8 max-w-3xl"}
+            className={
+              hasImage
+                ? isModal
+                  ? EVENT_MODAL_FLYER_GRID_CLASS
+                  : EVENT_DETAIL_FLYER_GRID_CLASS
+                : "mt-8 max-w-3xl"
+            }
           >
             {hasImage && (
-              <aside className={EVENT_DETAIL_ASIDE_CLASS}>
+              <aside
+                className={
+                  isModal ? EVENT_MODAL_ASIDE_CLASS : EVENT_DETAIL_ASIDE_CLASS
+                }
+              >
                 <div className={EVENT_DETAIL_FLYER_FRAME_CLASS}>
                   <div className="relative aspect-[4/5] w-full">
                     <EventFlyerImage
                       src={event.imageUrl!}
                       alt={`Flyer for ${event.title}`}
                       fill
-                      sizes="(max-width: 768px) 80vw, (max-width: 1024px) 18rem, 21rem"
+                      sizes={
+                        isModal
+                          ? "(max-width: 768px) 80vw, 15rem"
+                          : "(max-width: 768px) 80vw, (max-width: 1024px) 18rem, 21rem"
+                      }
                       className="object-cover"
                       priority
                     />
@@ -285,7 +340,11 @@ export function EventDetailView({ event }: { event: CampusEvent }) {
       </div>
 
       {/* Mobile sticky action bar */}
-      <div className={EVENT_DETAIL_MOBILE_BAR_CLASS}>
+      <div
+        className={
+          isModal ? EVENT_MODAL_MOBILE_BAR_CLASS : EVENT_DETAIL_MOBILE_BAR_CLASS
+        }
+      >
         <div className="mx-auto flex max-w-3xl items-center gap-3">
           {primaryUrl ? (
             <TrackedAnchor

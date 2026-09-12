@@ -129,7 +129,9 @@ export function EventsBrowser({
   });
 
   useEffect(() => {
-    if (isRestoring) return;
+    // The feed stays mounted under intercepted event routes. Only the feed
+    // URL owns its snapshot; background updates must not overwrite it.
+    if (isRestoring || pathname !== "/events") return;
     saveEventFeedSnapshot({
       path: `${window.location.pathname}${window.location.search}`,
       scrollY: window.scrollY,
@@ -141,7 +143,7 @@ export function EventsBrowser({
       dayWindow,
       loadedCount: loadedEvents.length,
     });
-  }, [loadedEvents, hasMore, nextOffset, category, query, dayWindow, isRestoring]);
+  }, [loadedEvents, hasMore, nextOffset, category, query, dayWindow, isRestoring, pathname]);
 
   const {
     trimmedQuery,
@@ -180,34 +182,39 @@ export function EventsBrowser({
       query: string;
       dayWindow: DayWindow;
     }) => {
+      if (window.location.pathname !== "/events") return;
       const params = new URLSearchParams();
       if (next.category !== "all") params.set("cat", next.category);
       if (next.query) params.set("q", next.query);
       if (next.dayWindow !== "all") params.set("when", next.dayWindow);
       const search = params.toString();
-      router.replace(search ? `${pathname}?${search}` : pathname, {
+      const href = search ? `/events?${search}` : "/events";
+      // Replacing the current URL refetches the first page and discards the
+      // loaded pages when returning from a card.
+      if (href === `${window.location.pathname}${window.location.search}`) return;
+      router.replace(href, {
         scroll: false,
       });
     },
-    [router, pathname]
+    [router]
   );
 
   // Category and day-window are discrete clicks; write the URL immediately so
   // a chip toggle is shareable the same frame it lands.
   useEffect(() => {
-    if (isRestoring) return;
+    if (isRestoring || pathname !== "/events") return;
     writeFiltersToUrl({ category, query: trimmedQuery, dayWindow });
     // trimmedQuery is intentionally excluded: text input shares the 600ms
     // debouncer below, which writes the URL and fires analytics together.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [category, dayWindow, isRestoring, writeFiltersToUrl]);
+  }, [category, dayWindow, isRestoring, writeFiltersToUrl, pathname]);
 
   // Search input piggybacks on the existing 600ms debouncer that gates the
   // events_search analytics ping; one timer writes the URL and fires the ping
   // together, so we never thrash the address bar mid-keystroke.
   const lastTrackedQuery = useRef(initialFilters.query.trim());
   useEffect(() => {
-    if (isRestoring) return;
+    if (isRestoring || pathname !== "/events") return;
     if (trimmedQuery === lastTrackedQuery.current) return;
     const t = setTimeout(() => {
       writeFiltersToUrl({ category, query: trimmedQuery, dayWindow });
@@ -218,7 +225,7 @@ export function EventsBrowser({
     }, 600);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [trimmedQuery, isRestoring, writeFiltersToUrl]);
+  }, [trimmedQuery, isRestoring, writeFiltersToUrl, pathname]);
 
   const clearFilters = useCallback(() => {
     setCategory("all");
@@ -262,6 +269,7 @@ export function EventsBrowser({
     handleCalendarSelect,
     loadMore,
   } = useEventFeedNavigation({
+    active: pathname === "/events",
     loadedEvents,
     setLoadedEvents,
     calendarEvents,

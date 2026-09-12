@@ -147,7 +147,7 @@ test("app routes expose loading UI while server data resolves", () => {
   assert.equal(existsSync(sourceFile("src/app/loading.tsx")), false);
 });
 
-test("event detail loading renders handed-off events and mirrors the page layout", () => {
+test("event detail loading renders handed-off events inside the card layout", () => {
   const loader = read("src/app/events/[id]/loading.tsx");
   const loading = read("src/components/events/EventDetailLoading.tsx");
   const view = read("src/components/events/EventDetailView.tsx");
@@ -156,26 +156,70 @@ test("event detail loading renders handed-off events and mirrors the page layout
 
   // Same shell as the page, not the generic interstitial.
   assert.doesNotMatch(loader, /RouteLoadingPage/);
-  assert.match(loader, /aria-busy="true"/);
-  assert.match(loader, /EVENT_DETAIL_MAIN_CLASS/);
-  assert.match(page, /EVENT_DETAIL_MAIN_CLASS/);
+  assert.match(loader, /EventModalDetailLoading/);
+  assert.match(read("src/app/events/[id]/layout.tsx"), /<EventModal standalone>/);
 
   // Opened from a list card: the card's event renders the real view at once.
   assert.match(card, /stashEventForDetail\(event\)/);
   assert.match(loading, /peekEventForDetail/);
-  assert.match(loading, /<EventDetailView event=\{handedOff\} \/>/);
-  assert.match(page, /<EventDetailView event=\{event\} \/>/);
+  assert.match(loading, /<EventDetailView event=\{handedOff\} variant="modal" \/>/);
+  assert.match(page, /<EventDetailView event=\{event\} variant="modal" \/>/);
 
   // Opened cold: the skeleton borrows the view's layout classes, not copies.
   for (const layout of [
-    "EVENT_DETAIL_CONTAINER_CLASS",
-    "EVENT_DETAIL_FLYER_GRID_CLASS",
-    "EVENT_DETAIL_ASIDE_CLASS",
-    "EVENT_DETAIL_MOBILE_BAR_CLASS",
+    "EVENT_MODAL_CONTAINER_CLASS",
+    "EVENT_MODAL_FLYER_GRID_CLASS",
+    "EVENT_MODAL_ASIDE_CLASS",
   ]) {
     assert.match(view, new RegExp(`export const ${layout}`));
     assert.match(loading, new RegExp(`className=\\{${layout}\\}`));
   }
+});
+
+test("event cards use the same overlay on soft navigation and direct loads", () => {
+  const layout = read("src/app/layout.tsx");
+  const slotDefault = read("src/app/@modal/default.tsx");
+  const modalLayout = read("src/app/@modal/(.)events/[id]/layout.tsx");
+  const modalPage = read("src/app/@modal/(.)events/[id]/page.tsx");
+  const modalLoading = read("src/app/@modal/(.)events/[id]/loading.tsx");
+  const loading = read("src/components/events/EventDetailLoading.tsx");
+  const shell = read("src/components/events/EventModal.tsx");
+  const card = read("src/components/events/EventCard.tsx");
+  const tile = read("src/components/home/FlyerTile.tsx");
+  const page = read("src/app/events/[id]/page.tsx");
+
+  // Root layout renders the slot; it is empty unless a card intercepted.
+  assert.match(layout, /modal: React\.ReactNode/);
+  assert.match(layout, /\{modal\}/);
+  assert.match(slotDefault, /return null/);
+  assert.equal(existsSync(sourceFile("src/app/@modal/(.)events/[id]/error.tsx")), true);
+
+  // Overlay reuses the page body; shell lives in the layout so loading hands
+  // off to page without remounting.
+  assert.match(modalLayout, /<EventModal>/);
+  assert.match(modalPage, /<EventDetailView event=\{event\} variant="modal" \/>/);
+  assert.match(modalPage, /force-dynamic/);
+  assert.match(modalLoading, /EventModalDetailLoading/);
+  assert.match(loading, /<EventDetailView event=\{handedOff\} variant="modal" \/>/);
+
+  // Every close path is history-back; dialog semantics and marker cleanup.
+  assert.match(shell, /router\.back\(\)/);
+  assert.match(shell, /role="dialog"/);
+  assert.match(shell, /aria-modal="true"/);
+  assert.match(shell, /useDialogFocusTrap/);
+  assert.match(shell, /clearEventFeedReturnState/);
+
+  // Cards stay real links (crawlable) and do not scroll the list.
+  for (const source of [card, tile]) {
+    assert.match(source, /href=\{href\}/);
+    assert.match(source, /scroll=\{false\}/);
+    assert.match(source, /stashEventForDetail\(event\)/);
+  }
+
+  // Direct loads keep the SEO metadata and structured data inside the card route.
+  assert.match(page, /generateMetadata/);
+  assert.match(page, /application\/ld\+json/);
+  assert.doesNotMatch(modalPage, /generateMetadata/);
 });
 
 test("/events loading mirrors the live shell and skeletons only the feed", () => {
@@ -219,7 +263,7 @@ test("app routes expose 500-level error boundaries", () => {
     assert.equal(existsSync(sourceFile(route)), true, `${route} is missing`);
     const source = read(route);
     assert.match(source, /"use client"/);
-    assert.match(source, /RouteErrorPage/);
+    assert.match(source, /RouteErrorPage|EventDetailError/);
   }
 });
 

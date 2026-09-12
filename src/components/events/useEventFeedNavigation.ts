@@ -23,6 +23,7 @@ import { useInfiniteEventFeedLoader } from "./useInfiniteEventFeedLoader";
 import { useObservedDayKey } from "./useObservedDayKey";
 
 type UseEventFeedNavigationArgs = {
+  active: boolean;
   loadedEvents: CampusEvent[];
   setLoadedEvents: Dispatch<SetStateAction<CampusEvent[]>>;
   calendarEvents: CampusEvent[];
@@ -47,6 +48,7 @@ type UseEventFeedNavigationArgs = {
 };
 
 export function useEventFeedNavigation({
+  active,
   loadedEvents,
   setLoadedEvents,
   calendarEvents,
@@ -196,7 +198,7 @@ export function useEventFeedNavigation({
   );
 
   const loadMore = useCallback(async () => {
-    if (isRestoring || isLoadingMore || !hasMore) return;
+    if (!active || isRestoring || isLoadingMore || !hasMore) return;
     if (
       pendingCalendarScrollRef.current ||
       Date.now() < calendarJumpSuppressUntilRef.current
@@ -228,6 +230,7 @@ export function useEventFeedNavigation({
       setIsLoadingMore(false);
     }
   }, [
+    active,
     hasMore,
     isLoadingMore,
     isRestoring,
@@ -246,7 +249,7 @@ export function useEventFeedNavigation({
     hasMore,
     loadError,
     isLoadingMore,
-    isRestoring,
+    isRestoring: isRestoring || !active,
     onLoadMore: loadMore,
     suppressAutoLoadUntilRef: calendarJumpSuppressUntilRef,
     pendingCalendarScrollRef,

@@ -253,3 +253,31 @@ test("event feed session accepts every generated category value", async () => {
     env.restore();
   }
 });
+
+test("detail history restores its origin after close, forward, and refresh", async () => {
+  const env = installBrowserEnv();
+  try {
+    const session = await importTsModule("src/lib/events/feed-session.ts");
+    window.history = {
+      state: { __NA: true, tree: "next-router-state" },
+      replaceState(state) { this.state = state; },
+    };
+    session.saveEventFeedReturn("/events/event-1", { eventId: "event-1", eventTop: 96 });
+    window.location.pathname = "/events/event-1";
+    session.syncEventFeedReturnHistory();
+    assert.equal(window.history.state.tree, "next-router-state");
+
+    session.clearEventFeedReturnState();
+    assert.equal(session.getSavedReturnPath(), null);
+    session.syncEventFeedReturnHistory();
+    assert.equal(session.getSavedReturnPath(), "/events");
+    assert.equal(session.getSavedScrollPosition().eventTop, 96);
+
+    session.clearEventFeedReturnState();
+    window.location.pathname = "/events/different-event";
+    session.syncEventFeedReturnHistory();
+    assert.equal(session.getSavedReturnPath(), null);
+  } finally {
+    env.restore();
+  }
+});
