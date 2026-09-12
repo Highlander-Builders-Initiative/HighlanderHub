@@ -604,6 +604,9 @@ def main() -> None:
                 sources.append((story_source(raw, cached), raw, cached))
     import extract_posts as igposts
     import post_archive
+    # Reassessment names a source by key, so the post it names has to be on disk
+    # — restore anything this machine is missing before deciding it is unknown.
+    post_archive.hydrate_local_posts()
     for record in post_archive.iter_local_posts():
         path = igposts._cache_path(str(record.get("media_id")))
         if path.exists():

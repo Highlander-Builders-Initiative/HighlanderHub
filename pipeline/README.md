@@ -486,6 +486,18 @@ Instagram collection outright, record incomplete coverage, and retain every
 checkpoint — continuing would turn one throttle into a run-long pattern of
 rejected requests.
 
+The local archive is a cache of `instagram_posts`, and both collection and
+extraction restore it from that mirror before reading it. A machine that lost
+`data/` therefore gets back every post the mirror holds, not just the seven days
+the next scan re-walks — which is what keeps older posts still supporting live
+events being refreshed and reassessed. Restoring fills gaps only: a post already
+on disk is never overwritten, because the local file is written before the mirror
+row it produces and so is at least as fresh. It cannot re-admit history either,
+since the mirror only holds posts a scan already accepted past its activation
+boundary. The first run after a restore is slow rather than expensive — each
+restored post's extraction comes back from `post_extractions` one row at a time,
+so no OCR is paid for twice.
+
 Posts outside the discovery overlap are re-fetched by shortcode only while the
 event they support has not ended; after that a club's edits cannot change a
 listing that is already over. Those requests are deduplicated against whatever

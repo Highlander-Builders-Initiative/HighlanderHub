@@ -36,6 +36,7 @@ from instaloader.exceptions import (
 
 from config import POST_CHECKPOINTS_FILE, POST_OVERLAP_DAYS, ensure_post_dirs
 from post_archive import (
+    hydrate_local_posts,
     iso as _iso,
     iter_local_posts,
     media_key,
@@ -445,6 +446,10 @@ def main(handles: list[str] | None = None) -> None:
         level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
     )
     ensure_post_dirs()
+    # The archive is what decides which posts are new, which still need
+    # refreshing, and which are already paid for — so a machine that lost
+    # `data/` gets it back from the durable mirror before any of that is judged.
+    hydrate_local_posts()
 
     L = instaloader.Instaloader(
         download_pictures=False,
