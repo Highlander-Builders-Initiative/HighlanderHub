@@ -41,8 +41,9 @@ import logging
 from logging.handlers import RotatingFileHandler
 import sys
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from functools import cached_property
 from typing import Any
 
 import assessed_events
@@ -68,6 +69,32 @@ class StageResult:
     ok: bool
     seconds: float
     error: str | None = None
+
+
+@dataclass
+class InstagramChannels:
+    """Keep successful channel extractions available for a single publication."""
+
+    stories: list[tuple[dict, dict]] = field(default_factory=list)
+    posts: list[tuple[dict, dict]] = field(default_factory=list)
+
+    @cached_property
+    def meta(self) -> dict[str, dict[str, Any]]:
+        # Empty metadata is valid. An exception leaves the property uncached,
+        # so a later stage can retry without losing the other channel's work.
+        return extract_stories._load_account_meta()
+
+    def extract_stories(self) -> None:
+        self.stories = extract_stories.extract_all(self.meta)
+
+    def extract_posts(self) -> None:
+        self.posts, _ = extract_posts.extract_all(set(self.meta))
+
+    def publish(self) -> None:
+        assessed_events.publish_instagram(
+            self.stories, self.posts, self.meta,
+            datetime.now(timezone.utc).isoformat(), notify=False,
+        )
 
 
 def _safe(name: str, fn, results: list[StageResult]) -> bool:
@@ -164,31 +191,10 @@ def _run_stages(results: list[StageResult]) -> None:
     _safe("instagram.scrape", scrape.main, results)
     _safe("instagram.posts.scrape", scrape_posts.main, results)
 
-    # Extraction fills these in; publication settles both channels together.
-    # Held across stages rather than returned, so a failed extract still lets
-    # the other channel publish whatever it read.
-    channels: dict[str, Any] = {"meta": {}, "stories": [], "posts": []}
-
-    def extract_stories_stage() -> None:
-        channels["meta"] = extract_stories._load_account_meta()
-        channels["stories"] = extract_stories.extract_all(channels["meta"])
-
-    def extract_posts_stage() -> None:
-        if not channels["meta"]:
-            channels["meta"] = extract_stories._load_account_meta()
-        channels["posts"] = extract_posts.extract_all(set(channels["meta"]))[0]
-
-    def publish_instagram_stage() -> None:
-        if not channels["meta"]:
-            channels["meta"] = extract_stories._load_account_meta()
-        assessed_events.publish_instagram(
-            channels["stories"], channels["posts"], channels["meta"],
-            datetime.now(timezone.utc).isoformat(), notify=False,
-        )
-
-    _safe("instagram.extract", extract_stories_stage, results)
-    _safe("instagram.posts.extract", extract_posts_stage, results)
-    _safe("instagram.publish", publish_instagram_stage, results)
+    channels = InstagramChannels()
+    _safe("instagram.extract", channels.extract_stories, results)
+    _safe("instagram.posts.extract", channels.extract_posts, results)
+    _safe("instagram.publish", channels.publish, results)
     _safe("instagram.normalize", normalize.main, results)
     _safe("events.reconcile", reconcile_events.main, results)
 

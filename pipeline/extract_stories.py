@@ -4,8 +4,8 @@ Reads raw story JSON from data/raw/<handle>/, runs OCR + Gemini extraction for
 uncached image stories, caches terminal results in data/extracted/, then writes
 event-shaped rows to Supabase.
 
-Date and time reasoning over flyer text lives in `story_dates`; this module
-assembles rows and owns caching, extraction and publishing.
+Date reasoning lives in `story_dates` and shared row policy in `instagram_rows`;
+this module owns story extraction, identity/date adaptation and caching.
 """
 from __future__ import annotations
 
@@ -13,6 +13,7 @@ import base64
 import json
 import logging
 import re
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from functools import lru_cache
 from pathlib import Path
@@ -27,10 +28,15 @@ from config import (
     ensure_dirs,
     load_accounts,
 )
-from classify import classify_content_kind, detect_free_food, is_informational_notice
+from classify import is_informational_notice
 from discord_notify import notify_free_food_events
 from event_identity import dedupe_event_rows, suppress_tombstoned_event_groups
 from flyer_qr import QR_SCAN_VERSION, qr_rsvp_urls
+from instagram_rows import (
+    EVENT_CATEGORIES,
+    build_instagram_row,
+    instagram_event_id as _instagram_event_id,
+)
 from reshare import reshared_origin_handle, strip_byline
 from story_dates import (
     align_printed_dates,
@@ -41,25 +47,12 @@ from story_dates import (
     looks_like_schedule_grid,
     midnight_end,
     normalize_timestamptz,
-    was_stale_when_posted,
 )
-from url_utils import normalize_http_url as _normalize_url
-from url_utils import normalize_rsvp_url
 
 log = logging.getLogger("pipeline.extract_stories")
 
 VISION_URL = "https://vision.googleapis.com/v1/images:annotate"
 GEMINI_MODEL = "gemini-2.5-flash-lite"
-EVENT_CATEGORIES = (
-    "club",
-    "academic",
-    "social",
-    "career",
-    "sports",
-    "arts",
-    "community",
-    "free_food",
-)
 # Categories the LLM may assign. `free_food` is excluded: free food is detected
 # deterministically (see classify.detect_free_food / has_free_food), so the model
 # always picks the event's real type. `free_food` stays valid for storage so
@@ -67,8 +60,6 @@ EVENT_CATEGORIES = (
 LLM_EVENT_CATEGORIES = tuple(c for c in EVENT_CATEGORIES if c != "free_food")
 REMOTE_CACHE_TERMINAL_STATUSES = {"ok", "not_event", "no_text", "image_expired"}
 DURABLE_FLYER_BUCKET = "event-flyers"
-# Instagram handles that must not appear as the public "hosted by" name on listings.
-_ANONYMIZED_HOST_HANDLES = frozenset({"highlander_opps"})
 GEMINI_RESPONSE_SCHEMA: dict[str, Any] = {
     "type": "object",
     "properties": {
@@ -610,53 +601,6 @@ def _process_story(raw: dict[str, Any], meta: dict[str, Any]) -> dict[str, Any]:
     return _persist_terminal_cache(story_id, payload)
 
 
-def _clean_tags(value: Any) -> list[str]:
-    if not isinstance(value, list):
-        return []
-    out: list[str] = []
-    for item in value:
-        tag = str(item).strip()
-        if tag:
-            out.append(tag)
-    return out
-
-
-def _category(value: Any) -> str:
-    if isinstance(value, str) and value in EVENT_CATEGORIES:
-        return value
-    return "community"
-
-
-def _bool_or_default(value: Any, default: bool) -> bool:
-    if isinstance(value, bool):
-        return value
-    if value is None:
-        return default
-    if isinstance(value, str):
-        normalized = value.strip().lower()
-        if normalized in {"true", "1", "yes", "y"}:
-            return True
-        if normalized in {"false", "0", "no", "n"}:
-            return False
-        return default
-    if isinstance(value, int):
-        if value == 1:
-            return True
-        if value == 0:
-            return False
-    return default
-
-
-def _instagram_event_id(handle: str, starts_at: str) -> str | None:
-    if not handle:
-        return None
-    try:
-        start_slug = datetime.fromisoformat(starts_at).strftime("%Y%m%dT%H%MZ")
-    except ValueError:
-        return None
-    return f"ig_{handle}_{start_slug}"
-
-
 def _reshared_owner(raw: dict[str, Any]) -> str | None:
     """The post author recorded by the scraper, if the story reshares a post.
 
@@ -690,22 +634,90 @@ def _caption_fallback_title(description: str) -> str:
     return candidate[:120] if len(candidate) >= 8 else ""
 
 
+@dataclass
+class StoryContext:
+    identity_handle: str
+    host_handle: str
+    account_meta: dict
+    identity_accounts: set[str]
+    prior_ids: set[str]
+    legacy_range: tuple[str, str | None] | None
+    text: str
+    caption: str
+    image_url: str | None
+    qr_urls: list[str]
+    ocr_text: str
+    viewer_handle: str
+    known_handles: Iterable[str]
+
+    def event_ids(self, starts_at: str) -> set[str]:
+        return {event_id for account in self.identity_accounts
+                if (event_id := _instagram_event_id(account, starts_at))}
+
+    def clean_title(self, title: str) -> str:
+        """Drop reshare chrome a title lifted from the flyer's byline.
+
+        A title that was nothing but a byline falls back to the caption's
+        opening clause, which beats publishing a bare Instagram handle.
+        """
+        return (strip_byline(title, self.ocr_text, self.viewer_handle, self.known_handles)
+                or _caption_fallback_title(self.caption))
+
+
+def _story_context(raw: dict, cached: dict, account_meta: dict, known_handles: Iterable[str] = ()) -> StoryContext:
+    """Resolve story evidence and identity without projecting an event row.
+
+    Old extraction dates reconstruct aliases for retirement and admin overrides.
+    The legacy range is only used to map unregistered stories; assessed callers
+    use their own occurrences. QR URLs are decoded image evidence, not LLM guesses.
+    """
+    old = cached.get("result") or {}
+    handle = str(raw.get("handle") or "")
+    ocr_text = cached.get("ocr_text")
+    origin = _reshared_owner(raw) or reshared_origin_handle(ocr_text, handle, known_handles)
+    media = _reshared_media_identity(raw)
+    accounts = {account for account in (handle, origin, media) if account}
+    host_handle = origin or handle
+    host_meta = account_meta
+    if host_handle != handle:
+        host_meta = known_handles.get(host_handle, {}) if isinstance(known_handles, dict) else {}
+
+    start = normalize_timestamptz(old.get("starts_at"))
+    end = normalize_timestamptz(old.get("ends_at"))
+    ocr_range = local_event_range(raw, cached)
+    immediate_legacy = immediate_event_range(raw, cached, start, end, legacy=True)
+    prior_starts = {start, ocr_range[0] if ocr_range else None,
+                    immediate_legacy[0] if immediate_legacy else None}
+    prior_ids = {event_id for account in accounts for value in prior_starts if value
+                 if (event_id := _instagram_event_id(account, value))}
+    start, end = ocr_range or immediate_event_range(raw, cached, start, end) or (start, end)
+    supported = None
+    if start:
+        supported = ((start, end) if is_single_session_reminder(raw, cached, start, end)
+                     else align_printed_dates(raw, cached, start, end))
+    captions = [str(value).strip() for value in (raw.get("caption"),
+                (raw.get("reshared_post") or {}).get("caption")) if value and str(value).strip()]
+    caption = "\n".join(dict.fromkeys(captions))
+    qr_urls = old.get("_qr_urls")
+    return StoryContext(
+        origin or media or handle, host_handle, host_meta, accounts, prior_ids, supported,
+        "\n".join((str(ocr_text or ""), caption)), caption,
+        cached.get("image_url") or raw.get("image_url"), qr_urls if isinstance(qr_urls, list) else [],
+        str(ocr_text or ""), handle, known_handles,
+    )
+
+
 def _to_event_row(
     raw: dict[str, Any],
     cached: dict[str, Any],
     account_meta: dict[str, Any],
     scraped_at: str,
     known_handles: Iterable[str] = (),
-    *,
-    assessed_kind: str | None = None,
 ) -> tuple[dict[str, Any] | None, set[str]]:
-    """Return the event row plus any prior event IDs to retire.
+    """Map an unregistered legacy story and retain IDs superseded by its reading.
 
-    Superseded IDs are surfaced out-of-band so the row stays a clean DB record;
-    the caller uses them to delete stale rows when OCR refines the start time
-    into a new ID, when source text provides no date, or when the story turns
-    out to reshare another account's post and the event re-keys onto that
-    account. The caller retains IDs supported by another valid story.
+    Assessed publication uses supported occurrences directly. This adapter keeps
+    the old notice/date/grid checks for `_collect_event_rows` and reconciliation.
     """
     if cached.get("status") != "ok":
         return None, set()
@@ -713,175 +725,42 @@ def _to_event_row(
     if not isinstance(llm, dict) or not llm.get("is_event"):
         return None, set()
 
+    context = _story_context(raw, cached, account_meta, known_handles)
+    prior_ids = context.prior_ids
     description = str(llm.get("description") or "")
-    tags = _clean_tags(llm.get("tags"))
-    ocr_range = local_event_range(raw, cached)
-    llm_starts_at = normalize_timestamptz(llm.get("starts_at"))
-    llm_ends_at = normalize_timestamptz(llm.get("ends_at"))
-
-    # A reshared post carries the original author's byline, which the LLM
-    # reads as body text. Keep it out of the title, and key the event on the
-    # original author so every club that reshares one post lands on one row.
     ocr_text = cached.get("ocr_text")
-    origin_handle = _reshared_owner(raw) or reshared_origin_handle(
-        ocr_text, str(raw.get("handle") or ""), known_handles
-    )
-    handle = str(raw.get("handle") or "")
-    media_identity = _reshared_media_identity(raw)
-    identity_handle = origin_handle or media_identity or handle
-    legacy_range = immediate_event_range(
-        raw, cached, llm_starts_at, llm_ends_at, legacy=True
-    )
-    prior_starts = {
-        llm_starts_at,
-        ocr_range[0] if ocr_range else None,
-        legacy_range[0] if legacy_range else None,
-    }
-    identity_accounts = {handle, origin_handle, media_identity}
-    prior_ids = {
-        event_id
-        for account in identity_accounts if account
-        for start in prior_starts if start
-        if (event_id := _instagram_event_id(account, start))
-    }
-    title = strip_byline(
-        str(llm.get("title") or ""),
-        ocr_text,
-        str(raw.get("handle") or ""),
-        known_handles,
-    )
+    title = strip_byline(str(llm.get("title") or ""), ocr_text, str(raw.get("handle") or ""), known_handles)
     if not title:
-        # The card showed only chrome and a truncated caption, so the LLM had
-        # no real title to find. The caption still names the event usefully.
         title = _caption_fallback_title(description)
-
-    if assessed_kind is None and is_informational_notice(title, description, str(ocr_text or "")):
+    if is_informational_notice(title, description, str(ocr_text or "")):
         log.info("extract %s: skipping informational notice", raw.get("id"))
         return None, prior_ids
-    if assessed_kind is None and not has_source_date(raw, cached):
+    if not has_source_date(raw, cached):
         log.info("extract %s: skipping event without a source date", raw.get("id"))
         return None, prior_ids
-    if assessed_kind is not None:
-        starts_at, ends_at = llm_starts_at, llm_ends_at
-    elif ocr_range is not None:
-        starts_at, ends_at = ocr_range
-    else:
-        starts_at, ends_at = immediate_event_range(
-            raw, cached, llm_starts_at, llm_ends_at
-        ) or (llm_starts_at, llm_ends_at)
-    if not title or not starts_at:
+    if not title:
         return None, set()
-
-    supported_range = (
-        (starts_at, ends_at) if assessed_kind is not None or is_single_session_reminder(raw, cached, starts_at, ends_at)
-        else align_printed_dates(raw, cached, starts_at, ends_at)
-    )
-    if supported_range is None:
+    if context.legacy_range is None:
         log.info("extract %s: skipping date unsupported by source", raw.get("id"))
         return None, prior_ids
-    starts_at, ends_at = supported_range
-
-    ends_at = midnight_end(ocr_text, starts_at, ends_at)
-    if ends_at and datetime.fromisoformat(ends_at) <= datetime.fromisoformat(starts_at):
-        log.info(
-            "extract %s: dropping invalid end time (%s <= %s)",
-            raw.get("id"),
-            ends_at,
-            starts_at,
-        )
-        ends_at = None
-
-    if (assessed_kind is None and looks_like_schedule_grid(cached.get("ocr_text"), starts_at, ends_at)
+    starts_at, ends_at = context.legacy_range
+    if (looks_like_schedule_grid(ocr_text, starts_at, ends_at)
             and not is_single_session_reminder(raw, cached, starts_at, ends_at)):
-        log.info(
-            "extract %s: skipping ambiguous multi-event schedule (%s -> %s)",
-            raw.get("id"),
-            starts_at,
-            ends_at,
-        )
+        log.info("extract %s: skipping ambiguous multi-event schedule (%s -> %s)",
+                 raw.get("id"), starts_at, ends_at)
         return None, prior_ids
 
-    if was_stale_when_posted(raw, starts_at, ends_at):
-        log.info(
-            "extract %s: skipping event already stale when story was posted (%s)",
-            raw.get("id"),
-            starts_at,
-        )
-        return None, prior_ids
-
-    qr_values = llm.get("_qr_urls")
-    qr_urls = {url for value in (qr_values if isinstance(qr_values, list) else [])
-               if (url := normalize_rsvp_url(value))}
-    rsvp_url = (
-        normalize_rsvp_url(raw.get("story_cta_url"))
-        or (next(iter(qr_urls)) if len(qr_urls) == 1 else None)
-        or normalize_rsvp_url(llm.get("rsvp_url"), str(ocr_text or ""))
+    row = build_instagram_row(
+        raw, {**llm, "title": title, "starts_at": starts_at, "ends_at": ends_at,
+              "location": str(llm.get("location") or "").strip() or "UC Riverside"},
+        identity_handle=context.identity_handle, host_handle=context.host_handle, account_meta=context.account_meta,
+        text=context.text, image_url=context.image_url, qr_urls=context.qr_urls,
+        scraped_at=scraped_at, assessed_kind=None,
     )
-
-    # Accounts that asked not to be named publicly on scraped listings.
-    if handle in _ANONYMIZED_HOST_HANDLES or origin_handle in _ANONYMIZED_HOST_HANDLES:
-        host = ""
-        host_handle = None
-    elif origin_handle and origin_handle != handle:
-        origin_meta = known_handles.get(origin_handle, {}) if isinstance(known_handles, dict) else {}
-        host = origin_meta.get("label") or origin_handle
-        host_handle = origin_handle
-    else:
-        host = account_meta.get("label") or handle
-        host_handle = handle
-
-    # Derive the event ID from (handle, starts_at) so multiple stories about
-    # the same event (announcement flyer + "happening now" reminder) collapse
-    # into one row via upsert instead of becoming separate events. For a
-    # reshare the identity account is whoever wrote the post, not whoever
-    # reshared it, so every club amplifying one post collapses too.
-    event_id = _instagram_event_id(identity_handle, starts_at)
-    if event_id is None:
-        return None, set()
-
-    row = {
-        "id": event_id,
-        "title": title[:200],
-        "description": description,
-        "starts_at": starts_at,
-        "ends_at": ends_at,
-        "location": str(llm.get("location") or "").strip() or ("UC Riverside" if assessed_kind is None else ""),
-        "host": host,
-        "host_handle": host_handle,
-        "category": _category(llm.get("category")),
-        "content_kind": classify_content_kind(
-            "instagram",
-            title=title,
-            description=description,
-            tags=tags,
-            ocr_text=str(cached.get("ocr_text") or ""),
-            assessed_kind=assessed_kind,
-        ),
-        "tags": tags,
-        "source": "instagram",
-        "source_url": _normalize_url(raw.get("permalink")),
-        "image_url": _normalize_url(cached.get("image_url") or raw.get("image_url")),
-        "is_free": _bool_or_default(llm.get("is_free"), True),
-        "has_free_food": detect_free_food(
-            cached.get("ocr_text"), title, description, *tags
-        ),
-        "rsvp_required": _bool_or_default(llm.get("rsvp_required"), False),
-        "rsvp_url": rsvp_url,
-        "scraped_at": scraped_at,
-    }
-
-    # Retire IDs this story would have produced under an earlier reading:
-    # the LLM's pre-OCR start time, and — when the story turns out to be a
-    # reshare — the crawled account's own ID, which is where the duplicate
-    # rows live today.
-    superseded_ids = prior_ids | {
-        candidate
-        for account in identity_accounts
-        for start in {starts_at}
-        if account and start
-        if (candidate := _instagram_event_id(account, start))
-    }
-    superseded_ids.discard(event_id)
+    if row is None:
+        return None, prior_ids
+    superseded_ids = prior_ids | context.event_ids(starts_at)
+    superseded_ids.discard(row["id"])
     return row, superseded_ids
 
 

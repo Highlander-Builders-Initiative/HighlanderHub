@@ -49,7 +49,7 @@ class AssessedTombstoneTests(unittest.TestCase):
         self.addCleanup(mocked.stop)
 
     def prepare(self, origin, *, schedule=False):
-        text = 'Student Robotics Building Workshop and Student Astronomy Telescope Night, September 15-16, 2026, Tuesday-Wednesday, 3-5 PM'
+        text = 'Student Robotics Building Workshop and Student Astronomy Telescope Night, September 15-16, 2026, Tuesday-Wednesday, 3-5 PM in HUB 302'
         raw = {'id': '123', 'handle': 'campusclub', 'posted_at': NOW,
                'title': 'Student Robotics Building Workshop', 'name': 'Student Robotics Building Workshop', 'description_text': text,
                'description': text, 'first_date': '2026-09-15T15:00:00-07:00',
@@ -65,13 +65,15 @@ class AssessedTombstoneTests(unittest.TestCase):
                   'schedule': None, 'occurrences': [
                       {'title': title, 'starts_at': '2026-09-15T15:00:00-07:00',
                        'ends_at': '2026-09-15T17:00:00-07:00', 'location': 'HUB 302', 'all_day': False,
-                       'activity_evidence': evidence, 'date_evidence': evidence}
+                       'activity_evidence': evidence, 'date_evidence': evidence,
+                       'location_evidence': [{'field': field, 'quote': 'HUB 302'}]}
                       for title in ('Student Robotics Building Workshop', 'Student Astronomy Telescope Night')]}
         if schedule:
             result.update(occurrences=[], schedule={
                 'first_day': '2026-09-15', 'last_day': '2026-09-16', 'weekdays': [1, 2],
                 'windows': [{'start': '15:00', 'end': '17:00'}],
-                'title': 'Student Robotics Building Workshop', 'location': 'HUB 302'})
+                'title': 'Student Robotics Building Workshop', 'location': 'HUB 302',
+                'location_evidence': [{'field': field, 'quote': 'HUB 302'}]})
         payload = {'status': 'complete', 'source': source, 'result': semantic.validate(result, source)}
         if origin == 'instagram':
             folder = self.root / raw['handle']
@@ -109,6 +111,12 @@ class AssessedTombstoneTests(unittest.TestCase):
         record['event_ids'] = ['ucr_events_canonical']
         self.assertEqual({r['id'] for r in rows},
                          {r['id'] for r in reconcile._tombstoned_candidates({'ucr_events_canonical'})})
+
+    def test_old_schedule_without_location_citations_still_reconstructs_tombstones(self):
+        rows, record = self.prepare('instagram', schedule=True)
+        record['assessment']['result']['schedule'].pop('location_evidence')
+        self.assertEqual({row['id'] for row in rows},
+                         {row['id'] for row in reconcile._tombstoned_candidates({rows[0]['id']})})
 
     def test_known_legacy_identity_constrains_assessed_replacements(self):
         rows, record = self.prepare('localist', schedule=True)

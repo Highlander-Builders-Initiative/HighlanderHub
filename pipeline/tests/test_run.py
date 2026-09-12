@@ -189,6 +189,38 @@ class RunMainTests(unittest.TestCase):
             2, len(self.history.read_text(encoding="utf-8").strip().splitlines())
         )
 
+    def test_one_failed_extract_still_publishes_the_other_channels_data(self) -> None:
+        stories, posts = [({"id": "story"}, {"status": "ok"})], [({"media_id": "post"}, {"status": "ok"})]
+        for failed in ("extract_stories", "extract_posts"):
+            with self.subTest(failed=failed):
+                story_extract = self.fake_modules["extract_stories"].extract_all
+                post_extract = self.fake_modules["extract_posts"].extract_all
+                story_extract.side_effect = post_extract.side_effect = None
+                story_extract.return_value, post_extract.return_value = stories, (posts, {})
+                self.fake_modules[failed].extract_all.side_effect = RuntimeError("extract failed")
+                with self.assertRaises(SystemExit):
+                    self.run.main()
+                args = self.fake_modules["assessed_events"].publish_instagram.call_args.args
+                self.assertEqual([] if failed == "extract_stories" else stories, args[0])
+                self.assertEqual([] if failed == "extract_posts" else posts, args[1])
+
+    def test_empty_account_metadata_is_loaded_only_once(self) -> None:
+        loader = self.fake_modules["extract_stories"]._load_account_meta
+        loader.return_value = {}
+        self.run.main()
+        loader.assert_called_once()
+
+    def test_failed_metadata_load_is_retried_by_the_other_channel(self) -> None:
+        loader = self.fake_modules["extract_stories"]._load_account_meta
+        loader.side_effect = [RuntimeError("account load failed"), {"acm.ucr": {}}]
+        posts = [({"media_id": "post"}, {"status": "ok"})]
+        self.fake_modules["extract_posts"].extract_all.return_value = (posts, {})
+        with self.assertRaises(SystemExit):
+            self.run.main()
+        args = self.fake_modules["assessed_events"].publish_instagram.call_args.args
+        self.assertEqual(([], posts, {"acm.ucr": {}}), args[:3])
+        self.assertEqual(2, loader.call_count)
+
     def test_instagram_scrape_exit_does_not_skip_structured_pipeline(self) -> None:
         self.fake_modules["scrape"].main.side_effect = SystemExit(
             "Instagram credentials required"

@@ -67,6 +67,61 @@ class AssessmentCacheTests(unittest.TestCase):
 
 
 class SourcePublicationTests(unittest.TestCase):
+    def test_shared_builder_returns_classification_without_publication_gating(self):
+        from instagram_rows import build_instagram_row
+        raw = {"id": "123", "handle": "club"}
+        occurrence = {"title": "Bake sale fundraiser", "starts_at": "2026-09-15T15:00:00-07:00"}
+        for kind in (None, "activity"):
+            with self.subTest(kind=kind):
+                row = build_instagram_row(raw, occurrence, identity_handle="club", host_handle="club",
+                    account_meta={}, text="Bake sale fundraiser", image_url=None, qr_urls=[],
+                    scraped_at="2026-09-11T20:00:00Z", assessed_kind=kind)
+                self.assertEqual("fundraiser", row["content_kind"])
+
+    def test_assessed_story_does_not_call_the_legacy_row_mapper(self):
+        src = source()
+        raw = {"id": "123", "handle": "club", "posted_at": src["posted_at"]}
+        cached = {"status": "not_event", "ocr_text": src["texts"]["ocr_text"], "result": {}}
+        with patch("extract_stories._to_event_row", side_effect=AssertionError("Legacy mapper called")):
+            rows, _ = publication.story_rows(raw, cached,
+                {"status": "complete", "source": src, "result": decision(src)}, {}, "2026-09-11T20:00:00Z")
+        self.assertEqual(["Workshop"], [row["title"] for row in rows])
+
+    def test_old_extraction_text_cannot_suppress_or_enrich_assessed_story(self):
+        src = source()
+        raw = {"id": "123", "handle": "club", "posted_at": src["posted_at"]}
+        cached = {"status": "ok", "ocr_text": src["texts"]["ocr_text"], "result": {
+            "is_event": True, "title": "Obsolete fundraiser", "description": "Bake sale with free pizza",
+            "category": "social", "tags": ["free food"], "is_free": False,
+            "rsvp_required": True, "rsvp_url": "https://lu.ma/obsolete"}}
+        rows, _ = publication.story_rows(raw, cached,
+            {"status": "complete", "source": src, "result": decision(src)}, {}, "2026-09-11T20:00:00Z")
+        self.assertEqual(1, len(rows))
+        self.assertEqual("career", rows[0]["category"])
+        self.assertEqual([], rows[0]["tags"])
+        self.assertTrue(rows[0]["is_free"])
+        self.assertFalse(rows[0]["has_free_food"])
+        self.assertFalse(rows[0]["rsvp_required"])
+        self.assertIsNone(rows[0]["rsvp_url"])
+        self.assertNotIn("Bake sale", rows[0]["description"])
+
+    def test_reshare_chrome_is_stripped_from_an_assessed_story_title(self):
+        src = source("bluejadeandjoel and ucr_dance\n"
+                     "bluejadeandjoel Joel Mejia Smith: it's been a while\n"
+                     "Workshop September 15, 2026, 3-5 PM")
+        raw = {"id": "123", "handle": "ucr_dance", "posted_at": src["posted_at"],
+               "caption": "Spring showcase this Friday. Come through!"}
+        cached = {"status": "ok", "ocr_text": src["texts"]["ocr_text"], "result": {}}
+        for title, expected in (("bluejadeandjoel Workshop", "Workshop"),
+                                ("bluejadeandjoel and ucr_dance", "Spring showcase this Friday"),
+                                ("Workshop", "Workshop")):
+            with self.subTest(title=title):
+                result = decision(src)
+                result["occurrences"][0]["title"] = title
+                rows, _ = publication.story_rows(raw, cached,
+                    {"status": "complete", "source": src, "result": result}, {}, "2026-09-11T20:00:00Z")
+                self.assertEqual([expected], [row["title"] for row in rows])
+
     def test_assessed_story_location_stays_blank_or_uses_supplied_location(self):
         src = source()
         raw = {"id": "123", "handle": "club", "posted_at": src["posted_at"]}

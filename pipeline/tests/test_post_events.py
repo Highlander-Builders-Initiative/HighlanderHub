@@ -350,6 +350,57 @@ class PostPublicationTests(unittest.TestCase):
         rows, _ = self.rows()
         self.assertEqual("https://storage.example/slide1.jpg", rows[0]["image_url"])
 
+    def test_location_evidence_can_select_the_flyer(self):
+        self.cached["images"][1]["ocr_text"] = "Meet us in HUB 302"
+        self.record["caption"] = "Study Jam September 15, 2026, 3-5 PM"
+        self.source = publication.post_source(self.record, self.cached)
+        result = post_decision(self.source, field="caption")
+        result["occurrences"][0].update(
+            location="HUB 302", location_evidence=evidence("slide_2_ocr", "HUB 302"))
+        semantic.validate(result, self.source)
+        rows, _ = self.rows(result)
+        self.assertEqual("https://storage.example/slide1.jpg", rows[0]["image_url"])
+
+    def test_a_recap_is_skipped_but_claims_its_previous_identities(self):
+        self.record["posted_at"] = "2026-09-17T17:00:00+00:00"
+        rows, known = self.rows()
+        self.assertEqual([], rows)
+        self.assertEqual({"ig_acm.ucr_20260915T2200Z", "ig_post_700_20260915T2200Z"}, known)
+
+    def test_posted_during_the_event_or_missing_post_time_stays_publishable(self):
+        for posted_at in ("2026-09-15T23:00:00Z", None):
+            with self.subTest(posted_at=posted_at):
+                self.record["posted_at"] = posted_at
+                self.assertEqual(1, len(self.rows()[0]))
+
+    def test_caption_only_midnight_range_is_repaired(self):
+        self.record["caption"] = "Study Jam September 15, 2026, 9pm–12am"
+        for slide in self.cached["images"]:
+            slide["ocr_text"] = ""
+        self.source = publication.post_source(self.record, self.cached)
+        result = post_decision(self.source, field="caption")
+        result["occurrences"][0].update(starts_at="2026-09-15T21:00:00-07:00",
+                                        ends_at="2026-09-15T00:00:00-07:00")
+        rows, _ = self.rows(result)
+        self.assertEqual("2026-09-16T07:00:00+00:00", rows[0]["ends_at"])
+
+    def test_flyer_supplies_category_and_free_food_separately(self):
+        self.cached["images"][1]["ocr_text"] += " Resume workshop. FREE PIZZA!"
+        rows, _ = self.rows()
+        self.assertEqual("career", rows[0]["category"])
+        self.assertTrue(rows[0]["has_free_food"])
+
+    def test_make_update_dispatches_a_post_without_a_mapper_argument(self):
+        payload = {"status": "complete", "source": self.source,
+                   "result": post_decision(self.source, field="slide_2_ocr")}
+        with patch.object(publication, "cached_assessment", return_value=payload):
+            update = publication.make_update(self.source, self.record, self.cached, None,
+                                             self.meta, "2026-09-11T12:00:00Z")
+        self.assertEqual("complete", update["assessment"]["status"])
+        self.assertEqual(["ig_acm.ucr_20260915T2200Z"], [row["id"] for row in update["rows"]])
+        self.assertEqual("https://storage.example/slide1.jpg", update["rows"][0]["image_url"])
+        self.assertEqual(self.record["caption"], update["rows"][0]["description"])
+
     def test_a_caption_only_event_falls_back_to_the_lead_image(self):
         cached = {"status": "ok", "images": [
             {"media_key": "700_0_n", "index": 0, "ocr_text": "", "qr_urls": [],
@@ -415,6 +466,47 @@ class PostPublicationTests(unittest.TestCase):
         self.cached["images"][1]["qr_urls"] = ["https://instagram.com/acm.ucr"]
         rows, _ = self.rows()
         self.assertIsNone(rows[0]["rsvp_url"])
+
+    def test_stories_and_posts_share_public_row_policy(self):
+        self.record["caption"] = "Join us! Register at https://lu.ma/studyjam"
+        self.cached["images"][1]["ocr_text"] += " Resume workshop. FREE PIZZA!"
+        for handle in ("acm.ucr", "highlander_opps"):
+            with self.subTest(handle=handle):
+                self.record.update(handle=handle, owner_username=handle)
+                self.source = publication.post_source(self.record, self.cached)
+                post = self.rows()[0][0]
+                raw = {**self.record, "id": "555"}
+                cached = {"status": "ok", "ocr_text": self.cached["images"][1]["ocr_text"],
+                          "result": {"is_event": True, "title": "Old Gemini title",
+                                     "starts_at": "2026-09-14T10:00:00-07:00",
+                                     "description": "Stale Gemini-only description", "category": "social",
+                                     "tags": ["stale tag"], "is_free": False, "rsvp_required": True,
+                                     "rsvp_url": "https://lu.ma/obsolete", "location": "Invented room"}}
+                source = publication.story_source(raw, cached)
+                result = post_decision(source, field="ocr_text")
+                story = publication.story_rows(raw, cached,
+                    {"status": "complete", "source": source, "result": result},
+                    self.meta, "2026-09-11T12:00:00+00:00")[0][0]
+                for key in ("id", "title", "starts_at", "ends_at", "host", "host_handle",
+                            "category", "has_free_food", "rsvp_required", "rsvp_url", "content_kind",
+                            "description", "tags", "is_free", "location"):
+                    self.assertEqual(post[key], story[key], key)
+                self.assertEqual("career", post["category"])
+                self.assertTrue(post["has_free_food"])
+                self.assertTrue(post["rsvp_required"])
+                self.assertEqual("https://lu.ma/studyjam", post["rsvp_url"])
+                if handle == "highlander_opps":
+                    self.assertEqual(("", None), (post["host"], post["host_handle"]))
+
+    def test_assessed_fundraisers_remain_outside_both_public_channels(self):
+        result = post_decision(self.source, field="slide_2_ocr")
+        result["occurrences"][0]["title"] = "Bake sale fundraiser"
+        self.assertEqual([], self.rows(result)[0])
+        raw = {**self.record, "id": "555"}
+        cached = {"status": "ok", "ocr_text": self.cached["images"][1]["ocr_text"], "result": {}}
+        self.assertEqual([], publication.story_rows(raw, cached,
+            {"status": "complete", "source": self.source, "result": result}, self.meta,
+            "2026-09-11T12:00:00Z")[0])
 
 
 class PostAndReshareIdentityTests(unittest.TestCase):
