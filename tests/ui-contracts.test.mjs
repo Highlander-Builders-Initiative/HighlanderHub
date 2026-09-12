@@ -130,7 +130,6 @@ test("calendar loads its own month-range events outside feed pagination", () => 
 test("app routes expose loading UI while server data resolves", () => {
   const sharedLoading = read("src/components/ui/RouteLoadingPage.tsx");
   const routeLoaders = [
-    "src/app/events/[id]/loading.tsx",
     "src/app/about/loading.tsx",
     "src/app/submit/loading.tsx",
   ];
@@ -146,6 +145,37 @@ test("app routes expose loading UI while server data resolves", () => {
   // The landing page has no loading route on purpose: it is the site's front
   // door, and a full-page interstitial there reads as a stall, not as progress.
   assert.equal(existsSync(sourceFile("src/app/loading.tsx")), false);
+});
+
+test("event detail loading renders handed-off events and mirrors the page layout", () => {
+  const loader = read("src/app/events/[id]/loading.tsx");
+  const loading = read("src/components/events/EventDetailLoading.tsx");
+  const view = read("src/components/events/EventDetailView.tsx");
+  const page = read("src/app/events/[id]/page.tsx");
+  const card = read("src/components/events/EventCard.tsx");
+
+  // Same shell as the page, not the generic interstitial.
+  assert.doesNotMatch(loader, /RouteLoadingPage/);
+  assert.match(loader, /aria-busy="true"/);
+  assert.match(loader, /EVENT_DETAIL_MAIN_CLASS/);
+  assert.match(page, /EVENT_DETAIL_MAIN_CLASS/);
+
+  // Opened from a list card: the card's event renders the real view at once.
+  assert.match(card, /stashEventForDetail\(event\)/);
+  assert.match(loading, /peekEventForDetail/);
+  assert.match(loading, /<EventDetailView event=\{handedOff\} \/>/);
+  assert.match(page, /<EventDetailView event=\{event\} \/>/);
+
+  // Opened cold: the skeleton borrows the view's layout classes, not copies.
+  for (const layout of [
+    "EVENT_DETAIL_CONTAINER_CLASS",
+    "EVENT_DETAIL_FLYER_GRID_CLASS",
+    "EVENT_DETAIL_ASIDE_CLASS",
+    "EVENT_DETAIL_MOBILE_BAR_CLASS",
+  ]) {
+    assert.match(view, new RegExp(`export const ${layout}`));
+    assert.match(loading, new RegExp(`className=\\{${layout}\\}`));
+  }
 });
 
 test("/events loading mirrors the live shell and skeletons only the feed", () => {
@@ -257,7 +287,8 @@ test("home flyer marquee animates with wrapped transforms", () => {
 });
 
 test("event detail page exposes RSVP / calendar / share actions", () => {
-  const page = read("src/app/events/[id]/page.tsx");
+  // The page body lives in EventDetailView, shared with the loading state.
+  const page = read("src/components/events/EventDetailView.tsx");
   const calendarMenu = read("src/components/events/EventCalendarMenu.tsx");
 
   assert.match(page, /EventCalendarMenu/);

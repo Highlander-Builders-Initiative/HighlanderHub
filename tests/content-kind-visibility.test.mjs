@@ -71,7 +71,7 @@ test("admin can edit content_kind across all four kinds", () => {
 test("deadlines render deadline-oriented affordances", () => {
   const card = read("src/components/events/EventCard.tsx");
   const timeColumn = read("src/components/events/EventListRowTimeColumn.tsx");
-  const detail = read("src/app/events/[id]/page.tsx");
+  const detail = read("src/components/events/EventDetailView.tsx");
   const a11y = read("src/lib/events/a11y.ts");
 
   assert.match(timeColumn, /isDeadlineKind/);
