@@ -251,6 +251,136 @@ class RestartRecoveryTests(unittest.TestCase):
         self.assertEqual("2026-09-05T00:00:00+00:00", resolved["acm.ucr"]["scanned_through"])
 
 
+class FakeMirror:
+    """The `instagram_posts` reads an archive restore actually makes."""
+
+    def __init__(self, rows):
+        self.rows = sorted(rows, key=lambda row: str(row["media_id"]))
+        self.ranges: list[tuple[int, int]] = []
+        self.id_requests: list[list[str]] = []
+        self._selected: list[str] = []
+        self._page: list[dict] = []
+
+    def __call__(self):  # stands in for db.client()
+        return self
+
+    def table(self, name):
+        assert name == "instagram_posts", name
+        return self
+
+    def select(self, columns):
+        self._selected = [column.strip() for column in columns.split(",")]
+        return self
+
+    def order(self, field):
+        return self
+
+    def range(self, start, end):
+        # PostgREST ranges are inclusive on both ends.
+        self.ranges.append((start, end))
+        self._page = self.rows[start:end + 1]
+        return self
+
+    def in_(self, field, values):
+        self.id_requests.append(list(values))
+        wanted = {str(value) for value in values}
+        self._page = [row for row in self.rows if str(row[field]) in wanted]
+        return self
+
+    def execute(self):
+        page, self._page = self._page, []
+        return SimpleNamespace(data=[
+            {column: row.get(column) for column in self._selected} for row in page])
+
+
+class ArchiveRestoreTests(unittest.TestCase):
+    """A lost `data/` directory comes back from the durable mirror."""
+
+    def setUp(self):
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        self.root = Path(directory.name)
+        patcher = patch.object(post_archive, "POSTS_DIR", self.root / "posts")
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def mirror_row(self, media_id="700", *, caption="Flyer", handle="acm.ucr",
+                   first_seen="2026-09-01T00:00:00+00:00"):
+        """One `instagram_posts` row, built by the collector's own serializer."""
+        record = scrape_posts.serialize_post(
+            FakePost(media_id, "2026-09-02T09:00:00+00:00", caption=caption, owner=handle),
+            handle, seen_at=instant("2026-09-02T12:00:00+00:00"))
+        return {"media_id": media_id, "handle": handle,
+                "first_seen_at": first_seen, "record": record}
+
+    def hydrate(self, client):
+        with patch.dict(sys.modules, {"db": SimpleNamespace(client=client)}):
+            return post_archive.hydrate_local_posts()
+
+    def test_a_lost_archive_is_restored_from_the_mirror(self):
+        mirror = FakeMirror([self.mirror_row("700"),
+                             self.mirror_row("800", caption="Bake sale")])
+        self.assertEqual(2, self.hydrate(mirror))
+        saved = {record["media_id"]: record for record in post_archive.iter_local_posts()}
+        self.assertEqual({"700", "800"}, set(saved))
+        self.assertEqual("Bake sale", saved["800"]["caption"])
+        # The durable first-seen survives: a restored post is not newly found.
+        self.assertEqual("2026-09-01T00:00:00+00:00", saved["700"]["first_seen_at"])
+
+    def test_a_restored_post_is_not_rediscovered_as_new(self):
+        # The whole point of restoring: the next scan sees the post it already
+        # collected, so it costs no OCR, no model call, and no "discovered".
+        row = self.mirror_row("700")
+        self.hydrate(FakeMirror([row]))
+        rescanned = dict(row["record"], fetched_at="2026-09-11T12:00:00+00:00")
+        self.assertEqual("unchanged", post_archive.write_post(rescanned))
+
+    def test_a_post_already_on_disk_is_never_overwritten(self):
+        # The local file was written before the mirror row it produced, so it is
+        # at least as fresh — a stale mirror must not undo a caption correction.
+        post_archive.write_post(
+            self.mirror_row("700", caption="Study jam is cancelled")["record"])
+        mirror = FakeMirror([self.mirror_row("700", caption="Study jam")])
+        self.assertEqual(0, self.hydrate(mirror))
+        # Nothing was even fetched, so an intact archive costs one request.
+        self.assertEqual([], mirror.id_requests)
+        saved = next(iter(post_archive.iter_local_posts()))
+        self.assertEqual("Study jam is cancelled", saved["caption"])
+
+    def test_a_corrupt_local_file_counts_as_absent_and_is_replaced(self):
+        path = post_archive.post_path("acm.ucr", "700")
+        path.parent.mkdir(parents=True)
+        path.write_text("{ truncated")
+        self.assertEqual(1, self.hydrate(FakeMirror([self.mirror_row("700")])))
+        self.assertEqual("Flyer", post_archive.read_json(path)["caption"])
+
+    def test_mirrored_identifiers_never_become_paths_outside_the_archive(self):
+        for value in ("..", ".", "../../escaped", "a/b", "", None):
+            with self.subTest(value=value):
+                self.assertEqual("", post_archive._path_token(value))
+        rows = [self.mirror_row("../../escaped"), self.mirror_row("700", handle="../..")]
+        self.assertEqual(0, self.hydrate(FakeMirror(rows)))
+        self.assertFalse((self.root / "posts").exists())
+
+    def test_an_unreadable_mirror_costs_coverage_not_the_run(self):
+        for failure in (RuntimeError("supabase unavailable"),
+                        SystemExit("Supabase env missing")):
+            with self.subTest(failure=type(failure).__name__):
+                def explode():
+                    raise failure
+
+                self.assertEqual(0, self.hydrate(explode))
+
+    def test_a_mirror_larger_than_one_page_is_walked_completely(self):
+        mirror = FakeMirror([self.mirror_row(str(media_id))
+                             for media_id in (700, 800, 900)])
+        with patch.object(post_archive, "RESTORE_PAGE", 2):
+            self.assertEqual(3, self.hydrate(mirror))
+        # An inclusive-range off-by-one here would silently skip a post.
+        self.assertEqual([(0, 1), (2, 3)], mirror.ranges)
+        self.assertEqual(3, len(list(post_archive.iter_local_posts())))
+
+
 class CollectionRunTests(PostArchiveTests):
     """The collector entrypoint end to end, with Instagram mocked out."""
 
