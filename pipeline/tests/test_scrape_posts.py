@@ -400,8 +400,10 @@ class CollectionRunTests(PostArchiveTests):
              patch.object(scrape_posts, "_write_remote_checkpoints"), \
              patch.object(scrape_posts, "refresh_candidates", return_value=refresh or {}), \
              patch.object(scrape_posts, "_sleep_between_accounts"), \
+             patch.object(scrape_posts, "hydrate_local_posts") as hydrate, \
              patch.object(scrape_posts, "ensure_post_dirs"):
             scrape_posts.main()
+        self.hydrated = hydrate
 
     def test_a_first_run_activates_accounts_and_imports_nothing_older(self):
         accounts = [{"handle": "acm.ucr"}, {"handle": "ieee.ucr"}]
@@ -417,6 +419,12 @@ class CollectionRunTests(PostArchiveTests):
         checkpoints = scrape_posts.load_local_checkpoints()
         self.assertEqual({"acm.ucr", "ieee.ucr"}, set(checkpoints))
         self.assertTrue(all(entry["activated_at"] for entry in checkpoints.values()))
+
+    def test_collection_restores_the_archive_before_judging_what_is_new(self):
+        # Discovery, the refresh pass, and the extraction that follows all read
+        # the archive, so the restore has to happen before any of them looks.
+        self.run_main([{"handle": "acm.ucr"}], {})
+        self.hydrated.assert_called_once_with()
 
     def test_a_later_run_collects_what_was_published_after_activation(self):
         scrape_posts.write_local_checkpoints({"acm.ucr": {

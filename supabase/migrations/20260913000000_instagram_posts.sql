@@ -11,6 +11,13 @@
 -- Instagram in 24h, making the local archive the only record), posts remain
 -- refetchable — this table exists so losing the local cache does not repeat
 -- paid extraction or re-run discovery from scratch.
+--
+-- `post_archive.hydrate_local_posts` is what makes that true: collection and
+-- extraction both restore missing archive files from here before reading the
+-- archive. `record` is the serialized archive file and `first_seen_at` the
+-- column that keeps a restored post from looking newly discovered. Restoring
+-- cannot re-admit history — every row here was already accepted past its
+-- account's activation boundary.
 create table public.instagram_posts (
   media_id          text primary key,
   handle            text not null,
