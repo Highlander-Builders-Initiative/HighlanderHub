@@ -61,13 +61,17 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
+  modal,
 }: {
   children: React.ReactNode;
+  /** @modal slot: event detail as an overlay when opened from a card. */
+  modal: React.ReactNode;
 }) {
   return (
     <html lang="en" className={`${bricolage.variable} ${ibmPlexMono.variable}`}>
       <body>
         {children}
+        {modal}
         <Analytics />
       </body>
     </html>

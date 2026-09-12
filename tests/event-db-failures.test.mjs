@@ -22,7 +22,7 @@ test("missing detail rows still use the not-found path", () => {
   assert.match(source, /if \(!row\) return null;/);
 });
 
-test("missing event details render the app-level not-found page", () => {
+test("unknown routes render the app-level not-found page", () => {
   const notFound = read("src/app/not-found.tsx");
 
   assert.match(notFound, /function NotFound/);

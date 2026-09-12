@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { waitForEventsBrowserHydration } from "./events-browser-helpers";
 
 test("browses events, opens detail, and submits an event for review", async ({
   page,
@@ -6,6 +7,7 @@ test("browses events, opens detail, and submits an event for review", async ({
   await page.goto("/events");
 
   await expect(page.getByLabel(/Search events/i)).toBeVisible();
+  await waitForEventsBrowserHydration(page);
 
   await page
     .getByRole("link", {
@@ -13,14 +15,15 @@ test("browses events, opens detail, and submits an event for review", async ({
     })
     .click();
 
+  const dialog = page.getByRole("dialog");
   await expect(
-    page.getByRole("heading", { name: "E2E Test: Highlander Hub Showcase" })
+    dialog.getByRole("heading", { name: "E2E Test: Highlander Hub Showcase" })
   ).toBeVisible();
-  await expect(page.getByRole("button", { name: /Back/i })).toBeVisible();
+  await expect(dialog.getByRole("button", { name: "Close event" })).toBeVisible();
   await expect(
-    page.getByRole("button", { name: /Add to calendar/i })
+    dialog.getByRole("button", { name: /Add to calendar/i })
   ).toBeVisible();
-  await expect(page.getByRole("button", { name: /Share/i })).toBeVisible();
+  await expect(dialog.getByRole("button", { name: /Share/i })).toBeVisible();
 
   await page.goto("/submit");
   await page.route("**/api/submissions", async (route) => {

@@ -68,6 +68,8 @@ function EventCardComponent({
     <div className="relative">
       <Link
         href={href}
+        // Opens as an overlay (@modal intercepted route); the list keeps its place.
+        scroll={false}
         onClick={onOpen}
         onMouseEnter={prefetch}
         onFocus={prefetch}

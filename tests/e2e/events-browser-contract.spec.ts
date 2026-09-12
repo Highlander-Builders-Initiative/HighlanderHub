@@ -49,7 +49,7 @@ test("club suggestion highlight survives narrowed search results", async ({
 
   await search.fill("mcvb");
 
-  await expect(page.getByRole("option", { name: /ucr mcvb/i })).toBeVisible();
+  await expect(page.getByRole("option", { name: /ucr_mcvb/i })).toBeVisible();
   expect(pageErrors).toEqual([]);
 });
 

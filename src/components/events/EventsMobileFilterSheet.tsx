@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
+import { useDialogFocusTrap } from "@/components/ui/useDialogFocusTrap";
 import { EventCategoryFilter } from "./EventCategoryFilter";
 import { EventDayWindowFilter } from "./EventDayWindowFilter";
 import { EventsMiniCalendar } from "./EventsMiniCalendar";
@@ -26,15 +27,6 @@ type Props = {
   resultCount: number;
 };
 
-const FOCUSABLE_SELECTOR = [
-  "button:not([disabled])",
-  "[href]",
-  "input:not([disabled])",
-  "select:not([disabled])",
-  "textarea:not([disabled])",
-  "[tabindex]:not([tabindex='-1'])",
-].join(",");
-
 export function EventsMobileFilterSheet({
   open,
   onClose,
@@ -54,61 +46,9 @@ export function EventsMobileFilterSheet({
   hasActiveFilters,
   resultCount,
 }: Props) {
-  const closeRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
-  const lastActiveElementRef = useRef<HTMLElement | null>(null);
 
-  useEffect(() => {
-    if (!open) return;
-
-    lastActiveElementRef.current = document.activeElement as HTMLElement | null;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    const focusables = () =>
-      Array.from(panelRef.current?.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR) ?? [])
-        .filter((el) => !el.hasAttribute("disabled") && el.tabIndex !== -1);
-
-    const first = focusables()[0] ?? closeRef.current;
-    first?.focus();
-
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        onClose();
-        return;
-      }
-
-      if (e.key !== "Tab") return;
-
-      const tabbables = focusables();
-      if (tabbables.length === 0) {
-        e.preventDefault();
-        closeRef.current?.focus();
-        return;
-      }
-
-      const firstTabbable = tabbables[0];
-      const lastTabbable = tabbables[tabbables.length - 1];
-      const active = document.activeElement as HTMLElement | null;
-
-      if (e.shiftKey) {
-        if (!active || active === firstTabbable || !panelRef.current?.contains(active)) {
-          e.preventDefault();
-          lastTabbable.focus();
-        }
-      } else if (!active || active === lastTabbable || !panelRef.current?.contains(active)) {
-        e.preventDefault();
-        firstTabbable.focus();
-      }
-    };
-    window.addEventListener("keydown", onKey);
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", onKey);
-      lastActiveElementRef.current?.focus?.();
-    };
-  }, [open, onClose]);
+  useDialogFocusTrap({ active: open, panelRef, onClose });
 
   if (!open) return null;
 
@@ -143,7 +83,6 @@ export function EventsMobileFilterSheet({
             Filter events
           </h2>
           <button
-            ref={closeRef}
             type="button"
             onClick={onClose}
             aria-label="Close filters"
