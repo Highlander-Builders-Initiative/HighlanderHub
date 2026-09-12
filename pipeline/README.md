@@ -330,7 +330,9 @@ activity, deadline, application, service schedule, announcement, or uncertain.
 The decision records the role of its dates and exact source evidence. Awareness
 observances are announcements; real workshops or vigils during a campaign remain
 activities. All-day and multi-day activities remain supported. Explicit bounded
-recurring hours become individual sessions, with printed breaks respected.
+recurring hours become individual sessions, with printed breaks respected. A
+timed occurrence may not exceed 24 hours, so seasonal hours and daily visiting
+hours cannot publish as one continuous weeks-long span.
 
 `assessed_events.py` applies student eligibility and fundraising policy separately,
 then publishes student events/deadlines. Nonpublic decisions remain inspectable

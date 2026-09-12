@@ -96,7 +96,9 @@ locations or clock times; use an empty location when absent. Respect explicit
 years/timezones; otherwise use America/Los_Angeles and infer the year from
 posted_at. An explicit relative date may use posted_at to resolve it, but
 posted_at alone is never an event date. Date-only events start at local midnight
-and end at midnight AFTER the last included day (exclusive end).
+and end at midnight AFTER the last included day (exclusive end). A timed
+occurrence never spans more than 24 hours: anything longer is an all-day
+activity, a schedule, or separate occurrences, never one clock-bounded range.
 Every starts_at and ends_at MUST include the correct numeric UTC offset, such
 as 2026-09-15T15:00:00-07:00. Never return timezone-naive timestamps.
 Deadlines MUST return one occurrence at the cutoff timestamp (ends_at=null),
@@ -247,14 +249,20 @@ def validate_occurrence(item: dict, source: dict) -> None:
                 raise ValueError("Occurrence offset disagrees with America/Los_Angeles")
     if end and end <= start:
         raise ValueError("Invalid occurrence duration")
+    # A seasonal range printed with its daily hours ("August 11 to September 17
+    # ... 10:00 AM to 3:00 PM") reads as one long timed span whose endpoints and
+    # clocks are all genuinely printed, so grounding alone cannot reject it.
+    # Repeated hours are a schedule or separate occurrences; only an all-day
+    # activity runs continuously for days.
+    if end and not item["all_day"] and end - start > timedelta(hours=24):
+        raise ValueError("A timed occurrence cannot exceed 24 hours; recurring hours need a schedule or separate occurrences")
     # Use the supplied offset for sources that explicitly name another zone.
     if not _day_supported(start.date(), text, source):
         raise ValueError("Occurrence start date lacks source support")
-    if end:
-        last = end.date() - timedelta(days=1) if item["all_day"] else end.date()
-        overnight = not item["all_day"] and end - start <= timedelta(hours=24)
-        if not overnight and not _day_supported(last, text, source):
-            raise ValueError("Occurrence end date lacks source support")
+    # A timed span is now at most overnight, and its next-day end need not be
+    # printed. A multi-day all-day activity must still print its last day.
+    if end and item["all_day"] and not _day_supported(end.date() - timedelta(days=1), text, source):
+        raise ValueError("Occurrence end date lacks source support")
     if item["all_day"]:
         if end is None or start.time() != time(0) or end.time() != time(0):
             raise ValueError("All-day occurrences use midnight boundaries")
@@ -325,6 +333,11 @@ def validate(result: Any, source: dict) -> dict:
         raise ValueError("Incompatible publication choices")
     if kind in {"activity", "deadline"} and not choices:
         raise ValueError("Activity or deadline requires a supported occurrence")
+    # Recurring availability is a bounded pattern, never loose sessions: the
+    # schedule is what stops it from collapsing back into one span. Publishing
+    # nothing stays a valid outcome when the pattern cannot be established.
+    if role == "recurring_hours" and result["occurrences"]:
+        raise ValueError("Recurring hours need a bounded schedule, not standalone occurrences")
     if result["use_source_occurrences"]:
         if not source.get("source_occurrences") or kind == "service_schedule":
             raise ValueError("No authoritative source occurrences")
