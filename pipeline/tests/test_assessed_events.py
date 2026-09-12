@@ -67,6 +67,45 @@ class AssessmentCacheTests(unittest.TestCase):
 
 
 class SourcePublicationTests(unittest.TestCase):
+    def test_assessed_story_location_stays_blank_or_uses_supplied_location(self):
+        src = source()
+        raw = {"id": "123", "handle": "club", "posted_at": src["posted_at"]}
+        cached = {"status": "ok", "ocr_text": src["texts"]["ocr_text"], "result": {}}
+        for location, expected in (("", ""), ("  ", ""), (" HUB 302 ", "HUB 302")):
+            with self.subTest(location=location):
+                result = decision(src)
+                result["occurrences"][0]["location"] = location
+                rows, _ = publication.story_rows(raw, cached,
+                    {"status": "complete", "source": src, "result": result}, {}, "2026-09-11T20:00:00Z")
+                self.assertEqual([expected], [row["location"] for row in rows])
+
+    def test_structured_occurrences_preserve_source_location_when_assessment_is_blank(self):
+        for origin in ("localist", "highlander_link"):
+            raw = {"id": 1, "title": "Workshop", "name": "Workshop",
+                   "filters": {"event_audience": [{"name": "Students"}]},
+                   "first_date": "2026-09-15T15:00:00-07:00", "startsOn": "2026-09-15T15:00:00-07:00",
+                   "location_name": "HUB 302", "location": "HUB 302"}
+            src = publication.structured_source(raw, origin)
+            for mode in ("occurrences", "schedule", "source"):
+                for location, expected in (("", "HUB 302"), ("  ", "HUB 302"), (" Library ", "Library")):
+                    with self.subTest(origin=origin, mode=mode, location=location):
+                        result = decision(source())
+                        result["occurrences"][0]["location"] = location
+                        if mode == "schedule":
+                            src["texts"]["description"] = "Workshop September 15, 2026 Tuesday 3-5 PM"
+                            result["date_evidence"] = [{"field": "description", "quote": src["texts"]["description"]}]
+                            result["occurrences"] = []
+                            result["schedule"] = {"title": "Workshop", "location": location,
+                                "first_day": "2026-09-15", "last_day": "2026-09-15",
+                                "weekdays": [1], "windows": [{"start": "15:00", "end": "17:00"}]}
+                        elif mode == "source":
+                            result["use_source_occurrences"] = True
+                            result["occurrences"] = []
+                            expected = "HUB 302"
+                        rows, _ = publication.structured_rows(raw, origin,
+                            {"status": "complete", "source": src, "result": result}, "2026-09-11T20:00:00Z")
+                        self.assertEqual([expected], [row["location"] for row in rows])
+
     def test_actual_observances_retire_legacy_ids_from_reviewed_source_evidence(self):
         cases = json.loads((Path(__file__).parent / "fixtures/content_assessment_cases.json").read_text())
         for case in cases[:2]:
