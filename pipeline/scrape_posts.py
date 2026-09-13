@@ -59,7 +59,7 @@ log = logging.getLogger("pipeline.scrape_posts")
 POSSIBLY_PINNED = 3
 
 # Posts are fetched one profile at a time: unlike stories there is no batched
-# endpoint, so a run is one request per account plus pagination.
+# endpoint, so a scan needs a profile query and a feed query per account, plus pagination.
 # `PacedRateController` puts a floor under the individual requests; this jitter
 # keeps the per-account cadence from looking metronomic on top of it.
 ACCOUNT_SLEEP_RANGE = (5.0, 12.0)
@@ -309,7 +309,14 @@ def scan_account(
     # returns an instant before the account was activated, so reaching the
     # boundary is the only stop condition this loop needs.
     boundary = scan_boundary(checkpoint, now)
-    profile = instaloader.Profile.from_username(L.context, handle)
+    user_id = account.get("instagram_user_id")
+    if not user_id:
+        raise ValueError(f"{handle}: missing instagram_user_id; run resolve_ids.py first")
+    # Seed the public constructor with the resolved ID. Looking up a username
+    # (including via from_id) hits the separately throttled web_profile_info.
+    profile = instaloader.Profile(
+        L.context, {"id": str(user_id), "username": handle}
+    )
 
     records: list[dict[str, Any]] = []
     counts = {"new": 0, "updated": 0, "unchanged": 0}
