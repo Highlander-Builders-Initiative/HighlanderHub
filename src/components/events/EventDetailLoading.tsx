@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import {
   EVENT_DETAIL_FLYER_FRAME_CLASS,
+  EVENT_DETAIL_MOBILE_FLYER_CLASS,
   EVENT_MODAL_ASIDE_CLASS,
   EVENT_MODAL_CONTAINER_CLASS,
   EVENT_MODAL_FLYER_GRID_CLASS,
@@ -44,11 +45,15 @@ function EventModalSkeleton() {
         Loading event
       </p>
 
-      <div className="flex flex-wrap items-center gap-2 pr-12">
+      <div className={EVENT_DETAIL_MOBILE_FLYER_CLASS}>
+        <div className="relative aspect-[4/5] w-full bg-ink/[0.04]" />
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2 md:pr-12">
         <Bar className="h-[22px] w-20" />
         <Bar className="h-[22px] w-12" />
       </div>
-      <div className="mt-5 max-w-3xl pr-12">
+      <div className="mt-3 max-w-3xl md:mt-5 md:pr-12">
         <LineBar
           line="h-[30px] sm:h-[38px]"
           bar="h-[22px] w-full sm:h-[28px] sm:w-3/4"
@@ -62,13 +67,13 @@ function EventModalSkeleton() {
           </div>
         </div>
 
-        <div className="order-1 min-w-0 md:order-2">
+        <div className="min-w-0">
           <div className="space-y-3">
             <LineBar line="h-[25px]" bar="h-4 w-44" />
             <LineBar line="h-[21px]" bar="h-3 w-52 max-w-full" />
             <LineBar line="h-[22px]" bar="h-3.5 w-48 max-w-full" />
           </div>
-          <div className="mt-10 max-w-prose">
+          <div className="mt-6 max-w-prose md:mt-10">
             {["w-full", "w-11/12", "w-full", "w-2/3"].map((width, i) => (
               <LineBar key={i} line="h-[26px]" bar={`h-3.5 ${width}`} />
             ))}
