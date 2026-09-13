@@ -471,6 +471,26 @@ class MainTests(ScrapeTestCase):
         # Jitter goes between chunks, not after the last one.
         self.assertEqual(2, self.sleep.call_count)
 
+    def test_every_instagram_request_waits_a_minimum_gap(self) -> None:
+        controller = self.scrape.PacedRateController(Mock())
+
+        with patch.object(self.scrape.random, "uniform", return_value=1.7) as uniform:
+            controller.wait_before_query("iphone")
+
+        uniform.assert_called_once_with(*self.scrape.REQUEST_GAP_RANGE)
+        self.sleep.assert_called_once_with(1.7)
+
+    def test_main_paces_requests_through_the_loader(self) -> None:
+        with patch.object(self.scrape, "_load_scrape_accounts", return_value=[]):
+            with patch.object(
+                self.scrape.instaloader, "Instaloader", return_value=self.loader()
+            ) as build:
+                self.scrape.main()
+
+        self.assertIs(
+            self.scrape.PacedRateController, build.call_args.kwargs["rate_controller"]
+        )
+
     def test_accounts_without_a_userid_are_skipped_and_named(self) -> None:
         accounts = [
             account("acm_ucr", POSTING["acm_ucr"]),
