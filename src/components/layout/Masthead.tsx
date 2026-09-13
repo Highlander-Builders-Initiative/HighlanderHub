@@ -1,11 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { MASTHEAD_NAV_LINKS, type SiteNavLink } from "@/lib/site-nav";
+import { SITE_NAV_LINKS, isNavLinkActive } from "@/lib/site-nav";
 
+// Current page: ink with an underline (DESIGN.md's underline-from-active).
+// The rest sit a step quieter so the marker reads at a glance.
 const NAV_LINK_CLASS =
-  "interactive-focus px-1 py-2 text-ink transition-colors hover:text-ink/70";
+  "interactive-focus px-1 py-2 underline-offset-[6px] decoration-2 transition-colors";
+const NAV_LINK_ACTIVE_CLASS = "text-ink underline";
+const NAV_LINK_IDLE_CLASS = "text-ink/60 hover:text-ink";
 
 const HIDE_THRESHOLD = 80;
 const DELTA = 6;
@@ -20,8 +25,6 @@ type MastheadProps = {
    * because no rail exists below the lg breakpoint.
    */
   hideNavOnDesktop?: boolean;
-  /** Override the inline nav links (defaults to the site masthead set). */
-  navLinks?: readonly SiteNavLink[];
 };
 
 export function Masthead({
@@ -29,8 +32,8 @@ export function Masthead({
   position = "sticky",
   variant = "glass",
   hideNavOnDesktop = false,
-  navLinks = MASTHEAD_NAV_LINKS,
 }: MastheadProps) {
+  const pathname = usePathname();
   const [hidden, setHidden] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const lastY = useRef(0);
@@ -110,11 +113,19 @@ export function Masthead({
             hideNavOnDesktop ? "lg:hidden" : ""
           }`}
         >
-          {navLinks.map((link) => (
-            <Link key={link.href} href={link.href} className={NAV_LINK_CLASS}>
-              {link.label}
-            </Link>
-          ))}
+          {SITE_NAV_LINKS.map((link) => {
+            const active = isNavLinkActive(link.href, pathname);
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                aria-current={active ? "page" : undefined}
+                className={`${NAV_LINK_CLASS} ${active ? NAV_LINK_ACTIVE_CLASS : NAV_LINK_IDLE_CLASS}`}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
         </nav>
 
         {/* Mobile Dropdown Trigger */}
@@ -142,16 +153,22 @@ export function Masthead({
       {isOpen && (
         <div className="md:hidden border-t border-ink/10 animate-field-reveal">
           <nav aria-label="Mobile Site" className="mx-auto max-w-7xl px-4 py-3 flex flex-col gap-1 sm:px-6">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => setIsOpen(false)}
-                className="interactive-focus block rounded-md px-3 py-2 text-sm font-medium text-ink hover:bg-surface transition-colors"
-              >
-                {link.label}
-              </Link>
-            ))}
+            {SITE_NAV_LINKS.map((link) => {
+              const active = isNavLinkActive(link.href, pathname);
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setIsOpen(false)}
+                  aria-current={active ? "page" : undefined}
+                  className={`interactive-focus block rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                    active ? "bg-surface text-ink" : "text-ink/60 hover:bg-surface hover:text-ink"
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
           </nav>
         </div>
       )}

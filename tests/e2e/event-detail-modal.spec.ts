@@ -65,15 +65,13 @@ test("a filtered feed does not rewrite the detail URL or reset when closed", asy
   // Let both filter synchronization and the search debounce settle.
   await page.waitForTimeout(900);
   await expect(page).toHaveURL(/\/events\/e2e-highlander-hub-showcase$/);
-  await dialog.getByRole("button", { name: "Save", exact: true }).click();
   await dialog.getByRole("button", { name: "Close event" }).click();
   await expect(page).toHaveURL(/\/events\?cat=social&q=Showcase$/);
   await expect(page.getByLabel("Search events")).toHaveValue("Showcase");
-  await expect(page.getByRole("button", { name: "Remove from saved" })).toHaveAttribute("aria-pressed", "true");
   await page.goForward();
-  await expect(page.getByRole("dialog").getByRole("button", { name: "Saved", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("dialog").getByRole("heading", { name: EVENT_NAME })).toBeVisible();
   await page.reload();
-  await expect(page.getByRole("dialog").getByRole("button", { name: "Saved", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("dialog").getByRole("heading", { name: EVENT_NAME })).toBeVisible();
   await page.getByRole("dialog").getByRole("button", { name: "Close event" }).click();
   await expect(page).toHaveURL(/\/events\?cat=social&q=Showcase$/);
 });
@@ -130,35 +128,15 @@ test("a fresh event link opens a card with a safe close destination", async ({ p
 });
 
 
-test("unsaving inside a card updates the saved list, including after refresh", async ({ page }) => {
-  await page.addInitScript(() => {
-    if (localStorage.getItem("hh:saved-events:v1") === null) {
-      localStorage.setItem("hh:saved-events:v1", JSON.stringify(["e2e-highlander-hub-showcase"]));
-    }
-  });
-  await page.goto("/saved");
-  await openOverlay(page);
-  await page.reload();
-  const dialog = page.getByRole("dialog");
-  await dialog.getByRole("button", { name: "Saved", exact: true }).click();
-  await dialog.getByRole("button", { name: "Close event" }).click();
-  await expect(page).toHaveURL(/\/saved$/);
-  await expect(page.getByText("Nothing saved yet.")).toBeVisible();
-  await page.reload();
-  await expect(page.getByText("Nothing saved yet.")).toBeVisible();
-});
-
-test("mobile cards keep save state on refresh and release scrolling on close", async ({ page }) => {
+test("mobile cards survive refresh and release scrolling on close", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/events");
   const dialog = await openOverlay(page);
-  await dialog.getByRole("button", { name: "Save event", exact: true }).click();
   await page.reload();
-  await expect(dialog.getByRole("button", { name: "Remove from saved" })).toHaveAttribute("aria-pressed", "true");
+  await expect(dialog.getByRole("heading", { name: EVENT_NAME })).toBeVisible();
   await dialog.getByRole("button", { name: "Close event" }).click();
   await expect(page).toHaveURL(/\/events$/);
   await expect(page.locator("body")).not.toHaveCSS("overflow", "hidden");
-  await expect(page.getByRole("button", { name: "Remove from saved" })).toHaveAttribute("aria-pressed", "true");
 });
 
 test("unavailable events keep the card's close controls", async ({ page }) => {

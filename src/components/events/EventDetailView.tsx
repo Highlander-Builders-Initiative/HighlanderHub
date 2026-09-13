@@ -10,7 +10,6 @@ import { ShareButton } from "@/components/events/ShareButton";
 import { EventBackButton } from "@/components/events/EventBackButton";
 import { EventFlyerImage } from "@/components/events/EventFlyerImage";
 import { TrackedAnchor } from "@/components/events/TrackedAnchor";
-import { SaveButton } from "@/components/events/SaveButton";
 import { normalizeHttpUrl } from "@/lib/events/validation";
 import { isDeadlineKind } from "@/lib/events/content-kind";
 import type { CampusEvent } from "@/types/event";
@@ -367,7 +366,6 @@ export function EventDetailView({
                     surface="desktop"
                   />
 
-                  <SaveButton eventId={event.id} surface="detail" variant="label" />
                   <ShareButton event={event} variant="text" />
                 </div>
               </section>
@@ -421,7 +419,6 @@ export function EventDetailView({
             calendarLabel={calendarLabel}
             surface="mobile"
           />
-          <SaveButton eventId={event.id} surface="detail" variant="icon" />
           <ShareButton event={event} variant="icon" />
         </div>
       </div>

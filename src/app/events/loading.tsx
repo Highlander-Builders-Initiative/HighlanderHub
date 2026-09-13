@@ -1,6 +1,5 @@
 import { Masthead } from "@/components/layout/Masthead";
 import { Footer } from "@/components/layout/Footer";
-import { EVENTS_NAV_LINKS } from "@/lib/site-nav";
 import { EventsBrowserSkeleton } from "@/components/events/EventsBrowserSkeleton";
 
 /**
@@ -10,7 +9,7 @@ import { EventsBrowserSkeleton } from "@/components/events/EventsBrowserSkeleton
 export default function Loading() {
   return (
     <main className="min-h-screen bg-surface">
-      <Masthead position="static" variant="solid" navLinks={EVENTS_NAV_LINKS} />
+      <Masthead position="static" variant="solid" />
       <EventsBrowserSkeleton />
       <Footer />
     </main>
