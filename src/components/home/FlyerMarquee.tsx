@@ -371,7 +371,7 @@ function FlyerTileSet({
             size="medium"
             aspectClassName="aspect-[4/5]"
             decorative={decorative}
-            progressiveBlur
+            hoverCaption
           />
         </div>
       ))}
