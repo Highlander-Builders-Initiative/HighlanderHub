@@ -1,6 +1,7 @@
 """Post collection: activation boundaries, pinned prefixes, and restart recovery."""
 from __future__ import annotations
 
+import json
 import sys
 import tempfile
 import unittest
@@ -73,11 +74,58 @@ class PostArchiveTests(unittest.TestCase):
         self.addCleanup(remote.stop)
 
     def scan(self, posts, checkpoint, now="2026-09-11T12:00:00+00:00"):
-        profile = SimpleNamespace(get_posts=lambda: iter(posts))
-        with patch.object(scrape_posts.instaloader.Profile, "from_username", return_value=profile):
+        with patch.object(scrape_posts.instaloader.Profile, "get_posts", return_value=iter(posts)):
             return scrape_posts.scan_account(
-                Mock(), {"handle": "acm.ucr"}, checkpoint, instant(now)
+                Mock(), {"handle": "acm.ucr", "instagram_user_id": 42}, checkpoint, instant(now)
             )
+
+
+class ProfileLookupTests(PostArchiveTests):
+    def test_logged_in_scan_uses_stored_id_without_web_profile_info(self):
+        # Run the installed Profile and NodeIterator code; fake only transport.
+        loader = scrape_posts.instaloader.Instaloader(quiet=True)
+        self.addCleanup(loader.close)
+        loader.context.username = "collector"
+        loader.context._session.cookies.set("csrftoken", "offline-test")
+        responses = [
+            {"status": "ok", "data": {"user": {
+                "id": "42", "username": "renamed.ucr", "media_count": 0,
+            }}},
+            {"status": "ok", "data": {
+                "xdt_api__v1__feed__user_timeline_graphql_connection": {
+                    "edges": [],
+                    "page_info": {"has_next_page": False, "end_cursor": None},
+                },
+            }},
+        ]
+        with patch.object(loader.context, "get_json", side_effect=responses) as request, \
+             patch("requests.sessions.Session.request", side_effect=AssertionError("Live HTTP forbidden")):
+            result = scrape_posts.scan_account(
+                loader, {"handle": "acm.ucr", "instagram_user_id": 42},
+                {"activated_at": "2026-09-10T00:00:00+00:00"},
+                instant("2026-09-11T12:00:00+00:00"),
+            )
+        self.assertTrue(result.complete)
+        self.assertEqual(2, request.call_count)
+        for call in request.call_args_list:
+            self.assertEqual("graphql/query", call.args[0])
+            self.assertTrue(call.kwargs["use_post"])
+        profile_query, feed_query = request.call_args_list
+        self.assertEqual("42", json.loads(profile_query.kwargs["params"]["variables"])["id"])
+        self.assertEqual("renamed.ucr", json.loads(feed_query.kwargs["params"]["variables"])["username"])
+
+    def test_missing_id_fails_without_falling_back_to_username_lookup(self):
+        loader = Mock()
+        with patch.object(scrape_posts.instaloader, "Profile") as profile:
+            with self.assertRaisesRegex(ValueError, "missing instagram_user_id"):
+                scrape_posts.scan_account(
+                    loader, {"handle": "acm.ucr"},
+                    {"activated_at": "2026-09-10T00:00:00+00:00"},
+                    instant("2026-09-11T12:00:00+00:00"),
+                )
+        profile.assert_not_called()
+        profile.from_username.assert_not_called()
+        self.remote_writes.assert_not_called()
 
 
 class MediaIdentityTests(unittest.TestCase):
@@ -174,10 +222,9 @@ class OverlapAndCheckpointTests(PostArchiveTests):
 
         checkpoint = {"activated_at": "2026-09-01T00:00:00+00:00",
                       "scanned_through": "2026-09-10T00:00:00+00:00"}
-        profile = SimpleNamespace(get_posts=explode)
-        with patch.object(scrape_posts.instaloader.Profile, "from_username", return_value=profile):
+        with patch.object(scrape_posts.instaloader.Profile, "get_posts", side_effect=explode):
             with self.assertRaises(ConnectionException):
-                scrape_posts.scan_account(Mock(), {"handle": "acm.ucr"}, checkpoint,
+                scrape_posts.scan_account(Mock(), {"handle": "acm.ucr", "instagram_user_id": 42}, checkpoint,
                                           instant("2026-09-11T12:00:00+00:00"))
         # The item collected before the failure survives on disk...
         self.assertTrue((self.root / "posts" / "acm.ucr" / "900.json").exists())
@@ -488,12 +535,12 @@ class CollectionRunTests(PostArchiveTests):
     """The collector entrypoint end to end, with Instagram mocked out."""
 
     def run_main(self, accounts, posts_by_handle, *, refresh=None):
-        def profile(_context, handle):
-            return SimpleNamespace(get_posts=lambda: iter(posts_by_handle.get(handle, [])))
+        def get_posts(profile):
+            return iter(posts_by_handle.get(profile.username, []))
 
         loader = Mock()
         with patch.object(scrape_posts.instaloader, "Instaloader", return_value=loader), \
-             patch.object(scrape_posts.instaloader.Profile, "from_username", side_effect=profile), \
+             patch.object(scrape_posts.instaloader.Profile, "get_posts", autospec=True, side_effect=get_posts), \
              patch.object(scrape_posts, "_login"), \
              patch.object(scrape_posts, "_attach_http_error_logger"), \
              patch.object(scrape_posts, "_persist_rotated_session"), \
@@ -509,7 +556,7 @@ class CollectionRunTests(PostArchiveTests):
         self.hydrated = hydrate
 
     def test_a_first_run_activates_accounts_and_imports_nothing_older(self):
-        accounts = [{"handle": "acm.ucr"}, {"handle": "ieee.ucr"}]
+        accounts = [{"handle": "acm.ucr", "instagram_user_id": 42}, {"handle": "ieee.ucr", "instagram_user_id": 43}]
         posts = {
             "acm.ucr": [FakePost("900", "2026-09-11T09:00:00+00:00")],
             "ieee.ucr": [FakePost("800", "2020-01-01T09:00:00+00:00")],
@@ -526,14 +573,14 @@ class CollectionRunTests(PostArchiveTests):
     def test_collection_restores_the_archive_before_judging_what_is_new(self):
         # Discovery, the refresh pass, and the extraction that follows all read
         # the archive, so the restore has to happen before any of them looks.
-        self.run_main([{"handle": "acm.ucr"}], {})
+        self.run_main([{"handle": "acm.ucr", "instagram_user_id": 42}], {})
         self.hydrated.assert_called_once_with()
 
     def test_a_later_run_collects_what_was_published_after_activation(self):
         scrape_posts.write_local_checkpoints({"acm.ucr": {
             "activated_at": "2026-09-01T00:00:00+00:00",
             "scanned_through": "2026-09-10T00:00:00+00:00"}})
-        self.run_main([{"handle": "acm.ucr"}],
+        self.run_main([{"handle": "acm.ucr", "instagram_user_id": 42}],
                       {"acm.ucr": [FakePost("900", "2026-09-11T09:00:00+00:00")]})
         self.assertTrue((self.root / "posts" / "acm.ucr" / "900.json").exists())
         self.assertEqual("complete",
@@ -551,10 +598,10 @@ class CollectionRunTests(PostArchiveTests):
                 self.remote_writes.side_effect = None if durable else RuntimeError("mirror unavailable")
                 with patch.object(scrape_posts, "_utc_now", return_value=now):
                     if durable:
-                        self.run_main([{"handle": "acm.ucr"}], {"acm.ucr": feed})
+                        self.run_main([{"handle": "acm.ucr", "instagram_user_id": 42}], {"acm.ucr": feed})
                     else:
                         with self.assertRaises(RuntimeError):
-                            self.run_main([{"handle": "acm.ucr"}], {"acm.ucr": feed})
+                            self.run_main([{"handle": "acm.ucr", "instagram_user_id": 42}], {"acm.ucr": feed})
                 saved = scrape_posts.load_local_checkpoints()["acm.ucr"]
                 self.assertEqual(now.isoformat() if durable else "2026-09-10T00:00:00+00:00",
                                  saved["scanned_through"])
@@ -569,7 +616,7 @@ class CollectionRunTests(PostArchiveTests):
         def rate_limited():
             raise TooManyRequestsException("429 Too Many Requests")
 
-        accounts = [{"handle": "acm.ucr"}, {"handle": "ieee.ucr"}]
+        accounts = [{"handle": "acm.ucr", "instagram_user_id": 42}, {"handle": "ieee.ucr", "instagram_user_id": 43}]
         with self.assertLogs("pipeline", level="ERROR"):
             with self.assertRaises(instagram_cooldown.CollectionStopped) as raised:
                 self.run_main(accounts, {"acm.ucr": _Exploding(rate_limited)})
@@ -590,7 +637,7 @@ class CollectionRunTests(PostArchiveTests):
             raise QueryReturnedBadRequestException(
                 '400 Bad Request - "fail" status, message "invalid request"')
 
-        accounts = [{"handle": "acm.ucr"}, {"handle": "ieee.ucr"}]
+        accounts = [{"handle": "acm.ucr", "instagram_user_id": 42}, {"handle": "ieee.ucr", "instagram_user_id": 43}]
         with self.assertLogs("pipeline", level="ERROR"):
             with self.assertRaisesRegex(instagram_cooldown.CollectionStopped,
                                         "posts collection was challenged"):
@@ -603,7 +650,7 @@ class CollectionRunTests(PostArchiveTests):
         known = {"900": {"media_id": "900", "handle": "acm.ucr", "shortcode": "C900"},
                  "700": {"media_id": "700", "handle": "acm.ucr", "shortcode": "C700"}}
         with patch.object(scrape_posts, "refresh_post") as refresh:
-            self.run_main([{"handle": "acm.ucr"}],
+            self.run_main([{"handle": "acm.ucr", "instagram_user_id": 42}],
                           {"acm.ucr": [FakePost("900", "2026-09-11T09:00:00+00:00")]},
                           refresh=known)
         # 900 came back from discovery this run; only 700 costs a request.

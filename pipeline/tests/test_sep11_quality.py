@@ -4,6 +4,7 @@ import json
 import sys
 import tempfile
 import unittest
+from datetime import datetime
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -135,6 +136,12 @@ class September11QualityTests(unittest.TestCase):
 
 
 class CrossSourceReconciliationTests(unittest.TestCase):
+    def setUp(self):
+        # Keep main()'s age filter from expiring these fixed historical fixtures.
+        clock = patch.object(reconcile, 'datetime', wraps=datetime)
+        clock.start().now.return_value = datetime.fromisoformat(NOW)
+        self.addCleanup(clock.stop)
+
     def event(self, eid, title='The Great Picture: Making and Showing the Largest Print Photograph', **extra):
         return {'id':eid, 'title':title, 'starts_at':'2026-09-12T14:00:00-07:00',
                 'ends_at':None, 'source':'instagram' if eid.startswith('ig_') else 'campus_website',
@@ -195,11 +202,11 @@ class CrossSourceReconciliationTests(unittest.TestCase):
         database.table.return_value.update.return_value.eq.return_value.eq.return_value.execute.side_effect = RuntimeError('write failed')
         with patch.object(db,'get_imported_events',return_value=rows), \
              patch.object(db,'get_deleted_event_ids',return_value=set()), \
-             patch.object(db,'client',return_value=database), \
-             patch.object(db,'delete_unlocked_event_rows_by_ids') as delete:
+             patch.object(db,'client',return_value=database):
             with self.assertRaisesRegex(RuntimeError,'write failed'):
                 reconcile.main(notify=False)
-            delete.assert_not_called()
+        database.table.return_value.update.assert_called_once_with({'has_free_food':True})
+        database.rpc.assert_not_called()
 
     def test_concurrent_admin_change_stops_reconciliation_before_deletion(self):
         import db
@@ -210,14 +217,29 @@ class CrossSourceReconciliationTests(unittest.TestCase):
         query.execute.return_value.data = []
         with patch.object(db,'get_imported_events',return_value=rows), \
              patch.object(db,'get_deleted_event_ids',return_value=set()), \
-             patch.object(db,'client',return_value=database), \
-             patch.object(db,'delete_unlocked_event_rows_by_ids') as delete:
+             patch.object(db,'client',return_value=database):
             with self.assertRaisesRegex(RuntimeError,'changed during reconciliation'):
                 reconcile.main(notify=False)
         database.table.return_value.update.assert_called_once_with({'has_free_food':True})
         query.eq.assert_any_call('is_locked', False)
         query.eq.assert_any_call('updated_at', NOW)
-        delete.assert_not_called()
+        database.rpc.assert_not_called()
+
+    def test_finished_duplicates_are_skipped_but_ongoing_events_reconcile(self):
+        now = datetime.fromisoformat('2026-09-13T00:00:00+00:00')
+        for ends_at, eligible in ((None, False),
+                                  ('2026-09-12T23:00:00+00:00', False),
+                                  ('2026-09-13T01:00:00+00:00', True)):
+            with self.subTest(ends_at=ends_at):
+                rows = [self.event('ucr_events_1', ends_at=ends_at),
+                        self.event('ig_a_1', ends_at=ends_at, has_free_food=True)]
+                updates, removed = reconcile.plan(rows, now=now)
+                if eligible:
+                    self.assertEqual(['ucr_events_1'], [row['id'] for row in updates])
+                    self.assertTrue(updates[0]['has_free_food'])
+                    self.assertEqual({'ig_a_1'}, removed)
+                else:
+                    self.assertEqual(([], set()), (updates, removed))
 
     def test_merging_an_already_notified_duplicate_preserves_alert_history(self):
         import db
