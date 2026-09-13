@@ -46,6 +46,7 @@ pipeline/
 ├── scrape.py              # IG stories:       data/raw/<handle>/<story_id>.json
 ├── extract_stories.py     # IG OCR + LLM:     data/extracted/<story_id>.json
 ├── scrape_posts.py        # IG posts:         data/posts/<handle>/<media_id>.json
+├── instagram_cooldown.py  # IG pause:         data/instagram_cooldown.json
 ├── post_archive.py        # post archive I/O, free of Instaloader
 ├── extract_posts.py       # per-slide OCR:    data/post_extractions/<media_id>.json
 ├── instagram_rows.py      # shared story/post event row policy
@@ -271,6 +272,25 @@ in `.github/workflows/scrape.yml` is commented out.
 Scheduling cannot renew an expired session. When the Instagram step starts
 failing with `400 ... "invalid request"`, quit Safari and re-run
 `import_safari_session.py`.
+
+### When Instagram pushes back
+
+Stories and posts collect through the same logged-in account, so they share one
+stop decision (`instagram_cooldown.classify`). A 429, a checkpoint, challenge or
+`feedback_required` reply, a logged-out redirect, a 400 on a single post
+request, or a story batch in which every account is rejected stops the channel
+that hit it and pauses **both** channels for `PIPELINE_INSTAGRAM_COOLDOWN_HOURS`
+(default 24), recorded in `data/instagram_cooldown.json`. A 429 is never waited
+out and retried, and a story batch splits only a bare 400, never one whose
+message names a challenge or a wait. Until the pause ends, both collection
+stages fail before sending a request — later in the same run, and on every run
+after it — while extraction, publication, and normalization still process
+whatever is already on disk.
+
+A fresh login fixes a challenge, so a successful `import_safari_session.py` run
+lifts a challenge pause. A throttle pause ends only with time; delete the file
+to resume sooner. A pause file that can't be read keeps both channels paused
+until you check it and delete it.
 
 ## Supabase row shapes
 
@@ -519,9 +539,10 @@ count cutoff: a busy account must be able to pass the same newest-first prefix
 on its next run. A checkpoint advances only after a scan completes **and** its
 raw writes reach Supabase. An interrupted scan keeps the items it already
 collected locally and re-walks the interval next run. Authentication challenges
-and rate limits stop Instagram collection outright, record incomplete coverage, and retain every
-checkpoint — continuing would turn one throttle into a run-long pattern of
-rejected requests.
+and rate limits stop collection on both Instagram channels (see
+[When Instagram pushes back](#when-instagram-pushes-back)), record incomplete
+coverage, and retain every checkpoint — continuing would turn one throttle into
+a run-long pattern of rejected requests.
 
 The local archive is a cache of `instagram_posts`, and both collection and
 extraction restore it from that mirror before reading it. A machine that lost
