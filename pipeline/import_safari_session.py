@@ -20,6 +20,7 @@ import browser_cookie3
 # pyrefly: ignore [missing-import]
 import instaloader
 
+import instagram_cooldown
 from config import IG_USERNAME
 
 
@@ -144,6 +145,15 @@ def main(argv: list[str] | None = None) -> None:
     print(f"   {session_file}\n")
     print("🔒 Encode for IG_SESSION_FILE (GitHub Actions secret) with:")
     print(f"   base64 -i ~/.config/instaloader/session-{username}")
+
+    # A fresh login is what a challenge asks for, so it ends that pause. A rate
+    # limit or an unreadable pause record stays in force.
+    if instagram_cooldown.current() is not None:
+        still_paused = instagram_cooldown.lift_challenge()
+        if still_paused is None:
+            print("\n▶️  Lifted the Instagram challenge pause; the next run collects again.")
+        else:
+            print(f"\n⏸  Instagram collection is still paused: {still_paused.describe()}.")
 
 
 if __name__ == "__main__":

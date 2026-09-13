@@ -9,7 +9,14 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
+from instaloader.exceptions import (
+    ConnectionException,
+    QueryReturnedBadRequestException,
+    TooManyRequestsException,
+)
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+import instagram_cooldown
 import post_archive
 import scrape_posts
 
@@ -55,6 +62,8 @@ class PostArchiveTests(unittest.TestCase):
         for module, target, value in (
             (post_archive, "POSTS_DIR", self.root / "posts"),
             (scrape_posts, "POST_CHECKPOINTS_FILE", self.root / "post_checkpoints.json"),
+            (instagram_cooldown, "INSTAGRAM_COOLDOWN_FILE", self.root / "instagram_cooldown.json"),
+            (instagram_cooldown, "_UNSAVED", None),
         ):
             patcher = patch.object(module, target, value)
             patcher.start()
@@ -161,13 +170,13 @@ class OverlapAndCheckpointTests(PostArchiveTests):
     def test_an_interrupted_scan_keeps_its_items_and_retains_the_checkpoint(self):
         def explode():
             yield FakePost("900", "2026-09-11T09:00:00+00:00")
-            raise scrape_posts.ConnectionException("page 2 timed out")
+            raise ConnectionException("page 2 timed out")
 
         checkpoint = {"activated_at": "2026-09-01T00:00:00+00:00",
                       "scanned_through": "2026-09-10T00:00:00+00:00"}
         profile = SimpleNamespace(get_posts=explode)
         with patch.object(scrape_posts.instaloader.Profile, "from_username", return_value=profile):
-            with self.assertRaises(scrape_posts.ConnectionException):
+            with self.assertRaises(ConnectionException):
                 scrape_posts.scan_account(Mock(), {"handle": "acm.ucr"}, checkpoint,
                                           instant("2026-09-11T12:00:00+00:00"))
         # The item collected before the failure survives on disk...
@@ -558,17 +567,34 @@ class CollectionRunTests(PostArchiveTests):
             for handle in ("acm.ucr", "ieee.ucr")})
 
         def rate_limited():
-            raise scrape_posts.TooManyRequestsException("429 Too Many Requests")
+            raise TooManyRequestsException("429 Too Many Requests")
 
         accounts = [{"handle": "acm.ucr"}, {"handle": "ieee.ucr"}]
-        with self.assertRaises(scrape_posts.InstagramPostsBlocked) as raised:
-            self.run_main(accounts, {"acm.ucr": _Exploding(rate_limited)})
+        with self.assertLogs("pipeline", level="ERROR"):
+            with self.assertRaises(instagram_cooldown.CollectionStopped) as raised:
+                self.run_main(accounts, {"acm.ucr": _Exploding(rate_limited)})
         self.assertIn("rate limited", str(raised.exception))
-        self.assertIn("incomplete", str(raised.exception))
+        self.assertIn("checkpoints were retained", str(raised.exception))
         saved = scrape_posts.load_local_checkpoints()
         # Neither account advanced, so the uncollected interval is retried.
         for handle in ("acm.ucr", "ieee.ucr"):
             self.assertEqual("2026-09-10T00:00:00+00:00", saved[handle]["scanned_through"])
+        # Story collection is paused as well, not just the rest of this scan.
+        with self.assertRaisesRegex(instagram_cooldown.CollectionPaused,
+                                    "posts collection was throttled"):
+            instagram_cooldown.ensure_collection_allowed("stories")
+
+    def test_a_bare_400_on_one_account_stops_collection(self):
+        # A post scan asks about one account, so there is no bad userid to isolate.
+        def bad_request():
+            raise QueryReturnedBadRequestException(
+                '400 Bad Request - "fail" status, message "invalid request"')
+
+        accounts = [{"handle": "acm.ucr"}, {"handle": "ieee.ucr"}]
+        with self.assertLogs("pipeline", level="ERROR"):
+            with self.assertRaisesRegex(instagram_cooldown.CollectionStopped,
+                                        "posts collection was challenged"):
+                self.run_main(accounts, {"acm.ucr": _Exploding(bad_request)})
 
     def test_refreshes_skip_posts_already_fetched_by_discovery(self):
         scrape_posts.write_local_checkpoints({"acm.ucr": {
@@ -630,20 +656,6 @@ class RefreshEligibilityTests(unittest.TestCase):
         # The finished event's post is dropped: refreshing it cannot change a
         # listing that is already over.
         self.assertEqual(["700"], sorted(eligible))
-
-
-class FailureClassificationTests(unittest.TestCase):
-    def test_rate_limits_and_challenges_stop_collection(self):
-        for exc in (scrape_posts.TooManyRequestsException("429"),
-                    scrape_posts.LoginRequiredException("login"),
-                    scrape_posts.QueryReturnedForbiddenException("403"),
-                    scrape_posts.QueryReturnedBadRequestException("invalid request")):
-            with self.subTest(exc=type(exc).__name__):
-                self.assertIsNotNone(scrape_posts._classify_failure(exc))
-
-    def test_an_ordinary_connection_error_does_not_stop_collection(self):
-        self.assertIsNone(scrape_posts._classify_failure(scrape_posts.ConnectionException("reset")))
-        self.assertIsNone(scrape_posts._classify_failure(ValueError("odd payload")))
 
 
 class SerializationTests(PostArchiveTests):

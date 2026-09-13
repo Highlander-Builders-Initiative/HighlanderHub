@@ -8,6 +8,7 @@ data/assessment-report.json
 data/followed_accounts.json
 data/followed_accounts.tmp
 data/run_history.jsonl
+data/instagram_cooldown.json
 output/
 .instaloader-session*
 session-*

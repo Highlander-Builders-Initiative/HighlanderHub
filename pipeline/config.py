@@ -134,6 +134,18 @@ try:
 except ValueError:
     POST_OVERLAP_DAYS = 7
 
+# When Instagram challenges or throttles either collection channel, both stop
+# and stay paused this long (see instagram_cooldown.py): asking again straight
+# after pushback is what escalates a throttle into a checkpoint. Override with
+# PIPELINE_INSTAGRAM_COOLDOWN_HOURS.
+INSTAGRAM_COOLDOWN_FILE = DATA_DIR / "instagram_cooldown.json"
+try:
+    INSTAGRAM_COOLDOWN_HOURS = float(
+        os.environ.get("PIPELINE_INSTAGRAM_COOLDOWN_HOURS", "24")
+    )
+except ValueError:
+    INSTAGRAM_COOLDOWN_HOURS = 24.0
+
 
 def ensure_dirs() -> None:
     RAW_DIR.mkdir(parents=True, exist_ok=True)

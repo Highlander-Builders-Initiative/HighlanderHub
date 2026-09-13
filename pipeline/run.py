@@ -11,7 +11,10 @@ Stages:
      current scrape completed.
   2. **Instagram story scrape** – fetch story JSON to disk.
   3. **Instagram post scrape** – fetch feed posts for the same accounts,
-     forward-only from each account's activation timestamp.
+     forward-only from each account's activation timestamp. Both collectors
+     share one stop decision (`instagram_cooldown.py`): a challenge or throttle
+     seen by either pauses both, for the rest of this run and the cooldown
+     after it, while the stages below still process what is on disk.
   4. **Extract** – run OCR + Vertex AI Gemini structured extraction on
      Instagram story images and post carousels, caching per-item outputs to
      avoid redundant API calls. Stories and posts are separate stages so a
@@ -187,7 +190,9 @@ def _run_stages(results: list[StageResult]) -> None:
         results,
     )
     # Instagram extract/publish/normalize always run using whatever is on disk,
-    # so a collection failure costs coverage but never the existing feed.
+    # so a collection failure costs coverage but never the existing feed. Both
+    # collectors check one shared pause before their first request, so a
+    # challenge or throttle during stories keeps post collection from starting.
     _safe("instagram.scrape", scrape.main, results)
     _safe("instagram.posts.scrape", scrape_posts.main, results)
 

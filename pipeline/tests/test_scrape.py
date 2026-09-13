@@ -24,12 +24,15 @@ import instaloader
 from instaloader.exceptions import (
     ConnectionException,
     QueryReturnedBadRequestException,
+    TooManyRequestsException,
 )
 from instaloader.structures import Story
 
 PIPELINE_ROOT = Path(__file__).resolve().parents[1]
 if str(PIPELINE_ROOT) not in sys.path:
     sys.path.insert(0, str(PIPELINE_ROOT))
+
+import instagram_cooldown
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 
@@ -106,21 +109,21 @@ class FakeLoader:
         poison: tuple[int, ...] = (),
         max_accepted: int | None = None,
         reject_everything: bool = False,
+        rejection: str = '400 Bad Request - "fail" status, message "invalid request"',
     ) -> None:
         self.context = context
         self._reels = reels_by_userid
         self._poison = set(poison)
         self._max_accepted = max_accepted
         self._reject_everything = reject_everything
+        self._rejection = rejection
         self.requests: list[list[int]] = []
 
     def get_stories(self, userids: list[int] | None = None) -> Iterator[Story]:
         requested = list(userids or [])
         self.requests.append(requested)
         if self._reject_everything:
-            raise QueryReturnedBadRequestException(
-                '400 Bad Request - "fail" status, message "invalid request"'
-            )
+            raise QueryReturnedBadRequestException(self._rejection)
         if self._max_accepted is not None and len(requested) > self._max_accepted:
             raise QueryReturnedBadRequestException(
                 f'400 Bad Request - too many reel_ids ({len(requested)})'
@@ -158,6 +161,20 @@ class ScrapeTestCase(unittest.TestCase):
         raw_patch = patch.object(self.scrape, "RAW_DIR", self.raw_dir)
         raw_patch.start()
         self.addCleanup(raw_patch.stop)
+
+        # Pauses go to their own throwaway file, never pipeline/data.
+        state = tempfile.TemporaryDirectory()
+        self.addCleanup(state.cleanup)
+        cooldown_patch = patch.object(
+            instagram_cooldown,
+            "INSTAGRAM_COOLDOWN_FILE",
+            Path(state.name) / "instagram_cooldown.json",
+        )
+        cooldown_patch.start()
+        self.addCleanup(cooldown_patch.stop)
+        unsaved_patch = patch.object(instagram_cooldown, "_UNSAVED", None)
+        unsaved_patch.start()
+        self.addCleanup(unsaved_patch.stop)
 
     def loader(self, **kwargs: Any) -> FakeLoader:
         return FakeLoader(self.context, self.reels_by_userid, **kwargs)
@@ -377,12 +394,29 @@ class SplitRetryTests(ScrapeTestCase):
 
         with self.assertLogs(self.scrape.log, level="WARNING"):
             with self.assertRaisesRegex(
-                self.scrape.InstagramStoriesBadRequest,
+                instagram_cooldown.EveryAccountRejected,
                 "Stopping the Instagram scrape",
             ):
                 self.scrape.scrape_chunk(loader, chunk, by_userid)
 
         self.assertEqual([4, 2, 1, 1, 2, 1, 1], loader.request_sizes)
+
+    def test_a_400_carrying_pushback_is_not_split(self) -> None:
+        chunk = self.eight_accounts()
+        _, by_userid, _ = self.scrape._index_by_userid(chunk)
+        for message in (
+            '400 Bad Request - "fail" status, message "login_required"',
+            '400 Bad Request - "fail" status, message "Please wait a few minutes '
+            'before you try again."',
+        ):
+            with self.subTest(message=message):
+                loader = self.loader(reject_everything=True, rejection=message)
+
+                with self.assertRaises(QueryReturnedBadRequestException):
+                    self.scrape.scrape_chunk(loader, chunk, by_userid)
+
+                # One request, where a bare 400 would split into 15.
+                self.assertEqual([8], loader.request_sizes)
 
     def test_a_lone_account_rejected_on_its_own_is_not_session_death(self) -> None:
         chunk = [account("deadclub", 900000004)]
@@ -538,13 +572,17 @@ class MainTests(ScrapeTestCase):
         accounts = [account(f"club_{i}", 900000100 + i) for i in range(6)]
         loader = self.loader(reject_everything=True)
 
-        with self.assertLogs(self.scrape.log, level="WARNING"):
+        with self.assertLogs("pipeline", level="WARNING"):
             with self.assertRaisesRegex(RuntimeError, "Stopping the Instagram scrape"):
                 self.run_main(accounts, loader)
 
         # Only the first chunk was attempted, and no jitter was burned after it.
         self.assertEqual([3, 1, 2, 1, 1], loader.request_sizes)
         self.sleep.assert_not_called()
+        # A session that refuses every account pauses post collection too.
+        self.assertEqual(
+            instagram_cooldown.Kind.CHALLENGED, instagram_cooldown.current().kind
+        )
 
     def test_connection_error_keeps_going_but_fails_the_run(self) -> None:
         accounts = [account(f"club_{i}", 900000100 + i) for i in range(6)]
@@ -560,6 +598,90 @@ class MainTests(ScrapeTestCase):
                     self.run_main(accounts, loader)
 
         self.assertEqual(2, scrape_chunk.call_count)
+
+    def test_a_throttle_stops_both_channels_before_the_next_chunk(self) -> None:
+        accounts = [account(f"club_{i}", 900000100 + i) for i in range(6)]
+
+        with patch.object(
+            self.scrape,
+            "scrape_chunk",
+            side_effect=TooManyRequestsException("429 Too Many Requests"),
+        ) as scrape_chunk:
+            with self.assertLogs("pipeline", level="ERROR"):
+                with self.assertRaisesRegex(
+                    instagram_cooldown.CollectionStopped,
+                    "stories collection was throttled",
+                ):
+                    self.run_main(accounts, self.loader())
+
+        # Unlike an ordinary connection error, the next chunk is never asked for.
+        self.assertEqual(1, scrape_chunk.call_count)
+        self.sleep.assert_not_called()
+        with self.assertRaisesRegex(
+            instagram_cooldown.CollectionPaused, "Not collecting Instagram posts"
+        ):
+            instagram_cooldown.ensure_collection_allowed("posts")
+
+    def test_a_400_carrying_pushback_stops_both_channels_without_splitting(self) -> None:
+        accounts = [account(f"club_{i}", 900000100 + i) for i in range(6)]
+        loader = self.loader(
+            reject_everything=True,
+            rejection='400 Bad Request - "fail" status, message "login_required"',
+        )
+
+        with self.assertLogs("pipeline", level="ERROR"):
+            with self.assertRaisesRegex(
+                instagram_cooldown.CollectionStopped,
+                "stories collection was challenged",
+            ):
+                self.run_main(accounts, loader)
+
+        # A bare 400 here costs [3, 1, 2, 1, 1] before anything stops.
+        self.assertEqual([3], loader.request_sizes)
+
+    def test_pushback_on_the_follow_list_stops_collection_too(self) -> None:
+        with (
+            patch.object(self.scrape, "ACCOUNT_SOURCE", "followed"),
+            patch.object(self.scrape, "load_curated_accounts", return_value=[]),
+            patch.object(
+                self.scrape,
+                "_load_followed_accounts",
+                side_effect=TooManyRequestsException("429 Too Many Requests"),
+            ),
+            patch.object(
+                self.scrape.instaloader, "Instaloader", return_value=self.loader()
+            ),
+        ):
+            with self.assertLogs("pipeline", level="ERROR"):
+                with self.assertRaisesRegex(
+                    instagram_cooldown.CollectionStopped,
+                    "stories collection was throttled",
+                ):
+                    self.scrape.main()
+
+    def test_a_pause_from_either_channel_keeps_the_loader_from_being_built(self) -> None:
+        with self.assertLogs("pipeline", level="ERROR"):
+            instagram_cooldown.pause(
+                instagram_cooldown.Block(instagram_cooldown.Kind.THROTTLED, "rate limited"),
+                "posts",
+                "429 Too Many Requests",
+            )
+
+        with patch.object(self.scrape.instaloader, "Instaloader") as build:
+            with self.assertRaisesRegex(
+                instagram_cooldown.CollectionPaused, "posts collection was throttled"
+            ):
+                self.scrape.main()
+
+        build.assert_not_called()
+
+    def test_a_429_is_raised_rather_than_waited_out(self) -> None:
+        controller = self.scrape.PacedRateController(Mock())
+
+        with self.assertRaises(TooManyRequestsException):
+            controller.handle_429("iphone")
+
+        self.sleep.assert_not_called()
 
 
 class SessionTests(ScrapeTestCase):

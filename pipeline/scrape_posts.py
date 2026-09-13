@@ -22,18 +22,12 @@ from typing import Any, Iterable, NamedTuple
 
 import instaloader
 from instaloader.exceptions import (
-    # ConnectionException is the base of TooManyRequests/NotFound and is
-    # deliberately *not* fatal on its own — see _classify_failure.
-    ConnectionException,
-    LoginRequiredException,
     PrivateProfileNotFollowedException,
     ProfileNotExistsException,
-    QueryReturnedBadRequestException,
-    QueryReturnedForbiddenException,
     QueryReturnedNotFoundException,
-    TooManyRequestsException,
 )
 
+import instagram_cooldown
 from config import POST_CHECKPOINTS_FILE, POST_OVERLAP_DAYS, ensure_post_dirs
 from post_archive import (
     hydrate_local_posts,
@@ -69,10 +63,6 @@ POSSIBLY_PINNED = 3
 # `PacedRateController` puts a floor under the individual requests; this jitter
 # keeps the per-account cadence from looking metronomic on top of it.
 ACCOUNT_SLEEP_RANGE = (5.0, 12.0)
-
-
-class InstagramPostsBlocked(RuntimeError):
-    """Authentication challenge or rate limit: stop collecting this run."""
 
 
 # ---------------------------------------------------------------- checkpoints
@@ -288,28 +278,6 @@ def write_remote_posts(records: list[dict[str, Any]]) -> None:
     )
 
 
-# -------------------------------------------------------------------- errors
-
-
-def _classify_failure(exc: BaseException) -> str | None:
-    """Name the failures that must stop Instagram collection outright.
-
-    A rate limit or a challenged session does not get better by asking more
-    accounts, and continuing would turn one throttle into a run-long pattern of
-    rejected requests against an already-suspicious account.
-    """
-    if isinstance(exc, TooManyRequestsException):
-        return "rate limited"
-    if isinstance(exc, LoginRequiredException):
-        return "login required"
-    if isinstance(exc, QueryReturnedForbiddenException):
-        return "forbidden (challenge or blocked session)"
-    if isinstance(exc, QueryReturnedBadRequestException):
-        # The same 400 the story scraper sees when a session goes stale.
-        return "bad request (stale session or challenge)"
-    return None
-
-
 # ------------------------------------------------------------------ scanning
 
 
@@ -440,6 +408,9 @@ def main(handles: list[str] | None = None) -> None:
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
     )
+    # First: with a pause in force nothing below is worth doing, and extraction
+    # restores the archive for itself.
+    instagram_cooldown.ensure_collection_allowed("posts")
     ensure_post_dirs()
     # The archive is what decides which posts are new, which still need
     # refreshing, and which are already paid for — so a machine that lost
@@ -473,7 +444,7 @@ def main(handles: list[str] | None = None) -> None:
         "accounts": 0, "scanned": 0, "discovered": 0, "updated": 0,
         "unchanged": 0, "refreshed": 0, "incomplete": 0, "errors": 0, "skipped": 0,
     }
-    blocked: str | None = None
+    paused: instagram_cooldown.Pause | None = None
     try:
         accounts = _load_scrape_accounts(L)
         if handles:
@@ -508,10 +479,12 @@ def main(handles: list[str] | None = None) -> None:
                 log.info("%s: no readable feed (%s)", handle, exc)
                 continue
             except (Exception, SystemExit) as exc:  # noqa: BLE001 - per-account isolation.
-                reason = _classify_failure(exc)
+                # Pushback does not get better by asking more accounts: stop, and
+                # keep every checkpoint so the interval is re-walked later.
+                block = instagram_cooldown.classify(exc, lone_400=True)
                 totals["errors"] += 1
-                if reason is not None:
-                    blocked = f"{handle}: {reason}: {exc}"
+                if block is not None:
+                    paused = instagram_cooldown.pause(block, "posts", f"{handle}: {exc}")
                     break
                 log.warning("%s: post scan failed: %s", handle, exc, exc_info=True)
                 continue
@@ -537,7 +510,7 @@ def main(handles: list[str] | None = None) -> None:
             if index < len(accounts):
                 _sleep_between_accounts()
 
-        if blocked is None:
+        if paused is None:
             # Posts outside the overlap that still back an upcoming event.
             # Anything already fetched by discovery this run is skipped.
             for media_id, record in sorted(refresh_candidates(now).items()):
@@ -546,10 +519,12 @@ def main(handles: list[str] | None = None) -> None:
                 try:
                     refresh_post(L, record, now)
                 except (Exception, SystemExit) as exc:  # noqa: BLE001
-                    reason = _classify_failure(exc)
+                    block = instagram_cooldown.classify(exc, lone_400=True)
                     totals["errors"] += 1
-                    if reason is not None:
-                        blocked = f"refresh {media_id}: {reason}: {exc}"
+                    if block is not None:
+                        paused = instagram_cooldown.pause(
+                            block, "posts", f"refresh {media_id}: {exc}"
+                        )
                         break
                     log.warning("post %s: refresh failed: %s", media_id, exc)
                     continue
@@ -560,17 +535,25 @@ def main(handles: list[str] | None = None) -> None:
         write_local_checkpoints(checkpoints)
         _write_remote_checkpoints(checkpoints)
         log.info("Done: %s", totals)
-        if blocked is not None:
-            raise InstagramPostsBlocked(
-                f"Instagram post collection stopped early — {blocked}. Coverage is "
-                "incomplete for this run; checkpoints were retained so the "
-                "uncollected interval is re-walked once the session is healthy."
+        if paused is not None:
+            raise instagram_cooldown.CollectionStopped(
+                f"Instagram post collection stopped early — {paused.describe()}: "
+                f"{paused.detail}. Coverage is incomplete for this run; checkpoints "
+                "were retained so the uncollected interval is re-walked once "
+                "collection resumes."
             )
         if totals["errors"]:
             raise RuntimeError(
                 f"Instagram post collection hit {totals['errors']} failure(s); "
                 "checkpoints for those accounts were retained."
             )
+    except Exception as exc:
+        # Pushback outside the per-account loops, such as on the follow list. A
+        # CollectionStopped raised above is never classified again.
+        block = instagram_cooldown.classify(exc)
+        if block is None:
+            raise
+        raise instagram_cooldown.stop(block, "posts", exc) from exc
     finally:
         _persist_rotated_session(L)
 

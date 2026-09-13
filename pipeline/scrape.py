@@ -18,10 +18,11 @@ import instaloader
 from instaloader.exceptions import (
     ConnectionException,
     IPhoneSupportDisabledException,
-    LoginRequiredException,
     QueryReturnedBadRequestException,
+    TooManyRequestsException,
 )
 
+import instagram_cooldown
 from accounts import uses_followed_accounts
 from config import (
     ACCOUNT_SOURCE,
@@ -62,16 +63,18 @@ CHUNK_SLEEP_RANGE = (8.0, 20.0)
 REQUEST_GAP_RANGE = (1.0, 2.5)
 
 
-class InstagramStoriesBadRequest(RuntimeError):
-    """Fatal Instagram stories API failure that should stop the run."""
-
-
 class PacedRateController(instaloader.RateController):
     """Instaloader's rate controller with a floor between consecutive requests."""
 
     def wait_before_query(self, query_type: str) -> None:
         self.sleep(random.uniform(*REQUEST_GAP_RANGE))
         super().wait_before_query(query_type)
+
+    def handle_429(self, query_type: str) -> None:
+        # Instaloader's default sits out its sliding window and asks again, up to
+        # twice more. A 429 means stop, not wait: raise it so the collector
+        # pauses both channels instead.
+        raise TooManyRequestsException(f"429 Too Many Requests on {query_type}; not retried")
 
 
 # Response headers Instagram sets when it throttles or challenges a request.
@@ -521,6 +524,10 @@ def _load_scrape_accounts(L: instaloader.Instaloader) -> list[dict[str, Any]]:
     try:
         accounts, matched_curated = _load_followed_accounts(L, curated_accounts)
     except (QueryReturnedBadRequestException, ConnectionException) as e:
+        if instagram_cooldown.classify(e) is not None:
+            # Pushback rather than the follow-list quirk below: carrying on from
+            # the cache would send the story fetch straight into it.
+            raise
         log.warning(
             "Could not fetch Instagram follow list (%s). Imported/Safari sessions "
             "often fail this GraphQL call; using follow cache or accounts.json.",
@@ -581,6 +588,9 @@ def _fetch_stories(L: instaloader.Instaloader, userids: list[int]) -> StoryFetch
         # the failure would escape this handler if we didn't materialize here.
         stories = list(L.get_stories(userids=list(userids)))
     except QueryReturnedBadRequestException as e:
+        if instagram_cooldown.classify(e) is not None:
+            # Pushback, not a bad userid: splitting would repeat it per account.
+            raise
         if len(userids) == 1:
             log.warning("Instagram rejected userid %s on its own: %s", userids[0], e)
             return StoryFetch([], [], list(userids))
@@ -626,7 +636,7 @@ def scrape_chunk(
     fetch = _fetch_stories(L, userids)
 
     if not fetch.accepted_sizes and len(userids) > 1:
-        raise InstagramStoriesBadRequest(
+        raise instagram_cooldown.EveryAccountRejected(
             f"Instagram rejected all {len(userids)} accounts in this chunk, including "
             "every one of them asked about individually. Only a dead, challenged, or "
             "rate-limited session fails every account at once — a bad account would "
@@ -735,6 +745,8 @@ def main() -> None:
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
     )
+    # Before login or any request: a pause recorded by either channel holds here.
+    instagram_cooldown.ensure_collection_allowed("stories")
     ensure_dirs()
 
     L = instaloader.Instaloader(
@@ -789,26 +801,22 @@ def main() -> None:
         for index, chunk in enumerate(chunks, start=1):
             try:
                 result = scrape_chunk(L, chunk, by_userid)
-            except LoginRequiredException:
-                log.error("Login required (session expired). Re-auth and re-run.")
-                raise
-            except ConnectionException as e:
-                totals["errors"] += 1
-                log.warning("chunk %d/%d: connection error: %s", index, len(chunks), e)
-            except InstagramStoriesBadRequest as e:
-                totals["errors"] += 1
-                log.error("%s", e)
-                raise RuntimeError(str(e)) from None
             except Exception as e:  # noqa: BLE001 — keep the run alive across chunks
+                block = instagram_cooldown.classify(e)
+                if block is not None:
+                    raise instagram_cooldown.stop(block, "stories", e) from e
                 totals["errors"] += 1
-                log.warning(
-                    "chunk %d/%d: %s: %s",
-                    index,
-                    len(chunks),
-                    type(e).__name__,
-                    e,
-                    exc_info=True,
-                )
+                if isinstance(e, ConnectionException):
+                    log.warning("chunk %d/%d: connection error: %s", index, len(chunks), e)
+                else:
+                    log.warning(
+                        "chunk %d/%d: %s: %s",
+                        index,
+                        len(chunks),
+                        type(e).__name__,
+                        e,
+                        exc_info=True,
+                    )
             else:
                 totals["seen"] += result.seen
                 totals["new"] += result.new
@@ -853,6 +861,13 @@ def main() -> None:
                 "for rejected accounts, expired sessions, auth challenges, or rate "
                 "limits."
             )
+    except Exception as e:
+        # Pushback before the chunks, such as on the follow list. A
+        # CollectionStopped from the loop is never classified again.
+        block = instagram_cooldown.classify(e)
+        if block is None:
+            raise
+        raise instagram_cooldown.stop(block, "stories", e) from e
     finally:
         # Persist whatever the jar rotated to during this run, even when we exit by
         # raising (e.g. one flaky account). Guarded so a logged-out jar can't clobber
