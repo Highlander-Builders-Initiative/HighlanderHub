@@ -47,6 +47,7 @@ from post_archive import (
     write_post,
 )
 from scrape import (
+    PacedRateController,
     _attach_http_error_logger,
     _load_scrape_accounts,
     _login,
@@ -64,10 +65,10 @@ log = logging.getLogger("pipeline.scrape_posts")
 POSSIBLY_PINNED = 3
 
 # Posts are fetched one profile at a time: unlike stories there is no batched
-# endpoint, so a run is one request per account plus pagination. Instaloader's
-# own rate controller already paces the individual requests; this jitter keeps
-# the per-account cadence from looking metronomic on top of it.
-ACCOUNT_SLEEP_RANGE = (3.0, 9.0)
+# endpoint, so a run is one request per account plus pagination.
+# `PacedRateController` puts a floor under the individual requests; this jitter
+# keeps the per-account cadence from looking metronomic on top of it.
+ACCOUNT_SLEEP_RANGE = (5.0, 12.0)
 
 
 class InstagramPostsBlocked(RuntimeError):
@@ -454,6 +455,7 @@ def main(handles: list[str] | None = None) -> None:
         save_metadata=False,
         compress_json=False,
         quiet=True,
+        rate_controller=PacedRateController,
     )
     L.context.user_agent = (
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "

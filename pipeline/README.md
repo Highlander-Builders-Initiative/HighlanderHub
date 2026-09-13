@@ -122,8 +122,11 @@ Use a **dedicated account**, not your personal one. Instagram is aggressive
 about flagging accounts that look like scrapers — expect occasional
 checkpoints / temporary blocks, and add jitter / lower the cadence if you
 get throttled. `scrape.py` asks about 50 accounts per request and sleeps
-5–15s between requests, so a full run is ~17 story requests rather than one
-per account.
+8–20s between requests, so a full run is ~17 story requests rather than one
+per account. Every Instagram call — including the per-owner reels, feed-page,
+and carousel requests Instaloader makes inside a chunk or profile — also waits
+an extra 1–2.5s (`REQUEST_GAP_RANGE`), and `scrape_posts.py` sleeps 5–12s
+between accounts.
 
 ## Editing accounts.json
 

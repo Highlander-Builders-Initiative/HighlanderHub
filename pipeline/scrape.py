@@ -51,11 +51,27 @@ STORY_CHUNK_SIZE = 50
 # Jitter between chunks. One chunk covers 50 accounts, so a full run is ~17
 # requests and the sleeps can be far more generous than the old per-account 2–5s
 # while still finishing in minutes.
-CHUNK_SLEEP_RANGE = (5.0, 15.0)
+CHUNK_SLEEP_RANGE = (8.0, 20.0)
+
+# Extra pause before every Instagram request, on top of Instaloader's own
+# `do_sleep` (exponential, mean ~1.7s, often near zero). Its RateController only
+# waits once an 11-minute quota is spent, so the requests inside one chunk or one
+# profile — iphone reels per posting owner, feed pages, carousel metadata,
+# split-retries — otherwise go out nearly back to back. That burst is what an
+# automated-behavior check sees, and the scraper account has been flagged for it.
+REQUEST_GAP_RANGE = (1.0, 2.5)
 
 
 class InstagramStoriesBadRequest(RuntimeError):
     """Fatal Instagram stories API failure that should stop the run."""
+
+
+class PacedRateController(instaloader.RateController):
+    """Instaloader's rate controller with a floor between consecutive requests."""
+
+    def wait_before_query(self, query_type: str) -> None:
+        self.sleep(random.uniform(*REQUEST_GAP_RANGE))
+        super().wait_before_query(query_type)
 
 
 # Response headers Instagram sets when it throttles or challenges a request.
@@ -730,6 +746,7 @@ def main() -> None:
         save_metadata=False,
         compress_json=False,
         quiet=True,
+        rate_controller=PacedRateController,
     )
     L.context.user_agent = (
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
