@@ -10,17 +10,20 @@ import {
   restoreSavedEventFeedSpot,
   type EventFeedRestorePatch,
 } from "@/lib/events/feed-restore";
+import type { EventFeedQuery } from "@/components/events/events-filters";
 
 type RestoreBootstrap = EventFeedRestoreState & {
   currentEvents: CampusEvent[];
   currentHasMore: boolean;
   currentNextOffset: number;
+  pageFilters: EventFeedQuery;
 };
 
 type UseEventFeedRestoreArgs = {
   events: CampusEvent[];
   initialHasMore: boolean;
   initialNextOffset: number;
+  pageFilters: EventFeedQuery;
   applyRestore: (patch: EventFeedRestorePatch) => void;
 };
 
@@ -28,6 +31,7 @@ export function useEventFeedRestore({
   events,
   initialHasMore,
   initialNextOffset,
+  pageFilters,
   applyRestore,
 }: UseEventFeedRestoreArgs) {
   const [isRestoring, setIsRestoring] = useState(false);
@@ -36,6 +40,7 @@ export function useEventFeedRestore({
     currentEvents: events,
     currentHasMore: initialHasMore,
     currentNextOffset: initialNextOffset,
+    pageFilters,
   }));
 
   useLayoutEffect(() => {
@@ -45,6 +50,7 @@ export function useEventFeedRestore({
       currentEvents,
       currentHasMore,
       currentNextOffset,
+      pageFilters,
     } = bootstrap;
     if (!snapshot && !returnScroll) return;
 
@@ -62,6 +68,7 @@ export function useEventFeedRestore({
           currentEvents,
           currentHasMore,
           currentNextOffset,
+          pageFilters,
           applyRestore,
         });
       } finally {

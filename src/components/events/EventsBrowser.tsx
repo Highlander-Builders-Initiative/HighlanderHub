@@ -24,6 +24,7 @@ import { saveEventFeedSnapshot } from "@/lib/events/feed-session";
 import {
   type CategoryValue,
   type DayWindow,
+  type EventFeedQuery,
 } from "./events-filters";
 import { useCalendarMonthEvents } from "./useCalendarMonthEvents";
 import { useEventFeedFilters } from "./useEventFeedFilters";
@@ -31,11 +32,7 @@ import { useEventFeedRestore } from "./useEventFeedRestore";
 import { useEventFeedNavigation } from "./useEventFeedNavigation";
 import type { EventFeedRestorePatch } from "@/lib/events/feed-restore";
 
-export type EventsBrowserInitialFilters = {
-  category: CategoryValue;
-  query: string;
-  dayWindow: DayWindow;
-};
+export type EventsBrowserInitialFilters = EventFeedQuery;
 
 const DEFAULT_INITIAL_FILTERS: EventsBrowserInitialFilters = {
   category: "all",
@@ -125,6 +122,7 @@ export function EventsBrowser({
     events,
     initialHasMore,
     initialNextOffset,
+    pageFilters: initialFilters,
     applyRestore,
   });
 
@@ -177,11 +175,7 @@ export function EventsBrowser({
   // router.replace so each keystroke / chip click does not push a history
   // entry; deep links survive, the back button doesn't.
   const writeFiltersToUrl = useCallback(
-    (next: {
-      category: CategoryValue;
-      query: string;
-      dayWindow: DayWindow;
-    }) => {
+    (next: EventFeedQuery) => {
       if (window.location.pathname !== "/events") return;
       const params = new URLSearchParams();
       if (next.category !== "all") params.set("cat", next.category);
@@ -287,6 +281,7 @@ export function EventsBrowser({
     isCalendarLoading,
     setCalendarCursor,
     feedFilters,
+    pageFilters: initialFilters,
   });
 
   const openMobileFilters = useCallback(() => {

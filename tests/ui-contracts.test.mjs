@@ -33,7 +33,7 @@ test("event browser paginates the list instead of rendering every event at once"
   assert.match(observedDayKey, /resolveObservedDayKey/);
   assert.match(browser, /useEventFeedNavigation/);
   assert.match(navigation, /loadMoreRef/);
-  assert.match(navigation, /fetchEventsPage\(nextOffset, undefined, feedFilters\)/);
+  assert.match(navigation, /fetchEventsPage\(nextOffset, undefined, requested\)/);
   assert.doesNotMatch(browser, /Load more/);
   assert.match(browser, /hasMore/);
 });
@@ -306,6 +306,8 @@ test("event back navigation restores from a snapshot before falling back to pagi
     /rootScroller\.scrollTop = intent\.scrollY;/
   );
   assert.match(restore, /fetchEventsPage/);
+  assert.match(restore, /fetchPage\(next, limitToFetch, filters\)/);
+  assert.match(restore, /fetchPage\(restoredNext, undefined, filters\)/);
   assert.match(restore, /restoreToEventCard/);
   assert.match(session, /highlanderhub\.returnScroll/);
 });

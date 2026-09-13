@@ -1,5 +1,6 @@
 import type { EventCategory, CampusEvent } from "@/types/event";
 import type { DayWindow } from "@/types/events-feed";
+import type { EventFeedQuery } from "@/components/events/events-filters";
 import {
   clearEventFeedReturnState,
   type SavedEventFeedSnapshot,
@@ -19,7 +20,8 @@ export type EventFeedRestorePatch = {
 
 type EventPageFetcher = (
   offset: number,
-  limit?: number
+  limit: number | undefined,
+  filters: EventFeedQuery
 ) => Promise<EventsApiPage>;
 
 type RestoreTarget = {
@@ -43,6 +45,7 @@ export async function restoreEventsUntilTarget(
   next: number,
   more: boolean,
   target: RestoreTarget,
+  filters: EventFeedQuery,
   fetchPage: EventPageFetcher = fetchEventsPage
 ) {
   let restored = current;
@@ -52,7 +55,7 @@ export async function restoreEventsUntilTarget(
   if (typeof target.loadedCount === "number") {
     const limitToFetch = Math.max(0, target.loadedCount - current.length);
     if (limitToFetch > 0) {
-      const page = await fetchPage(next, limitToFetch);
+      const page = await fetchPage(next, limitToFetch, filters);
       const nextEvents = mergeUniqueEventsByStart(restored, page.events);
       if (nextEvents.length === restored.length && page.nextOffset === restoredNext) {
         return { current: restored, next: restoredNext, more: restoredMore };
@@ -67,7 +70,7 @@ export async function restoreEventsUntilTarget(
     restoredMore &&
     !restored.some((event) => event.id === target.eventId)
   ) {
-    const page = await fetchPage(restoredNext);
+    const page = await fetchPage(restoredNext, undefined, filters);
     const nextEvents = mergeUniqueEventsByStart(restored, page.events);
     if (nextEvents.length === restored.length && page.nextOffset === restoredNext) break;
     restored = nextEvents;
@@ -143,6 +146,7 @@ type RestoreSavedEventFeedSpotArgs = {
   currentEvents: CampusEvent[];
   currentHasMore: boolean;
   currentNextOffset: number;
+  pageFilters: EventFeedQuery;
   applyRestore: (patch: EventFeedRestorePatch) => void;
 };
 
@@ -157,6 +161,7 @@ export async function restoreSavedEventFeedSpot({
   currentEvents,
   currentHasMore,
   currentNextOffset,
+  pageFilters,
   applyRestore,
 }: RestoreSavedEventFeedSpotArgs): Promise<boolean> {
   if (snapshot && snapshot.path !== path) return false;
@@ -196,11 +201,20 @@ export async function restoreSavedEventFeedSpot({
       return true;
     }
 
+    const listFilters: EventFeedQuery = snapshot
+      ? {
+          category: snapshot.category,
+          query: snapshot.query,
+          dayWindow: snapshot.dayWindow,
+        }
+      : pageFilters;
+
     const restored = await restoreEventsUntilTarget(
       intent.events,
       intent.nextOffset,
       intent.hasMore,
-      intent
+      intent,
+      listFilters
     );
 
     applyRestore({

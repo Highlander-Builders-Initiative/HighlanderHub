@@ -83,6 +83,7 @@ test("filtered event pagination replaces client id-search backfill", () => {
   const api = read("src/lib/events/api.ts");
   const navigation = read("src/components/events/useEventFeedNavigation.ts");
   const browser = read("src/components/events/EventsBrowser.tsx");
+  const filtersHook = read("src/components/events/useEventFeedFilters.ts");
 
   assert.match(data, /filterEventSource/);
   assert.match(data, /function hasEventPageFilters/);
@@ -94,7 +95,11 @@ test("filtered event pagination replaces client id-search backfill", () => {
   assert.match(api, /params\.set\("cat", filters\.category\)/);
   assert.match(api, /params\.set\("when", filters\.dayWindow\)/);
   assert.match(browser, /const feedFilters = useMemo/);
-  assert.match(navigation, /fetchEventsPage\(nextOffset, undefined, feedFilters\)/);
+  assert.match(navigation, /fetchEventsPage\(nextOffset, undefined, requested\)/);
+  assert.match(
+    filtersHook,
+    /useMemo\(\(\) => Array.from\(grouped\.keys\(\)\), \[grouped\]\)/
+  );
 
   assert.doesNotMatch(data, /getEventsByIds/);
   assert.doesNotMatch(data, /EVENTS_BY_IDS_LIMIT/);
@@ -102,4 +107,25 @@ test("filtered event pagination replaces client id-search backfill", () => {
   assert.doesNotMatch(api, /fetchEventsByIds/);
   assert.doesNotMatch(browser, /useEventSearchBackfill/);
   assert.doesNotMatch(browser, /feedHasMore/);
+});
+
+test("event feed queries compare by category, day window, and trimmed query", async () => {
+  const { eventFeedQueriesEqual } = await importTsModule(
+    "src/components/events/events-filters.ts"
+  );
+
+  assert.equal(
+    eventFeedQueriesEqual(
+      { category: "sports", query: "  club ", dayWindow: "week" },
+      { category: "sports", query: "club", dayWindow: "week" }
+    ),
+    true
+  );
+  assert.equal(
+    eventFeedQueriesEqual(
+      { category: "sports", query: "", dayWindow: "all" },
+      { category: "all", query: "", dayWindow: "all" }
+    ),
+    false
+  );
 });

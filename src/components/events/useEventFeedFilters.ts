@@ -115,7 +115,7 @@ export function useEventFeedFilters({
     () => groupByDay(filteredCalendarEvents),
     [filteredCalendarEvents]
   );
-  const dayKeys = Array.from(grouped.keys());
+  const dayKeys = useMemo(() => Array.from(grouped.keys()), [grouped]);
 
   // Per-day event count drives the calendar heat map. Real counts (not
   // distinct categories) so a day with five social events reads as busy.

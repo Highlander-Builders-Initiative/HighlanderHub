@@ -36,12 +36,15 @@ export function useDialogFocusTrap({
 
     const opener = document.activeElement as HTMLElement | null;
     const { body, documentElement } = document;
-    const previousOverflow = body.style.overflow;
+    const previousOverflow = documentElement.style.overflow;
     const previousPaddingRight = body.style.paddingRight;
     // Hiding the scrollbar widens the viewport; pad by its width so the page
     // underneath does not jump sideways on platforms with classic scrollbars.
     const scrollbarWidth = window.innerWidth - documentElement.clientWidth;
-    body.style.overflow = "hidden";
+    // Lock the root, not body: html's overflow-x: clip keeps body's overflow
+    // from reaching the viewport, so hiding it on body turns body into its own
+    // scroll container. The page keeps scrolling and sticky rails unstick.
+    documentElement.style.overflow = "hidden";
     if (scrollbarWidth > 0) body.style.paddingRight = `${scrollbarWidth}px`;
 
     // Elements hidden at this breakpoint (display: none) have no client rects
@@ -92,7 +95,7 @@ export function useDialogFocusTrap({
     window.addEventListener("keydown", onKey);
 
     return () => {
-      body.style.overflow = previousOverflow;
+      documentElement.style.overflow = previousOverflow;
       body.style.paddingRight = previousPaddingRight;
       window.removeEventListener("keydown", onKey);
       opener?.focus?.({ preventScroll: true });
