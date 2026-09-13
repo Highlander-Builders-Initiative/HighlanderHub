@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type MutableRefObject } from "react";
+import { useCallback, useEffect, useRef, useState, type MutableRefObject } from "react";
 import { resolveObservedDayKey } from "@/lib/events/observed-day-key";
 
 type UseObservedDayKeyArgs = {
@@ -18,9 +18,17 @@ export function useObservedDayKey({
   userInitiatedScrollRef,
   initialDayKey,
 }: UseObservedDayKeyArgs) {
-  const [observedDayKey, setObservedDayKey] = useState(
+  const [observedDayKey, setObservedDayKeyState] = useState(
     () => dayKeys[0] ?? initialDayKey
   );
+  // Scroll can resolve the same day every frame; skip setState so this
+  // owner does not re-render (React still renders once even on a bailout).
+  const observedDayKeyRef = useRef(observedDayKey);
+  const setObservedDayKey = useCallback((next: string) => {
+    if (observedDayKeyRef.current === next) return;
+    observedDayKeyRef.current = next;
+    setObservedDayKeyState(next);
+  }, []);
 
   useEffect(() => {
     if (dayKeys.length === 0) return;
@@ -51,9 +59,7 @@ export function useObservedDayKey({
         viewportHeight: window.innerHeight,
       });
 
-      if (next) {
-        setObservedDayKey((prev) => (prev === next ? prev : next));
-      }
+      if (next) setObservedDayKey(next);
     };
 
     const onScroll = () => {
@@ -70,7 +76,7 @@ export function useObservedDayKey({
       window.removeEventListener("resize", onScroll);
       cancelAnimationFrame(rafId);
     };
-  }, [dayKeys, dayHeaderRefs, daySectionRefs, userInitiatedScrollRef]);
+  }, [dayKeys, dayHeaderRefs, daySectionRefs, userInitiatedScrollRef, setObservedDayKey]);
 
   return { observedDayKey, setObservedDayKey };
 }

@@ -86,6 +86,12 @@ const securityHeaders = [
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // A leftover ~/package-lock.json makes Next infer the home folder as the
+  // workspace root. Chunk URLs then include Documents/GitHub/HighlanderHub
+  // and HMR fails with ChunkLoadError. Pin the project directory instead.
+  turbopack: {
+    root: __dirname,
+  },
   async headers() {
     return [
       {

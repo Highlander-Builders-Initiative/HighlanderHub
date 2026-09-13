@@ -37,6 +37,24 @@ export const CATEGORIES: { value: CategoryValue; label: string }[] = [
 export { DAY_WINDOWS };
 export type { DayWindow };
 
+/** The three fields that identify a paged event list. Offsets belong to them. */
+export type EventFeedQuery = {
+  query: string;
+  category: CategoryValue;
+  dayWindow: DayWindow;
+};
+
+export function eventFeedQueriesEqual(
+  a: EventFeedQuery,
+  b: EventFeedQuery
+): boolean {
+  return (
+    a.category === b.category &&
+    a.dayWindow === b.dayWindow &&
+    a.query.trim() === b.query.trim()
+  );
+}
+
 export function categoryLabel(value: CategoryValue): string {
   return CATEGORIES.find((c) => c.value === value)?.label ?? "All";
 }

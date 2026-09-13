@@ -18,7 +18,10 @@ import { track } from "@/lib/analytics";
 import { fetchEventsPage } from "@/lib/events/api";
 import { calendarJumpEndsAtLoadedBoundary } from "@/lib/events/calendar-feed-pagination";
 import { mergeUniqueEventsByStart } from "@/lib/events/merge";
-import type { CategoryValue, DayWindow } from "./events-filters";
+import {
+  eventFeedQueriesEqual,
+  type EventFeedQuery,
+} from "./events-filters";
 import { useInfiniteEventFeedLoader } from "./useInfiniteEventFeedLoader";
 import { useObservedDayKey } from "./useObservedDayKey";
 
@@ -40,11 +43,9 @@ type UseEventFeedNavigationArgs = {
   isRestoring: boolean;
   isCalendarLoading: boolean;
   setCalendarCursor: Dispatch<SetStateAction<string>>;
-  feedFilters: {
-    query: string;
-    category: CategoryValue;
-    dayWindow: DayWindow;
-  };
+  feedFilters: EventFeedQuery;
+  /** Filters the loaded pages were fetched with; offsets belong to them. */
+  pageFilters: EventFeedQuery;
 };
 
 export function useEventFeedNavigation({
@@ -66,6 +67,7 @@ export function useEventFeedNavigation({
   isCalendarLoading,
   setCalendarCursor,
   feedFilters,
+  pageFilters,
 }: UseEventFeedNavigationArgs) {
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const dayHeaderRefs = useRef<Map<string, HTMLElement>>(new Map());
@@ -197,8 +199,19 @@ export function useEventFeedNavigation({
     [loadedEvents, calendarEvents, observedDayKey]
   );
 
+  // Offsets belong to the loaded list's query. Wait until the selected
+  // filters match that list, fetch with those filters, and drop a response
+  // if the list was replaced while the request was in flight.
+  const pageFiltersRef = useRef(pageFilters);
+  useLayoutEffect(() => {
+    pageFiltersRef.current = pageFilters;
+  }, [pageFilters]);
+  const filtersReady = eventFeedQueriesEqual(feedFilters, pageFilters);
+
   const loadMore = useCallback(async () => {
-    if (!active || isRestoring || isLoadingMore || !hasMore) return;
+    if (!active || isRestoring || isLoadingMore || !hasMore || !filtersReady) {
+      return;
+    }
     if (
       pendingCalendarScrollRef.current ||
       Date.now() < calendarJumpSuppressUntilRef.current
@@ -209,8 +222,10 @@ export function useEventFeedNavigation({
     setIsLoadingMore(true);
     setLoadError("");
 
+    const requested = pageFilters;
     try {
-      const page = await fetchEventsPage(nextOffset, undefined, feedFilters);
+      const page = await fetchEventsPage(nextOffset, undefined, requested);
+      if (!eventFeedQueriesEqual(pageFiltersRef.current, requested)) return;
       const anchorEl = dayHeaderRefs.current.get(observedDayKey);
       if (anchorEl) {
         pendingLoadAnchorRef.current = {
@@ -236,7 +251,8 @@ export function useEventFeedNavigation({
     isRestoring,
     nextOffset,
     observedDayKey,
-    feedFilters,
+    pageFilters,
+    filtersReady,
     setHasMore,
     setIsLoadingMore,
     setLoadError,
@@ -249,7 +265,7 @@ export function useEventFeedNavigation({
     hasMore,
     loadError,
     isLoadingMore,
-    isRestoring: isRestoring || !active,
+    isRestoring: isRestoring || !active || !filtersReady,
     onLoadMore: loadMore,
     suppressAutoLoadUntilRef: calendarJumpSuppressUntilRef,
     pendingCalendarScrollRef,

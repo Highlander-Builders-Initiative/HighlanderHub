@@ -6,6 +6,8 @@ function event(id) {
   return { id };
 }
 
+const ALL_FILTERS = { category: "all", query: "", dayWindow: "all" };
+
 function richEvent(id, startsAt) {
   return {
     id,
@@ -117,8 +119,9 @@ test("restoreEventsUntilTarget batches to the saved loaded count, then falls bac
     2,
     true,
     { eventId: "target", loadedCount: 4 },
-    async (offset, limit) => {
-      calls.push({ offset, limit });
+    ALL_FILTERS,
+    async (offset, limit, filters) => {
+      calls.push({ offset, limit, filters });
       const page = pages.shift();
       assert.ok(page);
       return page;
@@ -126,8 +129,8 @@ test("restoreEventsUntilTarget batches to the saved loaded count, then falls bac
   );
 
   assert.deepEqual(calls, [
-    { offset: 2, limit: 2 },
-    { offset: 4, limit: undefined },
+    { offset: 2, limit: 2, filters: ALL_FILTERS },
+    { offset: 4, limit: undefined, filters: ALL_FILTERS },
   ]);
   assert.deepEqual(
     restored.current.map((ev) => ev.id),
@@ -188,6 +191,7 @@ test("restoreSavedEventFeedSpot handles card and scroll restores from a derived 
       currentEvents: events,
       currentHasMore: true,
       currentNextOffset: 24,
+      pageFilters: ALL_FILTERS,
       applyRestore(patch) {
         if (patch.loadedEvents !== undefined) {
           root.events = patch.loadedEvents;
@@ -236,6 +240,7 @@ test("restoreSavedEventFeedSpot handles card and scroll restores from a derived 
       currentEvents: [],
       currentHasMore: false,
       currentNextOffset: 0,
+      pageFilters: ALL_FILTERS,
       applyRestore() {},
     });
 
@@ -302,6 +307,7 @@ test("restoreSavedEventFeedSpot uses snapshot pagination when return scroll has 
       currentEvents: staleMountEvents,
       currentHasMore: false,
       currentNextOffset: 0,
+      pageFilters: ALL_FILTERS,
       applyRestore(patch) {
         if (patch.loadedEvents !== undefined) {
           root.events = patch.loadedEvents;
@@ -321,6 +327,72 @@ test("restoreSavedEventFeedSpot uses snapshot pagination when return scroll has 
       root.events.map((ev) => ev.id).join(","),
       /stale-only/
     );
+  } finally {
+    harness.restore();
+  }
+});
+
+test("restoreSavedEventFeedSpot pages with the snapshot filters that own the offset", async () => {
+  const session = await importTsModule("src/lib/events/feed-session.ts");
+  const restore = await importTsModule("src/lib/events/feed-restore.ts");
+  const harness = installRestoreDomHarness({ cardTop: 40 });
+  const { root } = harness;
+
+  try {
+    const events = [
+      richEvent("event-1", "2026-05-20T18:30:00.000-07:00"),
+    ];
+
+    session.saveEventFeedSnapshot({
+      path: "/events",
+      scrollY: 420,
+      category: "sports",
+      query: "",
+      dayWindow: "all",
+      events,
+      hasMore: true,
+      nextOffset: 24,
+      loadedCount: 1,
+    });
+    session.saveEventFeedReturn("/events/target", {
+      eventId: "target",
+      eventTop: 24,
+      loadedCount: 3,
+    });
+
+    const calls = [];
+    globalThis.fetch = async (url) => {
+      calls.push(String(url));
+      return {
+        ok: true,
+        json: async () => ({
+          events: [richEvent("target", "2026-05-20T20:30:00.000-07:00")],
+          hasMore: false,
+          nextOffset: 26,
+        }),
+      };
+    };
+
+    const didRestore = await restore.restoreSavedEventFeedSpot({
+      snapshot: session.getSavedEventFeedSnapshot(),
+      returnScroll: session.getSavedScrollPosition(),
+      path: "/events",
+      currentEvents: events,
+      currentHasMore: true,
+      currentNextOffset: 24,
+      pageFilters: ALL_FILTERS,
+      applyRestore(patch) {
+        if (patch.loadedEvents !== undefined) {
+          root.events = patch.loadedEvents;
+        }
+      },
+    });
+
+    assert.equal(didRestore, true);
+    assert.equal(calls.length, 1);
+    assert.match(calls[0], /offset=24/);
+    assert.match(calls[0], /cat=sports/);
+    assert.doesNotMatch(calls[0], /q=/);
   } finally {
     harness.restore();
   }
