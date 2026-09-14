@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from config import POST_EXTRACTED_DIR, ensure_post_dirs, load_accounts
-from extract_stories import (
+from image_ocr import (
     DURABLE_FLYER_BUCKET,
     ImageExpired,
     _download_image,
@@ -31,7 +31,7 @@ log = logging.getLogger("pipeline.extract_posts")
 
 # Bump when the meaning of a cached extraction changes — a new media type
 # becoming readable, a different OCR engine, a different slide decomposition.
-# A bump invalidates post extractions without touching story caches.
+# A bump invalidates post extractions.
 EXTRACTION_VERSION = 1
 
 # Statuses that will not be reprocessed. `unsupported_media` stays terminal
@@ -213,9 +213,8 @@ def _upload_flyer(record: dict[str, Any], media_key: str, image: bytes) -> str |
 def _readable_slides(record: dict[str, Any]) -> tuple[list[dict[str, Any]], str | None]:
     """The slides to read, plus the reason this post cannot be read.
 
-    Video slides are the cover JPEG Instagram already exposes — the same still
-    stories use as a flyer. An over-long carousel is skipped rather than
-    truncated to its first slides, because reading a subset would assess part
+    Video slides use the cover JPEG Instagram already exposes. An over-long
+    carousel is skipped rather than truncated to its first slides, because reading a subset would assess part
     of the evidence as if it were all of it.
     """
     media = [entry for entry in (record.get("media") or []) if isinstance(entry, dict)]
@@ -460,9 +459,9 @@ def main(*, notify: bool = True, handles: Iterable[str] | None = None,
     )
     processed, stats = extract_all(handles)
     import assessed_events as publication
-    from extract_stories import _load_account_meta
+    from config import load_account_meta
 
-    meta = _load_account_meta()
+    meta = load_account_meta()
     now = datetime.now(timezone.utc).isoformat()
     if publish:
         publication.publish_posts(processed, now, notify=notify, meta=meta)

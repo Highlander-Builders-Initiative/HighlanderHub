@@ -46,8 +46,7 @@ jobs:
           cache: pip
           cache-dependency-path: pipeline/requirements.txt
 
-      # Persists data/raw (durable IG archive — stories expire from IG in 24h)
-      # and data/extracted (per-story Gemini cache) between runs.
+      # Persist structured snapshots, post archives, extraction and assessment caches.
       - name: Restore pipeline data cache
         uses: actions/cache@v4
         with:

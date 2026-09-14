@@ -131,21 +131,21 @@ const importerBatches = (() => {
 })();
 
 test('real importer RPC batches retire unsupported IDs while preserving a locked fanout session', async () => {
-  const [story, rejectedStory, calendar, vanishedCalendar] = importerBatches;
-  assert.equal(story[0].assessment.status, 'complete');
-  assert.equal(story[0].rows.length, 2);
-  const [morning, afternoon] = story[0].rows.map(r => r.id);
+  const [schedule, rejectedSchedule, calendar, vanishedCalendar] = importerBatches;
+  assert.equal(schedule[0].assessment.status, 'complete');
+  assert.equal(schedule[0].rows.length, 2);
+  const [morning, afternoon] = schedule[0].rows.map(r => r.id);
   await reset();
-  await publish(story);
+  await publish(schedule);
   await db.query('update events set is_locked=true where id=$1', [morning]);
-  await publish(story);
+  await publish(schedule);
   assert.deepEqual(await ids(), [morning, afternoon].sort());
-  await publish(rejectedStory);
+  await publish(rejectedSchedule);
   assert.deepEqual(await ids(), [morning]);
 
   await reset();
-  await publish(story);
-  await publish(rejectedStory);
+  await publish(schedule);
+  await publish(rejectedSchedule);
   assert.deepEqual(await ids(), []);
   await publish(calendar);
   assert.deepEqual(await ids(), ['ucr_events_456']);
@@ -153,7 +153,7 @@ test('real importer RPC batches retire unsupported IDs while preserving a locked
   assert.deepEqual(await ids(), []);
 });
 
-test('a post publishes one listing; a story resharing it is not a second source', async () => {
+test('a post publishes one listing with its source and flyer', async () => {
   const [instagram] = importerBatches.slice(4);
   await reset();
   const written = await publish(instagram);

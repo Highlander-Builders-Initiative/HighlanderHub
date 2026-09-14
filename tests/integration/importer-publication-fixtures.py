@@ -8,7 +8,6 @@ from unittest.mock import MagicMock, patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "pipeline"))
 import assessed_events as publication
 import extract_posts as posts
-import extract_stories as stories
 import normalize_events as structured
 
 batches = []
@@ -23,33 +22,29 @@ def rpc(name, arguments):
 
 client.rpc.side_effect = rpc
 text = "Drop-in advising in HUB September 15, 2026 Tuesday 10 AM-12 PM and 1 PM-3 PM."
-raw = {"id": "123", "handle": "club", "posted_at": "2026-09-10T17:00:00Z"}
-cached = {"status": "ok", "ocr_text": text, "result": {
-    "is_event": True, "title": "Advising", "starts_at": "2026-09-15T10:00:00-07:00",
-    "ends_at": "2026-09-15T15:00:00-07:00"}}
+raw = {"id": "123", "title": "Advising", "description_text": text,
+       "first_date": "2026-09-15T10:00:00-07:00",
+       "filters": {"event_audience": [{"name": "Students"}]}}
 
 with tempfile.TemporaryDirectory() as directory, \
      patch.object(publication, "CACHE_DIR", Path(directory)), \
      patch.object(publication, "load_registry", return_value={}), \
      patch("db.client", return_value=client), \
      patch("db.get_imported_events", return_value=[]):
-    src = publication.story_source(raw, cached)
-    evidence = [{"field": "ocr_text", "quote": text}]
+    src = publication.structured_source(raw, "localist")
+    evidence = [{"field": "description", "quote": text}]
     result = {"kind": "service_schedule", "date_role": "recurring_hours", "reason": "Printed advising hours",
               "activity_evidence": evidence, "date_evidence": evidence, "use_source_occurrences": False,
               "occurrences": [], "schedule": {"title": "Advising", "location": "HUB",
-              "location_evidence": [{"field": "ocr_text", "quote": "HUB"}],
+              "location_evidence": [{"field": "description", "quote": "HUB"}],
               "first_day": "2026-09-15", "last_day": "2026-09-15", "weekdays": [1],
               "windows": [{"start": "10:00", "end": "12:00"}, {"start": "13:00", "end": "15:00"}]}}
     publication.record_review(src, result, reviewer="integration fixture")
-    with patch.object(stories, "ensure_dirs"), \
-         patch.object(stories, "_load_account_meta", return_value={}), \
-         patch.object(stories, "_iter_raw_stories", return_value=[raw]), \
-         patch.object(stories, "_process_story", return_value=cached):
-        stories.main(notify=False)
+    with patch.object(structured, "_collect_raw", side_effect=[[raw], [], [raw], []]):
+        structured.main(notify=False)
         result.update(kind="announcement", date_role="none", schedule=None, activity_evidence=[], date_evidence=[])
         publication.record_review(src, result, reviewer="integration fixture")
-        stories.main(notify=False)
+        structured.main(notify=False)
 
     calendar = {"id": 456, "title": "Workshop", "description_text": "Student workshop",
                 "first_date": "2026-09-15T10:00:00-07:00",
@@ -65,7 +60,7 @@ with tempfile.TemporaryDirectory() as directory, \
          patch("db.get_imported_events", return_value=[{"id": "ucr_events_456"}]):
         structured.main(["ucr_events_"], notify=False)
 
-    # A feed post is the source. A story resharing it is not published.
+    # A feed post publishes one listing.
     flyer = "Study Jam September 15, 2026 3 PM-5 PM"
     post = {"media_id": "700", "handle": "acm.ucr", "owner_username": "acm.ucr",
             "shortcode": "CStudy", "permalink": "https://www.instagram.com/p/CStudy/",
@@ -76,11 +71,6 @@ with tempfile.TemporaryDirectory() as directory, \
     post_cached = {"status": "ok", "images": [
         {"media_key": "700_0_n", "index": 0, "ocr_text": flyer, "qr_urls": [],
          "image_url": "https://storage.example/700_0_n.jpg"}]}
-    reshare = {"id": "555", "handle": "ieee.ucr", "posted_at": "2026-09-10T18:00:00Z",
-               "caption": None, "permalink": "https://www.instagram.com/stories/ieee.ucr/555/",
-               "reshared_post": {"media_id": "700", "owner_username": None,
-                                 "caption": "Join ACM for a study jam"}}
-    reshare_cached = {"status": "ok", "ocr_text": flyer, "result": {}}
     occurrence = {"title": "Study Jam", "starts_at": "2026-09-15T15:00:00-07:00",
                   "ends_at": "2026-09-15T17:00:00-07:00", "all_day": False, "location": "", "location_evidence": []}
     meta = {"acm.ucr": {"label": "ACM at UCR"}, "ieee.ucr": {"label": "IEEE at UCR"}}
@@ -98,23 +88,21 @@ with tempfile.TemporaryDirectory() as directory, \
 
     post_src = publication.post_source(post, post_cached)
     review(post_src, "slide_1_ocr")
-    publication.publish_instagram([(reshare, reshare_cached)], [(post, post_cached)],
-                                  meta, "2026-09-11T19:00:00Z", notify=False)
+    publication.publish_posts([(post, post_cached)], "2026-09-11T19:00:00Z", meta=meta, notify=False)
 
-    # The club corrects the caption to say the session is cancelled; with the
-    # reshare skipped, the post is the only source and the listing withdraws.
+    # A cancellation withdraws the post-supported listing.
     corrected = {**post, "caption": "Study jam is cancelled, see you next term"}
     corrected_src = publication.post_source(corrected, post_cached)
     review(corrected_src, "caption", kind="announcement")
-    publication.publish_instagram([], [(corrected, post_cached)], meta,
-                                  "2026-09-11T20:00:00Z", notify=False)
+    publication.publish_posts([(corrected, post_cached)],
+                                  "2026-09-11T20:00:00Z", meta=meta, notify=False)
 
     # A second post from an unrelated club with the same title and time.
     other = {**post, "media_id": "800", "handle": "ieee.ucr", "owner_username": "ieee.ucr",
              "shortcode": "COther", "permalink": "https://www.instagram.com/p/COther/"}
     other_src = publication.post_source(other, post_cached)
     review(other_src, "slide_1_ocr")
-    publication.publish_instagram([], [(other, post_cached)], meta,
+    publication.publish_posts([(other, post_cached)],
                                   "2026-09-11T21:00:00Z", notify=False)
 
     # The post now has a blank slide and no caption. Run extraction through

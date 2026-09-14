@@ -2,7 +2,7 @@
 
 Writes one JSON file per event to data/raw/ucr_events/<id>.json.
 
-Unlike Instagram stories (which are immutable), Localist events are mutable —
+Localist events are mutable —
 descriptions get edited, locations change, etc. We always overwrite the raw
 file so the on-disk copy reflects Localist's current state.
 

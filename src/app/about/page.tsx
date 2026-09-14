@@ -33,7 +33,7 @@ const PRINCIPLES = [
 
 const SOURCES = [
   {
-    label: "Club Instagram stories",
+    label: "Club Instagram posts",
     body: "Flyers posted by registered student orgs. We read the image to find the title, time, and place.",
   },
   {
@@ -90,8 +90,8 @@ export default function AboutPage() {
               className="space-y-4 text-base leading-relaxed text-ink/75 md:col-span-6 md:col-start-7 md:pt-11 md:text-lg"
             >
               <p>
-                Half the events at UCR live in Instagram stories that disappear
-                in 24 hours. The rest sit on events.ucr.edu, HighlanderLink, a
+                Events at UCR are scattered across Instagram posts,
+                events.ucr.edu, HighlanderLink, a
                 few club sites, and the occasional wall flyer. To know
                 what&rsquo;s actually happening on a given Thursday, you&rsquo;d
                 follow dozens of accounts and check several calendars.

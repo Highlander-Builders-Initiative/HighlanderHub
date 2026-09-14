@@ -34,13 +34,6 @@ test("generated EventRow matches events upsert schema", () => {
   assert.deepEqual(rowFields, schemaPropertyKeys(schema));
 });
 
-test("generated StoryRow matches stories upsert schema", () => {
-  const schema = readJson("schemas/stories.upsert.schema.json");
-  const generated = readFileSync(new URL("../src/lib/supabase-rows.ts", import.meta.url), "utf8");
-  const rowFields = parseInterfaceFields(generated, "StoryRow");
-  assert.deepEqual(rowFields, schemaPropertyKeys(schema));
-});
-
 test("events.ts reads rows through generated EventRow type", () => {
   const eventsTs = readFileSync(new URL("../src/lib/events/index.ts", import.meta.url), "utf8");
   assert.match(eventsTs, /from "@\/lib\/supabase-rows"/);

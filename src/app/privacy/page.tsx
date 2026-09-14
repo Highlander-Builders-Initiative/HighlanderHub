@@ -48,7 +48,7 @@ export default function PrivacyPage() {
             </p>
             <ul className="list-disc pl-5 space-y-2">
               <li>
-                <strong>Public Student Organization Channels:</strong> We parse promotional flyers and text descriptions posted publicly on Instagram stories and posts by registered student organizations. This aggregation includes event titles, schedules, locations, and hosting handle names.
+                <strong>Public Student Organization Channels:</strong> We parse promotional flyers and text descriptions posted publicly on Instagram posts by registered student organizations. This aggregation includes event titles, schedules, locations, and hosting handle names.
               </li>
               <li>
                 <strong>Official University Feeds:</strong> We mirror public listings from UCR&rsquo;s official events directory (<code>events.ucr.edu</code>).

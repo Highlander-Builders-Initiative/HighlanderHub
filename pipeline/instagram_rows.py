@@ -1,4 +1,4 @@
-"""Shared Instagram row policy after story/post occurrence and identity resolution."""
+"""Instagram post row policy after occurrence and identity resolution."""
 from __future__ import annotations
 
 import logging
@@ -8,7 +8,7 @@ from typing import Any, Iterable
 
 from category_inference import infer_category_from_text
 from classify import classify_content_kind, detect_free_food
-from story_dates import midnight_end, normalize_timestamptz, was_stale_when_posted
+from event_dates import midnight_end, normalize_timestamptz, was_stale_when_posted
 from url_utils import normalize_http_url, normalize_rsvp_url
 
 log = logging.getLogger("pipeline.instagram_rows")
@@ -59,13 +59,7 @@ def build_instagram_row(
     account_meta: dict, text: str, image_url: str | None, qr_urls: Iterable,
     scraped_at: str, assessed_kind: str | None,
 ) -> dict | None:
-    """Apply the same dates, host privacy, classification and RSVP rules to both channels.
-
-    Adapters resolve source-specific identities, supported occurrences and flyer
-    selection. `text` includes OCR and captions; `occurrence` may retain legacy
-    story fields such as category, tags, price and description. Classification
-    is returned for every row; publication eligibility belongs to the caller.
-    """
+    """Apply date, host privacy, classification and RSVP rules to an assessed post."""
     title = str(occurrence.get("title") or "").strip()
     starts_at = normalize_timestamptz(occurrence.get("starts_at"))
     if not title or not starts_at:
@@ -88,11 +82,9 @@ def build_instagram_row(
 
     destinations = {url for value in qr_urls if (url := normalize_rsvp_url(value))}
     rsvp_url = (
-        normalize_rsvp_url(raw.get("story_cta_url"))
-        or (next(iter(destinations)) if len(destinations) == 1 else None)
+        (next(iter(destinations)) if len(destinations) == 1 else None)
         or normalize_rsvp_url(occurrence.get("rsvp_url"), text)
         or _caption_rsvp_url(str(raw.get("caption") or ""))
-        or _caption_rsvp_url(str((raw.get("reshared_post") or {}).get("caption") or ""))
     )
     if raw.get("handle") in _ANONYMIZED_HOST_HANDLES or host_handle in _ANONYMIZED_HOST_HANDLES:
         host, host_handle = "", None

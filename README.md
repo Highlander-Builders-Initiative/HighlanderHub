@@ -13,7 +13,7 @@ when the next general meeting is.
 
 ## Where the events come from
 
-- **Club Instagram stories** — flyers posted by registered student
+- **Club Instagram posts** — flyers posted by registered student
   organizations.
 - **events.ucr.edu** — UCR's official campus events calendar.
 - **highlanderlink.ucr.edu** — public HighlanderLink listings from student

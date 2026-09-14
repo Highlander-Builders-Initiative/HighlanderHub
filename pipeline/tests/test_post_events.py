@@ -344,7 +344,7 @@ class PostPublicationTests(unittest.TestCase):
         self.assertEqual("student_event", row["content_kind"])
         self.assertEqual("instagram", row["source"])
         self.assertEqual("ACM at UCR", row["host"])
-        self.assertIn("ig_post_700_20260915T2200Z", known)
+        self.assertEqual({row["id"]}, known)
 
     def test_the_flyer_is_the_first_slide_that_actually_supplied_evidence(self):
         rows, _ = self.rows()
@@ -365,7 +365,7 @@ class PostPublicationTests(unittest.TestCase):
         self.record["posted_at"] = "2026-09-17T17:00:00+00:00"
         rows, known = self.rows()
         self.assertEqual([], rows)
-        self.assertEqual({"ig_acm.ucr_20260915T2200Z", "ig_post_700_20260915T2200Z"}, known)
+        self.assertEqual({"ig_acm.ucr_20260915T2200Z"}, known)
 
     def test_posted_during_the_event_or_missing_post_time_stays_publishable(self):
         for posted_at in ("2026-09-15T23:00:00Z", None):
@@ -439,9 +439,9 @@ class PostPublicationTests(unittest.TestCase):
             self.meta, "2026-09-11T12:00:00+00:00")
         self.assertEqual(([], set()), (rows, known))
 
-    def test_a_corrected_date_claims_both_the_old_and_new_identities(self):
+    def test_publication_claims_the_author_event_identity(self):
         rows, known = self.rows()
-        self.assertEqual({"ig_acm.ucr_20260915T2200Z", "ig_post_700_20260915T2200Z"}, known)
+        self.assertEqual({"ig_acm.ucr_20260915T2200Z"}, known)
         self.assertEqual(rows[0]["id"], "ig_acm.ucr_20260915T2200Z")
 
     def test_a_qr_destination_is_recovered_as_the_rsvp_link(self):
@@ -467,7 +467,7 @@ class PostPublicationTests(unittest.TestCase):
         rows, _ = self.rows()
         self.assertIsNone(rows[0]["rsvp_url"])
 
-    def test_stories_and_posts_share_public_row_policy(self):
+    def test_post_row_privacy_classification_and_registration_policy(self):
         self.record["caption"] = "Join us! Register at https://lu.ma/studyjam"
         self.cached["images"][1]["ocr_text"] += " Resume workshop. FREE PIZZA!"
         for handle in ("acm.ucr", "highlander_opps"):
@@ -475,22 +475,6 @@ class PostPublicationTests(unittest.TestCase):
                 self.record.update(handle=handle, owner_username=handle)
                 self.source = publication.post_source(self.record, self.cached)
                 post = self.rows()[0][0]
-                raw = {**self.record, "id": "555"}
-                cached = {"status": "ok", "ocr_text": self.cached["images"][1]["ocr_text"],
-                          "result": {"is_event": True, "title": "Old Gemini title",
-                                     "starts_at": "2026-09-14T10:00:00-07:00",
-                                     "description": "Stale Gemini-only description", "category": "social",
-                                     "tags": ["stale tag"], "is_free": False, "rsvp_required": True,
-                                     "rsvp_url": "https://lu.ma/obsolete", "location": "Invented room"}}
-                source = publication.story_source(raw, cached)
-                result = post_decision(source, field="ocr_text")
-                story = publication.story_rows(raw, cached,
-                    {"status": "complete", "source": source, "result": result},
-                    self.meta, "2026-09-11T12:00:00+00:00")[0][0]
-                for key in ("id", "title", "starts_at", "ends_at", "host", "host_handle",
-                            "category", "has_free_food", "rsvp_required", "rsvp_url", "content_kind",
-                            "description", "tags", "is_free", "location"):
-                    self.assertEqual(post[key], story[key], key)
                 self.assertEqual("career", post["category"])
                 self.assertTrue(post["has_free_food"])
                 self.assertTrue(post["rsvp_required"])
@@ -498,19 +482,14 @@ class PostPublicationTests(unittest.TestCase):
                 if handle == "highlander_opps":
                     self.assertEqual(("", None), (post["host"], post["host_handle"]))
 
-    def test_assessed_fundraisers_remain_outside_both_public_channels(self):
+    def test_assessed_fundraisers_remain_outside_public_feed(self):
         result = post_decision(self.source, field="slide_2_ocr")
         result["occurrences"][0]["title"] = "Bake sale fundraiser"
         self.assertEqual([], self.rows(result)[0])
-        raw = {**self.record, "id": "555"}
-        cached = {"status": "ok", "ocr_text": self.cached["images"][1]["ocr_text"], "result": {}}
-        self.assertEqual([], publication.story_rows(raw, cached,
-            {"status": "complete", "source": self.source, "result": result}, self.meta,
-            "2026-09-11T12:00:00Z")[0])
 
 
-class PostAndReshareIdentityTests(unittest.TestCase):
-    """One event posted once and reshared by other clubs is one listing."""
+class PostIdentityTests(unittest.TestCase):
+    """Post identities respect authors and publication constraints."""
 
     def setUp(self):
         self.cached = {"status": "ok", "images": [
@@ -527,30 +506,6 @@ class PostAndReshareIdentityTests(unittest.TestCase):
                                             "2026-09-11T12:00:00+00:00")
         return rows[0], known
 
-    def test_a_reshare_that_names_no_author_still_lands_on_the_post_row(self):
-        # A story resharing this post without naming the author keys its event
-        # on the media identity. The direct post claims that same identity, so
-        # the two settle on one listing instead of two.
-        row, known = self.post_row()
-        import extract_stories as ig
-        reshare_identity = ig._instagram_event_id("post_700", row["starts_at"])
-        self.assertIn(reshare_identity, known)
-        self.assertEqual(ig._instagram_event_id("acm.ucr", row["starts_at"]), row["id"])
-
-    def test_a_reshare_story_is_not_published_as_its_own_source(self):
-        story = {"id": "555", "handle": "ieee.ucr", "posted_at": "2026-09-10T18:00:00+00:00",
-                 "caption": None, "permalink": "https://www.instagram.com/stories/ieee.ucr/555/",
-                 "reshared_post": {"media_id": "700", "owner_username": None,
-                                   "caption": "Join ACM for a study jam"}}
-        original = {"id": "111", "handle": "ieee.ucr", "posted_at": "2026-09-10T18:00:00+00:00",
-                    "caption": "our own flyer", "permalink": "https://www.instagram.com/stories/ieee.ucr/111/"}
-        cached = {"status": "ok", "ocr_text": "Study Jam September 15, 2026, 3-5 PM"}
-        with patch.object(publication, "make_update",
-                          side_effect=lambda source, *a, **k: {"source_key": source["source_key"]}):
-            updates = publication.story_updates(
-                [(story, cached), (original, cached)], self.meta,
-                "2026-09-11T12:00:00+00:00", registry={})
-        self.assertEqual(["instagram:111"], [item["source_key"] for item in updates])
 
     def test_unrelated_clubs_sharing_a_title_and_time_stay_separate(self):
         from event_identity import dedupe_event_rows
@@ -564,8 +519,7 @@ class PostAndReshareIdentityTests(unittest.TestCase):
 
     def test_a_published_post_row_satisfies_the_publication_rpc_contract(self):
         # The shared RPC accepts only imported, publishable rows, and applies
-        # admin locks and tombstones by event id. A post row must qualify the
-        # same way a story row does, or it would be rejected outright.
+        # admin locks and tombstones by event id.
         row, _ = self.post_row()
         self.assertTrue(row["id"].startswith("ig_"))
         self.assertIn(row["content_kind"], {"student_event", "student_deadline"})
@@ -675,7 +629,7 @@ class PilotDryRunTests(unittest.TestCase):
                  patch.object(publication, "CACHE_DIR", Path(directory) / "assessments"), \
                  patch.object(semantic, "assess",
                               return_value=post_decision(source, field="slide_1_ocr")), \
-                 patch("extract_stories._load_account_meta", return_value={}), \
+                 patch("config.load_account_meta", return_value={}), \
                  patch.object(publication, "publish_posts") as publish, \
                  patch.object(publication, "publish") as rpc:
                 posts.main(publish=False, report=report)
@@ -745,16 +699,6 @@ class PostUpdateBatchTests(unittest.TestCase):
                     [(record(), {"status": status, "images": []})], {},
                     "2026-09-11T12:00:00+00:00",
                     registry=self.supporting_registry("ig_acm.ucr_20260915T2200Z")))
-
-    def test_posts_are_published_after_stories_so_the_post_link_wins(self):
-        with patch.object(publication, "load_registry", return_value={}), \
-             patch.object(publication, "story_updates", return_value=[{"source_key": "instagram:1"}]), \
-             patch.object(publication, "post_updates", return_value=[{"source_key": "instagram:post:700"}]), \
-             patch.object(publication, "_complete") as complete:
-            publication.publish_instagram([], [], {}, "2026-09-11T12:00:00+00:00", notify=False)
-        ordered = [item["source_key"] for item in complete.call_args.args[0]]
-        self.assertEqual(["instagram:1", "instagram:post:700"], ordered)
-        self.assertFalse(complete.call_args.kwargs["notify"])
 
 
 if __name__ == "__main__":
