@@ -47,11 +47,11 @@ class ReassessmentScopeTests(unittest.TestCase):
             with self.subTest(row=row):
                 self.assertIs(expected, publication._event_relevance(row, NOW))
 
-    def test_finished_stories_and_posts_do_not_call_model_even_on_refresh(self):
+    def test_finished_posts_do_not_call_model_even_on_refresh(self):
         src = source("Workshop September 11, 2026, 3-5 PM")
         old = decision(src)
         old["occurrences"][0].update(starts_at="2026-09-11T15:00:00-07:00", ends_at="2026-09-11T17:00:00-07:00")
-        for key in ("instagram:past", "instagram:post:past"):
+        for key in ("instagram:post:past",):
             for refresh in (False, True):
                 with self.subTest(key=key, refresh=refresh):
                     src["source_key"] = key
@@ -65,27 +65,27 @@ class ReassessmentScopeTests(unittest.TestCase):
                     self.assertEqual({"past_sources_skipped": 1}, stats)
                     self.assertEqual(before, prior)
 
-    def test_legacy_dates_and_finished_schedules_are_skipped(self):
+    def test_finished_schedules_are_skipped(self):
         src = source()
-        self.assertTrue(publication._source_is_past(src, {"result": {"starts_at": "2026-09-11T15:00:00-07:00"}}, None, NOW))
         prior = {"assessment": {"result": {"schedule": {"last_day": "2026-09-11"}}}}
-        self.assertTrue(publication._source_is_past(src, None, prior, NOW))
+        self.assertTrue(publication._source_is_past(src, prior, NOW))
         prior["assessment"]["result"]["schedule"]["last_day"] = "2026-09-12"
-        self.assertFalse(publication._source_is_past(src, None, prior, NOW))
+        self.assertFalse(publication._source_is_past(src, prior, NOW))
 
     def test_new_structured_dates_override_an_old_finished_assessment(self):
         src = source()
         src["source_occurrences"] = [{"starts_at": "2026-09-15T15:00:00-07:00"}]
         prior = {"assessment": {"result": {"occurrences": [{"starts_at": "2026-09-11T15:00:00-07:00"}]}}}
-        self.assertFalse(publication._source_is_past(src, None, prior, NOW))
+        self.assertFalse(publication._source_is_past(src, prior, NOW))
         src["source_occurrences"].append({"starts_at": "2026-09-10T15:00:00-07:00"})
-        self.assertFalse(publication._source_is_past(src, None, prior, NOW))
+        self.assertFalse(publication._source_is_past(src, prior, NOW))
 
     def test_old_upload_date_does_not_suppress_first_assessment_of_new_source(self):
         src = source()
         src["posted_at"] = "2026-06-01T12:00:00Z"
+        src["source_key"] = "instagram:post:new"
         with patch.object(semantic, "assess", return_value=decision(src)) as model:
-            update = publication.make_update(src, {"id": "new", "handle": "club", "posted_at": src["posted_at"]},
+            update = publication.make_update(src, {"media_id": "new", "handle": "club", "posted_at": src["posted_at"]},
                                              {"status": "ok", "ocr_text": src["texts"]["ocr_text"]}, None, {}, NOW)
         model.assert_called_once_with(src)
         self.assertEqual(1, len(update["rows"]))
@@ -102,7 +102,6 @@ class ReassessmentScopeTests(unittest.TestCase):
         complete.assert_called_once_with([], notify=False)
 
     def run_backfill(self, *flags):
-        import extract_stories as stories
         import normalize_events as structured
         raw = [{"id": number, "title": "Workshop", "description_text": "Student workshop",
                 "first_date": start, "last_date": end, "filters": {"event_audience": [{"name": "Students"}]}}
@@ -123,8 +122,7 @@ class ReassessmentScopeTests(unittest.TestCase):
         with patch.object(publication, "datetime", FixedDatetime), \
              patch.object(publication, "load_registry", return_value={}), \
              patch("db.get_imported_events", return_value=events), \
-             patch.object(stories, "RAW_DIR", self.root / "empty"), \
-             patch.object(stories, "_load_account_meta", return_value={}), \
+             patch.object(publication, "load_account_meta", return_value={}), \
              patch("post_archive.hydrate_local_posts"), \
              patch("post_archive.iter_local_posts", return_value=[]), \
              patch.object(structured, "_collect_raw", side_effect=[raw, []]), \

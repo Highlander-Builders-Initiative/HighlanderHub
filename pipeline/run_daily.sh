@@ -3,7 +3,7 @@
 #
 # Runs locally rather than in GitHub Actions on purpose: Instagram sessions
 # survive here because (a) the run happens from a residential IP, and (b)
-# scrape.py persists the rotated `sessionid` back to IG_SESSION_FILE after
+# scrape_posts.py persists the rotated `sessionid` back to IG_SESSION_FILE after
 # every run. On a CI runner the session file is ephemeral, so each run replays
 # the same increasingly stale cookie until Instagram rejects it.
 set -uo pipefail

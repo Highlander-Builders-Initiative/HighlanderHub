@@ -1,15 +1,6 @@
-"""One stop decision shared by both Instagram collection channels.
+"""Persist Instagram collection pauses after challenges or throttling.
 
-Stories (`scrape.py`) and feed posts (`scrape_posts.py`) collect through the
-same logged-in account from the same machine, so a challenge or throttle seen by
-either applies to both. `classify` is the only place that decides what counts as
-one. The channel that meets one records a pause here, and each collector checks
-it before its first request — including the other channel later in the same
-run. Asking again right after Instagram has pushed back is what escalates a
-throttle into a checkpoint.
-
-Only collection pauses. Extraction, assessment, and publication work from what
-is already on disk and never use the Instagram session.
+Extraction, assessment, and publication continue from the saved post archive.
 """
 from __future__ import annotations
 
@@ -73,18 +64,14 @@ class Pause:
     def describe(self) -> str:
         if self.kind is Kind.UNREADABLE:
             return (
-                f"the pause record could not be read ({self.detail}); both "
-                "Instagram channels stay paused until it is removed"
+                f"the pause record could not be read ({self.detail}); "
+                "Instagram collection stays paused until it is removed"
             )
         when = self.until.astimezone().strftime("%Y-%m-%d %H:%M %Z")
         return (
-            f"{self.channel} collection was {self.kind} ({self.reason}); both "
-            f"Instagram channels are paused until {when}"
+            f"{self.channel} collection was {self.kind} ({self.reason}); "
+            f"Instagram collection is paused until {when}"
         )
-
-
-class EveryAccountRejected(RuntimeError):
-    """A story batch refused for every account, each asked about on its own."""
 
 
 class CollectionPaused(RuntimeError):
@@ -92,10 +79,10 @@ class CollectionPaused(RuntimeError):
 
 
 class CollectionStopped(RuntimeError):
-    """Instagram challenged or throttled a collector mid-run; both channels are paused."""
+    """Instagram challenged or throttled a collector mid-run; collection are paused."""
 
 
-# A pause that could not be written. It still stops the other channel in this
+# A pause that could not be written. It still stops collection in this
 # process; only later runs miss it.
 _UNSAVED: Pause | None = None
 
@@ -116,12 +103,9 @@ def _instaloader_errors(exc: BaseException | None) -> Iterator[BaseException]:
 def classify(exc: BaseException, *, lone_400: bool = False) -> Block | None:
     """Whether `exc` is Instagram pushing back on the account.
 
-    A bare 400 is ambiguous in a story batch — it can be one bad userid, which
-    the split-retry isolates — but a request about a single account
-    (`lone_400`) has nothing to isolate, so there it means the session.
+    A bare 400 on a single-account feed request (`lone_400`) indicates a
+    stale session or challenge. Follow-list failures can still use the cache.
     """
-    if isinstance(exc, EveryAccountRejected):
-        return Block(Kind.CHALLENGED, "every account rejected")
     errors = list(_instaloader_errors(exc))
     text = " ".join(str(err) for err in errors).lower()
     if "feedback_required" in text:
@@ -149,7 +133,7 @@ def classify(exc: BaseException, *, lone_400: bool = False) -> Block | None:
 
 
 def pause(block: Block, channel: str, detail: str, *, now: datetime | None = None) -> Pause:
-    """Pause collection on both channels for the cooldown, starting now."""
+    """Pause collection for the cooldown, starting now."""
     global _UNSAVED
     record = Pause(
         kind=block.kind,
@@ -183,7 +167,7 @@ def pause(block: Block, channel: str, detail: str, *, now: datetime | None = Non
 
 
 def stop(block: Block, channel: str, exc: BaseException) -> CollectionStopped:
-    """Pause both channels and build the error that ends `channel`'s run."""
+    """Pause collection and build the error that ends `channel`'s run."""
     paused = pause(block, channel, str(exc))
     return CollectionStopped(f"{paused.describe()}. {exc}")
 
@@ -229,7 +213,7 @@ def current(*, now: datetime | None = None) -> Pause | None:
 
 
 def ensure_collection_allowed(channel: str, *, now: datetime | None = None) -> None:
-    """Refuse to start `channel` while a pause from either channel is in force."""
+    """Refuse to start `channel` while a collection pause is in force."""
     active = current(now=now)
     if active is None:
         return

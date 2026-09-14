@@ -16,7 +16,7 @@ that drifted for unrelated reasons (an earlier rule change, a hand edit made
 before locking was routine), which is rarely what you want.
 
 Only title/description/source are available on the stored row, so neither
-Localist `audiences` nor a story's OCR text is in play here. A campus_website
+Localist `audiences` nor a flyer's OCR text is in play here. A campus_website
 or instagram row can therefore classify differently than it did at import;
 rows whose kind was set by one of those missing signals are left alone unless
 --include-audience-origins or --include-flyer-origins is passed.
@@ -37,7 +37,7 @@ log = logging.getLogger("pipeline.backfill_content_kind")
 AUDIENCE_ORIGINS = {"campus_website", "club_website"}
 
 # Origins whose classification reads the flyer's OCR text, which the events
-# table does not store either. A story classified `student_application` off
+# table does not store either. A flyer classified `student_application` off
 # "select a slot" would look like a disagreement here and be reverted.
 FLYER_ORIGINS = {"instagram"}
 

@@ -1,4 +1,4 @@
-"""Shared paths and config for the Instagram stories pipeline."""
+"""Shared paths and config for the event ingestion pipeline."""
 from __future__ import annotations
 
 import logging
@@ -27,42 +27,14 @@ if load_dotenv is not None:
 
 DATA_DIR = ROOT / "data"
 RAW_DIR = DATA_DIR / "raw"
-EXTRACTED_DIR = DATA_DIR / "extracted"
-# Feed posts are a separate channel from stories and must never reach the
-# frontend `stories` table, so they get their own archive rather than another
-# subdirectory of RAW_DIR (which `normalize.py` walks wholesale).
 POSTS_DIR = DATA_DIR / "posts"
 POST_EXTRACTED_DIR = DATA_DIR / "post_extractions"
 POST_CHECKPOINTS_FILE = DATA_DIR / "post_checkpoints.json"
-# Instagram's private story payload is undocumented, and the keys carrying a
-# reshared feed post are a best guess (see scrape._reshared_post). Set
-# IG_DUMP_STORY_STRUCT=1 for a run to archive the raw payload here and confirm
-# the real shape against a story known to reshare a post.
-STRUCT_DUMP_DIR = DATA_DIR / "struct_dumps"
-DUMP_STORY_STRUCT = os.environ.get("IG_DUMP_STORY_STRUCT", "").strip().lower() in {
-    "1",
-    "true",
-    "yes",
-}
 ACCOUNTS_FILE = ROOT / "accounts.json"
 FOLLOWED_ACCOUNTS_FILE = DATA_DIR / "followed_accounts.json"
 ACCOUNT_SOURCE = os.environ.get("PIPELINE_ACCOUNT_SOURCE", "followed").lower()
 
-# How many days back `normalize` re-pushes story snapshots to Supabase. Raw
-# the on-disk story archive only grows (re-observation refreshes links), so
-# re-upserting the whole history every run is unbounded wasted writes. Stories
-# older than this stay as-is in Supabase (they were written when fresh). Widen
-# this or set it <= 0 to force a full re-sync — e.g. after editing accounts.json
-# labels or changing the story row shape. Override with
-# PIPELINE_STORIES_WINDOW_DAYS.
-try:
-    STORIES_WINDOW_DAYS = int(os.environ.get("PIPELINE_STORIES_WINDOW_DAYS", "30"))
-except ValueError:
-    STORIES_WINDOW_DAYS = 30
-
-# Instaloader needs to be logged in to fetch stories. Two supported modes:
-#   1. IG_USERNAME + IG_PASSWORD env vars  (interactive 2FA prompt if needed)
-#   2. A session file dropped here by `instaloader -l <user>` (preferred for cron)
+# Authenticate using credentials or a saved Instaloader session file.
 IG_USERNAME = os.environ.get("IG_USERNAME")
 IG_PASSWORD = os.environ.get("IG_PASSWORD")
 SESSION_FILE = os.environ.get("IG_SESSION_FILE")  # absolute path, optional
@@ -134,7 +106,7 @@ try:
 except ValueError:
     POST_OVERLAP_DAYS = 7
 
-# When Instagram challenges or throttles either collection channel, both stop
+# When Instagram challenges or throttles collection, requests stop
 # and stay paused this long (see instagram_cooldown.py): asking again straight
 # after pushback is what escalates a throttle into a checkpoint. Override with
 # PIPELINE_INSTAGRAM_COOLDOWN_HOURS.
@@ -149,9 +121,12 @@ except ValueError:
 
 def ensure_dirs() -> None:
     RAW_DIR.mkdir(parents=True, exist_ok=True)
-    EXTRACTED_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def ensure_post_dirs() -> None:
     POSTS_DIR.mkdir(parents=True, exist_ok=True)
     POST_EXTRACTED_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def load_account_meta() -> dict[str, dict[str, Any]]:
+    return {account["handle"]: account for account in load_accounts()}

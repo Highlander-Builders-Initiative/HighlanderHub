@@ -213,7 +213,7 @@ def _instant(value: Any) -> datetime:
 
 
 def _day_supported(day: date, text: str, source: dict) -> bool:
-    from story_dates import evidence_dates, _scan_printed_dates, _labeled_date, _OCR_DATE_RE, _MONTHS
+    from event_dates import evidence_dates, _scan_printed_dates, _labeled_date, _OCR_DATE_RE, _MONTHS
 
     # ISO dates are used by structured APIs. OCR date helpers cover human text.
     iso_days = re.findall(r"\b\d{4}-\d{2}-\d{2}\b", text)
@@ -257,7 +257,7 @@ def _day_supported(day: date, text: str, source: dict) -> bool:
 
 
 def _clock_supported(clock: time, text: str) -> bool:
-    from story_dates import _parse_ampm_time, _OCR_TIME_RANGE_RE, _OCR_COMPACT_TIME_RANGE_RE, time_range
+    from event_dates import _parse_ampm_time, _OCR_TIME_RANGE_RE, _OCR_COMPACT_TIME_RANGE_RE, time_range
     clocks = set()
     for match in re.finditer(r"\b(\d{1,2})(?::(\d{2}))?\s*([ap]\.?m\.?)", text, re.I):
         clocks.add(_parse_ampm_time(*match.groups()))

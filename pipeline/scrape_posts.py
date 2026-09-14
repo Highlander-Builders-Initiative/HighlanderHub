@@ -1,7 +1,7 @@
 """Fetch Instagram feed posts for the configured accounts.
 
 Writes one JSON file per post to data/posts/<handle>/<media_id>.json and a
-durable copy to Supabase. Unlike stories, posts do not expire from Instagram,
+durable copy to Supabase. Posts do not expire from Instagram,
 so the archive is a cache rather than the only record — but it is still the
 thing that makes a daily run cheap, because a post already on disk costs no
 OCR and no model call.
@@ -40,7 +40,7 @@ from post_archive import (
     write_json as _write_json,
     write_post,
 )
-from scrape import (
+from instagram_client import (
     PacedRateController,
     _attach_http_error_logger,
     _load_scrape_accounts,
@@ -58,9 +58,8 @@ log = logging.getLogger("pipeline.scrape_posts")
 # on their own merits — they just cannot decide where the scan stops.
 POSSIBLY_PINNED = 3
 
-# Posts are fetched one profile at a time: unlike stories there is no batched
-# endpoint. The default constructs the GraphQL feed iterator directly, avoiding
-# a separate profile query. The opt-in direct-feed pilot uses the v1 endpoint.
+# Posts are fetched one profile at a time. The default constructs the GraphQL
+# feed iterator directly, avoiding a separate profile query. The opt-in direct-feed pilot uses the v1 endpoint.
 # `PacedRateController` puts a floor under the individual requests; this jitter
 # keeps the per-account cadence from looking metronomic on top of it.
 ACCOUNT_SLEEP_RANGE = (5.0, 12.0)
@@ -280,7 +279,7 @@ def _serialize_media(post: Any) -> list[dict[str, Any]]:
     entries: list[dict[str, Any]] = []
     if post.typename == "GraphSidecar":
         for index, node in enumerate(post.get_sidecar_nodes()):
-            # Video nodes still expose a JPEG cover; OCR that still, like stories.
+            # Video nodes still expose a JPEG cover; OCR that still.
             url = node.display_url
             entries.append({
                 "index": index,
@@ -365,16 +364,16 @@ def _graphql_feed_posts(L: instaloader.Instaloader, handle: str,
                         user_id: str) -> instaloader.NodeIterator:
     """The logged-in 4.15.3 get_posts query, without its metadata lookup.
 
-    The query addresses a handle, so validate every page against the stored ID
-    before exposing any posts, including pinned/out-of-window entries. An empty
-    first page cannot establish identity; fail without advancing coverage.
+    The query addresses a handle, so validate every post against the stored ID
+    as its author or an accepted coauthor, including pinned/out-of-window entries.
+    An empty first page cannot establish identity; fail without advancing coverage.
     """
     if not L.context.is_logged_in:
         raise RuntimeError(f"{handle}: GraphQL post collection requires login")
-    verified_owner = False
+    verified_account = False
 
     def extract_page(response: dict[str, Any]) -> dict[str, Any]:
-        nonlocal verified_owner
+        nonlocal verified_account
         page = response["data"]["xdt_api__v1__feed__user_timeline_graphql_connection"]
         edges = page.get("edges")
         page_info = page.get("page_info")
@@ -383,16 +382,26 @@ def _graphql_feed_posts(L: instaloader.Instaloader, handle: str,
                 or (page_info["has_next_page"] and not page_info.get("end_cursor"))):
             raise RuntimeError(f"{handle}: malformed GraphQL feed page")
         for edge in edges:
-            owner = edge["node"].get("user") or {}
+            node = edge["node"]
+            owner = node.get("user") or {}
             owner_id = owner.get("pk")
-            if str(owner_id) != user_id:
+            # A collaboration appears on each accepted coauthor's profile,
+            # while `user` still identifies its original author. Invitations
+            # and ordinary tags do not establish that account's membership.
+            coauthors = node.get("coauthor_producers") or []
+            is_coauthor = isinstance(coauthors, list) and any(
+                isinstance(author, dict) and str(author.get("pk")) == user_id
+                for author in coauthors
+            )
+            if not owner_id or (str(owner_id) != user_id and not is_coauthor):
                 raise RuntimeError(
-                    f"{handle}: GraphQL feed owner ID {owner_id!r} does not match "
-                    f"stored ID {user_id}; verify the roster handle and ID"
+                    f"{handle}: GraphQL post {node.get('code')!r} author ID {owner_id!r} "
+                    f"does not match stored ID {user_id}, and the account is not an "
+                    "accepted coauthor; cannot verify feed membership"
                 )
-        if not edges and (not verified_owner or page_info["has_next_page"]):
+        if not edges and (not verified_account or page_info["has_next_page"]):
             raise RuntimeError(f"{handle}: empty GraphQL feed cannot verify account identity/coverage")
-        verified_owner = True
+        verified_account = True
         return page
 
     # Keep this aligned with Profile.get_posts in the pinned Instaloader version.

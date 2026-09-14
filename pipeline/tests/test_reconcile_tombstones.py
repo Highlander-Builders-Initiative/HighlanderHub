@@ -10,7 +10,6 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import assessed_events as publication
 import content_assessment as semantic
-import extract_stories as ig
 import normalize_events as structured
 import reconcile_events as reconcile
 
@@ -22,7 +21,7 @@ class AssessedTombstoneTests(unittest.TestCase):
         # Other pipeline tests reload importers; keep lazy imports and patches
         # pointed at the same module instances for this fixture.
         modules = patch.dict(sys.modules, {
-            'extract_stories': ig, 'normalize_events': structured,
+            'normalize_events': structured,
             'assessed_events': publication, 'content_assessment': semantic,
         })
         modules.start()
@@ -34,14 +33,13 @@ class AssessedTombstoneTests(unittest.TestCase):
         self.raws = {'localist': [], 'highlander_link': []}
         for target, name, value in (
             (publication, 'load_registry', lambda: self.registry),
-            (ig, '_load_account_meta', lambda: {}),
-            (ig, '_cache_path', lambda key: self.root / f'{key}.cache'),
+            (publication, 'load_account_meta', lambda: {}),
             (structured, '_collect_raw', lambda path: self.raws['localist' if path == structured.UCR_EVENTS_RAW else 'highlander_link']),
         ):
             mocked = patch.object(target, name, side_effect=value)
             mocked.start()
             self.addCleanup(mocked.stop)
-        mocked = patch.object(ig, 'RAW_DIR', self.root)
+        mocked = patch('post_archive.iter_local_posts', return_value=[])
         mocked.start()
         self.addCleanup(mocked.stop)
         mocked = patch.object(semantic, 'assess', side_effect=AssertionError('Reconciliation must not assess'))
@@ -55,10 +53,8 @@ class AssessedTombstoneTests(unittest.TestCase):
                'description': text, 'first_date': '2026-09-15T15:00:00-07:00',
                'startsOn': '2026-09-15T15:00:00-07:00',
                'filters': {'event_audience': [{'name': 'Students'}]}}
-        cached = {'status': 'not_event', 'ocr_text': text, 'result': {}}
-        source = (publication.story_source(raw, cached) if origin == 'instagram'
-                  else publication.structured_source(raw, origin))
-        field = 'ocr_text' if origin == 'instagram' else 'description'
+        source = publication.structured_source(raw, origin)
+        field = 'description'
         evidence = [{'field': field, 'quote': text}]
         result = {'kind': 'activity', 'date_role': 'occurrence', 'reason': 'Two campus activities',
                   'activity_evidence': evidence, 'date_evidence': evidence, 'use_source_occurrences': False,
@@ -75,15 +71,8 @@ class AssessedTombstoneTests(unittest.TestCase):
                 'title': 'Student Robotics Building Workshop', 'location': 'HUB 302',
                 'location_evidence': [{'field': field, 'quote': 'HUB 302'}]})
         payload = {'status': 'complete', 'source': source, 'result': semantic.validate(result, source)}
-        if origin == 'instagram':
-            folder = self.root / raw['handle']
-            folder.mkdir(exist_ok=True)
-            (folder / '123.json').write_text(json.dumps(raw))
-            (self.root / '123.cache').write_text(json.dumps(cached))
-            rows, _ = publication.story_rows(raw, cached, payload, {}, NOW)
-        else:
-            self.raws[origin] = [raw]
-            rows, _ = publication.structured_rows(raw, origin, payload, NOW)
+        self.raws[origin] = [raw]
+        rows, _ = publication.structured_rows(raw, origin, payload, NOW)
         self.assertEqual(2, len(rows))
         self.registry[source['source_key']] = {
             'origin': origin, 'assessment': payload, 'last_complete_assessment': payload,
@@ -91,7 +80,7 @@ class AssessedTombstoneTests(unittest.TestCase):
         return rows, self.registry[source['source_key']]
 
     def test_assessed_hashes_and_schedule_fanout_block_cross_source_copies(self):
-        for origin in ('instagram', 'localist', 'highlander_link'):
+        for origin in ('localist', 'highlander_link'):
             for schedule in (False, True):
                 with self.subTest(origin=origin, schedule=schedule):
                     self.registry.clear()
@@ -106,14 +95,14 @@ class AssessedTombstoneTests(unittest.TestCase):
                                      reconcile.plan([*copies, unrelated, locked], tombstones))
 
     def test_error_uses_last_complete_assessment_and_remapped_identity(self):
-        rows, record = self.prepare('instagram')
+        rows, record = self.prepare('localist')
         record['assessment'] = {'status': 'error', 'error': 'Model unavailable'}
         record['event_ids'] = ['ucr_events_canonical']
         self.assertEqual({r['id'] for r in rows},
                          {r['id'] for r in reconcile._tombstoned_candidates({'ucr_events_canonical'})})
 
     def test_old_schedule_without_location_citations_still_reconstructs_tombstones(self):
-        rows, record = self.prepare('instagram', schedule=True)
+        rows, record = self.prepare('localist', schedule=True)
         record['assessment']['result']['schedule'].pop('location_evidence')
         self.assertEqual({row['id'] for row in rows},
                          {row['id'] for row in reconcile._tombstoned_candidates({rows[0]['id']})})
@@ -138,6 +127,33 @@ class AssessedTombstoneTests(unittest.TestCase):
         tombstones = reconcile._tombstoned_candidates({'ucr_events_123'})
         self.assertEqual(['ucr_events_123'], [r['id'] for r in tombstones])
         self.assertEqual(([], {'ig_copy'}), reconcile.plan([{**tombstones[0], 'id': 'ig_copy'}], tombstones))
+
+    def test_post_tombstones_reconstruct_last_complete_assessment(self):
+        import extract_posts as posts
+        from test_post_events import record, post_decision
+
+        raw = record(caption="Study Jam September 15, 2026, 3-5 PM", slides=1)
+        cached = {"status": "ok", "images": []}
+        source = publication.post_source(raw, cached)
+        payload = {"status": "complete", "source": source,
+                   "result": post_decision(source, field="caption")}
+        rows, _ = publication.post_rows(raw, cached, payload, {}, NOW)
+        self.assertEqual(1, len(rows))
+        self.registry[source['source_key']] = {
+            'origin': 'instagram', 'assessment': {'status': 'error'},
+            'last_complete_assessment': payload,
+            'event_ids': ['ucr_events_canonical'],
+            'known_event_ids': [rows[0]['id']],
+        }
+        cache = self.root / 'post.json'
+        cache.write_text(json.dumps(cached))
+        with patch('post_archive.iter_local_posts', return_value=[raw]), \
+             patch.object(posts, '_cache_path', return_value=cache):
+            for deleted in ({rows[0]['id']}, {'ucr_events_canonical'}):
+                with self.subTest(deleted=deleted):
+                    rebuilt = reconcile._tombstoned_candidates(deleted)
+                    self.assertEqual([rows[0]['id']], [row['id'] for row in rebuilt])
+            self.assertEqual([], reconcile._tombstoned_candidates({'unrelated'}))
 
 
 if __name__ == '__main__':

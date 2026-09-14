@@ -29,8 +29,6 @@ class SchemaContractTests(unittest.TestCase):
         fake_config = types.SimpleNamespace(
             ROOT=PIPELINE_ROOT,
             RAW_DIR=PIPELINE_ROOT / "data" / "raw",
-            EXTRACTED_DIR=PIPELINE_ROOT / "data" / "extracted",
-            STORIES_WINDOW_DAYS=30,
             GOOGLE_CLOUD_PROJECT="test-project",
             GOOGLE_CLOUD_LOCATION="global",
             GOOGLE_VISION_API_KEY="test",
@@ -42,6 +40,7 @@ class SchemaContractTests(unittest.TestCase):
             ensure_dirs=lambda: None,
             ensure_post_dirs=lambda: None,
             load_accounts=lambda: [],
+            load_account_meta=lambda: {},
         )
         cls._saved_modules = {
             name: sys.modules.get(name) for name in ("config", "db")
@@ -54,22 +53,13 @@ class SchemaContractTests(unittest.TestCase):
             delete_events_missing_from_ids=lambda *a, **k: 0,
             get_deleted_event_ids=lambda: set(),
         )
-        sys.modules.pop("extract_stories", None)
         sys.modules.pop("normalize_events", None)
-        sys.modules.pop("normalize", None)
-        import extract_stories  # noqa: E402
-        import normalize  # noqa: E402
         import normalize_events  # noqa: E402
 
-        cls.extract_stories = extract_stories
-        cls.normalize = normalize
         cls.normalize_events = normalize_events
         cls.events_schema = _load_schema("events.upsert.schema.json")
-        cls.stories_schema = _load_schema("stories.upsert.schema.json")
         cls.event_keys = _schema_keys(cls.events_schema)
-        cls.story_keys = _schema_keys(cls.stories_schema)
         cls.event_required = set(cls.events_schema["required"])
-        cls.story_required = set(cls.stories_schema["required"])
 
     def _assert_row_matches_schema(self, row: dict[str, object], schema_keys: set[str], required: set[str]) -> None:
         keys = set(row.keys())
@@ -84,31 +74,6 @@ class SchemaContractTests(unittest.TestCase):
             else:
                 sys.modules[name] = mod
 
-    def test_extract_stories_event_row_keys(self) -> None:
-        row, _superseded_id = self.extract_stories._to_event_row(
-            {
-                "id": "3894795737410658765",
-                "handle": "cyber_ucr",
-                "permalink": "https://www.instagram.com/stories/cyber_ucr/3894795737410658765/",
-                "image_url": "https://cdn.example/flyer.jpg",
-            },
-            {
-                "status": "ok",
-                "ocr_text": "Security Night Workshop May 15",
-                "result": {
-                    "is_event": True,
-                    "title": "Security Night Workshop",
-                    "starts_at": "2026-05-15T19:00:00-07:00",
-                    "category": "career",
-                    "tags": ["security"],
-                },
-            },
-            {"label": "UCR Cybersecurity Club"},
-            "2026-05-14T12:00:00+00:00",
-        )
-        self.assertIsNotNone(row)
-        assert row is not None
-        self._assert_row_matches_schema(row, self.event_keys, self.event_required)
 
     def test_assessed_post_event_row_keys(self) -> None:
         import assessed_events as publication
@@ -165,19 +130,6 @@ class SchemaContractTests(unittest.TestCase):
         self.assertIsNotNone(row)
         assert row is not None
         self._assert_row_matches_schema(row, self.event_keys, self.event_required)
-
-    def test_normalize_story_row_keys(self) -> None:
-        row = self.normalize._to_story_row(
-            {
-                "id": "3140000000000000000",
-                "handle": "acm.ucr",
-                "posted_at": "2026-05-11T18:30:00+00:00Z",
-                "is_video": False,
-                "caption_mentions": ["other.handle"],
-            },
-            {"label": "ACM at UCR", "category": "club"},
-        )
-        self._assert_row_matches_schema(row, self.story_keys, self.story_required)
 
 
 if __name__ == "__main__":

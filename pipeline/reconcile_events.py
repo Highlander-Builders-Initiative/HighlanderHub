@@ -94,7 +94,7 @@ def plan(rows: list[dict], tombstones: list[dict] = (), *, now: datetime | None 
         # Date-only weekend announcements often omit the end on the campus
         # listing. The corrected flyers supply the complete final day.
         start = _parse_instant(winner.get('starts_at'))
-        from story_dates import PACIFIC_TZ
+        from event_dates import PACIFIC_TZ
         if start and start.astimezone(PACIFIC_TZ).time().isoformat() == '00:00:00':
             ends = [_parse_instant(r.get('ends_at')) for r in live]
             ends = [e for e in ends if e and e > start and e.astimezone(PACIFIC_TZ).time().isoformat() in {'00:00:00', '23:59:59'}]
@@ -109,12 +109,12 @@ def _tombstoned_candidates(deleted: set[str]) -> list[dict]:
     """Rebuild deleted source identities so a different source cannot revive them."""
     if not deleted:
         return []
-    import extract_stories as ig
+    from config import load_account_meta
     import normalize_events as structured
     import assessed_events as publication
     registry = publication.load_registry()
     now = datetime.now(timezone.utc).isoformat()
-    meta = ig._load_account_meta()
+    meta = load_account_meta()
     tombstones = []
 
     def assessed_candidates(key: str, raw: dict, cached: dict | None = None) -> bool:
@@ -128,8 +128,6 @@ def _tombstoned_candidates(deleted: set[str]) -> list[dict]:
             return True
         if key.startswith('instagram:post:'):
             rows, aliases = publication.post_rows(raw, cached or {}, payload, meta, now)
-        elif cached is not None:
-            rows, aliases = publication.story_rows(raw, cached, payload, meta, now)
         else:
             rows, aliases = publication.structured_rows(raw, record['origin'], payload, now)
         identities = aliases | set(record.get('event_ids', [])) | set(record.get('known_event_ids', []))
@@ -140,17 +138,6 @@ def _tombstoned_candidates(deleted: set[str]) -> list[dict]:
             tombstones.extend(rows)
         return True
 
-    pairs = []
-    handles = set(meta)
-    if ig.RAW_DIR.exists():
-        handles.update(path.name for path in ig.RAW_DIR.iterdir()
-                       if path.is_dir() and path.name not in {'ucr_events', 'highlander_link'})
-    for raw in ig._iter_raw_stories(handles):
-        path = ig._cache_path(str(raw.get('id')))
-        if path.exists():
-            cached = ig._read_json(path)
-            if not assessed_candidates(f"instagram:{raw['id']}", raw, cached):
-                pairs.append((raw, cached))
     # Posts have no pre-assessment identity to fall back on, so an unregistered
     # post simply contributes nothing here.
     import extract_posts as igposts
@@ -160,10 +147,7 @@ def _tombstoned_candidates(deleted: set[str]) -> list[dict]:
         if path.exists():
             assessed_candidates(f"instagram:post:{record['media_id']}", record,
                                 igposts._read_json(path))
-    # Compatibility for sources that have never entered assessed publication.
-    # Registered sources must not fall back to the pre-assessment identities.
-    rows, _, retired_by = ig._collect_event_rows(pairs, meta, now)
-    blocked = ig._inherit_tombstones(deleted, retired_by)
+    rows = []
     for raw in structured._collect_raw(structured.UCR_EVENTS_RAW):
         if not assessed_candidates(f"localist:{raw['id']}", raw):
             rows.extend(structured._to_event_rows(raw, now))
@@ -172,7 +156,7 @@ def _tombstoned_candidates(deleted: set[str]) -> list[dict]:
             row = structured._to_event_row_hlink(raw, now)
             if row:
                 rows.append(row)
-    return tombstones + [r for r in rows if r['id'] in blocked]
+    return tombstones + [r for r in rows if r['id'] in deleted]
 
 
 def _inherit_notifications(rows: list[dict], updates: list[dict], removed: set[str]) -> None:

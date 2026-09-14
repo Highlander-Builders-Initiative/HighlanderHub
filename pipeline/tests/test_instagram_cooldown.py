@@ -1,4 +1,4 @@
-"""The stop decision both Instagram collection channels share."""
+"""Persisted Instagram collection stop decisions."""
 from __future__ import annotations
 
 import sys
@@ -19,13 +19,11 @@ from instaloader.exceptions import (
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import instagram_cooldown
-import scrape
 import scrape_posts
 from instagram_cooldown import (
     Block,
     CollectionPaused,
     CollectionStopped,
-    EveryAccountRejected,
     Kind,
 )
 
@@ -53,7 +51,7 @@ class CooldownFileCase(unittest.TestCase):
             patcher.start()
             self.addCleanup(patcher.stop)
 
-    def pause(self, kind, channel="stories", **kwargs):
+    def pause(self, kind, channel="posts", **kwargs):
         with self.assertLogs("pipeline", level="ERROR"):
             return instagram_cooldown.pause(Block(kind, "test"), channel, "detail", **kwargs)
 
@@ -76,12 +74,11 @@ class ClassificationTests(unittest.TestCase):
                 "time, recreate the session and try again"), Kind.CHALLENGED),
             (LoginRequiredException("Login required."), Kind.CHALLENGED),
             (QueryReturnedForbiddenException("403 Forbidden"), Kind.CHALLENGED),
-            (EveryAccountRejected("Instagram rejected all 50 accounts"), Kind.CHALLENGED),
             # Refusals Instagram sends as a plain 400 or a `fail` status.
             (QueryReturnedBadRequestException(
                 '400 Bad Request - "fail" status, message "login_required"'), Kind.CHALLENGED),
             (ConnectionException(
-                'JSON Query to api/v1/feed/reels_media/: 401 Unauthorized - "fail" '
+                'JSON Query to api/v1/feed/user/10839758322/: 401 Unauthorized - "fail" '
                 'status, message "Please wait a few minutes before you try again."'),
              Kind.THROTTLED),
         ]
@@ -97,7 +94,7 @@ class ClassificationTests(unittest.TestCase):
         self.assertEqual(Kind.THROTTLED, instagram_cooldown.classify(gave_up).kind)
 
     def test_a_bare_400_is_pushback_only_for_a_lone_request(self):
-        # In a story batch it can be one bad userid, which the split-retry isolates.
+        # Follow-list failures can use cached accounts; feed failures stop collection.
         bare = QueryReturnedBadRequestException(BARE_400)
         self.assertIsNone(instagram_cooldown.classify(bare))
         self.assertEqual(Kind.CHALLENGED, instagram_cooldown.classify(bare, lone_400=True).kind)
@@ -119,7 +116,7 @@ class ClassificationTests(unittest.TestCase):
             try:
                 raise TooManyRequestsException("429 Too Many Requests")
             except TooManyRequestsException as err:
-                raise CollectionStopped("stories collection was throttled") from err
+                raise CollectionStopped("posts collection was throttled") from err
         except CollectionStopped as stopped:
             self.assertIsNone(instagram_cooldown.classify(stopped, lone_400=True))
 
@@ -140,16 +137,16 @@ class PauseTests(CooldownFileCase):
                 self.assertEqual(Kind.THROTTLED, active.kind)
                 self.assertEqual(old.until, active.until)
                 self.assertEqual(original, self.path.read_bytes())
-                for channel in ("posts", "stories"):
+                for channel in ("posts",):
                     with self.assertRaisesRegex(CollectionPaused, "action restricted"):
                         instagram_cooldown.ensure_collection_allowed(channel)
                 self.assertIsNone(instagram_cooldown.current(now=old.until))
 
-    def test_a_pause_from_one_channel_stops_both_until_it_expires(self):
-        self.pause(Kind.THROTTLED, "stories", now=NOW)
-        for channel in ("stories", "posts"):
+    def test_a_pause_stops_collection_until_it_expires(self):
+        self.pause(Kind.THROTTLED, "posts", now=NOW)
+        for channel in ("posts",):
             with self.subTest(channel=channel):
-                with self.assertRaisesRegex(CollectionPaused, "stories collection was throttled"):
+                with self.assertRaisesRegex(CollectionPaused, "posts collection was throttled"):
                     instagram_cooldown.ensure_collection_allowed(
                         channel, now=NOW + timedelta(hours=23, minutes=59))
         instagram_cooldown.ensure_collection_allowed("posts", now=NOW + timedelta(hours=24))
@@ -162,7 +159,7 @@ class PauseTests(CooldownFileCase):
     def test_an_unsaved_pause_still_stops_the_rest_of_the_run(self):
         with patch.object(instagram_cooldown, "write_json", side_effect=OSError("disk full")):
             with self.assertLogs("pipeline", level="ERROR") as logged:
-                instagram_cooldown.pause(Block(Kind.CHALLENGED, "test"), "stories", "detail")
+                instagram_cooldown.pause(Block(Kind.CHALLENGED, "test"), "posts", "detail")
         self.assertIn("this run only", "\n".join(logged.output))
         self.assertFalse(self.path.exists())
         with self.assertRaises(CollectionPaused):
@@ -174,7 +171,7 @@ class PauseTests(CooldownFileCase):
                 self.path.write_text(contents, encoding="utf-8")
                 with self.assertRaisesRegex(CollectionPaused, "could not be read.*delete it"):
                     instagram_cooldown.ensure_collection_allowed(
-                        "stories", now=NOW + timedelta(days=365))
+                        "posts", now=NOW + timedelta(days=365))
                 # A fresh session is no evidence that it was a challenge.
                 self.assertEqual(Kind.UNREADABLE, instagram_cooldown.lift_challenge().kind)
                 self.assertTrue(self.path.exists())
@@ -183,43 +180,19 @@ class PauseTests(CooldownFileCase):
         self.pause(Kind.CHALLENGED)
         with self.assertLogs("pipeline", level="INFO"):
             self.assertIsNone(instagram_cooldown.lift_challenge())
-        instagram_cooldown.ensure_collection_allowed("stories")
+        instagram_cooldown.ensure_collection_allowed("posts")
 
         self.pause(Kind.THROTTLED)
         self.assertEqual(Kind.THROTTLED, instagram_cooldown.lift_challenge().kind)
         with self.assertRaises(CollectionPaused):
-            instagram_cooldown.ensure_collection_allowed("stories")
+            instagram_cooldown.ensure_collection_allowed("posts")
 
 
-class ChannelSharingTests(CooldownFileCase):
-    """Both collectors in one process, as run.py schedules them."""
+class CollectionRestartTests(CooldownFileCase):
+    """A collection failure pauses subsequent runs."""
 
-    def test_a_challenged_story_fetch_keeps_post_collection_from_starting(self):
-        with (
-            patch.object(scrape, "ensure_dirs"),
-            patch.object(scrape, "_login"),
-            patch.object(scrape, "_attach_http_error_logger"),
-            patch.object(scrape, "_persist_rotated_session"),
-            patch.object(scrape, "_load_scrape_accounts",
-                         return_value=[{"handle": "acm_ucr", "instagram_user_id": 10839758322}]),
-            patch.object(scrape.instaloader, "Instaloader", return_value=Mock()),
-            patch.object(scrape, "scrape_chunk",
-                         side_effect=AbortDownloadException(CHALLENGE_REPLY)),
-        ):
-            with self.assertLogs("pipeline", level="ERROR"):
-                with self.assertRaisesRegex(CollectionStopped, "stories collection was challenged"):
-                    scrape.main()
 
-        with (
-            patch.object(scrape_posts.instaloader, "Instaloader") as build,
-            patch.object(scrape_posts, "hydrate_local_posts") as hydrate,
-        ):
-            with self.assertRaisesRegex(CollectionPaused, "Not collecting Instagram posts"):
-                scrape_posts.main()
-        build.assert_not_called()
-        hydrate.assert_not_called()
-
-    def test_a_throttle_while_posts_load_accounts_pauses_stories(self):
+    def test_a_throttle_while_loading_accounts_pauses_the_next_run(self):
         with (
             patch.object(scrape_posts, "ensure_post_dirs"),
             patch.object(scrape_posts, "hydrate_local_posts"),
@@ -234,9 +207,9 @@ class ChannelSharingTests(CooldownFileCase):
                 with self.assertRaisesRegex(CollectionStopped, "posts collection was throttled"):
                     scrape_posts.main()
 
-        with patch.object(scrape.instaloader, "Instaloader") as build:
-            with self.assertRaisesRegex(CollectionPaused, "Not collecting Instagram stories"):
-                scrape.main()
+        with patch.object(scrape_posts.instaloader, "Instaloader") as build:
+            with self.assertRaisesRegex(CollectionPaused, "Not collecting Instagram posts"):
+                scrape_posts.main()
         build.assert_not_called()
 
 

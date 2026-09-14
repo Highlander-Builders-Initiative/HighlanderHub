@@ -1,6 +1,5 @@
 """Assessment caching, source adaptation, and publication-boundary regressions."""
 import copy
-import json
 import sys
 import tempfile
 import unittest
@@ -61,39 +60,6 @@ class AssessmentCacheTests(unittest.TestCase):
             self.assertEqual(corrected, publication.cached_assessment(src, corrected))
             model.assert_not_called()
 
-    def test_hesa_reassesses_old_activity_and_retires_its_production_listing(self):
-        cases = json.loads((Path(__file__).parent / "fixtures/content_assessment_cases.json").read_text())
-        case = next(case for case in cases if case["name"] == "HESA program recruitment")
-        src = publication.story_source(case["raw"], case["cached"])
-        self.assertEqual(case["source"], src)
-        legacy_id = case["expected_known_event_ids"][0]
-        old = decision(src)
-        old["occurrences"][0].update(title="HIGHLANDER EARLY START ACADEMY (HESA)", all_day=True,
-            starts_at="2026-07-27T00:00:00-07:00", ends_at="2026-09-13T00:00:00-07:00")
-        prior = {"status": "complete", "model": semantic.MODEL, "version": 3,
-                 "source_hash": semantic.fingerprint(src), "source": src, "result": old}
-        # Reproduce the old publication before testing its retirement. The
-        # legacy classifier test alone never exercised this assessed path.
-        old_rows, _ = publication.story_rows(case["raw"], case["cached"], prior, {}, src["posted_at"])
-        self.assertEqual([(legacy_id, "student_event")], [(r["id"], r["content_kind"]) for r in old_rows])
-        publication._save_assessment(prior)
-        corrected = {**old, "kind": "application", "date_role": "program_duration", "occurrences": [],
-                     "reason": "Recruitment for a credit-bearing curriculum; the dates describe its term."}
-        semantic.validate(corrected, src)
-        extraction_before = copy.deepcopy(case["cached"])
-        with patch.object(semantic, "assess", return_value=corrected) as model, \
-             patch("extract_stories._gemini_extract", side_effect=AssertionError("Must reuse saved extraction")):
-            update = publication.make_update(src, case["raw"], case["cached"],
-                {"assessment": prior, "event_ids": [legacy_id]}, {}, "2026-09-12T12:00:00Z", refresh=True)
-            model.assert_called_once_with(src)
-            self.assertEqual("complete", update["assessment"]["status"])
-            self.assertEqual("application", update["assessment"]["result"]["kind"])
-            self.assertGreater(update["assessment"]["version"], 3)
-            self.assertEqual([], update["rows"])
-            self.assertIn(legacy_id, update["known_event_ids"])
-            self.assertEqual(update["assessment"], publication.cached_assessment(src, prior))
-            model.assert_called_once()
-        self.assertEqual(extraction_before, case["cached"])
 
     def test_failure_is_not_a_negative_decision_and_retries(self):
         src = source()
@@ -162,61 +128,6 @@ class SourcePublicationTests(unittest.TestCase):
                     scraped_at="2026-09-11T20:00:00Z", assessed_kind=kind)
                 self.assertEqual("fundraiser", row["content_kind"])
 
-    def test_assessed_story_does_not_call_the_legacy_row_mapper(self):
-        src = source()
-        raw = {"id": "123", "handle": "club", "posted_at": src["posted_at"]}
-        cached = {"status": "not_event", "ocr_text": src["texts"]["ocr_text"], "result": {}}
-        with patch("extract_stories._to_event_row", side_effect=AssertionError("Legacy mapper called")):
-            rows, _ = publication.story_rows(raw, cached,
-                {"status": "complete", "source": src, "result": decision(src)}, {}, "2026-09-11T20:00:00Z")
-        self.assertEqual(["Workshop"], [row["title"] for row in rows])
-
-    def test_old_extraction_text_cannot_suppress_or_enrich_assessed_story(self):
-        src = source()
-        raw = {"id": "123", "handle": "club", "posted_at": src["posted_at"]}
-        cached = {"status": "ok", "ocr_text": src["texts"]["ocr_text"], "result": {
-            "is_event": True, "title": "Obsolete fundraiser", "description": "Bake sale with free pizza",
-            "category": "social", "tags": ["free food"], "is_free": False,
-            "rsvp_required": True, "rsvp_url": "https://lu.ma/obsolete"}}
-        rows, _ = publication.story_rows(raw, cached,
-            {"status": "complete", "source": src, "result": decision(src)}, {}, "2026-09-11T20:00:00Z")
-        self.assertEqual(1, len(rows))
-        self.assertEqual("career", rows[0]["category"])
-        self.assertEqual([], rows[0]["tags"])
-        self.assertTrue(rows[0]["is_free"])
-        self.assertFalse(rows[0]["has_free_food"])
-        self.assertFalse(rows[0]["rsvp_required"])
-        self.assertIsNone(rows[0]["rsvp_url"])
-        self.assertNotIn("Bake sale", rows[0]["description"])
-
-    def test_reshare_chrome_is_stripped_from_an_assessed_story_title(self):
-        src = source("bluejadeandjoel and ucr_dance\n"
-                     "bluejadeandjoel Joel Mejia Smith: it's been a while\n"
-                     "Workshop September 15, 2026, 3-5 PM")
-        raw = {"id": "123", "handle": "ucr_dance", "posted_at": src["posted_at"],
-               "caption": "Spring showcase this Friday. Come through!"}
-        cached = {"status": "ok", "ocr_text": src["texts"]["ocr_text"], "result": {}}
-        for title, expected in (("bluejadeandjoel Workshop", "Workshop"),
-                                ("bluejadeandjoel and ucr_dance", "Spring showcase this Friday"),
-                                ("Workshop", "Workshop")):
-            with self.subTest(title=title):
-                result = decision(src)
-                result["occurrences"][0]["title"] = title
-                rows, _ = publication.story_rows(raw, cached,
-                    {"status": "complete", "source": src, "result": result}, {}, "2026-09-11T20:00:00Z")
-                self.assertEqual([expected], [row["title"] for row in rows])
-
-    def test_assessed_story_location_stays_blank_or_uses_supplied_location(self):
-        src = source()
-        raw = {"id": "123", "handle": "club", "posted_at": src["posted_at"]}
-        cached = {"status": "ok", "ocr_text": src["texts"]["ocr_text"], "result": {}}
-        for location, expected in (("", ""), ("  ", ""), (" HUB 302 ", "HUB 302")):
-            with self.subTest(location=location):
-                result = decision(src)
-                result["occurrences"][0]["location"] = location
-                rows, _ = publication.story_rows(raw, cached,
-                    {"status": "complete", "source": src, "result": result}, {}, "2026-09-11T20:00:00Z")
-                self.assertEqual([expected], [row["location"] for row in rows])
 
     def test_structured_occurrences_preserve_source_location_when_assessment_is_blank(self):
         for origin in ("localist", "highlander_link"):
@@ -245,18 +156,6 @@ class SourcePublicationTests(unittest.TestCase):
                             {"status": "complete", "source": src, "result": result}, "2026-09-11T20:00:00Z")
                         self.assertEqual([expected], [row["location"] for row in rows])
 
-    def test_actual_observances_retire_legacy_ids_from_reviewed_source_evidence(self):
-        cases = json.loads((Path(__file__).parent / "fixtures/content_assessment_cases.json").read_text())
-        for case in cases[:2]:
-            src = case["source"]
-            result = {"kind":"announcement", "date_role":"observance", "reason":"Source describes an awareness observance, with no attendable activity.",
-                      "activity_evidence":[], "date_evidence":[{"field":"ocr_text", "quote":src["texts"]["ocr_text"]}],
-                      "occurrences":[], "schedule":None, "use_source_occurrences":False}
-            semantic.validate(result, src)
-            rows, retired = publication.story_rows(case["raw"], case["cached"], {"status":"complete", "source":src, "result":result}, {}, "2026-09-11T20:00:00Z")
-            self.assertEqual([], rows)
-            expected = "ig_ucrwoof_20260901T0700Z" if "Dog" in case["name"] else "ig_ucr_caps_20260906T0700Z"
-            self.assertIn(expected, retired)
 
     def test_campus_calendar_placement_does_not_promote_an_announcement(self):
         raw = {"id":1, "title":"National Service Dog Month", "description_text":"Celebrate service dogs this September.",

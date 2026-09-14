@@ -7,7 +7,7 @@ Highlander Hub is a monorepo: a Next.js app, a Python ingest pipeline, and Supab
 ```mermaid
 flowchart LR
   subgraph sources [Sources]
-    IG[Instagram stories]
+    IG[Instagram posts]
     UCR[events.ucr.edu]
     HL[HighlanderLink]
     SUB["/submit form"]
@@ -20,7 +20,6 @@ flowchart LR
 
   subgraph db [Supabase]
     EV[(events)]
-    ST[(stories)]
     SM[(submissions)]
     DN[(discord_notifications)]
   end
@@ -34,7 +33,6 @@ flowchart LR
   IG --> SCR --> NORM --> EV
   UCR --> NORM --> EV
   HL --> NORM --> EV
-  SCR --> ST
   SUB --> SUBAPI --> SM
   EV --> DN
 

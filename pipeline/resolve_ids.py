@@ -2,7 +2,7 @@
 
 Offline step after discover.py: given handles, resolve numeric instagram_user_id
 via Instagram topsearch (authenticated with IG_SESSION_FILE, the same session
-scrape.py uses), then write IDs back into accounts.json.
+scrape_posts.py uses), then write IDs back into accounts.json.
 
 Usage:
     python resolve_ids.py
@@ -75,11 +75,11 @@ def attach_ig_session(
     session: requests.Session,
     session_file: str | Path | None,
 ) -> None:
-    """Load scrape.py's Instaloader session cookies onto a requests session."""
+    """Load scrape_posts.py's Instaloader session cookies onto a requests session."""
     if not session_file:
         raise SystemExit(
             "IG_SESSION_FILE is required. Instagram search returns 401 without "
-            "a logged-in session. Set it in pipeline/.env (same file scrape.py uses)."
+            "a logged-in session. Set it in pipeline/.env (same file scrape_posts.py uses)."
         )
     path = Path(session_file)
     if not path.exists():

@@ -12,7 +12,7 @@ Secondary users: club officers submitting events through `/submit`, who care tha
 
 ## Product Purpose
 
-Highlander Hub is the one scannable place to find campus and club events at UC Riverside. It pulls from sources clubs already use (Instagram stories, events.ucr.edu, HighlanderLink) so students don't have to follow forty accounts to know what's happening, and so clubs don't have to maintain yet another channel.
+Highlander Hub is the one scannable place to find campus and club events at UC Riverside. It pulls from sources clubs already use (Instagram posts, events.ucr.edu, HighlanderLink) so students don't have to follow forty accounts to know what's happening, and so clubs don't have to maintain yet another channel.
 
 Success is mutual:
 - Students treat Highlander Hub as the default weekly check-in for "what's happening on campus."

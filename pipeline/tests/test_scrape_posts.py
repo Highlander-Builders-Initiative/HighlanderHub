@@ -166,7 +166,7 @@ class ProfileLookupTests(PostArchiveTests):
             bad["user"] = owner
             with self.subTest(owner=owner), \
                  patch.object(self.loader.context, "get_json", return_value=self.page([iphone_post(), bad])):
-                with self.assertRaisesRegex(RuntimeError, "owner ID"):
+                with self.assertRaisesRegex(RuntimeError, "author ID"):
                     self.graphql_scan()
                 self.remote_writes.assert_not_called()
                 self.assertEqual([], list((self.root / "posts").glob("*/*.json")))
@@ -176,11 +176,62 @@ class ProfileLookupTests(PostArchiveTests):
         wrong["user"]["pk"] = "99"
         with patch.object(self.loader.context, "get_json", side_effect=[
                 self.page([iphone_post()], "next"), self.page([wrong])]):
-            with self.assertRaisesRegex(RuntimeError, "owner ID"):
+            with self.assertRaisesRegex(RuntimeError, "author ID"):
                 self.graphql_scan()
         self.assertTrue((self.root / "posts" / "acm.ucr" / "700.json").exists())
         self.assertFalse((self.root / "posts" / "acm.ucr" / "701.json").exists())
         self.remote_writes.assert_not_called()
+
+    def test_accepted_coauthor_validates_feed_without_changing_original_author(self):
+        collaboration = iphone_post()
+        collaboration["user"].update(pk="99", username="partner.ucr")
+        collaboration["coauthor_producers"] = [{"pk": "42", "username": "acm.ucr"}]
+        with patch.object(self.loader.context, "get_json", return_value=self.page([collaboration])):
+            result = self.graphql_scan()
+        self.assertTrue(result.complete)
+        saved = self.remote_writes.call_args.args[0][0]
+        self.assertEqual("acm.ucr", saved["handle"])
+        self.assertEqual("partner.ucr", saved["owner_username"])
+        self.assertEqual(99, saved["owner_userid"])
+
+    def test_old_collaboration_in_pinned_prefix_does_not_abort_new_posts(self):
+        old = iphone_post("701", posted_at="2020-01-01T00:00:00+00:00")
+        old["user"].update(pk="99", username="partner.ucr")
+        old["coauthor_producers"] = [{"pk": 42, "username": "acm.ucr"}]
+        with patch.object(self.loader.context, "get_json", side_effect=[
+                self.page([old], "next"), self.page([iphone_post()])]):
+            result = self.graphql_scan()
+        self.assertTrue(result.complete)
+        self.assertEqual(["700"], result.media_ids)
+
+    def test_accepted_coauthor_is_recognized_on_later_pages(self):
+        collaboration = iphone_post("701")
+        collaboration["user"].update(pk="99", username="partner.ucr")
+        collaboration["coauthor_producers"] = [{"pk": "42"}]
+        with patch.object(self.loader.context, "get_json", side_effect=[
+                self.page([iphone_post()], "next"), self.page([collaboration])]):
+            result = self.graphql_scan()
+        self.assertTrue(result.complete)
+        self.assertEqual(["700", "701"], result.media_ids)
+
+    def test_pending_invites_tags_and_unverified_coauthors_do_not_validate_membership(self):
+        for metadata in (
+            {"invited_coauthor_producers": [{"pk": "42"}]},
+            {"usertags": {"in": [{"user": {"pk": "42"}}]}},
+            {"coauthor_producers": [{"pk": "98", "username": "acm.ucr"}]},
+            {"coauthor_producers": [{"username": "acm.ucr"}]},
+            {"coauthor_producers": [None, "42"]},
+            {"coauthor_producers": {"pk": "42"}},
+        ):
+            collaboration = iphone_post()
+            collaboration["user"].update(pk="99", username="partner.ucr")
+            collaboration.update(metadata)
+            with self.subTest(metadata=metadata), \
+                 patch.object(self.loader.context, "get_json", return_value=self.page([collaboration])):
+                with self.assertRaisesRegex(RuntimeError, "not an accepted coauthor"):
+                    self.graphql_scan()
+        self.remote_writes.assert_not_called()
+        self.assertEqual([], list((self.root / "posts").glob("*/*.json")))
 
     def test_empty_first_page_and_malformed_pagination_do_not_establish_coverage(self):
         malformed = self.page([iphone_post()])
@@ -895,10 +946,10 @@ class CollectionRunTests(PostArchiveTests):
         # Neither account advanced, so the uncollected interval is retried.
         for handle in ("acm.ucr", "ieee.ucr"):
             self.assertEqual("2026-09-10T00:00:00+00:00", saved[handle]["scanned_through"])
-        # Story collection is paused as well, not just the rest of this scan.
+        # Subsequent collection is paused, not just the rest of this scan.
         with self.assertRaisesRegex(instagram_cooldown.CollectionPaused,
                                     "posts collection was throttled"):
-            instagram_cooldown.ensure_collection_allowed("stories")
+            instagram_cooldown.ensure_collection_allowed("posts")
 
     def test_a_bare_400_on_one_account_stops_collection(self):
         # A post scan asks about one account, so there is no bad userid to isolate.
@@ -960,7 +1011,7 @@ class CollectionRunTests(PostArchiveTests):
         for checkpoint in scrape_posts.load_local_checkpoints().values():
             self.assertNotIn("scanned_through", checkpoint)
         with self.assertRaises(instagram_cooldown.CollectionPaused):
-            instagram_cooldown.ensure_collection_allowed("stories")
+            instagram_cooldown.ensure_collection_allowed("posts")
 
 
 class _Exploding:

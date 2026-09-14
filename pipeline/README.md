@@ -1,69 +1,37 @@
-# UCR data pipeline
+# Event ingestion pipeline
 
-Three sources right now, hand-off to the Next.js app via Supabase tables:
+Collect campus events from Instagram feed posts, Localist (`events.ucr.edu`),
+and HighlanderLink. Instagram captions and carousel images become source
+text through OCR, then grounded semantic assessment produces event rows.
 
-| Source | Scraper | Raw | Table | App reader |
-| --- | --- | --- | --- | --- |
-| Instagram stories | `scrape.py` ([instaloader](https://github.com/instaloader/instaloader)) + `extract_stories.py` | `data/raw/<handle>/` | `stories`, `events` | `src/lib/events/index.ts` |
-| Instagram posts | `scrape_posts.py` + `extract_posts.py` | `data/posts/<handle>/` | `events` | `src/lib/events/index.ts` |
-| events.ucr.edu (Localist) | `ucr_events.py` (JSON API) | `data/raw/ucr_events/` | `events` | `src/lib/events/index.ts` |
-| highlanderlink.ucr.edu (CampusLabs Engage) | `highlander_link.py` (JSON API) | `data/raw/highlander_link/` | `events` | `src/lib/events/index.ts` |
-
-Instagram posts are a second channel over the same account list and the same
-daily run. They are collected forward-only from each account's activation
-timestamp, publish through the same assessment/reconciliation boundary as
-stories, and never enter the frontend's `stories` table.
-
-`run.py` scrapes everything, extracts IG event rows, normalizes, then reconciles
-corroborated duplicates across sources. Its seventh stage prefers structured
-campus metadata while retaining a missing end date or RSVP link from a matching
-flyer. Matches require the same start instant plus a distinctive title and
-compatible host/location, or a shared registration link and related title.
-Generic meetings from different clubs stay separate. Locked rows win and
-deleted source identities suppress their duplicate group. Notifications run
-only after reconciliation in the combined runner. Failures
-in one source don't kill the others. IG raw files are the durable story archive;
-Localist and HighlanderLink raw files are the latest successful source snapshot.
-
-Stories expire from Instagram after 24 hours, so the IG raw archive is the
-only durable record — keep it. Localist and HighlanderLink events are mutable
-(descriptions get edited or events disappear), so those scrapers overwrite
-current files and prune files absent from a completed source fetch.
-
-Recurring Localist series run by UCR Recreation with at least three instances
-contribute only their next ongoing/upcoming session. Other recurring events
-still expand into separate occurrences. The source link preserves access to
-the full recreation schedule; each successful run advances the selected
-session and reconciles old unlocked occurrence rows.
+`run.py` executes seven isolated stages: `ucr_events.scrape`,
+`highlander_link.scrape`, `events.normalize`, `instagram.posts.scrape`,
+`instagram.posts.extract`, `instagram.publish`, and `events.reconcile`.
+Collection failures still allow extraction and publication of archived posts.
+Each run records stage status and duration in `data/run_history.jsonl`.
 
 ## Layout
 
-```
-pipeline/
-├── accounts.json          # IG handles to monitor (edit me)
-├── resolve_ids.py         # fills instagram_user_id for handles added by hand
-├── config.py              # paths + env-driven auth config
-├── scrape.py              # IG stories:       data/raw/<handle>/<story_id>.json
-├── extract_stories.py     # IG OCR + LLM:     data/extracted/<story_id>.json
-├── scrape_posts.py        # IG posts:         data/posts/<handle>/<media_id>.json
-├── instagram_cooldown.py  # IG pause:         data/instagram_cooldown.json
-├── post_archive.py        # post archive I/O, free of Instaloader
-├── extract_posts.py       # per-slide OCR:    data/post_extractions/<media_id>.json
-├── instagram_rows.py      # shared story/post event row policy
-├── story_dates.py         # what the flyer text says about day and time
-├── ucr_events.py          # Localist ingest:  data/raw/ucr_events/<event_id>.json
-├── highlander_link.py     # Engage ingest:    data/raw/highlander_link/<event_id>.json
-├── normalize.py           # IG raw stories -> Supabase stories
-├── normalize_events.py    # Localist + HighlanderLink events -> Supabase events
-├── run.py                 # scrape all + extract + normalize all
-├── requirements.txt
-├── data/raw/              # gitignored; per-item JSON
-├── data/extracted/        # gitignored; per-story extraction cache
-├── data/posts/            # gitignored; per-post record
-├── data/post_extractions/ # gitignored; per-post slide OCR cache
-├── data/post_checkpoints.json  # gitignored; activation + scan progress
-└── output/                # gitignored; legacy local dumps
-```
+| Module | Responsibility |
+| --- | --- |
+| `instagram_client.py` | Login, session persistence, request pacing, account roster |
+| `scrape_posts.py` | Feed collection and checkpoint management |
+| `instagram_cooldown.py` | Persisted collection pauses |
+| `post_archive.py` | Local and durable post archive |
+| `image_ocr.py` | Image downloads and Google Vision OCR |
+| `extract_posts.py` | Per-slide OCR and QR cache |
+| `event_dates.py` | Printed date and time evidence |
+| `instagram_rows.py` | Instagram event row policy |
+| `content_assessment.py` | Grounded semantic assessment |
+| `assessed_events.py` | Source publication and reassessment |
+| `ucr_events.py`, `highlander_link.py` | Structured-source collection |
+| `normalize_events.py` | Structured-source publication |
+| `reconcile_events.py` | Cross-source deduplication and notifications |
+
+Archives and caches under `data/` are gitignored. Structured snapshots live in
+`data/raw/ucr_events/` and `data/raw/highlander_link/`; posts live in
+`data/posts/`, OCR in `data/post_extractions/`, and assessments in
+`data/assessments/`.
 
 ## Setup
 
@@ -76,7 +44,7 @@ pip install -r requirements.txt
 
 ## Auth
 
-Instagram requires a logged-in session to fetch stories. Pick one:
+Instagram requires a logged-in session to fetch posts. Pick one:
 
 **Option A — session file (recommended for cron):**
 
@@ -104,8 +72,8 @@ IG_SESSION_FILE=$HOME/.config/instaloader/session-rhino.5172250
 (`base64 -i …` is only for the GitHub Actions secret `IG_SESSION_FILE_B64`.)
 
 If login succeeds but scrape dies on `get_followees` / `400 invalid request`, the
-session is fine for the story fetch — the follow-list GraphQL call is
-what failed. The scraper falls back to `data/followed_accounts.json`, then
+the follow-list GraphQL call failed; this alone does not establish
+whether feed collection will succeed. The scraper falls back to `data/followed_accounts.json`, then
 `accounts.json`. To skip the follow-list call entirely:
 
 ```bash
@@ -122,17 +90,13 @@ export IG_PASSWORD=...
 Use a **dedicated account**, not your personal one. Instagram is aggressive
 about flagging accounts that look like scrapers — expect occasional
 checkpoints / temporary blocks, and add jitter / lower the cadence if you
-get throttled. `scrape.py` asks about 50 accounts per request and sleeps
-8–20s between requests, so a full run is ~17 story requests rather than one
-per account. Every Instagram call — including the per-owner reels, feed-page,
-and carousel requests Instaloader makes inside a chunk or profile — also waits
-an extra 1–2.5s (`REQUEST_GAP_RANGE`), and `scrape_posts.py` sleeps 5–12s
-between accounts.
+get throttled. Every Instagram request waits an extra 1–2.5s
+(`REQUEST_GAP_RANGE`), and `scrape_posts.py` sleeps 5–12s between accounts.
 
 ## Editing accounts.json
 
-`scrape.py` asks Instagram for stories by numeric user id, not by handle, so
-every entry needs an `instagram_user_id`. Handles added by hand (or by
+`scrape_posts.py` validates feed ownership against the stored numeric user ID,
+so every entry needs an `instagram_user_id`. Handles added by hand (or by
 `discover.py`) don't have one:
 
 ```bash
@@ -143,7 +107,7 @@ python resolve_ids.py --dry-run
 Accounts still missing an id are skipped by the scrape and named in a warning —
 they are invisible to the run until resolved.
 
-Supabase writes and story extraction also need credentials in `pipeline/.env`:
+Supabase writes and post extraction also need credentials in `pipeline/.env`:
 
 ```bash
 SUPABASE_URL=...
@@ -158,89 +122,27 @@ GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json
 ## Run it
 
 ```bash
-python run.py                # scrape all sources + extract + normalize all
-python scrape.py             # IG story ingest only
-python scrape_posts.py       # IG post ingest only (--handle to limit a pilot)
-python extract_posts.py      # per-slide OCR + publish (--dry-run to inspect first)
-python extract_stories.py    # OCR + Gemini extraction from existing IG raw files
-python ucr_events.py         # UCR events ingest only (no auth needed)
-python highlander_link.py    # HighlanderLink ingest only (no auth needed)
-python normalize.py          # rebuild Supabase stories from data/raw/
-python normalize_events.py   # rebuild events from ucr_events/ + highlander_link/
+python run.py
+
+# Individual stages
+python ucr_events.py
+python highlander_link.py
+python normalize_events.py
+python scrape_posts.py
+python extract_posts.py --no-notify
+
+# Offline tests
+.venv/bin/python -m unittest discover -s tests
 ```
 
-Re-running is cheap: IG raw files are skipped if present, extracted story
-results are cached first in `data/extracted/` and then in Supabase
-`story_extractions` for stateless CI runs, and Localist + HighlanderLink events
-are overwritten/pruned because they are mutable.
-
-A cached `ok` extraction records Gemini's response, not verified event quality.
-`story_dates.py` owns every question of the form "what day and time does the
-source text support?", with one date vocabulary and two policies over it: the
-narrow `override_dates` the wall-time override can rebuild a timestamp from,
-and the broad `evidence_dates` that only has to prove a day was printed.
-Instagram event mapping requires date evidence in OCR or the story caption;
-posting timestamps, model descriptions, tags, and confidence cannot supply it.
-A printed calendar date stands on its own. Immediacy words bind the event to
-`posted_at` instead of unlocking the model's clock: `now`/`rn` take the posting
-instant, `today`/`tonight`/`tomorrow` fix the day and leave the time to
-extraction, and a printed date outranks all of them. Calls to action (`apply
-now`, `applications are now open`, `book your appointment now`) are not
-immediacy claims. Bare weekdays and bare `M/D` are too easy to read out of
-prose and room numbers, so they need a corroborating neighbour: a clock time on
-the flyer, a second slash date across a range dash (`recruitment is
-10/8-10/11`), or — for `M/D` — a weekday printed beside it (`signups close
-Thursday (6/11)`).
-
-The weekday and date must form one expression; a nearby greeting or a fraction
-such as `1/2 price` does not qualify. `Apply today` is also a call to action,
-not evidence of an event happening today. Explicit evening-to-midnight ranges
-such as `September 19, 2026 5PM–12AM` end at midnight on the following day.
-
-Multi-day grids and weekday practice schedules are skipped when one event
-cannot represent the flyer. A clear `today` reminder for a single session can
-still use a reused schedule flyer. Skipped schedules and corrected timestamps
-retire their old row IDs, including IDs previously derived from posting time;
-admin locks/deletions continue to apply to replacement identities.
-
-Reshares use the original author when known, otherwise the attached post's
-`media_id`. Copies of the same post share observed author metadata during
-mapping, so missing OCR bylines do not create one event per resharing club.
-The byline is kept out of the published title on both the assessed and legacy
-story paths; a title that was only chrome falls back to the caption's opening
-clause rather than showing a bare handle.
-
-RSVP mapping rejects Instagram destinations and bare shortener homepages.
-Spaces inside a short link are removed only when the full spaced link is
-corroborated by an OCR line. QR codes are decoded locally from flyer images;
-their destinations are never fetched by the decoder. A valid story CTA wins,
-then a single QR destination, then the extracted URL. Multiple distinct QR
-destinations remain ambiguous. `rsvp_required` stays true when no usable link
-can be recovered.
-
-Upcoming cached RSVP flyers receive one QR scan without repeating OCR/Gemini.
-The scan version and destinations are stored inside the existing result JSON
-for both local and remote caches, including successful scans with no QR code.
-Download/decoder failures remain retryable. Install the updated requirements
-before running extraction. Content-kind mapping reads OCR for appointment and
-application signals, but limited capacity alone never makes an event an
-application. Text-only backfills skip Instagram unless explicitly requested.
-
-Undated posts are skipped even from existing caches, and their prior event IDs
-enter the existing unlocked-row cleanup unless another accepted story supports
-the same ID. This is not full semantic verification; unrecognized date
-expressions are conservatively skipped. A single printed calendar day now
-corrects the model's day even without a time range. An unrelated model day on
-a multi-date flyer is rejected. Corroborated dotted dates (`10.31` beside a
-clock) and separate numeric tiles explicitly labeled `MONTH DAY YEAR` are
-recognized; bare prices and room numbers remain excluded. Date-only month/day
-ranges include the entire last day. Awareness/resource posts and service
-closures are not student gatherings.
+Collection accesses Instagram. Extraction calls Google Vision for uncached
+images; assessment calls Vertex AI when source text changes. Publication writes
+to Supabase. `extract_posts.py --dry-run --report /tmp/post-report.json` assesses
+and generates reviewable rows without publishing or sending notifications.
 
 ## Schedule
 
-Stories live 24h, so 4–6× a day is a reasonable cadence. UCR events change
-much more slowly — once a day is plenty. The supported unattended runner is
+The supported unattended runner is
 macOS launchd via `install-launchd.sh`, which runs `run_daily.sh` at 07:00
 local time. To run more often, point cron at that same wrapper — don't invoke
 `run.py` directly (you'd skip log rotation and the failure notification).
@@ -263,7 +165,7 @@ launchctl unload ~/Library/LaunchAgents/com.highlanderhub.pipeline.plist
 ```
 
 Run it here rather than in GitHub Actions: the Instagram session survives
-locally because the run comes from a residential IP and `scrape.py` writes the
+locally because the run comes from a residential IP and `scrape_posts.py` writes the
 rotated `sessionid` back to `IG_SESSION_FILE` after every run. On a CI runner
 that file is ephemeral, so each run replays the same increasingly stale cookie
 from `IG_SESSION_FILE_B64` until Instagram rejects it — which is why the cron
@@ -275,24 +177,19 @@ failing with `400 ... "invalid request"`, quit Safari and re-run
 
 ### When Instagram pushes back
 
-Stories and posts collect through the same logged-in account, so they share one
-stop decision (`instagram_cooldown.classify`). A 429, a checkpoint, challenge or
-`feedback_required` reply, a logged-out redirect, a 400 on a single post
-request, or a story batch in which every account is rejected stops the channel
-that hit it and pauses **both** channels for `PIPELINE_INSTAGRAM_COOLDOWN_HOURS`
-(default 24), recorded in `data/instagram_cooldown.json`. A 429 is never waited
-out and retried, and a story batch splits only a bare 400, never one whose
-message names a challenge or a wait. Until the pause ends, both collection
-stages fail before sending a request — later in the same run, and on every run
-after it — while extraction, publication, and normalization still process
-whatever is already on disk.
+A 429, checkpoint, challenge, `feedback_required` reply, logged-out redirect,
+or a 400 on a single post request stops collection and records a pause in
+`data/instagram_cooldown.json` for `PIPELINE_INSTAGRAM_COOLDOWN_HOURS` (default
+24). A 429 is never waited out and retried. Until the pause ends, collection
+fails before sending a request; extraction and publication still process the
+saved archive.
 
 A successful `import_safari_session.py` run lifts a pause classified as a session
 challenge. Rate limits and `feedback_required` action restrictions keep their
 original cooldown even after a session refresh, including pauses older runs
 misclassified as challenges. The deadline is the collector's waiting period,
 not a promise that Instagram will remove its restriction then. A pause file
-that can't be read keeps both channels paused until you check it and delete it.
+that can't be read keeps collection paused until you check it and delete it.
 
 ## Supabase row shapes
 
@@ -309,7 +206,7 @@ Already in the DB shape that `src/lib/events/index.ts` maps into `CampusEvent`
 
 ```jsonc
 {
-  "id": "ig_cyber_ucr_3894795737410658765",
+  "id": "ig_cyber_ucr_20260516T0200Z",
   "title": "Security Night Workshop",
   "description": "...",
   "starts_at": "2026-05-15T19:00:00-07:00",
@@ -320,8 +217,8 @@ Already in the DB shape that `src/lib/events/index.ts` maps into `CampusEvent`
   "category": "career",
   "tags": ["security", "workshop"],
   "source": "instagram",
-  "source_url": "https://www.instagram.com/stories/cyber_ucr/3894795737410658765/",
-  "image_url": "https://...supabase.co/storage/v1/object/public/event-flyers/instagram/cyber_ucr/3894795737410658765.jpg",
+  "source_url": "https://www.instagram.com/p/SecurityNight/",
+  "image_url": "https://...supabase.co/storage/v1/object/public/event-flyers/instagram/cyber_ucr/posts/3894795737410658765/flyer.jpg",
   "is_free": true,
   "rsvp_required": true,
   "rsvp_url": "https://lu.ma/...",
@@ -329,33 +226,10 @@ Already in the DB shape that `src/lib/events/index.ts` maps into `CampusEvent`
 }
 ```
 
-### `stories`
-
-```jsonc
-{
-  "id": "3140000000000000000",
-  "handle": "acm.ucr",
-  "account_label": "ACM at UCR",
-  "account_category": "club",
-  "owner_userid": 123456,
-  "owner_username": "acm.ucr",
-  "typename": "GraphStoryImage",
-  "is_video": false,
-  "posted_at": "2026-05-11T18:30:00+00:00Z",
-  "expires_at": "2026-05-12T18:30:00+00:00Z",
-  "image_url": "https://scontent...jpg",
-  "video_url": null,
-  "caption": null,
-  "caption_mentions": ["other.handle"],
-  "story_cta_url": "https://lu.ma/...",
-  "permalink": "https://www.instagram.com/stories/acm.ucr/3140000000000000000/"
-}
-```
-
 ## Hand-off to the app
 
 The Next.js app reads upcoming events from the Supabase `events` table via
-`src/lib/events/index.ts`. `extract_stories.py` writes Instagram flyers into that
+`src/lib/events/index.ts`. `assessed_events.py` publishes Instagram flyers into that
 same table with `source='instagram'`, so extracted IG events appear alongside
 Localist events without a frontend change.
 
@@ -365,158 +239,9 @@ records successful sends by a durable `notification_key` based on the public
 event identity, so reruns and generated row ID changes do not repost the same
 event.
 
-## Instagram story extraction
-
-Imported content now passes through `content_assessment.py` before publication.
-Instagram OCR/captions and structured campus listings use the same typed decision:
-activity, deadline, application, service schedule, announcement, or uncertain.
-The decision records the role of its dates and exact source evidence. Awareness
-observances are announcements; real workshops or vigils during a campaign remain
-activities. All-day and multi-day activities remain supported. Explicit bounded
-recurring hours become individual sessions, with printed breaks respected. A
-timed occurrence may not exceed 24 hours, so seasonal hours and daily visiting
-hours cannot publish as one continuous weeks-long span.
-
-Program recruitment (academies, fellowships, cohorts, and course-based programs)
-is application content even without explicit "apply now" wording. Printed term
-dates have the role `program_duration`; they are neither event occurrences nor
-an inferred application window. Separately advertised orientations, workshops,
-and application cutoffs retain their own activity/deadline dates. Conferences,
-retreats and exhibitions remain eligible as multi-day activities.
-
-`assessed_events.py` applies student eligibility and fundraising policy separately,
-then publishes student events/deadlines. Nonpublic decisions remain inspectable
-in `source_assessments`, alongside source text, evidence, reasons, version, model,
-and the IDs each source supports. The last successful assessment is retained
-after a failed reassessment. The frontend's existing end-time visibility policy
-continues to keep real ongoing events visible.
-
-Apply `supabase/migrations/20260911000000_source_assessments.sql` before running
-the new importers. Its service-role-only RPC atomically updates source ownership,
-saves current rows, and removes obsolete imported rows only when no other source
-supports them. Admin locks and deleted identities constrain replacements. An
-assessment/API error preserves prior support and causes the stage to report a
-retryable failure. A successful `uncertain` decision stays unpublished.
-
-Semantic caches live in `data/assessments/` and the database. Automatic
-invalidation for policy/version/model changes is temporarily disabled. Saved
-decisions survive code and prompt edits; `content_assessment.VERSION` and the
-model name record how a decision was made, but do not trigger a rerun. Changed
-source text or an explicit `--refresh` can request a new assessment without
-repeating OCR or image downloads. The newest saved decision wins over an older
-local copy. Source reviews retain reviewer attribution and follow the same
-refresh policy. Old `is_event` values are extraction hints, not publication gates.
-
-Regular imports skip sources whose known event occurrences have all finished
-before today's America/Los_Angeles date, including failed assessments awaiting
-retry. Today's events, ongoing multi-day events, and sources with future sessions
-remain eligible. Ends are exclusive, so an event ending at today's midnight
-finished yesterday. A post's upload date is not its event date; new sources with
-unknown event dates still receive their initial assessment. Structured sources
-use their current supplied dates so a rescheduled future event can be processed.
-
-Inspect existing saved evidence (today/future listings only, dry run by default,
-no notifications). To deliberately replace a saved decision, add `--refresh`:
-
-```bash
-python assessed_events.py --report /tmp/assessment-report.json
-python assessed_events.py --source instagram:3977797394086504274 --refresh --report /tmp/one-source.json
-python assessed_events.py --source instagram:3977797394086504274 --refresh --apply
-```
-
-The initial migration of an existing feed should assess all sources supporting
-the affected event group together so legacy duplicates acquire ownership before
-cleanup. Backfills always limit selection to listings on or after today's campus
-date, using registry ownership, legacy IDs, or stored source URLs. `--active` is
-retained for compatibility; it is no longer required. Neither `--source` nor
-`--refresh` bypasses the date limit. Review the report before applying; failures are distinct from
-intentional exclusions. The command reads saved source text and may call the
-configured Gemini service, but never scrapes, downloads media, runs OCR, or sends
-Discord notifications.
-
-Verification:
-
-```bash
-python -m unittest discover -s tests
-python evaluate_content_assessment.py --synthetic --report /tmp/semantic-eval.json
-# Include saved-source regressions in a live model evaluation only when authorized:
-python evaluate_content_assessment.py --report /tmp/full-semantic-eval.json
-```
-
-The root `npm test` also executes the actual publication SQL in disposable
-PGlite PostgreSQL, covering rollback, shared support, retries, rekeying, locks,
-tombstones, session fanout, and public-role access denial. It also runs both
-Python importer entrypoints and applies their actual RPC payloads to PGlite,
-checking retirement with a locked sibling. Install `pipeline/requirements.txt`
-first; the test uses `pipeline/.venv/bin/python` when present, otherwise `python3`
-(or set `PIPELINE_PYTHON`). No network calls are made by these fixtures.
-Semantic evaluation uses the real model and is separate from deterministic
-contract tests; use `--fresh` to evaluate changed prompts instead of reusing old
-answers. Evaluation fixtures are independent of live-listing backfills and can
-exercise historical examples without publishing anything. The saved HESA
-regression also checks the production story mapper:
-no public event is emitted, and the old listing ID is supplied for reconciliation.
-Explicit occurrences and expanded schedules share a 100-session
-limit; oversized schedules fail assessment rather than publishing a partial set.
-
-`extract_stories.py` turns raw IG story image flyers into `events` rows:
-
-1. Walks `data/raw/<handle>/*.json` for handles in `accounts.json`.
-2. Skips story IDs already cached in `data/extracted/`; video stories use their
-   Instagram cover frame as the flyer image.
-3. If the local cache misses, checks Supabase `story_extractions` for a
-   terminal result and writes that result back to `data/extracted/`.
-4. Downloads `image_url`; expired CDN URLs (`403`, `404`, `410`) are cached
-   as `{"status": "image_expired"}`.
-5. Sends image bytes to Google Cloud Vision OCR using `GOOGLE_VISION_API_KEY`.
-6. If OCR text is empty, caches `{"status": "no_text"}` and skips Gemini.
-7. Sends OCR text plus story/account metadata to Gemini 2.5 Flash Lite on
-   Vertex AI using Application Default Credentials, `GOOGLE_CLOUD_PROJECT`,
-   `GOOGLE_CLOUD_LOCATION=global`, and a JSON response schema. The global
-   Vertex endpoint uses `aiplatform.googleapis.com` and bills the configured
-   Google Cloud project.
-8. If the story is an event, uploads the same downloaded bytes to the public
-   `event-flyers` Supabase Storage bucket and caches that durable `image_url`.
-9. Caches terminal extraction results in both
-   `data/extracted/<story_id>.json` and Supabase `story_extractions`.
-10. Upserts cached `status == "ok"` event results into Supabase `events`.
-
-Terminal cache statuses (`image_expired`, `no_text`, `not_event`, `ok`) are
-not reprocessed on later runs. Transient download, Vision, Gemini, or remote
-cache failures are logged and retried on the next run; `error` is allowed in
-the database for diagnostics but is not replayed as a cache hit. Download,
-Vision, and Gemini failures persist `result.stage` and `result.error` locally
-and remotely. Extraction saves successful items before raising a stage failure
-that names unsuccessful story IDs. Direct `run.py` calls also save a rotating
-`data/run.log`, so warning details survive a closed terminal.
-
-Run extraction by itself after a scrape:
-
-```bash
-python extract_stories.py
-```
-
-Expected logs look like:
-
-```text
-extract ig_cyber_ucr_3894795737410658765: ok
-extract ig_cyber_ucr_3894795737410658766: no_text
-Wrote 1 events to Supabase
-```
-
-To check the output:
-
-```sql
-select id, title, starts_at, host, category
-from events
-where source = 'instagram'
-order by scraped_at desc;
-```
-
 ## Instagram post collection
 
-Posts are the other half of how a club announces an event, and unlike stories
-they do not expire. `scrape_posts.py` constructs the logged-in GraphQL
+Posts provide persistent captions and flyers for club announcements. `scrape_posts.py` constructs the logged-in GraphQL
 `NodeIterator` used by Instaloader 4.15.3's `get_posts()` directly, skipping its
 profile-metadata lookup and reading photos and image carousels through
 `get_sidecar_nodes()`. Pagination and request pacing stay with Instaloader.
@@ -524,10 +249,11 @@ An offline transport regression verifies that the feed request matches the
 upstream method, URL, headers, and body; live reliability is not yet verified.
 
 The GraphQL query uses the roster handle. Before accepting a page, every post's
-owner ID must match the stored `instagram_user_id`, including pinned and old
-posts. Missing or mismatched IDs reject the page and retain the scan checkpoint;
-verify the roster handle and ID before retrying. This deliberately also rejects
-collaboration posts owned by another account. An empty first page cannot prove
+author ID or an accepted `coauthor_producers` ID must match the stored
+`instagram_user_id`, including pinned and old posts. Collaborations retain their
+original author for event attribution. Pending coauthor invitations and ordinary
+tags do not qualify. Missing authors or unverified membership reject the page
+and retain the scan checkpoint. An empty first page cannot prove
 account identity and also retains the checkpoint, even for a truly empty feed.
 Missing IDs require `resolve_ids.py`; there is no automatic profile-lookup fallback.
 
@@ -552,7 +278,7 @@ count cutoff: a busy account must be able to pass the same newest-first prefix
 on its next run. A checkpoint advances only after a scan completes **and** its
 raw writes reach Supabase. An interrupted scan keeps the items it already
 collected locally and re-walks the interval next run. Authentication challenges
-and rate limits stop collection on both Instagram channels (see
+and rate limits stop Instagram collection (see
 [When Instagram pushes back](#when-instagram-pushes-back)), record incomplete
 coverage, and retain every checkpoint — continuing would turn one throttle into
 a run-long pattern of rejected requests.
@@ -595,9 +321,8 @@ on every fetch:
 A failed image download or an incomplete OCR is a **retryable error**, never a
 negative decision: the slides that succeeded are kept inside the error payload
 and matched by media key on retry, so a partial media failure costs only the
-slides that actually failed. Video slides use Instagram's cover JPEG — the same
-still stories already OCR as a flyer — so a Reel or a carousel mixing video
-with images is read, not skipped. An over-long carousel is skipped as
+slides that actually failed. Video slides use Instagram's cover JPEG, so a
+Reel or a carousel mixing video with images is read, not skipped. An over-long carousel is skipped as
 `unsupported_media` rather than truncated. That status is terminal only while
 this version still cannot read the post.
 
@@ -614,9 +339,8 @@ slide's OCR are separate `texts` fields (`caption`, `slide_1_ocr`,
 to the slide that actually printed it. Caption-only evidence is allowed — a
 post with blank images can still announce an event.
 
-`make_update` dispatches by source-key prefix: `instagram:post:` for posts,
-`instagram:` for stories, and structured sources otherwise. Both Instagram
-adapters use `instagram_rows.py` for event IDs, host privacy, stale-at-posting
+`make_update` dispatches by source-key prefix: `instagram:post:` for posts
+and structured sources otherwise. Posts use `instagram_rows.py` for event IDs, host privacy, stale-at-posting
 checks, midnight repair, classification, free-food detection, and RSVP handling.
 Caption and OCR text both inform repairs and fallback categories; free food
 remains a separate `has_free_food` flag. Occurrences and schedules cite named
@@ -626,19 +350,10 @@ selection. Assessment version 3 refreshes semantic decisions using saved text.
 **A post publishes exactly one occurrence.** A carousel holding a whole term's
 schedule cannot be turned into one listing without choosing a session on the
 reader's behalf, so multiple occurrences and recurring schedules are skipped
-with an explicit reason. Stories keep their existing multi-occurrence
-behaviour.
+with an explicit reason.
 
-A story that reshares a feed post is skipped before download, OCR, or a model
-call. The post is collected from the author's grid and is the single source
-for that media; re-reading the story embed would duplicate work and a second
-`source_assessments` row. Original story flyers (not reshares) are unchanged.
-
-Posts are ordered last in the Instagram publication batch so a listing that
-still has both a legacy reshare source and a post keeps the durable `/p/`
-permalink rather than a story link that stops resolving within a day. Two
-unrelated clubs announcing the same title at the same time still keep
-separate listings.
+Each post publishes its durable `/p/` permalink. Two unrelated clubs announcing
+the same title at the same time keep separate listings.
 
 Everything downstream is unchanged: caption corrections may replace or withdraw
 that post's support while another valid source keeps the event alive, errors
@@ -690,8 +405,7 @@ Read `/tmp/post-pilot.json` before enabling publication: each entry carries the
 assessment's quoted evidence next to the row it produced, so a wrong date or an
 invented activity is visible without querying the database. When it looks right,
 drop `--dry-run` (keep `--no-notify` for the first real run), then confirm the
-listings in the running site — flyer, permalink, date, host, and that a post
-is not also published as a second card from a story resharing it.
+listings in the running site — flyer, permalink, date, host, and duplicate handling.
 
 Performance and collection reliability have to be measured in that pilot; the
 architecture alone does not establish them.
@@ -711,7 +425,7 @@ pass. Scheduled runs use the GraphQL iterator described above.
 
 Requests use the live Instaloader session and rate controller, retaining request
 pacing, response diagnostics, session-cookie rotation, account jitter, and the
-shared story/post cooldown. Each direct page gets one attempt; a throttle or
+persisted collection cooldown. Each direct page gets one attempt; a throttle or
 challenge stops collection without retrying or switching endpoints. Logs report
 attempted feed pages and elapsed time per account. These page counts exclude
 roster discovery and any additional media-metadata requests Instaloader needs.
