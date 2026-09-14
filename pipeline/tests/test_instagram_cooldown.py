@@ -35,6 +35,10 @@ CHALLENGE_REPLY = (
     '400 Bad Request - "fail" status, message "challenge_required" '
     "when accessing https://www.instagram.com/graphql/query"
 )
+FEEDBACK_REPLY = (
+    '400 Bad Request - "fail" status, message "feedback_required" '
+    "when accessing https://www.instagram.com/api/v1/feed/user/10839758322/?count=12"
+)
 
 
 class CooldownFileCase(unittest.TestCase):
@@ -55,6 +59,14 @@ class CooldownFileCase(unittest.TestCase):
 
 
 class ClassificationTests(unittest.TestCase):
+    def test_feedback_restrictions_are_throttles_even_when_instaloader_aborts(self):
+        for error_type in (AbortDownloadException, QueryReturnedBadRequestException,
+                           ConnectionException):
+            with self.subTest(error_type=error_type.__name__):
+                block = instagram_cooldown.classify(error_type(FEEDBACK_REPLY))
+                self.assertEqual(Kind.THROTTLED, block.kind)
+                self.assertEqual("action restricted (feedback_required)", block.reason)
+
     def test_challenges_and_throttles_are_named(self):
         cases = [
             (TooManyRequestsException("429 Too Many Requests"), Kind.THROTTLED),
@@ -113,6 +125,26 @@ class ClassificationTests(unittest.TestCase):
 
 
 class PauseTests(CooldownFileCase):
+    def test_session_refresh_preserves_existing_misclassified_feedback_pause(self):
+        for unsaved in (False, True):
+            with self.subTest(unsaved=unsaved), patch.object(instagram_cooldown, "utc_now", return_value=NOW):
+                with self.assertLogs("pipeline", level="ERROR"):
+                    old = instagram_cooldown.pause(
+                        Block(Kind.CHALLENGED, "challenge or logged-out session"),
+                        "posts", FEEDBACK_REPLY, now=NOW)
+                original = self.path.read_bytes()
+                if unsaved:
+                    instagram_cooldown._UNSAVED = old
+                active = instagram_cooldown.lift_challenge()
+                self.assertIsNotNone(active)
+                self.assertEqual(Kind.THROTTLED, active.kind)
+                self.assertEqual(old.until, active.until)
+                self.assertEqual(original, self.path.read_bytes())
+                for channel in ("posts", "stories"):
+                    with self.assertRaisesRegex(CollectionPaused, "action restricted"):
+                        instagram_cooldown.ensure_collection_allowed(channel)
+                self.assertIsNone(instagram_cooldown.current(now=old.until))
+
     def test_a_pause_from_one_channel_stops_both_until_it_expires(self):
         self.pause(Kind.THROTTLED, "stories", now=NOW)
         for channel in ("stories", "posts"):
