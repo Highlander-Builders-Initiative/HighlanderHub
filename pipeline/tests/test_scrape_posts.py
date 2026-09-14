@@ -74,45 +74,162 @@ class PostArchiveTests(unittest.TestCase):
         self.addCleanup(remote.stop)
 
     def scan(self, posts, checkpoint, now="2026-09-11T12:00:00+00:00"):
-        with patch.object(scrape_posts.instaloader.Profile, "get_posts", return_value=iter(posts)):
+        with patch.object(scrape_posts, "_graphql_feed_posts", return_value=iter(posts)):
             return scrape_posts.scan_account(
                 Mock(), {"handle": "acm.ucr", "instagram_user_id": 42}, checkpoint, instant(now)
             )
 
 
 class ProfileLookupTests(PostArchiveTests):
-    def test_logged_in_scan_uses_stored_id_without_web_profile_info(self):
-        # Run the installed Profile and NodeIterator code; fake only transport.
-        loader = scrape_posts.instaloader.Instaloader(quiet=True)
-        self.addCleanup(loader.close)
-        loader.context.username = "collector"
-        loader.context._session.cookies.set("csrftoken", "offline-test")
-        responses = [
-            {"status": "ok", "data": {"user": {
-                "id": "42", "username": "renamed.ucr", "media_count": 0,
-            }}},
-            {"status": "ok", "data": {
-                "xdt_api__v1__feed__user_timeline_graphql_connection": {
-                    "edges": [],
-                    "page_info": {"has_next_page": False, "end_cursor": None},
-                },
-            }},
-        ]
-        with patch.object(loader.context, "get_json", side_effect=responses) as request, \
-             patch("requests.sessions.Session.request", side_effect=AssertionError("Live HTTP forbidden")):
-            result = scrape_posts.scan_account(
-                loader, {"handle": "acm.ucr", "instagram_user_id": 42},
-                {"activated_at": "2026-09-10T00:00:00+00:00"},
-                instant("2026-09-11T12:00:00+00:00"),
-            )
+    def setUp(self):
+        super().setUp()
+        self.loader = scrape_posts.instaloader.Instaloader(
+            quiet=True, rate_controller=scrape_posts.PacedRateController)
+        self.addCleanup(self.loader.close)
+        self.loader.context.username = "collector"
+        self.loader.context._session.cookies.set("csrftoken", "offline-test")
+        # Every test in this class is offline, even on unexpected fallback paths.
+        no_http = patch("requests.adapters.HTTPAdapter.send",
+                        side_effect=AssertionError("Live HTTP forbidden"))
+        no_http.start()
+        self.addCleanup(no_http.stop)
+
+    @staticmethod
+    def page(items, cursor=None):
+        return {"status": "ok", "data": {
+            "xdt_api__v1__feed__user_timeline_graphql_connection": {
+                "edges": [{"node": item} for item in items],
+                "page_info": {"has_next_page": cursor is not None, "end_cursor": cursor},
+            },
+        }}
+
+    def graphql_scan(self):
+        return scrape_posts.scan_account(
+            self.loader, {"handle": "acm.ucr", "instagram_user_id": 42},
+            {"activated_at": "2026-09-10T00:00:00+00:00"},
+            instant("2026-09-11T12:00:00+00:00"))
+
+    def test_real_transport_matches_upstream_feed_request_and_keeps_rate_control(self):
+        import requests
+        context = self.loader.context
+        requests_seen = []
+        metadata = {"status": "ok", "data": {"user": {
+            "id": "42", "username": "acm.ucr", "media_count": 3}}}
+        feed = self.page([iphone_post(str(n), media_type=t)
+                          for n, t in [(700, 1), (701, 8), (702, 2)]])
+
+        def respond(request, **kwargs):
+            requests_seen.append((request.method, request.url,
+                                  dict(request.headers), request.body))
+            response = requests.Response()
+            response.status_code = 200
+            response.request = request
+            response.url = request.url
+            # The first request is the original Profile metadata fetch.
+            response._content = json.dumps(metadata if len(requests_seen) == 1 else feed).encode()
+            return response
+
+        controller = context._rate_controller
+        with patch("requests.adapters.HTTPAdapter.send", side_effect=respond), \
+             patch.object(context, "do_sleep"), \
+             patch.object(controller, "sleep"), \
+             patch.object(controller, "wait_before_query", wraps=controller.wait_before_query) as pace:
+            upstream = list(scrape_posts.instaloader.Profile(
+                context, {"id": "42", "username": "acm.ucr"}).get_posts())
+            self.assertEqual(2, len(requests_seen))
+            pace.reset_mock()
+            result = self.graphql_scan()
+            self.assertEqual(3, len(requests_seen))
+            self.assertEqual(requests_seen[1], requests_seen[2])
+            pace.assert_called_once_with("7898261790222653")
         self.assertTrue(result.complete)
+        self.assertEqual(3, result.discovered)
+        self.assertEqual(
+            [scrape_posts.serialize_post(post, "acm.ucr", seen_at=instant("2026-09-11T12:00:00+00:00"))
+             for post in upstream], self.remote_writes.call_args.args[0])
+
+    def test_pagination_preserves_pinned_prefix_and_date_boundary(self):
+        old = [iphone_post(str(n), posted_at="2020-01-01T00:00:00+00:00") for n in range(3)]
+        with patch.object(self.loader.context, "get_json", side_effect=[
+                self.page(old, "next"), self.page([iphone_post(), old[0]], "unused")]) as request:
+            result = self.graphql_scan()
+        self.assertTrue(result.complete)
+        self.assertEqual(["700"], result.media_ids)
         self.assertEqual(2, request.call_count)
-        for call in request.call_args_list:
-            self.assertEqual("graphql/query", call.args[0])
-            self.assertTrue(call.kwargs["use_post"])
-        profile_query, feed_query = request.call_args_list
-        self.assertEqual("42", json.loads(profile_query.kwargs["params"]["variables"])["id"])
-        self.assertEqual("renamed.ucr", json.loads(feed_query.kwargs["params"]["variables"])["username"])
+        variables = json.loads(request.call_args.kwargs["params"]["variables"])
+        self.assertEqual("next", variables["after"])
+        self.assertEqual("acm.ucr", variables["username"])
+
+    def test_wrong_or_missing_owner_rejects_entire_page_even_outside_window(self):
+        for owner in ({"pk": "99"}, {}, None):
+            bad = iphone_post("701", posted_at="2020-01-01T00:00:00+00:00")
+            bad["user"] = owner
+            with self.subTest(owner=owner), \
+                 patch.object(self.loader.context, "get_json", return_value=self.page([iphone_post(), bad])):
+                with self.assertRaisesRegex(RuntimeError, "owner ID"):
+                    self.graphql_scan()
+                self.remote_writes.assert_not_called()
+                self.assertEqual([], list((self.root / "posts").glob("*/*.json")))
+
+    def test_owner_validation_applies_to_later_pages(self):
+        wrong = iphone_post("701")
+        wrong["user"]["pk"] = "99"
+        with patch.object(self.loader.context, "get_json", side_effect=[
+                self.page([iphone_post()], "next"), self.page([wrong])]):
+            with self.assertRaisesRegex(RuntimeError, "owner ID"):
+                self.graphql_scan()
+        self.assertTrue((self.root / "posts" / "acm.ucr" / "700.json").exists())
+        self.assertFalse((self.root / "posts" / "acm.ucr" / "701.json").exists())
+        self.remote_writes.assert_not_called()
+
+    def test_empty_first_page_and_malformed_pagination_do_not_establish_coverage(self):
+        malformed = self.page([iphone_post()])
+        del malformed["data"]["xdt_api__v1__feed__user_timeline_graphql_connection"]["page_info"]
+        for response in (self.page([]), malformed):
+            with self.subTest(response=response), \
+                 patch.object(self.loader.context, "get_json", return_value=response):
+                with self.assertRaisesRegex(RuntimeError, "empty GraphQL|malformed GraphQL"):
+                    self.graphql_scan()
+                self.remote_writes.assert_not_called()
+
+    def test_empty_final_page_after_verified_owner_can_complete(self):
+        with patch.object(self.loader.context, "get_json", side_effect=[
+                self.page([iphone_post()], "next"), self.page([])]):
+            self.assertTrue(self.graphql_scan().complete)
+
+    def test_logged_out_scan_fails_before_any_request(self):
+        self.loader.context.username = None
+        with patch.object(self.loader.context, "get_json") as request:
+            with self.assertRaisesRegex(RuntimeError, "requires login"):
+                self.graphql_scan()
+            request.assert_not_called()
+
+    def test_identity_failure_retains_persisted_checkpoint(self):
+        before = {"activated_at": "2026-09-01T00:00:00+00:00",
+                  "scanned_through": "2026-09-10T00:00:00+00:00"}
+        wrong = iphone_post()
+        wrong["user"]["pk"] = "99"
+        for response in (self.page([wrong]), self.page([])):
+            scrape_posts.write_local_checkpoints({"acm.ucr": before})
+            with self.subTest(response=response), \
+                 patch.object(scrape_posts.instaloader, "Instaloader", return_value=self.loader), \
+                 patch.object(self.loader, "close"), \
+                 patch.object(self.loader.context, "get_json", return_value=response), \
+                 patch.object(scrape_posts, "_login"), \
+                 patch.object(scrape_posts, "_attach_http_error_logger"), \
+                 patch.object(scrape_posts, "_persist_rotated_session"), \
+                 patch.object(scrape_posts, "_load_scrape_accounts", return_value=[
+                     {"handle": "acm.ucr", "instagram_user_id": 42}]), \
+                 patch.object(scrape_posts, "resolve_checkpoints", return_value={"acm.ucr": dict(before)}), \
+                 patch.object(scrape_posts, "_write_remote_checkpoints") as remote_checkpoints, \
+                 patch.object(scrape_posts, "refresh_candidates", return_value={}), \
+                 patch.object(scrape_posts, "hydrate_local_posts"), \
+                 patch.object(scrape_posts, "ensure_post_dirs"):
+                with self.assertRaisesRegex(RuntimeError, "1 failure"):
+                    scrape_posts.main()
+                self.assertEqual(before, scrape_posts.load_local_checkpoints()["acm.ucr"])
+                self.assertEqual(before, remote_checkpoints.call_args.args[0]["acm.ucr"])
+                self.remote_writes.assert_not_called()
 
     def test_missing_id_fails_without_falling_back_to_username_lookup(self):
         loader = Mock()
@@ -126,6 +243,158 @@ class ProfileLookupTests(PostArchiveTests):
         profile.assert_not_called()
         profile.from_username.assert_not_called()
         self.remote_writes.assert_not_called()
+
+
+def iphone_post(media_id="700", *, media_type=1, posted_at="2026-09-11T09:00:00+00:00"):
+    """Representative v1 wire format consumed by the installed Instaloader."""
+    photo = {"media_type": 1, "image_versions2": {"candidates": [
+        {"url": "https://cdn.example/photo.jpg"}]}}
+    video = {"media_type": 2, "image_versions2": {"candidates": [
+        {"url": "https://cdn.example/cover.jpg"}]},
+        "video_versions": [{"url": "https://cdn.example/video.mp4"}]}
+    return {
+        "pk": media_id, "code": f"C{media_id}", "media_type": media_type,
+        "taken_at": int(instant(posted_at).timestamp()),
+        "caption": {"text": "Meet @ieee.ucr"}, "has_liked": False, "like_count": 0,
+        "user": {"pk": "42", "username": "renamed.ucr", "is_private": False,
+                 "full_name": "Club", "profile_pic_url": "https://cdn.example/avatar.jpg"},
+        "image_versions2": photo["image_versions2"],
+        "carousel_media": [photo, video],
+        "video_versions": video["video_versions"],
+    }
+
+
+class DirectFeedTests(PostArchiveTests):
+    def setUp(self):
+        super().setUp()
+        self.loader = scrape_posts.instaloader.Instaloader(
+            quiet=True, rate_controller=scrape_posts.PacedRateController)
+        self.addCleanup(self.loader.close)
+        self.loader.context.username = "collector"
+
+    def direct_scan(self):
+        return scrape_posts.scan_account(
+            self.loader, {"handle": "acm.ucr", "instagram_user_id": 42},
+            {"activated_at": "2026-09-10T00:00:00+00:00"},
+            instant("2026-09-11T12:00:00+00:00"), direct_feed=True)
+
+    def test_one_page_serializes_images_carousels_and_video_without_metadata_requests(self):
+        items = [iphone_post(str(n), media_type=t) for n, t in [(700, 1), (701, 8), (702, 2)]]
+        with patch.object(self.loader.context, "get_json", return_value={
+                "status": "ok", "items": items, "more_available": False}) as request, \
+             patch("requests.sessions.Session.request", side_effect=AssertionError("Live HTTP forbidden")):
+            result = self.direct_scan()
+        self.assertTrue(result.complete)
+        self.assertEqual(3, result.discovered)
+        request.assert_called_once_with("api/v1/feed/user/42/", params={"count": 12})
+        records = self.remote_writes.call_args.args[0]
+        self.assertEqual(["GraphImage", "GraphSidecar", "GraphVideo"], [r["typename"] for r in records])
+        self.assertEqual([False, True], [m["is_video"] for m in records[1]["media"]])
+        self.assertEqual(["photo", "cover"], [m["media_key"] for m in records[1]["media"]])
+        self.assertEqual("renamed.ucr", records[0]["owner_username"])
+        self.assertEqual(["ieee.ucr"], records[0]["caption_mentions"])
+
+    def test_pagination_skips_pinned_prefix_and_stops_at_boundary(self):
+        old = [iphone_post(str(n), posted_at="2020-01-01T00:00:00+00:00") for n in range(3)]
+        pages = [
+            {"status": "ok", "items": old, "more_available": True, "next_max_id": "next"},
+            {"status": "ok", "items": [iphone_post(), old[0]],
+             "more_available": True, "next_max_id": "unused"},
+        ]
+        with patch.object(self.loader.context, "get_json", side_effect=pages) as request:
+            result = self.direct_scan()
+        self.assertTrue(result.complete)
+        self.assertEqual(["700"], result.media_ids)
+        self.assertEqual(2, request.call_count)
+        self.assertEqual({"count": 12, "max_id": "next"}, request.call_args.kwargs["params"])
+
+    def test_budget_exhaustion_mirrors_partial_records_but_is_incomplete(self):
+        pages = [{"status": "ok", "items": [iphone_post(str(700 + n))],
+                  "more_available": True, "next_max_id": str(n)} for n in range(3)]
+        with patch.object(self.loader.context, "get_json", side_effect=pages) as request:
+            result = self.direct_scan()
+        self.assertFalse(result.complete)
+        self.assertEqual(3, request.call_count)
+        self.assertEqual(3, len(self.remote_writes.call_args.args[0]))
+
+    def test_malformed_or_repeating_pages_never_establish_coverage(self):
+        for page in ({"status": "ok"}, {"status": "ok", "items": []},
+                     {"status": "ok", "items": [], "more_available": True},
+                     {"status": "ok", "items": [], "more_available": True, "next_max_id": "same"}):
+            with self.subTest(page=page), \
+                 patch.object(self.loader.context, "get_json", return_value=page) as request:
+                with self.assertRaises(RuntimeError):
+                    self.direct_scan()
+                self.assertLessEqual(request.call_count, 2)
+                self.remote_writes.assert_not_called()
+
+    def test_real_transport_keeps_pacing_hooks_cookies_and_stops_pushback_without_retry(self):
+        import requests
+        context = self.loader.context
+        session = context._session
+        saved_headers = dict(session.headers)
+        saved_attempts = context.max_connection_attempts
+        saved_fatal = context.fatal_status_codes
+        hook = Mock()
+        session.hooks["response"].append(hook)
+        for status, body, kind in (
+            (200, {"status": "ok", "items": [], "more_available": False}, None),
+            (429, {"status": "fail", "message": "Too many requests"}, instagram_cooldown.Kind.THROTTLED),
+            (401, {"status": "fail"}, instagram_cooldown.Kind.CHALLENGED),
+            (403, {"status": "fail"}, instagram_cooldown.Kind.CHALLENGED),
+            (400, {"message": "challenge_required"}, instagram_cooldown.Kind.CHALLENGED),
+            (400, {"message": "feedback_required", "spam": True,
+                   "feedback_title": "Try Again Later", "status": "fail"},
+             instagram_cooldown.Kind.THROTTLED),
+            (200, {"status": "fail", "message": "Please wait a few minutes"}, instagram_cooldown.Kind.THROTTLED),
+            (302, {}, instagram_cooldown.Kind.CHALLENGED),
+        ):
+            with self.subTest(status=status, body=body):
+                response = requests.Response()
+                response.status_code = status
+                response.reason = "Test response"
+                response._content = json.dumps(body).encode()
+                response.headers["Content-Type"] = "application/json"
+                if status == 302:
+                    response.headers["location"] = "https://www.instagram.com/accounts/login/"
+                hook.reset_mock()
+                hook.return_value = response
+                def respond(request, **kwargs):
+                    self.assertEqual("https://www.instagram.com/api/v1/feed/user/42/?count=12", request.url)
+                    self.assertEqual("936619743392459", request.headers["X-IG-App-ID"])
+                    self.assertEqual("https://www.instagram.com/acm.ucr/", request.headers["Referer"])
+                    response.request = request
+                    response.url = request.url
+                    session.cookies.set("sessionid", "rotated-offline")
+                    return response
+                controller = context._rate_controller
+                with patch("requests.adapters.HTTPAdapter.send", side_effect=respond) as send, \
+                     patch.object(context, "do_sleep"), \
+                     patch.object(controller, "sleep") as sleep, \
+                     patch.object(controller, "wait_before_query", wraps=controller.wait_before_query) as pace:
+                    if kind is None:
+                        self.assertTrue(self.direct_scan().complete)
+                    else:
+                        with self.assertRaises(BaseException) as raised:
+                            self.direct_scan()
+                        block = instagram_cooldown.classify(raised.exception, lone_400=True)
+                        self.assertIsNotNone(block, repr(raised.exception))
+                        self.assertEqual(kind, block.kind)
+                    self.assertEqual(1, send.call_count)
+                    pace.assert_called_once_with("other")
+                    self.assertTrue(sleep.called)
+                    hook.assert_called_once()
+                self.assertEqual(saved_headers, dict(session.headers))
+                self.assertEqual(saved_attempts, context.max_connection_attempts)
+                self.assertIs(saved_fatal, context.fatal_status_codes)
+                self.assertEqual("rotated-offline", session.cookies.get("sessionid"))
+
+    def test_unbounded_pilot_is_rejected_before_any_side_effect(self):
+        for handles in (None, [], [" "], [str(n) for n in range(6)]):
+            with self.subTest(handles=handles), patch.object(scrape_posts, "ensure_post_dirs") as dirs:
+                with self.assertRaisesRegex(ValueError, "requires"):
+                    scrape_posts.main(handles, direct_feed=True)
+                dirs.assert_not_called()
 
 
 class MediaIdentityTests(unittest.TestCase):
@@ -216,13 +485,13 @@ class OverlapAndCheckpointTests(PostArchiveTests):
         self.assertEqual(instant("2026-09-09T00:00:00+00:00"), boundary)
 
     def test_an_interrupted_scan_keeps_its_items_and_retains_the_checkpoint(self):
-        def explode():
+        def explode(*args):
             yield FakePost("900", "2026-09-11T09:00:00+00:00")
             raise ConnectionException("page 2 timed out")
 
         checkpoint = {"activated_at": "2026-09-01T00:00:00+00:00",
                       "scanned_through": "2026-09-10T00:00:00+00:00"}
-        with patch.object(scrape_posts.instaloader.Profile, "get_posts", side_effect=explode):
+        with patch.object(scrape_posts, "_graphql_feed_posts", side_effect=explode):
             with self.assertRaises(ConnectionException):
                 scrape_posts.scan_account(Mock(), {"handle": "acm.ucr", "instagram_user_id": 42}, checkpoint,
                                           instant("2026-09-11T12:00:00+00:00"))
@@ -503,7 +772,7 @@ class ArchiveRestoreTests(unittest.TestCase):
         for failure in (RuntimeError("supabase unavailable"),
                         SystemExit("Supabase env missing")):
             with self.subTest(failure=type(failure).__name__):
-                def explode():
+                def explode(*args):
                     raise failure
 
                 self.assertEqual(0, self.hydrate(explode))
@@ -534,13 +803,13 @@ class ArchiveRestoreTests(unittest.TestCase):
 class CollectionRunTests(PostArchiveTests):
     """The collector entrypoint end to end, with Instagram mocked out."""
 
-    def run_main(self, accounts, posts_by_handle, *, refresh=None):
-        def get_posts(profile):
-            return iter(posts_by_handle.get(profile.username, []))
+    def run_main(self, accounts, posts_by_handle, *, refresh=None, handles=None, direct_feed=False):
+        def get_posts(loader, handle, user_id):
+            return iter(posts_by_handle.get(handle, []))
 
         loader = Mock()
         with patch.object(scrape_posts.instaloader, "Instaloader", return_value=loader), \
-             patch.object(scrape_posts.instaloader.Profile, "get_posts", autospec=True, side_effect=get_posts), \
+             patch.object(scrape_posts, "_graphql_feed_posts", side_effect=get_posts), \
              patch.object(scrape_posts, "_login"), \
              patch.object(scrape_posts, "_attach_http_error_logger"), \
              patch.object(scrape_posts, "_persist_rotated_session"), \
@@ -552,7 +821,7 @@ class CollectionRunTests(PostArchiveTests):
              patch.object(scrape_posts, "_sleep_between_accounts"), \
              patch.object(scrape_posts, "hydrate_local_posts") as hydrate, \
              patch.object(scrape_posts, "ensure_post_dirs"):
-            scrape_posts.main()
+            scrape_posts.main(handles, direct_feed=direct_feed)
         self.hydrated = hydrate
 
     def test_a_first_run_activates_accounts_and_imports_nothing_older(self):
@@ -655,6 +924,43 @@ class CollectionRunTests(PostArchiveTests):
                           refresh=known)
         # 900 came back from discovery this run; only 700 costs a request.
         self.assertEqual(["700"], [call.args[1]["media_id"] for call in refresh.call_args_list])
+
+
+    def test_direct_pilot_limits_accounts_skips_refresh_and_retains_incomplete_checkpoint(self):
+        before = {"activated_at": "2026-09-01T00:00:00+00:00",
+                  "scanned_through": "2026-09-10T00:00:00+00:00"}
+        scrape_posts.write_local_checkpoints({"acm.ucr": before, "ieee.ucr": before})
+        accounts = [{"handle": "acm.ucr", "instagram_user_id": 42},
+                    {"handle": "ieee.ucr", "instagram_user_id": 43}]
+        def limited(*args):
+            yield FakePost("700", "2026-09-11T09:00:00+00:00")
+            raise scrape_posts.DirectFeedLimitReached("budget exhausted")
+        with patch.object(scrape_posts, "_direct_feed_posts", side_effect=limited) as feed, \
+             patch.object(scrape_posts, "refresh_post") as refresh:
+            with self.assertRaisesRegex(RuntimeError, "incomplete"):
+                self.run_main(accounts, {}, handles=[" ACM.UCR "], direct_feed=True,
+                              refresh={"800": {"handle": "ieee.ucr"}})
+        self.assertEqual(1, feed.call_count)
+        refresh.assert_not_called()
+        saved = scrape_posts.load_local_checkpoints()
+        self.assertEqual(before["scanned_through"], saved["acm.ucr"]["scanned_through"])
+        self.assertEqual("incomplete", saved["acm.ucr"]["last_status"])
+        self.assertEqual(before, saved["ieee.ucr"])
+        self.assertEqual(1, len(self.remote_writes.call_args.args[0]))
+
+    def test_direct_pushback_pauses_both_channels_without_default_fallback(self):
+        accounts = [{"handle": "acm.ucr", "instagram_user_id": 42},
+                    {"handle": "ieee.ucr", "instagram_user_id": 43}]
+        with patch.object(scrape_posts, "_direct_feed_page", side_effect=TooManyRequestsException("429")) as page, \
+             patch.object(scrape_posts, "refresh_post") as refresh:
+            with self.assertRaises(instagram_cooldown.CollectionStopped):
+                self.run_main(accounts, {}, handles=["acm.ucr", "ieee.ucr"], direct_feed=True)
+        page.assert_called_once()
+        refresh.assert_not_called()
+        for checkpoint in scrape_posts.load_local_checkpoints().values():
+            self.assertNotIn("scanned_through", checkpoint)
+        with self.assertRaises(instagram_cooldown.CollectionPaused):
+            instagram_cooldown.ensure_collection_allowed("stories")
 
 
 class _Exploding:

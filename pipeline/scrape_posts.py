@@ -59,10 +59,80 @@ log = logging.getLogger("pipeline.scrape_posts")
 POSSIBLY_PINNED = 3
 
 # Posts are fetched one profile at a time: unlike stories there is no batched
-# endpoint, so a scan needs a profile query and a feed query per account, plus pagination.
+# endpoint. The default constructs the GraphQL feed iterator directly, avoiding
+# a separate profile query. The opt-in direct-feed pilot uses the v1 endpoint.
 # `PacedRateController` puts a floor under the individual requests; this jitter
 # keeps the per-account cadence from looking metronomic on top of it.
 ACCOUNT_SLEEP_RANGE = (5.0, 12.0)
+DIRECT_FEED_MAX_ACCOUNTS = 5
+DIRECT_FEED_MAX_PAGES = 3
+
+
+class DirectFeedLimitReached(RuntimeError):
+    """The pilot budget ended before coverage was established."""
+
+
+def _direct_feed_page(L: instaloader.Instaloader, handle: str,
+                      user_id: str, params: dict[str, Any]) -> dict[str, Any]:
+    """Use the live session through Instaloader's pacing and error handling.
+
+    Keep response hooks and rotated cookies on the original session. Limit
+    each page to one attempt so pushback cannot trigger automatic retries.
+    Header and retry overrides apply only to this endpoint.
+    """
+    context = L.context
+    session = context._session
+    headers = session.headers.copy()
+    attempts = context.max_connection_attempts
+    fatal_codes = context.fatal_status_codes
+    try:
+        session.headers.update({
+            "X-IG-App-ID": "936619743392459",
+            "X-ASBD-ID": "198387",
+            "User-Agent": context.user_agent,
+            "X-Requested-With": "XMLHttpRequest",
+            "Referer": f"https://www.instagram.com/{handle}/",
+        })
+        context.max_connection_attempts = 1
+        context.fatal_status_codes = list(set(fatal_codes) | {401, 403})
+        return context.get_json(f"api/v1/feed/user/{user_id}/", params=params)
+    finally:
+        session.headers.clear()
+        session.headers.update(headers)
+        context.max_connection_attempts = attempts
+        context.fatal_status_codes = fatal_codes
+
+
+def _direct_feed_posts(L: instaloader.Instaloader, handle: str,
+                       user_id: str) -> Iterable[Any]:
+    """Bounded v1 pagination; malformed responses never establish coverage."""
+    cursor = None
+    seen_cursors: set[str] = set()
+    pages = 0
+    started = time.monotonic()
+    try:
+        for _ in range(DIRECT_FEED_MAX_PAGES):
+            params: dict[str, Any] = {"count": 12}
+            if cursor is not None:
+                params["max_id"] = cursor
+            pages += 1
+            data = _direct_feed_page(L, handle, user_id, params)
+            if (not isinstance(data, dict) or data.get("status") != "ok"
+                    or not isinstance(data.get("items"), list)
+                    or not isinstance(data.get("more_available"), bool)):
+                raise RuntimeError(f"{handle}: malformed direct feed page")
+            for item in data["items"]:
+                yield instaloader.Post.from_iphone_struct(L.context, item)
+            if not data["more_available"]:
+                return
+            cursor = data.get("next_max_id")
+            if not isinstance(cursor, str) or not cursor or cursor in seen_cursors:
+                raise RuntimeError(f"{handle}: missing or repeated direct feed cursor")
+            seen_cursors.add(cursor)
+        raise DirectFeedLimitReached(f"{handle}: direct feed page budget exhausted")
+    finally:
+        log.info("%s: direct feed attempted %d page(s) in %.1fs",
+                 handle, pages, time.monotonic() - started)
 
 
 # ---------------------------------------------------------------- checkpoints
@@ -84,7 +154,7 @@ def write_local_checkpoints(checkpoints: dict[str, dict[str, Any]]) -> None:
     """Merge the given rows into the local cache, leaving untouched ones alone.
 
     Checkpoints are a keyed store, not a snapshot of one run. A pilot
-    (`--handle acm.ucr`) resolves a single account, and writing the file from
+    (`--handle acm_ucr`) resolves a single account, and writing the file from
     that run's handles would drop every other club's activation boundary. If
     the durable row is also missing, re-activation at `now` silently skips the
     interval the lost row had already claimed.
@@ -291,11 +361,69 @@ class AccountResult(NamedTuple):
     media_ids: list[str]
 
 
+def _graphql_feed_posts(L: instaloader.Instaloader, handle: str,
+                        user_id: str) -> instaloader.NodeIterator:
+    """The logged-in 4.15.3 get_posts query, without its metadata lookup.
+
+    The query addresses a handle, so validate every page against the stored ID
+    before exposing any posts, including pinned/out-of-window entries. An empty
+    first page cannot establish identity; fail without advancing coverage.
+    """
+    if not L.context.is_logged_in:
+        raise RuntimeError(f"{handle}: GraphQL post collection requires login")
+    verified_owner = False
+
+    def extract_page(response: dict[str, Any]) -> dict[str, Any]:
+        nonlocal verified_owner
+        page = response["data"]["xdt_api__v1__feed__user_timeline_graphql_connection"]
+        edges = page.get("edges")
+        page_info = page.get("page_info")
+        if (not isinstance(edges, list) or not isinstance(page_info, dict)
+                or not isinstance(page_info.get("has_next_page"), bool)
+                or (page_info["has_next_page"] and not page_info.get("end_cursor"))):
+            raise RuntimeError(f"{handle}: malformed GraphQL feed page")
+        for edge in edges:
+            owner = edge["node"].get("user") or {}
+            owner_id = owner.get("pk")
+            if str(owner_id) != user_id:
+                raise RuntimeError(
+                    f"{handle}: GraphQL feed owner ID {owner_id!r} does not match "
+                    f"stored ID {user_id}; verify the roster handle and ID"
+                )
+        if not edges and (not verified_owner or page_info["has_next_page"]):
+            raise RuntimeError(f"{handle}: empty GraphQL feed cannot verify account identity/coverage")
+        verified_owner = True
+        return page
+
+    # Keep this aligned with Profile.get_posts in the pinned Instaloader version.
+    # NodeIterator retains upstream pagination, transport, and rate control.
+    return instaloader.NodeIterator(
+        context=L.context,
+        query_hash=None,
+        edge_extractor=extract_page,
+        node_wrapper=lambda node: instaloader.Post.from_iphone_struct(L.context, node),
+        query_variables={
+            "data": {
+                "count": 12,
+                "include_relationship_info": True,
+                "latest_besties_reel_media": True,
+                "latest_reel_media": True,
+            },
+            "username": handle,
+        },
+        query_referer=f"https://www.instagram.com/{handle}/",
+        is_first=lambda post, first: first is None or post.date_local > first.date_local,
+        doc_id="7898261790222653",
+    )
+
+
 def scan_account(
     L: instaloader.Instaloader,
     account: dict[str, Any],
     checkpoint: dict[str, Any],
     now: datetime,
+    *,
+    direct_feed: bool = False,
 ) -> AccountResult:
     """Walk one profile's feed back to its boundary and save what is new.
 
@@ -312,32 +440,37 @@ def scan_account(
     user_id = account.get("instagram_user_id")
     if not user_id:
         raise ValueError(f"{handle}: missing instagram_user_id; run resolve_ids.py first")
-    # Seed the public constructor with the resolved ID. Looking up a username
-    # (including via from_id) hits the separately throttled web_profile_info.
-    profile = instaloader.Profile(
-        L.context, {"id": str(user_id), "username": handle}
-    )
+    if direct_feed:
+        posts = _direct_feed_posts(L, handle, str(user_id))
+    else:
+        posts = _graphql_feed_posts(L, handle, str(user_id))
 
     records: list[dict[str, Any]] = []
     counts = {"new": 0, "updated": 0, "unchanged": 0}
     scanned = 0
     complete = False
-    for number, post in enumerate(profile.get_posts(), start=1):
-        published = post.date_utc.replace(tzinfo=timezone.utc)
-        if published < boundary:
-            # A pinned entry sits at the top of the feed no matter how old it
-            # is, so it must not be read as "the feed is now older than the
-            # boundary". Skip it and keep walking.
-            if number <= POSSIBLY_PINNED:
-                continue
+    try:
+        for number, post in enumerate(posts, start=1):
+            published = post.date_utc.replace(tzinfo=timezone.utc)
+            if published < boundary:
+                # A pinned entry sits at the top of the feed no matter how old it
+                # is, so it must not be read as "the feed is now older than the
+                # boundary". Skip it and keep walking.
+                if number <= POSSIBLY_PINNED:
+                    continue
+                complete = True
+                break
+            scanned += 1
+            record = serialize_post(post, handle, seen_at=now)
+            records.append(record)
+            counts[write_post(record)] += 1
+        else:
             complete = True
-            break
-        scanned += 1
-        record = serialize_post(post, handle, seen_at=now)
-        records.append(record)
-        counts[write_post(record)] += 1
-    else:
-        complete = True
+    except DirectFeedLimitReached as exc:
+        log.warning("%s; retaining scan checkpoint", exc)
+    finally:
+        if direct_feed:
+            posts.close()
 
     write_remote_posts(records)
     return AccountResult(
@@ -410,8 +543,13 @@ def _sleep_between_accounts() -> None:
     time.sleep(random.uniform(*ACCOUNT_SLEEP_RANGE))
 
 
-def main(handles: list[str] | None = None) -> None:
-    """Collect posts. `handles` limits the run to named accounts, for a pilot."""
+def main(handles: list[str] | None = None, *, direct_feed: bool = False) -> None:
+    """Collect posts; direct-feed pilots require at most five explicit handles."""
+    wanted = {handle.strip().lower() for handle in (handles or []) if handle.strip()}
+    if direct_feed and not 1 <= len(wanted) <= DIRECT_FEED_MAX_ACCOUNTS:
+        raise ValueError(
+            f"--direct-feed requires 1–{DIRECT_FEED_MAX_ACCOUNTS} named --handle accounts"
+        )
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
     )
@@ -455,14 +593,13 @@ def main(handles: list[str] | None = None) -> None:
     try:
         accounts = _load_scrape_accounts(L)
         if handles:
-            wanted = {handle.strip().lower() for handle in handles if handle.strip()}
             accounts = [account for account in accounts
                         if str(account.get("handle") or "").lower() in wanted]
             missing = wanted - {str(account.get("handle") or "").lower() for account in accounts}
             if missing:
                 raise RuntimeError(
                     f"Not in the account roster: {', '.join(sorted(missing))}. "
-                    "Post collection only covers accounts the run already follows."
+                    "Check the exact Instagram handles in the configured account roster."
                 )
             log.info("Pilot run limited to %d account(s)", len(accounts))
         # Activation is claimed for exactly the accounts this run will fetch, so
@@ -479,7 +616,7 @@ def main(handles: list[str] | None = None) -> None:
             totals["accounts"] += 1
             checkpoint = checkpoints.setdefault(handle, {"activated_at": _iso(now)})
             try:
-                result = scan_account(L, account, checkpoint, now)
+                result = scan_account(L, account, checkpoint, now, direct_feed=direct_feed)
             except (ProfileNotExistsException, PrivateProfileNotFollowedException,
                     QueryReturnedNotFoundException) as exc:
                 totals["skipped"] += 1
@@ -517,7 +654,7 @@ def main(handles: list[str] | None = None) -> None:
             if index < len(accounts):
                 _sleep_between_accounts()
 
-        if paused is None:
+        if paused is None and not direct_feed:
             # Posts outside the overlap that still back an upcoming event.
             # Anything already fetched by discovery this run is skipped.
             for media_id, record in sorted(refresh_candidates(now).items()):
@@ -548,6 +685,11 @@ def main(handles: list[str] | None = None) -> None:
                 f"{paused.detail}. Coverage is incomplete for this run; checkpoints "
                 "were retained so the uncollected interval is re-walked once "
                 "collection resumes."
+            )
+        if totals["incomplete"]:
+            raise RuntimeError(
+                f"Direct-feed pilot left {totals['incomplete']} account(s) incomplete; "
+                "checkpoints were retained. Rerun without --direct-feed to finish coverage."
             )
         if totals["errors"]:
             raise RuntimeError(
@@ -609,4 +751,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--handle", action="append",
                         help="limit collection to this account (repeatable); for pilots")
-    main(parser.parse_args().handle)
+    parser.add_argument("--direct-feed", action="store_true",
+                        help="pilot v1 feed fetching: 1–5 named handles, at most 3 pages each; no refresh pass")
+    args = parser.parse_args()
+    if args.direct_feed and not 1 <= len({h.strip().lower() for h in (args.handle or [])
+                                         if h.strip()}) <= DIRECT_FEED_MAX_ACCOUNTS:
+        parser.error("--direct-feed requires 1–5 named --handle accounts")
+    main(args.handle, direct_feed=args.direct_feed)

@@ -287,10 +287,12 @@ stages fail before sending a request — later in the same run, and on every run
 after it — while extraction, publication, and normalization still process
 whatever is already on disk.
 
-A fresh login fixes a challenge, so a successful `import_safari_session.py` run
-lifts a challenge pause. A throttle pause ends only with time; delete the file
-to resume sooner. A pause file that can't be read keeps both channels paused
-until you check it and delete it.
+A successful `import_safari_session.py` run lifts a pause classified as a session
+challenge. Rate limits and `feedback_required` action restrictions keep their
+original cooldown even after a session refresh, including pauses older runs
+misclassified as challenges. The deadline is the collector's waiting period,
+not a promise that Instagram will remove its restriction then. A pause file
+that can't be read keeps both channels paused until you check it and delete it.
 
 ## Supabase row shapes
 
@@ -514,9 +516,20 @@ order by scraped_at desc;
 ## Instagram post collection
 
 Posts are the other half of how a club announces an event, and unlike stories
-they do not expire. `scrape_posts.py` walks each account's feed with
-Instaloader's `get_posts()`, reading photos and image carousels through
-`get_sidecar_nodes()`.
+they do not expire. `scrape_posts.py` constructs the logged-in GraphQL
+`NodeIterator` used by Instaloader 4.15.3's `get_posts()` directly, skipping its
+profile-metadata lookup and reading photos and image carousels through
+`get_sidecar_nodes()`. Pagination and request pacing stay with Instaloader.
+An offline transport regression verifies that the feed request matches the
+upstream method, URL, headers, and body; live reliability is not yet verified.
+
+The GraphQL query uses the roster handle. Before accepting a page, every post's
+owner ID must match the stored `instagram_user_id`, including pinned and old
+posts. Missing or mismatched IDs reject the page and retain the scan checkpoint;
+verify the roster handle and ID before retrying. This deliberately also rejects
+collaboration posts owned by another account. An empty first page cannot prove
+account identity and also retains the checkpoint, even for a truly empty feed.
+Missing IDs require `resolve_ids.py`; there is no automatic profile-lookup fallback.
 
 Collection is **forward-only**. Before an account's first fetch the run records
 an `activated_at` timestamp, and nothing published before it is ever imported —
@@ -662,11 +675,11 @@ rows first:
 
 ```bash
 # Collect only these accounts, and activate only these accounts.
-python scrape_posts.py --handle acm.ucr --handle ieee.ucr
+python scrape_posts.py --handle acm_ucr --handle ieeeucr
 
 # OCR + assess them, publishing nothing and notifying nobody. The report holds
 # the source evidence and the event rows that *would* have been written.
-python extract_posts.py --handle acm.ucr --handle ieee.ucr \
+python extract_posts.py --handle acm_ucr --handle ieeeucr \
   --dry-run --report /tmp/post-pilot.json
 
 # Re-inspect one source after a fix, still without publishing.
@@ -682,6 +695,37 @@ is not also published as a second card from a story resharing it.
 
 Performance and collection reliability have to be measured in that pilot; the
 architecture alone does not establish them.
+
+For a bounded trial of direct post fetching, use:
+
+```bash
+python scrape_posts.py --direct-feed --handle acm_ucr --handle ieeeucr
+```
+
+This opt-in path uses the stored Instagram IDs with
+`/api/v1/feed/user/<user_id>/`, following the
+[upstream endpoint workaround](https://github.com/instaloader/instaloader/issues/2689).
+It accepts 1–5 explicitly named roster accounts and attempts at most three feed
+pages per account (12 requested items per page). It skips the separate refresh
+pass. Scheduled runs use the GraphQL iterator described above.
+
+Requests use the live Instaloader session and rate controller, retaining request
+pacing, response diagnostics, session-cookie rotation, account jitter, and the
+shared story/post cooldown. Each direct page gets one attempt; a throttle or
+challenge stops collection without retrying or switching endpoints. Logs report
+attempted feed pages and elapsed time per account. These page counts exclude
+roster discovery and any additional media-metadata requests Instaloader needs.
+Both paths skip the profile-metadata query; endpoint throttling still determines
+whether switching to the v1 endpoint improves elapsed time.
+
+Activation, overlap, pinned-prefix handling, and durable writes apply as usual.
+If the page budget ends before the date boundary or feed exhaustion, collected
+records are mirrored but `scanned_through` stays unchanged and the command exits
+with an incomplete-coverage error. Missing page fields or pagination cursors
+also retain progress. To finish coverage, rerun those handles without
+`--direct-feed` after any cooldown expires; repeatedly running the bounded pilot
+on a busy account may only revisit the same newest pages. Collection writes raw
+posts and checkpoints; it does not publish events or send notifications.
 
 Out of scope in this version: historical backfill, comments, profile-link
 crawling, and any schedule change. A missing post or a failed

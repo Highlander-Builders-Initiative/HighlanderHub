@@ -14,7 +14,7 @@ is already on disk and never use the Instagram session.
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timedelta
 from enum import StrEnum
 from typing import Any, Iterator
@@ -48,7 +48,6 @@ class Kind(StrEnum):
 _CHALLENGE_MARKERS = (
     "challenge_required",
     "checkpoint_required",
-    "feedback_required",
     "login_required",
 )
 _THROTTLE_MARKERS = ("too many requests", "please wait a few minutes")
@@ -124,18 +123,22 @@ def classify(exc: BaseException, *, lone_400: bool = False) -> Block | None:
     if isinstance(exc, EveryAccountRejected):
         return Block(Kind.CHALLENGED, "every account rejected")
     errors = list(_instaloader_errors(exc))
+    text = " ".join(str(err) for err in errors).lower()
+    if "feedback_required" in text:
+        # Instagram's "Try Again Later" action restriction also arrives as
+        # AbortDownloadException. A fresh cookie must not clear this pause.
+        return Block(Kind.THROTTLED, "action restricted (feedback_required)")
     for err in errors:
         if isinstance(err, TooManyRequestsException):
             return Block(Kind.THROTTLED, "rate limited")
         if isinstance(err, AbortDownloadException):
             # Instaloader's own "stop producing requests": a checkpoint,
-            # challenge or feedback_required reply, or a session sent to login.
+            # challenge reply, or a session sent to login.
             return Block(Kind.CHALLENGED, "challenge or logged-out session")
         if isinstance(err, LoginRequiredException):
             return Block(Kind.CHALLENGED, "login required")
         if isinstance(err, QueryReturnedForbiddenException):
             return Block(Kind.CHALLENGED, "forbidden (challenge or blocked session)")
-    text = " ".join(str(err) for err in errors).lower()
     if any(marker in text for marker in _CHALLENGE_MARKERS):
         return Block(Kind.CHALLENGED, "challenge")
     if any(marker in text for marker in _THROTTLE_MARKERS):
@@ -215,6 +218,11 @@ def current(*, now: datetime | None = None) -> Pause | None:
                 channel=None,
                 until=None,
             )
+    if record.kind is Kind.CHALLENGED and "feedback_required" in record.detail.lower():
+        # Older runs stored action restrictions as session challenges. Preserve
+        # their original deadline, including when a session import reads them.
+        record = replace(record, kind=Kind.THROTTLED,
+                         reason="action restricted (feedback_required)")
     if record.until is not None and (now or utc_now()) >= record.until:
         return None
     return record
@@ -227,8 +235,8 @@ def ensure_collection_allowed(channel: str, *, now: datetime | None = None) -> N
         return
     resume = {
         Kind.THROTTLED: (
-            "a new session does not lift a rate limit; delete "
-            f"{INSTAGRAM_COOLDOWN_FILE} to resume sooner"
+            "wait for the cooldown to expire; refreshing the session does not "
+            "clear a rate limit or action restriction"
         ),
         Kind.CHALLENGED: (
             "refresh the session with import_safari_session.py, or delete "
