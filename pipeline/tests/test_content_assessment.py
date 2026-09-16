@@ -81,7 +81,7 @@ class ContentAssessmentTests(unittest.TestCase):
             assess.validate(result, src)
 
     def test_midnight_normalization_is_source_independent_and_uses_cited_clocks(self):
-        for origin in ("instagram", "localist", "highlander_link"):
+        for origin in ("instagram", "campus_website", "manual"):
             for wording in ("9pm–12am", "starts at 9 PM and ends at midnight"):
                 with self.subTest(origin=origin, wording=wording):
                     src = source(f"Workshop September 15, 2026, {wording}")
@@ -243,7 +243,7 @@ class ContentAssessmentTests(unittest.TestCase):
     def test_semantic_kind_is_independent_of_audience_and_fundraising(self):
         self.assertEqual("other", classify_content_kind("instagram", title="National Service Dog Month", assessed_kind="announcement"))
         self.assertEqual("student_event", classify_content_kind("instagram", title="Awareness Week", assessed_kind="activity"))
-        self.assertEqual("other", classify_content_kind("localist", title="Staff Workshop", audiences=["Staff"], assessed_kind="activity"))
+        self.assertEqual("other", classify_content_kind("campus_website", title="Staff Workshop", audiences=["Staff"], assessed_kind="activity"))
         self.assertEqual("fundraiser", classify_content_kind("instagram", title="Bake sale", assessed_kind="activity"))
         self.assertEqual("student_deadline", classify_content_kind("instagram", title="Submit your essay", assessed_kind="deadline"))
 

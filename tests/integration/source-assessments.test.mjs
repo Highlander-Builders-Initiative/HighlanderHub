@@ -15,7 +15,7 @@ for (const name of ['20260513073310_init_schema.sql', '20260527000000_add_event_
   '20260529000000_deleted_events.sql', '20260530000000_event_content_kind.sql',
   '20260531000000_event_has_free_food.sql', '20260909000000_event_content_kind_application.sql',
   '20260911000000_source_assessments.sql', '20260912000000_source_assessment_fanout_overrides.sql',
-  '20260913000000_instagram_posts.sql']) {
+  '20260913000000_instagram_posts.sql', '20260916000000_instagram_only_publication.sql']) {
   await db.exec(await readFile(new URL(name, migrations), 'utf8'));
 }
 
@@ -130,31 +130,9 @@ const importerBatches = (() => {
     { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }));
 })();
 
-test('real importer RPC batches retire unsupported IDs while preserving a locked fanout session', async () => {
-  const [schedule, rejectedSchedule, calendar, vanishedCalendar] = importerBatches;
-  assert.equal(schedule[0].assessment.status, 'complete');
-  assert.equal(schedule[0].rows.length, 2);
-  const [morning, afternoon] = schedule[0].rows.map(r => r.id);
-  await reset();
-  await publish(schedule);
-  await db.query('update events set is_locked=true where id=$1', [morning]);
-  await publish(schedule);
-  assert.deepEqual(await ids(), [morning, afternoon].sort());
-  await publish(rejectedSchedule);
-  assert.deepEqual(await ids(), [morning]);
-
-  await reset();
-  await publish(schedule);
-  await publish(rejectedSchedule);
-  assert.deepEqual(await ids(), []);
-  await publish(calendar);
-  assert.deepEqual(await ids(), ['ucr_events_456']);
-  await publish(vanishedCalendar);
-  assert.deepEqual(await ids(), []);
-});
 
 test('a post publishes one listing with its source and flyer', async () => {
-  const [instagram] = importerBatches.slice(4);
+  const [instagram] = importerBatches;
   await reset();
   const written = await publish(instagram);
   assert.deepEqual(await ids(), ['ig_acm.ucr_20260915T2200Z']);
@@ -166,7 +144,7 @@ test('a post publishes one listing with its source and flyer', async () => {
 });
 
 test('a corrected caption withdraws the post-supported listing', async () => {
-  const [instagram, withdrawn] = importerBatches.slice(4);
+  const [instagram, withdrawn] = importerBatches;
   await reset();
   await publish(instagram);
   await publish(withdrawn);
@@ -175,7 +153,7 @@ test('a corrected caption withdraws the post-supported listing', async () => {
 
 for (const retainedBy of [null, 'other source', 'admin lock']) {
   test(`a no_text extraction removes post support, preserving ${retainedBy || 'no unsupported listing'}`, async () => {
-    const [instagram, , , emptied] = importerBatches.slice(4);
+    const [instagram, , , emptied] = importerBatches;
     const event = instagram[0].rows[0];
     await reset();
     await publish(instagram);
@@ -194,7 +172,7 @@ for (const retainedBy of [null, 'other source', 'admin lock']) {
 }
 
 test('an unrelated club posting the same title and time keeps its own listing', async () => {
-  const [instagram, , otherClub] = importerBatches.slice(4);
+  const [instagram, , otherClub] = importerBatches;
   await reset();
   await publish(instagram);
   await publish(otherClub);
@@ -202,7 +180,7 @@ test('an unrelated club posting the same title and time keeps its own listing', 
 });
 
 test('admin locks and tombstones bind a post-supported listing', async () => {
-  const [instagram, withdrawn] = importerBatches.slice(4);
+  const [instagram, withdrawn] = importerBatches;
   await reset();
   await publish(instagram);
   await db.exec("update events set is_locked=true, title='Admin title' where id='ig_acm.ucr_20260915T2200Z'");
@@ -266,3 +244,13 @@ test('public roles cannot read assessments or invoke the publisher', async () =>
 });
 
 test.after(async () => { await db.close(); });
+
+
+test('publication rejects unsupported origins and imported row types', async () => {
+  await reset();
+  await assert.rejects(publish([{ ...update('unsupported'), origin: 'website' }]), /Invalid assessment update/);
+  await assert.rejects(publish([{ ...update('unsupported'), source_key: 'website:123' }]), /Invalid assessment update/);
+  await assert.rejects(publish([update('wrong_id', [row('website_123')])]), /Only publishable imported/);
+  await assert.rejects(publish([update('wrong_source', [row('ig_123', { source: 'campus_website' })])]), /Only publishable imported/);
+  assert.deepEqual(await ids(), []);
+});

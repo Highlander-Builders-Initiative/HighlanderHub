@@ -16,7 +16,7 @@ slug: src-app-about-page-tsx
 | # | Heuristic | Score | Key Issue |
 |---|-----------|-------|-----------|
 | 1 | Visibility of System Status | 3 | Static page; no broken states. Accordion expand state depends on component (verify focus ring on trigger). |
-| 2 | Match System / Real World | 3 | Strong UCR voice; omits HighlanderLink despite PRODUCT/README listing it as a source. |
+| 2 | Match System / Real World | 3 | Strong UCR voice. |
 | 3 | User Control and Freedom | 4 | Clear exits via masthead, external links, FAQ. No traps. |
 | 4 | Consistency and Standards | 3 | Matches Hub tokens; weaker than homepage editorial voice (no dateline, no marquee). |
 | 5 | Error Prevention | 3 | n/a for forms; copy proactively mentions OCR mistakes. |
@@ -37,7 +37,7 @@ slug: src-app-about-page-tsx
 
 ## Overall Impression
 
-The opener is the best thing on the page: specific problem ("ten different feeds"), concrete UCR examples, strong display type. After that, the page flattens into a long, same-shaped scroll that reads like a well-written FAQ site, not a curated campus bulletin. Biggest opportunity: break the twin card-grid rhythm, add one visual proof of the product (marquee, source diagram, or sample flyer row), and fix source accuracy (HighlanderLink).
+The opener is the best thing on the page: specific problem ("ten different feeds"), concrete UCR examples, strong display type. After that, the page flattens into a long, same-shaped scroll that reads like a well-written FAQ site, not a curated campus bulletin. Biggest opportunity: break the twin card-grid rhythm, add one visual proof of the product (marquee, source diagram, or sample flyer row).
 
 ## What's Working
 
@@ -54,7 +54,7 @@ The opener is the best thing on the page: specific problem ("ten different feeds
 - **Suggested command:** `impeccable layout about page`
 
 ### [P1] Incomplete / inaccurate source story
-- **What:** SOURCES lists Instagram, events.ucr.edu, manual only; PRODUCT and pipeline include HighlanderLink.
+- **What:** Keep SOURCES aligned with the supported Instagram and manual submission paths.
 - **Why:** Club officers and skeptics (Riley) will notice omission; undermines "we gather what clubs already post."
 - **Fix:** Add fourth source or merge into copy; align with README/pipeline.
 - **Suggested command:** `impeccable clarify about page sources section`
@@ -83,7 +83,7 @@ The opener is the best thing on the page: specific problem ("ten different feeds
 
 **Casey (Mobile):** Long scroll before FAQ; Principles cards add height early; primary actions in cards use `mt-auto` (good) but page lacks sticky "Submit event" shortcut.
 
-**Riley (Stress Tester):** HighlanderLink missing vs product claims; duplicate timelines (6h auto vs "within a day" manual) may read as contradictory without one timeline block.
+**Riley (Stress Tester):** duplicate timelines (6h auto vs "within a day" manual) may read as contradictory without one timeline block.
 
 **Maya (Student scanner, project-specific):** Strong opener, then wall of similar sections; no quick path back to `/events`; may bounce before FAQ.
 

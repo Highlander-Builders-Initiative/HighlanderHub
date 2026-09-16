@@ -50,12 +50,6 @@ export default function PrivacyPage() {
               <li>
                 <strong>Public Student Organization Channels:</strong> We parse promotional flyers and text descriptions posted publicly on Instagram posts by registered student organizations. This aggregation includes event titles, schedules, locations, and hosting handle names.
               </li>
-              <li>
-                <strong>Official University Feeds:</strong> We mirror public listings from UCR&rsquo;s official events directory (<code>events.ucr.edu</code>).
-              </li>
-              <li>
-                <strong>HighlanderLink:</strong> We monitor public student organization events listed on UCR&rsquo;s HighlanderLink platform.
-              </li>
             </ul>
             <p>
               This automated processing is conducted purely to consolidate public campus announcements. original flyer graphics are indexed and displayed to provide accurate visual context for student discoverability.

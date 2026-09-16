@@ -578,7 +578,7 @@ test("README documents the current ingestion and submission paths", () => {
   const readme = read("README.md");
 
   assert.match(readme, /Highlander Hub/);
-  assert.match(readme, /highlanderlink\.ucr\.edu/);
+  assert.match(readme, /Club Instagram posts/);
   assert.match(readme, /\/submit/);
   assert.doesNotMatch(readme, /on the roadmap/);
 });

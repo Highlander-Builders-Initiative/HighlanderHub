@@ -25,7 +25,7 @@ class ClassifyContentKindTests(unittest.TestCase):
         self.assertEqual(
             "fundraiser",
             classify_content_kind(
-                "localist",
+                "campus_website",
                 title="Percentage Night",
                 description="A donation drive for the food pantry.",
             ),
@@ -61,22 +61,22 @@ class ClassifyContentKindTests(unittest.TestCase):
             ),
         )
 
-    def test_highlander_link_defaults_to_student_event(self) -> None:
+    def test_manual_defaults_to_student_event(self) -> None:
         self.assertEqual(
             "student_event",
             classify_content_kind(
-                "highlander_link",
+                "manual",
                 title="Club Meetup",
                 description="Come hang out.",
             ),
         )
 
-    def test_localist_student_event_is_promoted(self) -> None:
-        # Student-relevance signal in the body promotes a Localist item.
+    def test_campus_website_student_event_is_promoted(self) -> None:
+        # Student-relevance signal in the body promotes a Campus item.
         self.assertEqual(
             "student_event",
             classify_content_kind(
-                "localist",
+                "campus_website",
                 title="Resume Workshop",
                 description="A career workshop for students.",
             ),
@@ -85,29 +85,29 @@ class ClassifyContentKindTests(unittest.TestCase):
         self.assertEqual(
             "student_event",
             classify_content_kind(
-                "localist",
+                "campus_website",
                 title="Campus Concert",
                 description="An evening performance.",
                 audiences=["Undergraduate Students"],
             ),
         )
 
-    def test_localist_unrelated_official_item_is_other(self) -> None:
+    def test_campus_website_unrelated_official_item_is_other(self) -> None:
         self.assertEqual(
             "other",
             classify_content_kind(
-                "localist",
+                "campus_website",
                 title="Board of Trustees Quarterly Meeting",
                 description="Administrative governance session.",
                 audiences=["Faculty", "Staff"],
             ),
         )
 
-    def test_localist_student_deadline(self) -> None:
+    def test_campus_website_student_deadline(self) -> None:
         self.assertEqual(
             "student_deadline",
             classify_content_kind(
-                "localist",
+                "campus_website",
                 title="Undergraduate Scholarship Applications Due",
                 description="Open to all students.",
                 audiences=["Students"],
@@ -134,7 +134,7 @@ class ClassifyContentKindTests(unittest.TestCase):
                 self.assertEqual(
                     "student_event",
                     classify_content_kind(
-                        "localist",
+                        "campus_website",
                         title=title,
                         description=description,
                         audiences=["Students"],
@@ -164,11 +164,11 @@ class ClassifyContentKindTests(unittest.TestCase):
             ),
         )
 
-    def test_localist_deadline_without_student_signal_is_other(self) -> None:
+    def test_campus_website_deadline_without_student_signal_is_other(self) -> None:
         self.assertEqual(
             "other",
             classify_content_kind(
-                "localist",
+                "campus_website",
                 title="Vendor Registration Closes",
                 description="Procurement deadline for suppliers.",
                 audiences=["Faculty", "Staff"],
@@ -181,7 +181,7 @@ class ClassifyContentKindTests(unittest.TestCase):
         self.assertEqual(
             "other",
             classify_content_kind(
-                "localist",
+                "campus_website",
                 title="Provost's Office Hours - Staff",
                 description=(
                     "Provost Watkins holds regular office hours to get to know "
@@ -348,7 +348,7 @@ class ClassifyContentKindTests(unittest.TestCase):
         self.assertEqual(
             "other",
             classify_content_kind(
-                "localist",
+                "campus_website",
                 title="Supporting International Student Success",
                 description="A workshop on advising international students.",
                 audiences=["Faculty & Staff"],
@@ -370,7 +370,7 @@ class ClassifyContentKindTests(unittest.TestCase):
                 self.assertEqual(
                     "other",
                     classify_content_kind(
-                        "localist",
+                        "campus_website",
                         title=title,
                         description=description,
                         audiences=audiences,
@@ -381,7 +381,7 @@ class ClassifyContentKindTests(unittest.TestCase):
         self.assertEqual(
             "other",
             classify_content_kind(
-                "localist",
+                "campus_website",
                 title="Applications Due for the Staff Award",
                 description="Nominate a colleague who mentors students.",
                 audiences=["Faculty & Staff"],
@@ -401,7 +401,7 @@ class ClassifyContentKindTests(unittest.TestCase):
                 self.assertEqual(
                     "student_event",
                     classify_content_kind(
-                        "localist",
+                        "campus_website",
                         title="Campus Concert",
                         description="An evening performance.",
                         audiences=[audience],
@@ -412,7 +412,7 @@ class ClassifyContentKindTests(unittest.TestCase):
         self.assertEqual(
             "student_event",
             classify_content_kind(
-                "localist",
+                "campus_website",
                 title="Career Fair",
                 description="Employers on campus.",
                 audiences=["Faculty & Staff", "Undergraduate Students"],
@@ -425,7 +425,7 @@ class ClassifyContentKindTests(unittest.TestCase):
         self.assertEqual(
             "student_event",
             classify_content_kind(
-                "localist",
+                "campus_website",
                 title="Open Lecture",
                 description="Open to all students.",
                 audiences=["Faculty & Staff", "General Public/Off-Campus Community"],
@@ -442,7 +442,7 @@ class ClassifyContentKindTests(unittest.TestCase):
                 self.assertEqual(
                     "student_event",
                     classify_content_kind(
-                        "localist",
+                        "campus_website",
                         title="Campus Event",
                         description=description,
                     ),
@@ -457,27 +457,27 @@ class ClassifyContentKindTests(unittest.TestCase):
             for field in ("title", "description"):
                 with self.subTest(text=text, field=field):
                     self.assertEqual("student_event", classify_content_kind(
-                        "localist", **{field: text},
+                        "campus_website", **{field: text},
                     ))
 
     def test_text_signals_do_not_match_parts_of_words(self) -> None:
         for text in ("Personality seminar", "Hackathoners meetup", "Club sportswear sale",
                      "For studentship administrators", "Undergraduateship overview"):
             with self.subTest(text=text):
-                self.assertEqual("other", classify_content_kind("localist", title=text))
+                self.assertEqual("other", classify_content_kind("campus_website", title=text))
 
     def test_tags_do_not_establish_student_eligibility(self) -> None:
         for tag in ("RSO", "general body meeting", "open to all students", "undergraduate"):
             with self.subTest(tag=tag):
                 self.assertEqual("other", classify_content_kind(
-                    "localist", title="Campus Briefing", tags=[tag],
+                    "campus_website", title="Campus Briefing", tags=[tag],
                 ))
 
     def test_audience_metadata_does_not_feed_org_text_matching(self) -> None:
         for audience in ("RSO", "general body meeting", "sorority"):
             with self.subTest(audience=audience):
                 self.assertEqual("other", classify_content_kind(
-                    "localist", title="Campus Briefing", audiences=[audience],
+                    "campus_website", title="Campus Briefing", audiences=[audience],
                 ))
 
     def test_metadata_does_not_reclassify_events_as_fundraisers_or_deadlines(self) -> None:
@@ -492,7 +492,7 @@ class ClassifyContentKindTests(unittest.TestCase):
         for audience in ("Nonstudent visitors", "Studentship administrators"):
             with self.subTest(audience=audience):
                 self.assertEqual("other", classify_content_kind(
-                    "localist", title="Campus Briefing", audiences=[audience],
+                    "campus_website", title="Campus Briefing", audiences=[audience],
                 ))
 
     def test_restricted_audiences_use_explicit_singular_and_plural_tokens(self) -> None:
@@ -504,7 +504,7 @@ class ClassifyContentKindTests(unittest.TestCase):
         ):
             with self.subTest(audience=audience):
                 self.assertEqual("other", classify_content_kind(
-                    "localist", title="Campus Briefing", description="Open to all students.",
+                    "campus_website", title="Campus Briefing", description="Open to all students.",
                     audiences=[audience],
                 ))
 
@@ -513,7 +513,7 @@ class ClassifyContentKindTests(unittest.TestCase):
                          "Stafford residents"):
             with self.subTest(audience=audience):
                 self.assertEqual("student_event", classify_content_kind(
-                    "localist", title="Campus Briefing", description="Open to all students.",
+                    "campus_website", title="Campus Briefing", description="Open to all students.",
                     audiences=[audience],
                 ))
 
@@ -521,7 +521,7 @@ class ClassifyContentKindTests(unittest.TestCase):
         for audience in ("Publication editors", "Public policy professionals", "Public"):
             with self.subTest(audience=audience):
                 self.assertEqual("other", classify_content_kind(
-                    "localist", title="Campus Briefing", description="Open to all students.",
+                    "campus_website", title="Campus Briefing", description="Open to all students.",
                     audiences=["Staff", audience],
                 ))
 
@@ -531,12 +531,12 @@ class ClassifyContentKindTests(unittest.TestCase):
             with self.subTest(audience=audience):
                 for description, expected in (("", "other"), ("Open to all students.", "student_event")):
                     self.assertEqual(expected, classify_content_kind(
-                        "localist", title="Campus Briefing", description=description,
+                        "campus_website", title="Campus Briefing", description=description,
                         audiences=["Staff", audience],
                     ))
 
     def test_student_sources_bypass_audience_restrictions_but_not_fundraisers(self) -> None:
-        for origin in ("instagram", "highlander_link", "manual", "submission"):
+        for origin in ("instagram", "manual", "manual", "submission"):
             for title, expected in (("Club Meetup", "student_event"),
                                     ("Applications Due", "student_deadline"),
                                     ("Fundraiser Deadline", "fundraiser")):
@@ -549,10 +549,10 @@ class ClassifyContentKindTests(unittest.TestCase):
         for audiences in (["Students", "Staff"], ["Staff", "Students"]):
             with self.subTest(audiences=audiences):
                 self.assertEqual("student_event", classify_content_kind(
-                    "localist", title="Campus Briefing", audiences=iter(audiences),
+                    "campus_website", title="Campus Briefing", audiences=iter(audiences),
                 ))
         self.assertEqual("other", classify_content_kind(
-            "localist", description="Open to all students.", audiences=iter(["Staff"]),
+            "campus_website", description="Open to all students.", audiences=iter(["Staff"]),
         ))
 
     def test_free_food_detection_preserves_word_boundaries_and_optional_texts(self) -> None:

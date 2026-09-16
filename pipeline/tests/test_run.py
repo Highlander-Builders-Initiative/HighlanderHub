@@ -14,9 +14,6 @@ if str(PIPELINE_ROOT) not in sys.path:
     sys.path.insert(0, str(PIPELINE_ROOT))
 
 STAGE_ORDER = [
-    "ucr_events.scrape",
-    "highlander_link.scrape",
-    "events.normalize",
     "instagram.posts.scrape",
     "instagram.posts.extract",
     "instagram.publish",
@@ -28,10 +25,7 @@ class RunMainTests(unittest.TestCase):
     def setUp(self) -> None:
         self.stage_names = [
             "extract_posts",
-            "highlander_link",
-            "normalize_events",
             "scrape_posts",
-            "ucr_events",
             "reconcile_events",
             "assessed_events",
         ]
@@ -47,9 +41,6 @@ class RunMainTests(unittest.TestCase):
         )
         # Stage name -> the mock the runner actually invokes for it.
         self.stage_mocks = {
-            "ucr_events.scrape": self.fake_modules["ucr_events"].main,
-            "highlander_link.scrape": self.fake_modules["highlander_link"].main,
-            "events.normalize": self.fake_modules["normalize_events"].main,
             "instagram.posts.scrape": self.fake_modules["scrape_posts"].main,
             "instagram.posts.extract": self.fake_modules["extract_posts"].extract_all,
             "instagram.publish": self.fake_modules["assessed_events"].publish_posts,
@@ -80,7 +71,7 @@ class RunMainTests(unittest.TestCase):
         self.assertEqual(1, len(lines))
         return json.loads(lines[0])
 
-    def test_extract_and_normalize_failures_make_pipeline_exit_nonzero_after_all_stages_run(self) -> None:
+    def test_extract_failure_make_pipeline_exit_nonzero_after_all_stages_run(self) -> None:
         calls: list[str] = []
 
         def succeeds(name: str):
@@ -98,14 +89,7 @@ class RunMainTests(unittest.TestCase):
 
         for stage, mock in self.stage_mocks.items():
             mock.side_effect = succeeds(stage)
-        self.fake_modules["ucr_events"].main.side_effect = succeeds("ucr_events.scrape")
-        self.fake_modules["highlander_link"].main.side_effect = succeeds(
-            "highlander_link.scrape"
-        )
         self.stage_mocks["instagram.posts.extract"].side_effect = fails("instagram.posts.extract")
-        self.fake_modules["normalize_events"].main.side_effect = fails(
-            "events.normalize"
-        )
         self.fake_modules["reconcile_events"].main.side_effect = succeeds("events.reconcile")
 
         with self.assertRaises(SystemExit) as raised:
@@ -113,22 +97,10 @@ class RunMainTests(unittest.TestCase):
 
         self.assertEqual(1, raised.exception.code)
         self.assertEqual(STAGE_ORDER, calls)
-        self.fake_modules["normalize_events"].main.assert_called_once_with(
-            ["ucr_events_", "highlander_link_"], notify=False
-        )
 
-    def test_failed_structured_scrape_is_not_reconciled(self) -> None:
-        self.fake_modules["ucr_events"].main.side_effect = RuntimeError("ucr failed")
-
-        with self.assertRaises(SystemExit):
-            self.run.main()
-
-        self.fake_modules["normalize_events"].main.assert_called_once_with(
-            ["highlander_link_"], notify=False
-        )
 
     def test_summary_records_every_stage_and_names_the_broken_one(self) -> None:
-        self.fake_modules["ucr_events"].main.side_effect = ValueError("page 2 exploded")
+        self.fake_modules["scrape_posts"].main.side_effect = ValueError("page 2 exploded")
 
         with self.assertRaises(SystemExit):
             with self.assertLogs("pipeline.run", level="INFO") as logged:
@@ -136,18 +108,18 @@ class RunMainTests(unittest.TestCase):
 
         summary = "\n".join(logged.output)
         self.assertIn("---- run summary ----", summary)
-        self.assertIn("ucr_events.scrape", summary)
+        self.assertIn("instagram.posts.scrape", summary)
         self.assertIn("FAILED", summary)
         self.assertIn("ValueError: page 2 exploded", summary)
-        self.assertIn(f"1 of {len(STAGE_ORDER)} stages broken: ucr_events.scrape", summary)
+        self.assertIn(f"1 of {len(STAGE_ORDER)} stages broken: instagram.posts.scrape", summary)
 
         record = self._history()
         self.assertFalse(record["ok"])
         self.assertEqual(STAGE_ORDER, [s["name"] for s in record["stages"]])
-        broken = next(s for s in record["stages"] if s["name"] == "ucr_events.scrape")
+        broken = next(s for s in record["stages"] if s["name"] == "instagram.posts.scrape")
         self.assertEqual("ValueError: page 2 exploded", broken["error"])
         self.assertTrue(
-            all(s["ok"] for s in record["stages"] if s["name"] != "ucr_events.scrape")
+            all(s["ok"] for s in record["stages"] if s["name"] != "instagram.posts.scrape")
         )
 
     def test_clean_run_records_ok_and_carries_no_error(self) -> None:
@@ -202,7 +174,7 @@ class RunMainTests(unittest.TestCase):
         self.assertEqual({"acm.ucr": {}}, self.fake_modules["assessed_events"].publish_posts.call_args.kwargs["meta"])
         self.assertEqual(2, loader.call_count)
 
-    def test_instagram_scrape_exit_does_not_skip_structured_pipeline(self) -> None:
+    def test_instagram_scrape_exit_does_not_skip_publication(self) -> None:
         self.fake_modules["scrape_posts"].main.side_effect = SystemExit(
             "Instagram credentials required"
         )
@@ -211,11 +183,6 @@ class RunMainTests(unittest.TestCase):
             self.run.main()
 
         self.assertEqual(1, raised.exception.code)
-        self.fake_modules["ucr_events"].main.assert_called_once()
-        self.fake_modules["highlander_link"].main.assert_called_once()
-        self.fake_modules["normalize_events"].main.assert_called_once_with(
-            ["ucr_events_", "highlander_link_"], notify=False
-        )
         self.fake_modules["extract_posts"].extract_all.assert_called_once()
 
         record = self._history()
@@ -228,7 +195,7 @@ class RunMainTests(unittest.TestCase):
             "SystemExit: Instagram credentials required", scrape_stage["error"]
         )
 
-    def test_extract_exit_does_not_skip_structured_normalize(self) -> None:
+    def test_extract_exit_does_not_skip_publication(self) -> None:
         self.fake_modules["extract_posts"].extract_all.side_effect = SystemExit(
             "Supabase env missing"
         )
@@ -237,15 +204,9 @@ class RunMainTests(unittest.TestCase):
             self.run.main()
 
         self.assertEqual(1, raised.exception.code)
-        self.fake_modules["normalize_events"].main.assert_called_once_with(
-            ["ucr_events_", "highlander_link_"], notify=False
-        )
         record = self._history()
         names = [s["name"] for s in record["stages"]]
         self.assertEqual(STAGE_ORDER, names)
-        self.assertLess(
-            names.index("events.normalize"), names.index("instagram.posts.extract")
-        )
         extract_stage = next(
             s for s in record["stages"] if s["name"] == "instagram.posts.extract"
         )

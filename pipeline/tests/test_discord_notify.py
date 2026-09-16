@@ -90,7 +90,7 @@ class DiscordNotifyTests(unittest.TestCase):
                 "starts_at": "2026-05-21T02:00:00.000Z",
                 "location": "HUB 302",
                 "host": "ACM at UCR",
-                "source_url": "https://events.ucr.edu/pizza",
+                "source_url": "https://events.example.edu/pizza",
             },
             {
                 "id": "social",
@@ -142,7 +142,7 @@ class DiscordNotifyTests(unittest.TestCase):
         self.assertEqual("https://highlanderhub.app/events/new", embed["url"])
         self.assertEqual("HUB 302", fields["Where"])
         self.assertEqual("ACM at UCR", fields["Host"])
-        self.assertNotIn("events.ucr.edu", str(payload))
+        self.assertNotIn("events.example.edu", str(payload))
         self.assertEqual({"parse": []}, payload["allowed_mentions"])
 
     def test_free_food_notifications_skip_same_event_with_new_row_id(self) -> None:

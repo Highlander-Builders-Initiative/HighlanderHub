@@ -1,6 +1,6 @@
 name: Scrape sources
 
-# Runs pipeline/run.py (Instagram + UCR + Highlander Link + extract/normalize).
+# Runs pipeline/run.py (Instagram collection, extraction, publication, and reconciliation).
 # Scheduled runs are disabled for now — use workflow_dispatch to run manually.
 # Re-enable the cron under `on.schedule` when the IG session is healthy again.
 #
@@ -46,14 +46,14 @@ jobs:
           cache: pip
           cache-dependency-path: pipeline/requirements.txt
 
-      # Persist structured snapshots, post archives, extraction and assessment caches.
+      # Persist post archives, extraction and assessment caches.
       - name: Restore pipeline data cache
         uses: actions/cache@v4
         with:
           path: pipeline/data
-          key: pipeline-data-${{ github.run_id }}
+          key: pipeline-post-data-${{ github.run_id }}
           restore-keys: |
-            pipeline-data-
+            pipeline-post-data-
 
       - name: Install pipeline dependencies
         working-directory: pipeline

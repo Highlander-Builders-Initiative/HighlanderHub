@@ -59,6 +59,7 @@ SCHEMA = {
         "reason": {"type": "string"},
         "activity_evidence": EVIDENCE_SCHEMA,
         "date_evidence": EVIDENCE_SCHEMA,
+        # Preserve the cached assessment shape; validation requires false.
         "use_source_occurrences": {"type": "boolean"},
         "occurrences": {"type": "array", "items": OCCURRENCE_SCHEMA},
         "schedule": {
@@ -150,14 +151,8 @@ Allowed kind/role pairs: activity/occurrence; deadline/cutoff;
 application/application_window or program_duration or none; service_schedule/recurring_hours or
 occurrence; announcement/observance or notice_period or none; uncertain/any.
 
-For structured sources, source_occurrences are authoritative occurrence fields,
-but their dates can still describe an observance or signup window. Set
-use_source_occurrences=true only for actual activities or deadlines whose
-supplied occurrences are appropriate. Cite their `dates` text as date evidence.
-Keep occurrences empty in this case. For an Instagram source or a structured
-listing containing a schedule rather than proper occurrences, return separate
-occurrences with their own supporting evidence. A single explicit 'today's
-session' reminder takes precedence over its reused seasonal schedule.
+Return occurrences with their own supporting evidence.
+use_source_occurrences must be false. A single explicit 'today's session' reminder takes precedence over its reused seasonal schedule.
 
 For recurring service hours with an explicit bounded date range, weekdays and
 times, use schedule instead of enumerating occurrences. Weekdays are 0=Monday
@@ -215,7 +210,7 @@ def _instant(value: Any) -> datetime:
 def _day_supported(day: date, text: str, source: dict) -> bool:
     from event_dates import evidence_dates, _scan_printed_dates, _labeled_date, _OCR_DATE_RE, _MONTHS
 
-    # ISO dates are used by structured APIs. OCR date helpers cover human text.
+    # Recognize ISO dates as well as human-readable flyer dates.
     iso_days = re.findall(r"\b\d{4}-\d{2}-\d{2}\b", text)
     if day.isoformat() in iso_days:
         return True
@@ -400,12 +395,7 @@ def validate(result: Any, source: dict) -> dict:
     if role == "recurring_hours" and result["occurrences"]:
         raise ValueError("Recurring hours need a bounded schedule, not standalone occurrences")
     if result["use_source_occurrences"]:
-        if not source.get("source_occurrences") or kind == "service_schedule":
-            raise ValueError("No authoritative source occurrences")
-        for item in source["source_occurrences"]:
-            start = _instant(item["starts_at"])
-            if item.get("ends_at") and _instant(item["ends_at"]) <= start:
-                raise ValueError("Invalid source occurrence range")
+        raise ValueError("Unsupported publication choices: occurrences must cite post evidence")
     for item in result["occurrences"]:
         validate_occurrence(item, source)
     if result["schedule"] is not None:

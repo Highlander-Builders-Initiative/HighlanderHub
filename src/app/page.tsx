@@ -127,8 +127,8 @@ export default async function HomePage() {
             Note from the editors
           </p>
           <p className="text-[18px] leading-[1.5] text-ink sm:text-[20px] md:col-span-8 md:col-start-5 md:text-[22px]">
-            We pull listings from where clubs already post: Instagram,
-            events.ucr.edu, and HighlanderLink. One page instead of 840
+            We pull listings from club Instagram posts and submissions.
+            One page instead of 840
             accounts to follow.
           </p>
         </div>

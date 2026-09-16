@@ -37,14 +37,6 @@ const SOURCES = [
     body: "Flyers posted by registered student orgs. We read the image to find the title, time, and place.",
   },
   {
-    label: "events.ucr.edu",
-    body: "UCR's official campus events calendar, mirrored so you don't check two places.",
-  },
-  {
-    label: "highlanderlink.ucr.edu",
-    body: "Public org and campus listings on UCR's Engage platform (HighlanderLink).",
-  },
-  {
     label: "Manual submissions",
     body: "Org leads use the submit form when something isn't in the feeds yet.",
   },
@@ -91,8 +83,7 @@ export default function AboutPage() {
             >
               <p>
                 Events at UCR are scattered across Instagram posts,
-                events.ucr.edu, HighlanderLink, a
-                few club sites, and the occasional wall flyer. To know
+                club sites, and the occasional wall flyer. To know
                 what&rsquo;s actually happening on a given Thursday, you&rsquo;d
                 follow dozens of accounts and check several calendars.
               </p>

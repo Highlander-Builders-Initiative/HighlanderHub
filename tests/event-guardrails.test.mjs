@@ -20,7 +20,7 @@ test("event validation helpers reject unsafe URLs and use Pacific wall-clock tim
         const badStart = validation.validateEventTimes("not a date", "");
         const pacific = validation.validateEventTimes("2026-05-20T23:30", "");
         console.log(JSON.stringify({
-          httpsUrl: validation.normalizeHttpUrl(" https://events.ucr.edu/foo "),
+          httpsUrl: validation.normalizeHttpUrl(" https://events.example.edu/foo "),
           httpUrl: validation.normalizeHttpUrl("http://example.com/a"),
           javascriptUrl: validation.normalizeHttpUrl("javascript:alert(1)"),
           mailtoUrl: validation.normalizeHttpUrl("mailto:club@example.com"),
@@ -44,7 +44,7 @@ test("event validation helpers reject unsafe URLs and use Pacific wall-clock tim
 
   assert.equal(result.status, 0, result.stderr);
   assert.deepEqual(JSON.parse(result.stdout.trim()), {
-    httpsUrl: "https://events.ucr.edu/foo",
+    httpsUrl: "https://events.example.edu/foo",
     httpUrl: "http://example.com/a",
     javascriptUrl: null,
     mailtoUrl: null,
@@ -78,7 +78,7 @@ test("submission validation requires RSVP URL from form data", () => {
         form.set("submitter_email", "taylor@example.com");
         form.set("rsvp_required", "on");
         const missing = submission.validateSubmissionFields(form);
-        form.set("rsvp_url", "https://events.ucr.edu/rsvp");
+        form.set("rsvp_url", "https://events.example.edu/rsvp");
         const valid = submission.validateSubmissionFields(form);
         form.set("rsvp_url", "javascript:alert(1)");
         const invalid = submission.validateSubmissionFields(form);

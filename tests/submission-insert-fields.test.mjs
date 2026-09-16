@@ -15,7 +15,7 @@ const VALID_SUBMISSION = {
   category: "free_food",
   content_kind: "student_event",
   tags: [" free food ", ""],
-  source_url: " https://events.ucr.edu/taco-night ",
+  source_url: " https://events.example.edu/taco-night ",
   image_url: null,
   is_free: true,
   has_free_food: true,
@@ -58,7 +58,7 @@ test("submission parser returns a canonical public insert row", () => {
   assert.equal(row.title, "Taco night");
   assert.equal(row.starts_at, "2027-01-01T00:00:00.000Z");
   assert.deepEqual(row.tags, ["free food"]);
-  assert.equal(row.source_url, "https://events.ucr.edu/taco-night");
+  assert.equal(row.source_url, "https://events.example.edu/taco-night");
   assert.equal(row.submitter_name, "Abe");
   assert.equal(row.submitter_email, "abe@ucr.edu");
   assert.equal(row.submitter_org, null);
