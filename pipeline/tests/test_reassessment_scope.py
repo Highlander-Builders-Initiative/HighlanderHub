@@ -72,13 +72,6 @@ class ReassessmentScopeTests(unittest.TestCase):
         prior["assessment"]["result"]["schedule"]["last_day"] = "2026-09-12"
         self.assertFalse(publication._source_is_past(src, prior, NOW))
 
-    def test_new_structured_dates_override_an_old_finished_assessment(self):
-        src = source()
-        src["source_occurrences"] = [{"starts_at": "2026-09-15T15:00:00-07:00"}]
-        prior = {"assessment": {"result": {"occurrences": [{"starts_at": "2026-09-11T15:00:00-07:00"}]}}}
-        self.assertFalse(publication._source_is_past(src, prior, NOW))
-        src["source_occurrences"].append({"starts_at": "2026-09-10T15:00:00-07:00"})
-        self.assertFalse(publication._source_is_past(src, prior, NOW))
 
     def test_old_upload_date_does_not_suppress_first_assessment_of_new_source(self):
         src = source()
@@ -90,43 +83,38 @@ class ReassessmentScopeTests(unittest.TestCase):
         model.assert_called_once_with(src)
         self.assertEqual(1, len(update["rows"]))
 
-    def test_skipped_structured_source_is_present_not_a_withdrawal(self):
-        raw = {"id": 1, "title": "Old workshop", "first_date": "2026-09-11T15:00:00-07:00"}
-        registry = {"localist:1": {"origin": "localist", "event_ids": ["ucr_events_1"]}}
-        with patch.object(publication, "load_registry", return_value=registry), \
-             patch("db.get_imported_events", return_value=[{"id": "ucr_events_1"}]), \
-             patch.object(publication, "_complete") as complete, \
-             patch.object(semantic, "assess") as model:
-            publication.publish_structured([("localist", raw)], {"ucr_events_"}, NOW, notify=False)
-        model.assert_not_called()
-        complete.assert_called_once_with([], notify=False)
-
     def run_backfill(self, *flags):
-        import normalize_events as structured
-        raw = [{"id": number, "title": "Workshop", "description_text": "Student workshop",
-                "first_date": start, "last_date": end, "filters": {"event_audience": [{"name": "Students"}]}}
-               for number, start, end in (
-                   (1, "2026-09-11T15:00:00-07:00", None),
-                   (2, "2026-09-12T09:00:00-07:00", None),
-                   (3, "2026-09-01T00:00:00-07:00", "2026-09-13T00:00:00-07:00"),
-                   (4, "2026-09-15T15:00:00-07:00", None))]
-        events = [{"id": f"ucr_events_{r['id']}", "starts_at": r["first_date"], "ends_at": r["last_date"]} for r in raw]
+        import extract_posts as posts
+        from test_post_events import record, post_decision
+
+        raws, events, results = [], [], {}
+        for number, start, end in (
+            (1, "2026-09-11T15:00:00-07:00", None),
+            (2, "2026-09-12T09:00:00-07:00", None),
+            (3, "2026-09-01T00:00:00-07:00", "2026-09-13T00:00:00-07:00"),
+            (4, "2026-09-15T15:00:00-07:00", None),
+        ):
+            raw = record(media_id=str(number), slides=1)
+            raw.update(shortcode=f"Post{number}", permalink=f"https://www.instagram.com/p/Post{number}/")
+            raw["caption"] = f"Study Jam {start} {end or ''}"
+            cached = {"status": "ok", "images": []}
+            src = publication.post_source(raw, cached)
+            result = post_decision(src, field="caption")
+            result["occurrences"][0].update(starts_at=start, ends_at=end, all_day=number == 3)
+            results[src["source_key"]] = result
+            (self.root / f"{number}.json").write_text(json.dumps(cached))
+            raws.append(raw)
+            events.append({"id": f"ig_saved_{number}", "source_url": raw["permalink"],
+                           "starts_at": start, "ends_at": end})
         report = self.root / "report.json"
-        # Use the real source mapper, cache boundary and row builder. No model
-        # or database access is needed to verify which sources reach them.
-        def assess(src):
-            return {"kind": "activity", "date_role": "occurrence", "reason": "Student workshop",
-                    "activity_evidence": [{"field": "description", "quote": "Student workshop"}],
-                    "date_evidence": [{"field": "dates", "quote": src["texts"]["dates"]}],
-                    "use_source_occurrences": True, "occurrences": [], "schedule": None}
         with patch.object(publication, "datetime", FixedDatetime), \
              patch.object(publication, "load_registry", return_value={}), \
              patch("db.get_imported_events", return_value=events), \
              patch.object(publication, "load_account_meta", return_value={}), \
              patch("post_archive.hydrate_local_posts"), \
-             patch("post_archive.iter_local_posts", return_value=[]), \
-             patch.object(structured, "_collect_raw", side_effect=[raw, []]), \
-             patch.object(semantic, "assess", side_effect=assess) as model, \
+             patch("post_archive.iter_local_posts", return_value=raws), \
+             patch.object(posts, "_cache_path", side_effect=lambda key: self.root / f"{key}.json"), \
+             patch.object(semantic, "assess", side_effect=lambda src: results[src["source_key"]]) as model, \
              patch.object(publication, "_complete") as complete, \
              patch.object(sys, "argv", ["assessed_events.py", "--report", str(report), *flags]):
             publication.main()
@@ -134,11 +122,13 @@ class ReassessmentScopeTests(unittest.TestCase):
 
     def test_backfill_defaults_to_today_ongoing_and_future_without_active_flag(self):
         updates, model, _ = self.run_backfill("--refresh")
-        self.assertEqual(["localist:2", "localist:3", "localist:4"], [u["source_key"] for u in updates])
+        self.assertEqual(["instagram:post:2", "instagram:post:3", "instagram:post:4"],
+                         [u["source_key"] for u in updates])
         self.assertEqual(3, model.call_count)
+        self.assertTrue(all(u["assessment"]["status"] == "complete" for u in updates))
 
     def test_explicit_source_refresh_cannot_bypass_past_date_limit(self):
-        updates, model, complete = self.run_backfill("--source", "localist:1", "--refresh", "--apply")
+        updates, model, complete = self.run_backfill("--source", "instagram:post:1", "--refresh", "--apply")
         self.assertEqual([], updates)
         model.assert_not_called()
         complete.assert_called_once_with([], notify=False)

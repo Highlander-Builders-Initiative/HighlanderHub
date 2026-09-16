@@ -67,7 +67,6 @@ export const EVENT_MODAL_MOBILE_BAR_CLASS =
 
 const SOURCE_LABELS: Record<CampusEvent["source"], string> = {
   instagram: "Instagram",
-  highlander_link: "Highlander Link",
   campus_website: "UCR Events",
   club_website: "Club site",
   manual: "Manual",

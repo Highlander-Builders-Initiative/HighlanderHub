@@ -26,16 +26,6 @@ test("next/image remote patterns allow scraper-produced image hosts", () => {
     true
   );
   assert.equal(
-    allows("https://se-images.campuslabs.com/clink/images/flyer.jpg"),
-    true
-  );
-  assert.equal(
-    allows(
-      "https://localist-images.azureedge.net/photos/123456789/original.jpg"
-    ),
-    true
-  );
-  assert.equal(
     allows(
       `${supabaseOrigin}/storage/v1/object/public/submission-flyers/829c3a3b-93fc-47b4-9c16-ee00fa356710.jpg`
     ),

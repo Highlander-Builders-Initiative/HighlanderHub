@@ -8,7 +8,6 @@ from unittest.mock import MagicMock, patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "pipeline"))
 import assessed_events as publication
 import extract_posts as posts
-import normalize_events as structured
 
 batches = []
 client = MagicMock()
@@ -21,45 +20,11 @@ def rpc(name, arguments):
     return response
 
 client.rpc.side_effect = rpc
-text = "Drop-in advising in HUB September 15, 2026 Tuesday 10 AM-12 PM and 1 PM-3 PM."
-raw = {"id": "123", "title": "Advising", "description_text": text,
-       "first_date": "2026-09-15T10:00:00-07:00",
-       "filters": {"event_audience": [{"name": "Students"}]}}
-
 with tempfile.TemporaryDirectory() as directory, \
      patch.object(publication, "CACHE_DIR", Path(directory)), \
      patch.object(publication, "load_registry", return_value={}), \
      patch("db.client", return_value=client), \
      patch("db.get_imported_events", return_value=[]):
-    src = publication.structured_source(raw, "localist")
-    evidence = [{"field": "description", "quote": text}]
-    result = {"kind": "service_schedule", "date_role": "recurring_hours", "reason": "Printed advising hours",
-              "activity_evidence": evidence, "date_evidence": evidence, "use_source_occurrences": False,
-              "occurrences": [], "schedule": {"title": "Advising", "location": "HUB",
-              "location_evidence": [{"field": "description", "quote": "HUB"}],
-              "first_day": "2026-09-15", "last_day": "2026-09-15", "weekdays": [1],
-              "windows": [{"start": "10:00", "end": "12:00"}, {"start": "13:00", "end": "15:00"}]}}
-    publication.record_review(src, result, reviewer="integration fixture")
-    with patch.object(structured, "_collect_raw", side_effect=[[raw], [], [raw], []]):
-        structured.main(notify=False)
-        result.update(kind="announcement", date_role="none", schedule=None, activity_evidence=[], date_evidence=[])
-        publication.record_review(src, result, reviewer="integration fixture")
-        structured.main(notify=False)
-
-    calendar = {"id": 456, "title": "Workshop", "description_text": "Student workshop",
-                "first_date": "2026-09-15T10:00:00-07:00",
-                "filters": {"event_audience": [{"name": "Students"}]}}
-    src = publication.structured_source(calendar, "localist")
-    result.update(kind="activity", date_role="occurrence", use_source_occurrences=True,
-                  activity_evidence=[{"field": "description", "quote": "Student workshop"}],
-                  date_evidence=[{"field": "dates", "quote": src["texts"]["dates"]}])
-    publication.record_review(src, result, reviewer="integration fixture")
-    with patch.object(structured, "_collect_raw", side_effect=[[calendar], []]):
-        structured.main(notify=False)
-    with patch.object(structured, "_collect_raw", side_effect=[[], []]), \
-         patch("db.get_imported_events", return_value=[{"id": "ucr_events_456"}]):
-        structured.main(["ucr_events_"], notify=False)
-
     # A feed post publishes one listing.
     flyer = "Study Jam September 15, 2026 3 PM-5 PM"
     post = {"media_id": "700", "handle": "acm.ucr", "owner_username": "acm.ucr",
@@ -111,7 +76,7 @@ with tempfile.TemporaryDirectory() as directory, \
         "index": 0, "is_video": False, "media_key": "blank",
         "image_url": "https://cdn.example/blank.jpg"}]}
     prior = {post_src["source_key"]: {
-        "event_ids": [item["id"] for item in batches[4][0]["rows"]]}}
+        "event_ids": [item["id"] for item in batches[0][0]["rows"]]}}
     with patch.object(posts, "POST_EXTRACTED_DIR", Path(directory) / "post_extractions"), \
          patch.object(posts, "_load_remote_cache", return_value=None), \
          patch.object(posts, "_write_remote_cache"), \

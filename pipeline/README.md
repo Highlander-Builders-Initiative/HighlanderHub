@@ -1,11 +1,9 @@
 # Event ingestion pipeline
 
-Collect campus events from Instagram feed posts, Localist (`events.ucr.edu`),
-and HighlanderLink. Instagram captions and carousel images become source
+Collect campus events from Instagram feed posts. Instagram captions and carousel images become source
 text through OCR, then grounded semantic assessment produces event rows.
 
-`run.py` executes seven isolated stages: `ucr_events.scrape`,
-`highlander_link.scrape`, `events.normalize`, `instagram.posts.scrape`,
+`run.py` executes four isolated stages: `instagram.posts.scrape`,
 `instagram.posts.extract`, `instagram.publish`, and `events.reconcile`.
 Collection failures still allow extraction and publication of archived posts.
 Each run records stage status and duration in `data/run_history.jsonl`.
@@ -24,12 +22,9 @@ Each run records stage status and duration in `data/run_history.jsonl`.
 | `instagram_rows.py` | Instagram event row policy |
 | `content_assessment.py` | Grounded semantic assessment |
 | `assessed_events.py` | Source publication and reassessment |
-| `ucr_events.py`, `highlander_link.py` | Structured-source collection |
-| `normalize_events.py` | Structured-source publication |
 | `reconcile_events.py` | Cross-source deduplication and notifications |
 
-Archives and caches under `data/` are gitignored. Structured snapshots live in
-`data/raw/ucr_events/` and `data/raw/highlander_link/`; posts live in
+Archives and caches under `data/` are gitignored. Posts live in
 `data/posts/`, OCR in `data/post_extractions/`, and assessments in
 `data/assessments/`.
 
@@ -96,8 +91,7 @@ get throttled. Every Instagram request waits an extra 1–2.5s
 ## Editing accounts.json
 
 `scrape_posts.py` validates feed ownership against the stored numeric user ID,
-so every entry needs an `instagram_user_id`. Handles added by hand (or by
-`discover.py`) don't have one:
+so every entry needs an `instagram_user_id`. New handles added by hand need one:
 
 ```bash
 python resolve_ids.py          # fills in every account missing an id
@@ -125,9 +119,6 @@ GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json
 python run.py
 
 # Individual stages
-python ucr_events.py
-python highlander_link.py
-python normalize_events.py
 python scrape_posts.py
 python extract_posts.py --no-notify
 
@@ -230,8 +221,7 @@ Already in the DB shape that `src/lib/events/index.ts` maps into `CampusEvent`
 
 The Next.js app reads upcoming events from the Supabase `events` table via
 `src/lib/events/index.ts`. `assessed_events.py` publishes Instagram flyers into that
-same table with `source='instagram'`, so extracted IG events appear alongside
-Localist events without a frontend change.
+same table with `source='instagram'`, alongside approved manual submissions.
 
 If `DISCORD_WEBHOOK_URL` is set, the pipeline posts newly discovered free-food
 events to Discord after Supabase upsert. The `discord_notifications` table
@@ -339,8 +329,7 @@ slide's OCR are separate `texts` fields (`caption`, `slide_1_ocr`,
 to the slide that actually printed it. Caption-only evidence is allowed — a
 post with blank images can still announce an event.
 
-`make_update` dispatches by source-key prefix: `instagram:post:` for posts
-and structured sources otherwise. Posts use `instagram_rows.py` for event IDs, host privacy, stale-at-posting
+`make_update` publishes assessed Instagram posts. Posts use `instagram_rows.py` for event IDs, host privacy, stale-at-posting
 checks, midnight repair, classification, free-food detection, and RSVP handling.
 Caption and OCR text both inform repairs and fallback categories; free food
 remains a separate `has_free_food` flag. Occurrences and schedules cite named
@@ -452,5 +441,5 @@ project pulling public-ish content from accounts you'd otherwise see by
 following them, but don't redistribute media, don't hammer the API, and
 expect the account you log in with to occasionally get checkpointed. For
 anything production-grade, talk to clubs about an opt-in feed (e.g. they
-post to a shared Highlander Link or our own submission form) instead of
+use our submission form) instead of
 relying on scraping forever.

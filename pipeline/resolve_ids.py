@@ -1,6 +1,6 @@
 """Fill missing Instagram user IDs in accounts.json.
 
-Offline step after discover.py: given handles, resolve numeric instagram_user_id
+Given account handles, resolve numeric instagram_user_id
 via Instagram topsearch (authenticated with IG_SESSION_FILE, the same session
 scrape_posts.py uses), then write IDs back into accounts.json.
 

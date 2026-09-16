@@ -129,43 +129,6 @@ class SourcePublicationTests(unittest.TestCase):
                 self.assertEqual("fundraiser", row["content_kind"])
 
 
-    def test_structured_occurrences_preserve_source_location_when_assessment_is_blank(self):
-        for origin in ("localist", "highlander_link"):
-            raw = {"id": 1, "title": "Workshop", "name": "Workshop",
-                   "filters": {"event_audience": [{"name": "Students"}]},
-                   "first_date": "2026-09-15T15:00:00-07:00", "startsOn": "2026-09-15T15:00:00-07:00",
-                   "location_name": "HUB 302", "location": "HUB 302"}
-            src = publication.structured_source(raw, origin)
-            for mode in ("occurrences", "schedule", "source"):
-                for location, expected in (("", "HUB 302"), ("  ", "HUB 302"), (" Library ", "Library")):
-                    with self.subTest(origin=origin, mode=mode, location=location):
-                        result = decision(source())
-                        result["occurrences"][0]["location"] = location
-                        if mode == "schedule":
-                            src["texts"]["description"] = "Workshop September 15, 2026 Tuesday 3-5 PM"
-                            result["date_evidence"] = [{"field": "description", "quote": src["texts"]["description"]}]
-                            result["occurrences"] = []
-                            result["schedule"] = {"title": "Workshop", "location": location,
-                                "first_day": "2026-09-15", "last_day": "2026-09-15",
-                                "weekdays": [1], "windows": [{"start": "15:00", "end": "17:00"}]}
-                        elif mode == "source":
-                            result["use_source_occurrences"] = True
-                            result["occurrences"] = []
-                            expected = "HUB 302"
-                        rows, _ = publication.structured_rows(raw, origin,
-                            {"status": "complete", "source": src, "result": result}, "2026-09-11T20:00:00Z")
-                        self.assertEqual([expected], [row["location"] for row in rows])
-
-
-    def test_campus_calendar_placement_does_not_promote_an_announcement(self):
-        raw = {"id":1, "title":"National Service Dog Month", "description_text":"Celebrate service dogs this September.",
-               "first_date":"2026-09-01T00:00:00-07:00", "last_date":"2026-10-01T00:00:00-07:00",
-               "filters":{"event_audience":[{"name":"Students"}]}}
-        src = publication.structured_source(raw, "localist")
-        result = {"kind":"announcement", "date_role":"observance", "reason":"Observance only", "activity_evidence":[],
-                  "date_evidence":[], "occurrences":[], "schedule":None, "use_source_occurrences":False}
-        self.assertEqual(([], {"ucr_events_1"}), publication.structured_rows(raw, "localist", {"status":"complete", "source":src, "result":result}, "2026-09-11T20:00:00Z"))
-
     def test_successes_publish_before_partial_failure_is_reported_without_notifications(self):
         updates = [{"source_key":"instagram:a", "assessment":{"status":"complete"}, "rows":[{"id":"ig_a"}]},
                    {"source_key":"instagram:b", "assessment":{"status":"error"}, "rows":[]}]
@@ -197,27 +160,6 @@ class SourcePublicationTests(unittest.TestCase):
              self.assertLogs("pipeline.assessed_events", level="WARNING"):
             publication._complete(updates, notify=True)
         notify.assert_not_called()
-
-    def test_unverified_missing_sources_are_not_retired(self):
-        prior = {"localist:1":{"source_key":"localist:1", "origin":"localist", "event_ids":["ucr_events_1"]}}
-        with patch.object(publication, "load_registry", return_value=prior), \
-             patch("db.get_imported_events", return_value=[]), \
-             patch.object(publication, "_complete") as complete:
-            publication.publish_structured([], set(), "2026-09-11T20:00:00Z", notify=False)
-            self.assertEqual([], complete.call_args.args[0])
-            publication.publish_structured([], {"ucr_events_"}, "2026-09-11T20:00:00Z", notify=False)
-            self.assertEqual("localist:1", complete.call_args.args[0][0]["source_key"])
-            self.assertEqual([], complete.call_args.args[0][0]["rows"])
-
-    def test_verified_snapshot_retires_vanished_legacy_source_without_a_registry_entry(self):
-        with patch.object(publication, "load_registry", return_value={}), \
-             patch("db.get_imported_events", return_value=[{"id":"ucr_events_123_456"}, {"id":"highlander_link_789"}]), \
-             patch.object(publication, "_complete") as complete:
-            publication.publish_structured([], {"ucr_events_"}, "2026-09-11T20:00:00Z", notify=False)
-            updates = complete.call_args.args[0]
-            self.assertEqual(1, len(updates))
-            self.assertEqual("localist:123", updates[0]["source_key"])
-            self.assertEqual(["ucr_events_123_456"], updates[0]["known_event_ids"])
 
 
 if __name__ == "__main__":

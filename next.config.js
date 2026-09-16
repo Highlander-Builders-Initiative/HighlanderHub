@@ -16,12 +16,6 @@ const imageRemotePatterns = [
   { protocol: "https", hostname: "*.cdninstagram.com" },
   {
     protocol: "https",
-    hostname: "se-images.campuslabs.com",
-    pathname: "/clink/images/**",
-  },
-  { protocol: "https", hostname: "localist-images.azureedge.net" },
-  {
-    protocol: "https",
     hostname: supabaseUrl.hostname,
     pathname: "/storage/v1/object/public/submission-flyers/**",
   },

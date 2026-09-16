@@ -28,14 +28,6 @@ export function isOptimizableFlyerHost(rawUrl: string): boolean {
   // "*.cdninstagram.com" — any subdomain, but not the apex (matches Next).
   if (/\.cdninstagram\.com$/.test(hostname)) return true;
 
-  if (
-    hostname === "se-images.campuslabs.com" &&
-    pathname.startsWith("/clink/images/")
-  ) {
-    return true;
-  }
-
-  if (hostname === "localist-images.azureedge.net") return true;
 
   if (
     hostname === SUPABASE_HOST &&

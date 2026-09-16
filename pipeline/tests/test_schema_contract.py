@@ -28,7 +28,6 @@ class SchemaContractTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         fake_config = types.SimpleNamespace(
             ROOT=PIPELINE_ROOT,
-            RAW_DIR=PIPELINE_ROOT / "data" / "raw",
             GOOGLE_CLOUD_PROJECT="test-project",
             GOOGLE_CLOUD_LOCATION="global",
             GOOGLE_VISION_API_KEY="test",
@@ -37,7 +36,6 @@ class SchemaContractTests(unittest.TestCase):
             POST_CHECKPOINTS_FILE=PIPELINE_ROOT / "data" / "post_checkpoints.json",
             POST_OVERLAP_DAYS=7,
             DATA_DIR=PIPELINE_ROOT / "data",
-            ensure_dirs=lambda: None,
             ensure_post_dirs=lambda: None,
             load_accounts=lambda: [],
             load_account_meta=lambda: {},
@@ -48,15 +46,8 @@ class SchemaContractTests(unittest.TestCase):
         sys.modules["config"] = fake_config
         sys.modules["db"] = types.SimpleNamespace(
             upsert_batched=lambda *a, **k: 0,
-            delete_rows_by_prefix=lambda *a, **k: 0,
-            delete_rows_by_ids=lambda *a, **k: 0,
-            delete_events_missing_from_ids=lambda *a, **k: 0,
             get_deleted_event_ids=lambda: set(),
         )
-        sys.modules.pop("normalize_events", None)
-        import normalize_events  # noqa: E402
-
-        cls.normalize_events = normalize_events
         cls.events_schema = _load_schema("events.upsert.schema.json")
         cls.event_keys = _schema_keys(cls.events_schema)
         cls.event_required = set(cls.events_schema["required"])
@@ -102,34 +93,6 @@ class SchemaContractTests(unittest.TestCase):
         rows, _known = publication.post_rows(record, cached, payload, {}, "2026-09-11T12:00:00+00:00")
         self.assertEqual(1, len(rows))
         self._assert_row_matches_schema(rows[0], self.event_keys, self.event_required)
-
-    def test_normalize_events_localist_row_keys(self) -> None:
-        row = self.normalize_events._to_event_row(
-            {
-                "id": 123,
-                "title": "Security Night Workshop",
-                "first_date": "2026-05-15T19:00:00-07:00",
-                "localist_url": "https://events.ucr.edu/foo",
-            },
-            "2026-05-14T12:00:00+00:00",
-        )
-        self.assertIsNotNone(row)
-        assert row is not None
-        self._assert_row_matches_schema(row, self.event_keys, self.event_required)
-
-    def test_normalize_events_highlander_link_row_keys(self) -> None:
-        row = self.normalize_events._to_event_row_hlink(
-            {
-                "id": 456,
-                "name": "Club Meetup",
-                "startsOn": "2026-05-15T19:00:00-07:00",
-                "endsOn": "2026-05-15T21:00:00-07:00",
-            },
-            "2026-05-14T12:00:00+00:00",
-        )
-        self.assertIsNotNone(row)
-        assert row is not None
-        self._assert_row_matches_schema(row, self.event_keys, self.event_required)
 
 
 if __name__ == "__main__":

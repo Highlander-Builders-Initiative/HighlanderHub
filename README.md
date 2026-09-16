@@ -15,9 +15,6 @@ when the next general meeting is.
 
 - **Club Instagram posts** — flyers posted by registered student
   organizations.
-- **events.ucr.edu** — UCR's official campus events calendar.
-- **highlanderlink.ucr.edu** — public HighlanderLink listings from student
-  organizations.
 - **Manual submissions** — events sent through the `/submit` form for review.
 
 Updates run automatically every six hours, so anything posted in the last

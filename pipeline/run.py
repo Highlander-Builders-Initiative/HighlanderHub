@@ -4,11 +4,10 @@ Each source is independent. A failure in one shouldn't kill the others, so
 we log and keep going.
 
 Stages:
-  1. Scrape and normalize Localist and HighlanderLink independently.
-  2. Collect Instagram feed posts, respecting the persisted collection cooldown.
-  3. Extract cached post images with Google Vision OCR.
-  4. Assess and publish the post archive even when collection failed.
-  5. Reconcile corroborated events and send eligible free-food alerts.
+  1. Collect Instagram feed posts, respecting the persisted collection cooldown.
+  2. Extract cached post images with Google Vision OCR.
+  3. Assess and publish the post archive even when collection failed.
+  4. Reconcile corroborated events and send eligible free-food alerts.
 
 Every run ends with a per-stage summary — printed to the log and appended to
 `data/run_history.jsonl`. Because stage failures are isolated, a dead source
@@ -31,11 +30,8 @@ from typing import Any
 
 import assessed_events
 import extract_posts
-import highlander_link
-import normalize_events
 import reconcile_events
 import scrape_posts
-import ucr_events
 from config import DATA_DIR, load_account_meta
 
 log = logging.getLogger("pipeline.run")
@@ -149,18 +145,6 @@ def _report(results: list[StageResult], total_seconds: float) -> None:
 
 
 def _run_stages(results: list[StageResult]) -> None:
-    ucr_events_ok = _safe("ucr_events.scrape", ucr_events.main, results)
-    highlander_link_ok = _safe("highlander_link.scrape", highlander_link.main, results)
-    reconcile_prefixes = []
-    if ucr_events_ok:
-        reconcile_prefixes.append("ucr_events_")
-    if highlander_link_ok:
-        reconcile_prefixes.append("highlander_link_")
-    _safe(
-        "events.normalize",
-        lambda: normalize_events.main(reconcile_prefixes, notify=False),
-        results,
-    )
     # Extraction and publication still process the archive after collection fails.
     _safe("instagram.posts.scrape", scrape_posts.main, results)
 

@@ -21,7 +21,6 @@ export const EVENT_CONTENT_KINDS = [
 export type EventContentKind = (typeof EVENT_CONTENT_KINDS)[number];
 export const EVENT_SOURCES = [
   "instagram",
-  "highlander_link",
   "campus_website",
   "club_website",
   "manual",
@@ -41,7 +40,7 @@ export interface EventRow {
   category: "club" | "academic" | "social" | "career" | "sports" | "arts" | "community" | "free_food";
   content_kind: "student_event" | "student_deadline" | "student_application" | "fundraiser" | "other";
   tags: string[];
-  source: "instagram" | "highlander_link" | "campus_website" | "club_website" | "manual";
+  source: "instagram" | "campus_website" | "club_website" | "manual";
   source_url?: string | null;
   image_url?: string | null;
   is_free: boolean;

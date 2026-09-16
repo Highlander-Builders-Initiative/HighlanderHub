@@ -26,7 +26,6 @@ if load_dotenv is not None:
     load_dotenv(ROOT / ".env")
 
 DATA_DIR = ROOT / "data"
-RAW_DIR = DATA_DIR / "raw"
 POSTS_DIR = DATA_DIR / "posts"
 POST_EXTRACTED_DIR = DATA_DIR / "post_extractions"
 POST_CHECKPOINTS_FILE = DATA_DIR / "post_checkpoints.json"
@@ -41,11 +40,6 @@ SESSION_FILE = os.environ.get("IG_SESSION_FILE")  # absolute path, optional
 GOOGLE_VISION_API_KEY = os.environ.get("GOOGLE_VISION_API_KEY")
 GOOGLE_CLOUD_PROJECT = os.environ.get("GOOGLE_CLOUD_PROJECT")
 GOOGLE_CLOUD_LOCATION = os.environ.get("GOOGLE_CLOUD_LOCATION") or "global"
-
-# Highlander Link is fully gated behind UCR SSO. The discovery script reuses a
-# session cookie pasted out of a logged-in browser (DevTools → Application →
-# Cookies). Cookies typically last 2–4 weeks before re-login is needed.
-HIGHLANDER_LINK_COOKIE = os.environ.get("HIGHLANDER_LINK_COOKIE")
 
 
 def _read_accounts(path: Path) -> list[dict[str, Any]]:
@@ -117,10 +111,6 @@ try:
     )
 except ValueError:
     INSTAGRAM_COOLDOWN_HOURS = 24.0
-
-
-def ensure_dirs() -> None:
-    RAW_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def ensure_post_dirs() -> None:

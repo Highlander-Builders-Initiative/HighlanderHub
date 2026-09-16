@@ -110,33 +110,28 @@ def _tombstoned_candidates(deleted: set[str]) -> list[dict]:
     if not deleted:
         return []
     from config import load_account_meta
-    import normalize_events as structured
     import assessed_events as publication
     registry = publication.load_registry()
     now = datetime.now(timezone.utc).isoformat()
     meta = load_account_meta()
     tombstones = []
 
-    def assessed_candidates(key: str, raw: dict, cached: dict | None = None) -> bool:
+    def assessed_candidates(key: str, raw: dict, cached: dict) -> None:
         record = registry.get(key)
         if record is None:
-            return False
+            return
         # Errors preserve publication's last successful assessment. Never run
         # a new model assessment while reconstructing an admin deletion.
         payload = record.get('last_complete_assessment') or record.get('assessment') or {}
         if payload.get('status') != 'complete' or 'result' not in payload:
-            return True
-        if key.startswith('instagram:post:'):
-            rows, aliases = publication.post_rows(raw, cached or {}, payload, meta, now)
-        else:
-            rows, aliases = publication.structured_rows(raw, record['origin'], payload, now)
+            return
+        rows, aliases = publication.post_rows(raw, cached or {}, payload, meta, now)
         identities = aliases | set(record.get('event_ids', [])) | set(record.get('known_event_ids', []))
         identities.update(row['id'] for row in rows)
         # Match the publication RPC: an override on any known source identity
         # constrains its replacements, including fanout and remapped IDs.
         if deleted & identities:
             tombstones.extend(rows)
-        return True
 
     # Posts have no pre-assessment identity to fall back on, so an unregistered
     # post simply contributes nothing here.
@@ -147,16 +142,7 @@ def _tombstoned_candidates(deleted: set[str]) -> list[dict]:
         if path.exists():
             assessed_candidates(f"instagram:post:{record['media_id']}", record,
                                 igposts._read_json(path))
-    rows = []
-    for raw in structured._collect_raw(structured.UCR_EVENTS_RAW):
-        if not assessed_candidates(f"localist:{raw['id']}", raw):
-            rows.extend(structured._to_event_rows(raw, now))
-    for raw in structured._collect_raw(structured.HIGHLANDER_LINK_RAW):
-        if not assessed_candidates(f"highlander_link:{raw['id']}", raw):
-            row = structured._to_event_row_hlink(raw, now)
-            if row:
-                rows.append(row)
-    return tombstones + [r for r in rows if r['id'] in deleted]
+    return tombstones
 
 
 def _inherit_notifications(rows: list[dict], updates: list[dict], removed: set[str]) -> None:

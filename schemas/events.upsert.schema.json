@@ -58,7 +58,6 @@
       "type": "string",
       "enum": [
         "instagram",
-        "highlander_link",
         "campus_website",
         "club_website",
         "manual"

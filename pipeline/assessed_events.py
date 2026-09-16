@@ -1,6 +1,6 @@
 """Assess imported sources and reconcile their published event projections.
 
-Both importers use this boundary. Raw OCR/extraction caches are retained as
+Instagram posts use this boundary. Raw OCR/extraction caches are retained as
 source material; versioned assessments and publication ownership live in
 source_assessments. Backfills never fetch media, run OCR, or send notifications.
 """
@@ -15,7 +15,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import content_assessment as semantic
-from classify import classify_content_kind
 from config import DATA_DIR, load_account_meta
 from event_identity import dedupe_event_rows
 from instagram_rows import build_instagram_row, instagram_event_id
@@ -55,7 +54,7 @@ def load_registry() -> dict[str, dict]:
     from db import client
     records = {}
     for offset in range(0, 1_000_000, 1000):
-        rows = client().table("source_assessments").select("*").order("source_key").range(offset, offset + 999).execute().data or []
+        rows = client().table("source_assessments").select("*").eq("origin", "instagram").order("source_key").range(offset, offset + 999).execute().data or []
         records.update((row["source_key"], row) for row in rows)
         if len(rows) < 1000:
             return records
@@ -139,23 +138,18 @@ def _event_relevance(row: dict, now: str) -> bool | None:
 def _source_is_past(source: dict, prior: dict | None, now: str) -> bool:
     """Skip known finished sources before any semantic call, including retries.
 
-    Structured sources supply their latest dates (including reschedules).
-    Instagram uses its last assessment. A post's
-    upload timestamp is never used as its event date. Undated/new content still
-    needs its first assessment to establish what it describes.
+    Instagram uses its last assessment. A post's upload timestamp is never
+    used as its event date. Undated/new content needs its first assessment.
     """
-    dates = source.get("source_occurrences") or []
-    if not dates:
-        previous = (prior or {}).get("last_complete_assessment") or (prior or {}).get("assessment")
-        for candidate in _assessment_candidates(source, previous):
-            result = candidate.get("result") or {}
-            dates = result.get("occurrences") or []
-            if result.get("use_source_occurrences"):
-                dates = candidate.get("source", {}).get("source_occurrences") or []
-            if result.get("schedule"):
-                dates = [{"starts_at": result["schedule"].get("last_day")}]
-            if dates:
-                break
+    dates = []
+    previous = (prior or {}).get("last_complete_assessment") or (prior or {}).get("assessment")
+    for candidate in _assessment_candidates(source, previous):
+        result = candidate.get("result") or {}
+        dates = result.get("occurrences") or []
+        if result.get("schedule"):
+            dates = [{"starts_at": result["schedule"].get("last_day")}]
+        if dates:
+            break
     return bool(dates) and all(_event_relevance(row, now) is False for row in dates)
 
 
@@ -175,46 +169,15 @@ def post_source(record: dict, cached: dict) -> dict:
     texts = {"caption": record.get("caption") or ""}
     for slide in posts.ordered_slides(cached):
         texts[f"slide_{int(slide.get('index', 0)) + 1}_ocr"] = slide.get("ocr_text") or ""
+    # Keep the empty occurrence field to preserve existing source fingerprints.
     return {"source_key": f"instagram:post:{record['media_id']}", "origin": "instagram",
             "posted_at": record.get("posted_at"), "texts": texts, "source_occurrences": []}
-
-
-def structured_source(raw: dict, origin: str) -> dict:
-    import normalize_events as structured
-    if origin == "localist":
-        title = raw.get("title") or ""
-        description = raw.get("description_text") or structured._strip_html(raw.get("description"))
-        instances = structured._extract_instances(raw.get("event_instances"))
-        occurrences = [{"id": str(i.get("id") or i["start"]), "starts_at": i["start"], "ends_at": i.get("end")}
-                       for i in instances]
-        if not occurrences:
-            start, end = structured._start_end(raw)
-            occurrences = [{"id": str(raw["id"]), "starts_at": start, "ends_at": end}] if start else []
-    else:
-        title, description = raw.get("name") or "", structured._strip_html(raw.get("description"))
-        occurrences = [{"id": str(raw["id"]), "starts_at": raw["startsOn"], "ends_at": raw.get("endsOn")}] if raw.get("startsOn") else []
-    for item in occurrences:
-        if item.get("ends_at") == item["starts_at"]:
-            item["ends_at"] = None
-    occurrences.sort(key=lambda item: (item["starts_at"], item["id"]))
-    return {"source_key": f"{origin}:{raw['id']}", "origin": origin,
-            "texts": {"title": title, "description": description,
-                      "dates": json.dumps(occurrences, sort_keys=True)},
-            "source_occurrences": occurrences}
 
 
 def assessment_occurrences(result: dict, source: dict) -> list[dict]:
     if result["schedule"]:
         return semantic.expand_schedule(result["schedule"], source, result)
     return result["occurrences"]
-
-
-def _disambiguate(rows: list[dict]) -> list[dict]:
-    titles: dict[str, set[str]] = {}
-    for row in rows:
-        titles.setdefault(row["id"], set()).add(row["title"])
-    return [{**row, "id": row["id"] + "_" + hashlib.sha256(row["title"].encode()).hexdigest()[:10]}
-            if len(titles[row["id"]]) > 1 else row for row in rows]
 
 
 def _evidence_slides(result: dict, occurrence: dict) -> list[int]:
@@ -283,34 +246,6 @@ def post_rows(record: dict, cached: dict, payload: dict, meta: dict, now: str) -
     return ([row] if row and row["content_kind"] in {"student_event", "student_deadline"} else []), known
 
 
-def structured_rows(raw: dict, origin: str, payload: dict, now: str) -> tuple[list[dict], set[str]]:
-    import normalize_events as structured
-    mapper = structured._to_event_row if origin == "localist" else structured._to_event_row_hlink
-    fallback = mapper(raw, now)
-    candidates = structured._to_event_rows(raw, now) if origin == "localist" else ([fallback] if fallback else [])
-    known = {row["id"] for row in candidates}
-    if fallback:
-        known.add(fallback["id"])
-    if payload["status"] != "complete":
-        return [], known
-    result = payload["result"]
-    rows = candidates if result["use_source_occurrences"] else []
-    if not result["use_source_occurrences"] and fallback:
-        for occurrence in assessment_occurrences(result, payload["source"]):
-            stamp = datetime.fromisoformat(occurrence["starts_at"]).astimezone(timezone.utc).strftime("%Y%m%dT%H%MZ")
-            rows.append({**fallback, **{k: occurrence[k] for k in ("title", "starts_at", "ends_at")},
-                         "location": occurrence["location"].strip() or fallback["location"],
-                         "id": f"{fallback['id']}_{stamp}"})
-    audiences = structured._filter_names(raw, "event_audience") if origin == "localist" else []
-    public = []
-    for row in rows:
-        kind = classify_content_kind(origin, title=row["title"], description=row["description"],
-                                     audiences=audiences, assessed_kind=result["kind"])
-        if kind in {"student_event", "student_deadline"}:
-            public.append({**row, "content_kind": kind})
-    return _disambiguate(public), known
-
-
 def make_update(source: dict, raw: dict, cached: dict | None, prior: dict | None, meta: dict,
                 now: str, stats: dict | None = None, *, refresh: bool = False) -> dict | None:
     if _source_is_past(source, prior, now):
@@ -320,10 +255,7 @@ def make_update(source: dict, raw: dict, cached: dict | None, prior: dict | None
         return None
     payload = cached_assessment(source, (prior or {}).get("assessment"), stats, refresh=refresh)
     try:
-        if source["source_key"].startswith("instagram:post:"):
-            rows, known = post_rows(raw, cached, payload, meta, now)
-        else:
-            rows, known = structured_rows(raw, source["origin"], payload, now)
+        rows, known = post_rows(raw, cached, payload, meta, now)
     except Exception as exc:
         payload = {**payload, "status": "error", "error": f"Mapping failed: {type(exc).__name__}: {exc}"}
         rows, known = [], set()
@@ -423,41 +355,8 @@ def publish_posts(processed: list[tuple[dict, dict]], now: str, *, notify: bool,
     _complete(updates, notify=notify)
 
 
-def publish_structured(raws: list[tuple[str, dict]], verified_prefixes: set[str], now: str, *, notify: bool) -> None:
-    registry = load_registry()
-    updates = []
-    present = set()
-    for origin, raw in raws:
-        source = structured_source(raw, origin)
-        present.add(source["source_key"])
-        update = make_update(source, raw, None, registry.get(source["source_key"]), {}, now)
-        if update is not None:
-            updates.append(update)
-    verified_origins = {origin for prefix, origin in (("ucr_events_", "localist"), ("highlander_link_", "highlander_link")) if prefix in verified_prefixes}
-    # Bootstrap vanished legacy sources as well. Before the first assessed run
-    # their IDs exist only in events, and a complete source snapshot must still
-    # remove them as the previous normalizer did.
-    missing_legacy: dict[str, list[str]] = {}
-    if verified_origins:
-        from db import get_imported_events
-        for row in get_imported_events():
-            for prefix, origin in (("ucr_events_", "localist"), ("highlander_link_", "highlander_link")):
-                if origin in verified_origins and row["id"].startswith(prefix):
-                    key = f"{origin}:{row['id'][len(prefix):].split('_', 1)[0]}"
-                    if key not in present:
-                        missing_legacy.setdefault(key, []).append(row["id"])
-    for key, record in registry.items():
-        if record["origin"] in verified_origins and key not in present:
-            missing_legacy.setdefault(key, [])
-    for key, ids in missing_legacy.items():
-        updates.append({"source_key": key, "origin": key.split(':', 1)[0], "rows": [], "known_event_ids": ids,
-                        "assessment": {"status": "complete", "reason": "Absent from a verified complete source snapshot"}})
-    _complete(updates, notify=notify)
-
-
 def main() -> None:
     """Backfill today's/future listings; default dry-run, no scrape/OCR/notifications."""
-    import normalize_events as structured
     from db import get_imported_events
 
     parser = argparse.ArgumentParser(description=__doc__)
@@ -487,9 +386,6 @@ def main() -> None:
             cached = igposts._read_json(path)
             if cached.get("status") == "ok":
                 sources.append((post_source(record, cached), record, cached))
-    for origin, directory in (("localist", structured.UCR_EVENTS_RAW), ("highlander_link", structured.HIGHLANDER_LINK_RAW)):
-        for raw in structured._collect_raw(directory):
-            sources.append((structured_source(raw, origin), raw, None))
     updates = []
     usable = set()
     skipped = 0
@@ -500,16 +396,10 @@ def main() -> None:
         if not any(source["texts"].values()):
             continue
         usable.add(key)
-        is_post = key.startswith("instagram:post:")
         prior_ids = set(registry.get(key, {}).get("event_ids", []))
-        empty = {"status": "error"}
-        if is_post:
-            _, legacy_ids = post_rows(raw, cached, empty, meta, now.isoformat())
-        else:
-            _, legacy_ids = structured_rows(raw, source["origin"], empty, now.isoformat())
         marker = f"/p/{raw.get('shortcode')}/"
-        url_match = source["origin"] == "instagram" and any(marker in (row.get("source_url") or "") for row in active)
-        if not (active_ids & (prior_ids | legacy_ids)) and not url_match:
+        url_match = any(marker in (row.get("source_url") or "") for row in active)
+        if not (active_ids & prior_ids) and not url_match:
             skipped += 1
             continue
         log.info("Assessing %s", key)
@@ -519,10 +409,8 @@ def main() -> None:
             continue
         # Bootstrap ownership using actual stored source URLs, including rows
         # generated by legacy versions whose identity cannot be reconstructed.
-        if source["origin"] == "instagram":
-            marker = f"/p/{raw.get('shortcode')}/"
-            update["known_event_ids"] = sorted(set(update["known_event_ids"]) | {
-                row["id"] for row in existing if marker in (row.get("source_url") or "")})
+        update["known_event_ids"] = sorted(set(update["known_event_ids"]) | {
+            row["id"] for row in existing if marker in (row.get("source_url") or "")})
         updates.append(update)
     missing = selected - usable
     if missing:
