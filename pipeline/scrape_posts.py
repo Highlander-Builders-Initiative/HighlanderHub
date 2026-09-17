@@ -22,18 +22,21 @@ from typing import Any, Iterable, NamedTuple
 
 import instaloader
 from instaloader.exceptions import (
+    ConnectionException,
     PrivateProfileNotFollowedException,
     ProfileNotExistsException,
     QueryReturnedNotFoundException,
 )
 
 import instagram_cooldown
-from config import POST_CHECKPOINTS_FILE, POST_OVERLAP_DAYS, ensure_post_dirs
+from config import (POST_CHECKPOINTS_FILE, POST_OVERLAP_DAYS, POST_DISCOVERY_MODE,
+                    ensure_post_dirs, load_accounts)
 from post_archive import (
     hydrate_local_posts,
     iso as _iso,
     iter_local_posts,
     media_key,
+    post_path,
     parse_instant as _parse_instant,
     read_json as _read_json,
     utc_now as _utc_now,
@@ -242,6 +245,13 @@ def resolve_checkpoints(
         through = min([value for value in (local_through, remote_through) if value], default=None)
         if through is not None:
             checkpoints[handle]["scanned_through"] = _iso(through)
+        # Reconciliation rotates by attempts, independently of successful
+        # coverage. Restore that ordering too when the local cache is lost.
+        local_attempt = _parse_instant(checkpoints[handle].get("last_scan_at"))
+        remote_attempt = _parse_instant(row.get("last_scan_at"))
+        if remote_attempt is not None and (local_attempt is None or remote_attempt > local_attempt):
+            checkpoints[handle]["last_scan_at"] = _iso(remote_attempt)
+            checkpoints[handle]["last_status"] = row.get("last_status")
 
     for handle in unconfirmed:
         if _parse_instant((remote.get(handle) or {}).get("activated_at")) is None:
@@ -374,7 +384,17 @@ def _graphql_feed_posts(L: instaloader.Instaloader, handle: str,
 
     def extract_page(response: dict[str, Any]) -> dict[str, Any]:
         nonlocal verified_account
-        page = response["data"]["xdt_api__v1__feed__user_timeline_graphql_connection"]
+        # HTTP 200 can still contain an API refusal. Keep its message in an
+        # Instaloader exception so the collector's cooldown classifier sees it.
+        diagnostic = {key: response[key] for key in
+                      ("errors", "message", "status", "feedback_title") if key in response}
+        if response.get("errors") or response.get("status") == "fail":
+            raise ConnectionException(f"{handle}: GraphQL feed error: {json.dumps(diagnostic)}")
+        data = response.get("data")
+        page = data.get("xdt_api__v1__feed__user_timeline_graphql_connection") if isinstance(data, dict) else None
+        if not isinstance(page, dict):
+            raise ConnectionException(
+                f"{handle}: malformed GraphQL feed: missing or null timeline data; {json.dumps(diagnostic)}")
         edges = page.get("edges")
         page_info = page.get("page_info")
         if (not isinstance(edges, list) or not isinstance(page_info, dict)
@@ -382,7 +402,9 @@ def _graphql_feed_posts(L: instaloader.Instaloader, handle: str,
                 or (page_info["has_next_page"] and not page_info.get("end_cursor"))):
             raise RuntimeError(f"{handle}: malformed GraphQL feed page")
         for edge in edges:
-            node = edge["node"]
+            node = edge.get("node") if isinstance(edge, dict) else None
+            if not isinstance(node, dict):
+                raise RuntimeError(f"{handle}: malformed GraphQL feed node")
             owner = node.get("user") or {}
             owner_id = owner.get("pk")
             # A collaboration appears on each accepted coauthor's profile,
@@ -552,9 +574,18 @@ def _sleep_between_accounts() -> None:
     time.sleep(random.uniform(*ACCOUNT_SLEEP_RANGE))
 
 
-def main(handles: list[str] | None = None, *, direct_feed: bool = False) -> None:
+def main(handles: list[str] | None = None, *, direct_feed: bool = False,
+         discovery: str | None = None, reconcile_accounts: int = 120,
+         following_max_pages: int = 100) -> None:
     """Collect posts; direct-feed pilots require at most five explicit handles."""
     wanted = {handle.strip().lower() for handle in (handles or []) if handle.strip()}
+    mode = discovery or POST_DISCOVERY_MODE
+    if mode not in ("profiles", "following"):
+        raise ValueError("PIPELINE_POST_DISCOVERY/--discovery must be profiles or following")
+    if direct_feed and mode != "profiles":
+        raise ValueError("--direct-feed cannot be combined with Following discovery")
+    if reconcile_accounts < 1 or following_max_pages < 1:
+        raise ValueError("Reconciliation count and Following page budget must be positive")
     if direct_feed and not 1 <= len(wanted) <= DIRECT_FEED_MAX_ACCOUNTS:
         raise ValueError(
             f"--direct-feed requires 1–{DIRECT_FEED_MAX_ACCOUNTS} named --handle accounts"
@@ -600,7 +631,9 @@ def main(handles: list[str] | None = None, *, direct_feed: bool = False) -> None
     }
     paused: instagram_cooldown.Pause | None = None
     try:
-        accounts = _load_scrape_accounts(L)
+        # The fast path uses the saved roster: enumerating all followees on each
+        # run would add another account-sized request sequence before discovery.
+        accounts = load_accounts() if mode == "following" else _load_scrape_accounts(L)
         if handles:
             accounts = [account for account in accounts
                         if str(account.get("handle") or "").lower() in wanted]
@@ -616,6 +649,26 @@ def main(handles: list[str] | None = None, *, direct_feed: bool = False) -> None
         checkpoints = resolve_checkpoints(
             [str(account.get("handle") or "") for account in accounts], now)
         fetched: set[str] = set()
+        following_result = None
+        if mode == "following":
+            import following_feed
+
+            try:
+                following_result = following_feed.collect(
+                    L, accounts, checkpoints, now, max_pages=following_max_pages)
+                fetched.update(following_result["media_ids"])
+                for key in ("scanned", "discovered", "updated", "unchanged"):
+                    totals[key] += following_result[key]
+            except (Exception, SystemExit) as exc:
+                block = instagram_cooldown.classify(exc)
+                if block is not None:
+                    raise instagram_cooldown.stop(block, "posts", exc) from exc
+                totals["errors"] += 1
+                log.warning("Following discovery failed; retaining progress and running "
+                            "bounded profile reconciliation: %s", exc)
+            accounts = following_feed.select_reconciliation(
+                accounts, checkpoints, reconcile_accounts)
+            log.info("Following mode: reconciling %d profiles this run", len(accounts))
 
         for index, account in enumerate(accounts, start=1):
             handle = str(account.get("handle") or "")
@@ -624,6 +677,12 @@ def main(handles: list[str] | None = None, *, direct_feed: bool = False) -> None
                 continue
             totals["accounts"] += 1
             checkpoint = checkpoints.setdefault(handle, {"activated_at": _iso(now)})
+            if mode == "following":
+                # Persist attempts as well as successes, so an unreadable club
+                # rotates out of the next batch without claiming coverage.
+                checkpoint["last_scan_at"] = _iso(now)
+                checkpoint["last_status"] = "incomplete"
+                write_local_checkpoints({handle: checkpoint})
             try:
                 result = scan_account(L, account, checkpoint, now, direct_feed=direct_feed)
             except (ProfileNotExistsException, PrivateProfileNotFollowedException,
@@ -646,6 +705,19 @@ def main(handles: list[str] | None = None, *, direct_feed: bool = False) -> None
             totals["discovered"] += result.discovered
             totals["updated"] += result.updated
             totals["unchanged"] += result.unchanged
+            if following_result is not None:
+                # Compare only the interval actually traversed by Following;
+                # older profile catch-up is not a feed omission.
+                feed_ids = set(following_result["media_ids"])
+                boundary = _parse_instant(following_result["boundary"])
+                missed = []
+                for media_id in sorted(set(result.media_ids) - feed_ids):
+                    record = _read_json(post_path(handle, media_id))
+                    published = _parse_instant(record.get("posted_at"))
+                    if published is not None and boundary <= published <= now:
+                        missed.append(media_id)
+                log.info("Following comparison %s: %d profile posts absent from feed: %s",
+                         handle, len(set(missed)), sorted(set(missed)))
             fetched.update(result.media_ids)
             if result.complete:
                 # Only a completed scan whose raw writes landed may move the
@@ -655,6 +727,8 @@ def main(handles: list[str] | None = None, *, direct_feed: bool = False) -> None
                 totals["incomplete"] += 1
             checkpoint["last_scan_at"] = _iso(now)
             checkpoint["last_status"] = "complete" if result.complete else "incomplete"
+            if mode == "following":
+                write_local_checkpoints({handle: checkpoint})
             log.info(
                 "%s: %d in window, %d new, %d updated, %d unchanged%s",
                 handle, result.scanned, result.discovered, result.updated,
@@ -762,8 +836,15 @@ if __name__ == "__main__":
                         help="limit collection to this account (repeatable); for pilots")
     parser.add_argument("--direct-feed", action="store_true",
                         help="pilot v1 feed fetching: 1–5 named handles, at most 3 pages each; no refresh pass")
+    parser.add_argument("--discovery", choices=("profiles", "following"),
+                        help="discovery mode; default PIPELINE_POST_DISCOVERY or profiles")
+    parser.add_argument("--reconcile-accounts", type=int, default=120,
+                        help="Following mode: oldest-attempted profiles per run (default 120)")
+    parser.add_argument("--following-max-pages", type=int, default=100,
+                        help="Following page budget; exhaustion retains progress (default 100)")
     args = parser.parse_args()
     if args.direct_feed and not 1 <= len({h.strip().lower() for h in (args.handle or [])
                                          if h.strip()}) <= DIRECT_FEED_MAX_ACCOUNTS:
         parser.error("--direct-feed requires 1–5 named --handle accounts")
-    main(args.handle, direct_feed=args.direct_feed)
+    main(args.handle, direct_feed=args.direct_feed, discovery=args.discovery,
+         reconcile_accounts=args.reconcile_accounts, following_max_pages=args.following_max_pages)

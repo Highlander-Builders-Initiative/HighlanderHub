@@ -7,6 +7,7 @@ evidence that an activity exists.
 """
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 import re
@@ -15,7 +16,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 # Recorded for provenance; policy changes currently do not invalidate caches.
-VERSION = 4
+VERSION = 5
 MAX_OCCURRENCES = 100
 MODEL = "gemini-2.5-flash-lite"
 KINDS = ("activity", "deadline", "application", "service_schedule", "announcement", "uncertain")
@@ -31,19 +32,23 @@ class GroundingRejected(ValueError):
     publication cache keeps it instead of paying for the same refusal again.
     """
 
+    def __init__(self, message: str, *, attempts: list[dict] | None = None):
+        super().__init__(message)
+        self.attempts = attempts or []
+
 
 EVIDENCE_SCHEMA = {
     "type": "array", "items": {
         "type": "object", "properties": {
-            "field": {"type": "string"}, "quote": {"type": "string"},
-        }, "required": ["field", "quote"],
+            "field": {"type": "string"},
+        }, "required": ["field"],
     },
 }
 OCCURRENCE_SCHEMA = {
     "type": "object", "properties": {
         "title": {"type": "string"},
         "starts_at": {"type": "string", "description": "ISO-8601 timestamp INCLUDING timezone offset, e.g. 2026-09-15T15:00:00-07:00"},
-        "ends_at": {"type": "string", "nullable": True, "description": "ISO-8601 timestamp INCLUDING timezone offset, or null"},
+        "ends_at": {"type": "string", "nullable": True, "description": "Null when no end time is printed; never guess a duration or repeat starts_at. For all-day events, midnight AFTER the last included date (exclusive), never 23:59:59. Include timezone offset."},
         "all_day": {"type": "boolean"},
         "location": {"type": "string"},
         "location_evidence": EVIDENCE_SCHEMA,
@@ -122,19 +127,18 @@ make an activity an application: conferences, retreats, festivals and exhibition
 can be genuine multi-day activities. Decide from what the source advertises,
 not just the word 'program' or the length of its date range.
 
-Give a short reason and exact supporting quotes with field names from `texts`.
+Give a short reason and supporting field references from `texts`.
 The evidence `field` is a direct text key such as ocr_text, caption, slide_1_ocr,
-title or description, never the parent object 'texts'. Quotes must be literal
-substrings (whitespace may differ). Use short continuous OCR fragments or replace
-line breaks with spaces; do not put literal backslash-n characters in quotes.
-Do not expand a date
-range inside a quote: for 'September 18-20, 2026', quote that entire range,
-never invent the substring 'September 18, 2026'. If unsure, quote the full field.
+title or description, never the parent object 'texts'. Each reference contains
+only `field`; the application attaches that field's original text as the quote.
+Do not transcribe or rewrite quotes. Cite only fields that support the specific
+claim, and keep each activity associated with its own date, time and location
+when a field describes several activities.
 Activity evidence must describe the actual activity/action/service, not just a
 date. Date evidence must connect that activity/action to its dates. Never cite
 metadata (posted_at, audiences, origin) as activity evidence. Do not invent
 locations or clock times; use an empty location when absent. For each occurrence
-or schedule, cite the location's source field and exact quote in location_evidence;
+or schedule, cite the location's source field in location_evidence;
 use [] when location is empty. Cite the slide that prints the location even when
 activity and date evidence come from the caption or another slide. Respect explicit
 years/timezones; otherwise use America/Los_Angeles and infer the year from
@@ -161,7 +165,7 @@ Schedule first_day and last_day must be dates only, like '2026-08-11', not
 timestamps. Schedule windows must be clocks only, like '10:00'. An ongoing
 attendable activity such as an exhibition can also use a schedule for its
 published daily visiting hours; it remains kind=activity, date_role=occurrence.
-Quote the date range, weekday pattern, and times in date_evidence. If any part
+Cite fields with the date range, weekday pattern, and times in date_evidence. If any part
 is missing/ambiguous leave schedule null and occurrences empty; do not guess.
 Never turn a seasonal schedule into one continuous event. Prefer a clearly
 supported single session if recurrence cannot be fully established.
@@ -231,10 +235,16 @@ def _day_supported(day: date, text: str, source: dict) -> bool:
             years.update(int(year) for year in re.findall(r"\b(?:19|20)\d{2}\b", fragment))
             if following:
                 years.add(int(following.group(1)))
-        # A single year at the end of a date range applies to both endpoints.
-        all_years = {int(year) for year in re.findall(r"\b(?:19|20)\d{2}\b", text)}
-        if not years and len(all_years) == 1:
-            years = all_years
+        # A range's trailing year applies to both endpoints. Unrelated years
+        # elsewhere in a cited field (e.g. "since 1962") are not event years.
+        range_pattern = (_OCR_DATE_RE.pattern + r"\s*(?:[-–—]|to|through|thru)\s*"
+                         r"(?:((?:" + "|".join(_MONTHS) + r"))\.?\s+)?"
+                         r"(\d{1,2})(?:st|nd|rd|th)?\s*,?\s*((?:19|20)\d{2})\b")
+        for match in re.finditer(range_pattern, text, re.I):
+            month = _MONTHS[match[1].lower().rstrip('.')]
+            end_month = _MONTHS[match[3].lower()] if match[3] else month
+            if (day.month, day.day) in {(month, int(match[2])), (end_month, int(match[4]))}:
+                years.add(int(match[5]))
         if years:
             return day.year in years
         posted = source.get("posted_at")
@@ -291,9 +301,12 @@ def validate_occurrence(item: dict, source: dict) -> None:
     if not explicit_zone:
         for value in (start, end):
             if value and value.utcoffset() != value.replace(tzinfo=PACIFIC).utcoffset():
-                raise ValueError("Occurrence offset disagrees with America/Los_Angeles")
+                expected = value.replace(tzinfo=PACIFIC).isoformat()
+                raise ValueError(f"Occurrence offset disagrees with America/Los_Angeles: "
+                                 f"{value.isoformat()} should use {expected} for that local date and clock")
     if end and end <= start:
-        raise ValueError("Invalid occurrence duration")
+        raise ValueError("Invalid occurrence duration: ends_at must be after starts_at; "
+                         "use ends_at=null for a timed event with no printed end time")
     # A seasonal range printed with its daily hours ("August 11 to September 17
     # ... 10:00 AM to 3:00 PM") reads as one long timed span whose endpoints and
     # clocks are all genuinely printed, so grounding alone cannot reject it.
@@ -303,16 +316,21 @@ def validate_occurrence(item: dict, source: dict) -> None:
         raise ValueError("A timed occurrence cannot exceed 24 hours; recurring hours need a schedule or separate occurrences")
     # Use the supplied offset for sources that explicitly name another zone.
     if not _day_supported(start.date(), text, source):
-        raise ValueError("Occurrence start date lacks source support")
+        raise ValueError(f"Occurrence start date lacks source support: {start.date()}; "
+                         "cite a printed date or explicit relative date, never posted_at alone")
+    if item["all_day"] and (end is None or start.time() != time(0) or end.time() != time(0)):
+        raise ValueError("All-day occurrences use midnight boundaries: starts_at is 00:00:00 on the first day; "
+                         "ends_at is 00:00:00 on the day AFTER the last included day, never 23:59:59")
     # A timed span is now at most overnight, and its next-day end need not be
     # printed. A multi-day all-day activity must still print its last day.
     if end and item["all_day"] and not _day_supported(end.date() - timedelta(days=1), text, source):
         raise ValueError("Occurrence end date lacks source support")
-    if item["all_day"]:
-        if end is None or start.time() != time(0) or end.time() != time(0):
-            raise ValueError("All-day occurrences use midnight boundaries")
-    elif not _clock_supported(start.time(), text) or (end and not _clock_supported(end.time(), text)):
-        raise ValueError("Occurrence clock lacks source support")
+    if not item["all_day"]:
+        if not _clock_supported(start.time(), text):
+            raise ValueError(f"Occurrence clock lacks source support: start {start.time()}")
+        if end and not _clock_supported(end.time(), text):
+            raise ValueError(f"Occurrence clock lacks source support: end {end.time()}; "
+                             "set ends_at=null when the source supplies no end time")
     if end and end != _instant(item["ends_at"]):
         item["ends_at"] = end.isoformat()
 
@@ -322,7 +340,9 @@ def expand_schedule(schedule: dict, source: dict, assessment: dict) -> list[dict
     first, last = date.fromisoformat(schedule["first_day"]), date.fromisoformat(schedule["last_day"])
     text = evidence_text(assessment["date_evidence"], source)
     if not 0 <= (last - first).days <= 120 or not all(_day_supported(day, text, source) for day in (first, last)):
-        raise ValueError("Recurring schedule needs a supported bounded date range")
+        raise ValueError("Recurring schedule needs a supported bounded date range; "
+                         "do not infer term boundaries. If first/last dates are absent, "
+                         "return schedule=null and occurrences=[] with service_schedule or uncertain")
     weekdays = schedule["weekdays"]
     if not isinstance(weekdays, list) or not weekdays or any(type(d) is not int or d not in range(7) for d in weekdays):
         raise ValueError("Invalid recurrence weekdays")
@@ -397,7 +417,11 @@ def validate(result: Any, source: dict) -> dict:
     if result["use_source_occurrences"]:
         raise ValueError("Unsupported publication choices: occurrences must cite post evidence")
     for item in result["occurrences"]:
-        validate_occurrence(item, source)
+        try:
+            validate_occurrence(item, source)
+        except ValueError as exc:
+            title = item.get("title") if isinstance(item, dict) else None
+            raise ValueError(f"{exc} (occurrence {title!r})") from exc
     if result["schedule"] is not None:
         if kind not in {"service_schedule", "activity"} or not isinstance(result["schedule"], dict):
             raise ValueError("Only activities or service schedules may recur")
@@ -409,30 +433,73 @@ def validate(result: Any, source: dict) -> dict:
     return result
 
 
+def _attach_source_quotes(result: dict, source: dict) -> dict:
+    """Resolve model field references without asking it to copy source text.
+
+    Saved/reviewed assessments retain the existing exact-quote contract. If a
+    response supplies a quote anyway, validate it rather than silently fixing it.
+    """
+    result = copy.deepcopy(result)
+    occurrences = result.get("occurrences", [])
+    if not isinstance(occurrences, list):
+        raise ValueError("Occurrences must be an array")
+    containers = [result, *occurrences]
+    if result.get("schedule") is not None:
+        containers.append(result["schedule"])
+    for container in containers:
+        if not isinstance(container, dict):
+            raise ValueError("Invalid assessment evidence container")
+        for key in ("activity_evidence", "date_evidence", "location_evidence"):
+            citations = container.get(key, [])
+            if not isinstance(citations, list):
+                raise ValueError("Evidence must be an array")
+            for citation in citations:
+                if not isinstance(citation, dict):
+                    raise ValueError("Invalid evidence object")
+                if "quote" not in citation:
+                    field = citation.get("field")
+                    original = source["texts"].get(field) if isinstance(field, str) else None
+                    if not isinstance(original, str) or not original.strip():
+                        raise ValueError(f"Evidence field {field!r} is missing or empty")
+                    citation["quote"] = original
+    return result
+
+
 def assess(source: dict) -> dict:
     from google import genai
     from config import GOOGLE_CLOUD_PROJECT, GOOGLE_CLOUD_LOCATION
 
     client = genai.Client(vertexai=True, project=GOOGLE_CLOUD_PROJECT or None,
-                          location=GOOGLE_CLOUD_LOCATION or "global")
+                          location=GOOGLE_CLOUD_LOCATION or "global",
+                          http_options={"retry_options": {
+                              "attempts": 4, "initial_delay": 5, "max_delay": 30,
+                              "exp_base": 2, "jitter": 1,
+                              "http_status_codes": [408, 429, 500, 502, 503, 504],
+                          }})
     prompt = PROMPT + json.dumps(source, ensure_ascii=False, sort_keys=True)
+    failures = []
     for attempt in range(2):
         response = client.models.generate_content(
             model=MODEL, contents=prompt,
             config={"response_mime_type": "application/json", "response_schema": SCHEMA, "temperature": 0},
         )
-        parsed = response.parsed
-        if hasattr(parsed, "model_dump"):
-            parsed = parsed.model_dump()
-        if not isinstance(parsed, dict):
-            parsed = json.loads(response.text)
+        parsed = response.text
         try:
-            return validate(parsed, source)
+            parsed = response.parsed
+            if hasattr(parsed, "model_dump"):
+                parsed = parsed.model_dump()
+            if not isinstance(parsed, dict):
+                parsed = response.text
+                parsed = json.loads(parsed)
+            if not isinstance(parsed, dict):
+                raise ValueError("Assessment must be a JSON object")
+            return validate(_attach_source_quotes(parsed, source), source)
         except (ValueError, TypeError, KeyError) as exc:
+            failures.append({"response": parsed, "error": str(exc)})
             if attempt:
-                raise GroundingRejected(f"Assessment failed validation after retry: {exc}") from exc
-            # One bounded schema/grounding repair. A transport failure is not a
-            # decision and goes straight to the retryable error cache.
+                raise GroundingRejected(f"Assessment failed validation after retry: {exc}",
+                                        attempts=failures) from exc
+            # One bounded grounding repair, separate from SDK transport retries.
             prompt += ("\nYour previous response failed validation: " + str(exc)
                        + "\nCorrect that issue using only the source. If evidence is insufficient, "
                        "return uncertain with no occurrences. Previous response:\n" + json.dumps(parsed))

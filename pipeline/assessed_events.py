@@ -75,7 +75,7 @@ def _assessment_candidates(source: dict, prior: dict | None) -> list[dict]:
 
 
 def cached_assessment(source: dict, prior: dict | None = None, stats: dict | None = None,
-                      *, refresh: bool = False) -> dict:
+                      *, refresh: bool = False, persist: bool = True) -> dict:
     """Reuse source-matched decisions until an explicit refresh or text change.
 
     Version and model are provenance only while automatic policy invalidation
@@ -108,13 +108,14 @@ def cached_assessment(source: dict, prior: dict | None = None, stats: dict | Non
         # The source was assessed and refused. Recorded as a decision so the
         # next run is not spent earning the same refusal.
         payload.update(status="error", error=f"{type(exc).__name__}: {exc}", retryable=False)
+        payload["validation_attempts"] = exc.attempts
         log.warning("Assessment refused for %s: %s", key, payload["error"])
     except Exception as exc:
         # A failed call never becomes a negative classification. Publication
         # preserves the previous support set and retries next run.
         payload.update(status="error", error=f"{type(exc).__name__}: {exc}", retryable=True)
         log.warning("Assessment failed for %s: %s", key, payload["error"])
-    return _save_assessment(payload)
+    return _save_assessment(payload) if persist else payload
 
 
 def _event_relevance(row: dict, now: str) -> bool | None:
@@ -247,13 +248,15 @@ def post_rows(record: dict, cached: dict, payload: dict, meta: dict, now: str) -
 
 
 def make_update(source: dict, raw: dict, cached: dict | None, prior: dict | None, meta: dict,
-                now: str, stats: dict | None = None, *, refresh: bool = False) -> dict | None:
+                now: str, stats: dict | None = None, *, refresh: bool = False,
+                persist: bool = True) -> dict | None:
     if _source_is_past(source, prior, now):
         if stats is not None:
             stats["past_sources_skipped"] = stats.get("past_sources_skipped", 0) + 1
         log.debug("Skipping finished source %s", source["source_key"])
         return None
-    payload = cached_assessment(source, (prior or {}).get("assessment"), stats, refresh=refresh)
+    payload = cached_assessment(source, (prior or {}).get("assessment"), stats,
+                                refresh=refresh, persist=persist)
     try:
         rows, known = post_rows(raw, cached, payload, meta, now)
     except Exception as exc:
@@ -364,8 +367,12 @@ def main() -> None:
     parser.add_argument("--source", action="append", help="source key, e.g. instagram:post:3977797394086504274")
     parser.add_argument("--active", action="store_true", help="compatibility flag; backfills always select today's/future listings")
     parser.add_argument("--refresh", action="store_true", help="explicitly replace cached decisions for the selected today's/future listings")
+    parser.add_argument("--retry-failed", action="store_true",
+                        help="retry only failed assessments named by --source, including sources without a listing")
     parser.add_argument("--report", type=Path, default=DATA_DIR / "assessment-report.json")
     args = parser.parse_args()
+    if args.retry_failed and not args.source:
+        parser.error("--retry-failed requires at least one --source; archive-wide retries are not allowed")
     logging.basicConfig(level=logging.INFO)
     registry = load_registry()
     now = datetime.now(timezone.utc)
@@ -396,14 +403,23 @@ def main() -> None:
         if not any(source["texts"].values()):
             continue
         usable.add(key)
+        if args.retry_failed:
+            candidates = _assessment_candidates(source, registry.get(key, {}).get("assessment"))
+            latest = next((item for item in candidates
+                           if item.get("source_hash") == semantic.fingerprint(source)), {})
+            if latest.get("status") != "error":
+                skipped += 1
+                continue
         prior_ids = set(registry.get(key, {}).get("event_ids", []))
         marker = f"/p/{raw.get('shortcode')}/"
         url_match = any(marker in (row.get("source_url") or "") for row in active)
-        if not (active_ids & prior_ids) and not url_match:
+        if not args.retry_failed and not (active_ids & prior_ids) and not url_match:
             skipped += 1
             continue
         log.info("Assessing %s", key)
-        update = make_update(source, raw, cached, registry.get(key), meta, now.isoformat(), refresh=args.refresh)
+        update = make_update(source, raw, cached, registry.get(key), meta, now.isoformat(),
+                             refresh=args.refresh or args.retry_failed,
+                             persist=args.apply or not args.retry_failed)
         if update is None:
             skipped += 1
             continue
@@ -420,7 +436,7 @@ def main() -> None:
     log.info("%s: %d sources; %d assessed rows; %d errors; report %s",
              "Applying" if args.apply else "Dry run", len(updates), sum(len(item["rows"]) for item in updates),
              sum(item["assessment"]["status"] == "error" for item in updates), args.report)
-    log.info("Skipped %d sources without a listing on or after today's campus date", skipped)
+    log.info("Skipped %d sources outside the selected reassessment scope or already finished", skipped)
     if args.apply:
         _complete(updates, notify=False)
 

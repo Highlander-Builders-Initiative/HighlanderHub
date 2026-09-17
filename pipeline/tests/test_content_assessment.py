@@ -3,8 +3,10 @@ import copy
 import json
 import sys
 import unittest
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import Mock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import content_assessment as assess
@@ -27,6 +29,42 @@ def decision(src, kind="activity", role="occurrence"):
 
 
 class ContentAssessmentTests(unittest.TestCase):
+    def test_unrelated_founding_year_does_not_override_event_year(self):
+        src = source("Workshop September 15, 3-5 PM. Women's Resource Center, since 1962.")
+        self.assertEqual(decision(src), assess.validate(decision(src), src))
+
+    def test_range_year_still_applies_to_both_endpoints(self):
+        for text, endpoints in (("September 6-12, 2026", ((9, 6), (9, 12))),
+                                ("August 11 to September 17, 2026", ((8, 11), (9, 17)))):
+            src = source(text)
+            for month, day in endpoints:
+                with self.subTest(text=text, day=day):
+                    self.assertTrue(assess._day_supported(date(2026, month, day), text, src))
+                    self.assertFalse(assess._day_supported(date(2025, month, day), text, src))
+
+    def test_all_day_repair_identifies_boundary_error_before_date_support(self):
+        src = source("Workshop September 15, 2026")
+        result = decision(src)
+        result["occurrences"][0].update(all_day=True, starts_at="2026-09-15T00:00:00-07:00",
+                                        ends_at="2026-09-15T23:59:59-07:00")
+        with self.assertRaisesRegex(ValueError, "midnight boundaries.*Workshop"):
+            assess.validate(result, src)
+
+    def test_timezone_repair_identifies_correct_offset_and_occurrence(self):
+        src = source("ID Camp November 21, 2026, 9-11 AM")
+        result = decision(src)
+        result["occurrences"][0].update(title="ID Camp", starts_at="2026-11-21T09:00:00-07:00",
+                                        ends_at="2026-11-21T11:00:00-07:00")
+        with self.assertRaisesRegex(ValueError, "2026-11-21T09:00:00-08:00.*ID Camp"):
+            assess.validate(result, src)
+
+    def test_caption_all_day_numeric_date_without_clock_is_supported(self):
+        src = source("P.s. we loved the Huntington trip so much we are gonna do it again on 9/25 👀✍️")
+        result = decision(src)
+        result["occurrences"][0].update(all_day=True, starts_at="2026-09-25T00:00:00-07:00",
+                                        ends_at="2026-09-26T00:00:00-07:00")
+        self.assertEqual(result, assess.validate(result, src))
+
     def test_valid_activity_retains_timestamps(self):
         src = source()
         self.assertEqual(decision(src), assess.validate(decision(src), src))
@@ -246,6 +284,69 @@ class ContentAssessmentTests(unittest.TestCase):
         self.assertEqual("other", classify_content_kind("campus_website", title="Staff Workshop", audiences=["Staff"], assessed_kind="activity"))
         self.assertEqual("fundraiser", classify_content_kind("instagram", title="Bake sale", assessed_kind="activity"))
         self.assertEqual("student_deadline", classify_content_kind("instagram", title="Submit your essay", assessed_kind="deadline"))
+
+
+class AssessmentRequestTests(unittest.TestCase):
+    def field_decision(self, src):
+        result = decision(src)
+        for container in [result, *result["occurrences"]]:
+            for key in ("activity_evidence", "date_evidence"):
+                container[key] = [{"field": "ocr_text"}]
+        return result
+
+    def test_field_references_attach_original_unicode_without_mutating_response(self):
+        src = source('Workshop September 15, 2026, 3-5 PM. “Nuevo León!” 🗓️\n• Welcome')
+        parsed = self.field_decision(src)
+        before = copy.deepcopy(parsed)
+        response = SimpleNamespace(parsed=parsed, text=json.dumps(parsed))
+        with patch("google.genai.Client") as client:
+            client.return_value.models.generate_content.return_value = response
+            result = assess.assess(src)
+        self.assertEqual(decision(src), result)
+        self.assertEqual(before, parsed)
+
+    def test_invalid_fields_and_json_save_both_rejected_responses(self):
+        src = source()
+        invalid = self.field_decision(src)
+        invalid["activity_evidence"] = [{"field": "made_up"}]
+        responses = [SimpleNamespace(parsed=invalid, text=json.dumps(invalid)),
+                     SimpleNamespace(parsed=None, text="{bad json")]
+        with patch("google.genai.Client") as client:
+            client.return_value.models.generate_content.side_effect = responses
+            with self.assertRaises(assess.GroundingRejected) as raised:
+                assess.assess(src)
+        self.assertEqual(2, len(raised.exception.attempts))
+        self.assertEqual(invalid, raised.exception.attempts[0]["response"])
+        self.assertEqual("{bad json", raised.exception.attempts[1]["response"])
+        self.assertIn("made_up", raised.exception.attempts[0]["error"])
+
+    def test_explicit_fabricated_quotes_still_fail(self):
+        src = source()
+        result = decision(src)
+        result["activity_evidence"] = [{"field": "ocr_text", "quote": "Fabricated"}]
+        with self.assertRaisesRegex(ValueError, "absent"):
+            assess.validate(assess._attach_source_quotes(result, src), src)
+
+    def test_configured_transport_retries_are_bounded_and_do_not_retry_bad_requests(self):
+        from google.genai import errors, types, _api_client
+        import tenacity
+
+        src = source()
+        response = SimpleNamespace(parsed=decision(src), text="")
+        with patch("google.genai.Client") as client:
+            client.return_value.models.generate_content.return_value = response
+            assess.assess(src)
+        options = types.HttpRetryOptions(**client.call_args.kwargs["http_options"]["retry_options"])
+        for code, expected in ((429, 4), (503, 4), (400, 1), (403, 1)):
+            operation = Mock(side_effect=errors.APIError(code, {"error": {"message": "test"}}))
+            sleeps = []
+            retry = tenacity.Retrying(**_api_client.retry_args(options), sleep=sleeps.append)
+            with self.subTest(code=code), self.assertRaises(errors.APIError):
+                retry(operation)
+            self.assertEqual(expected, operation.call_count)
+            if sleeps:
+                self.assertTrue(5 <= sleeps[0] <= 6)
+                self.assertTrue(all(delay <= 30 for delay in sleeps))
 
 
 if __name__ == "__main__":

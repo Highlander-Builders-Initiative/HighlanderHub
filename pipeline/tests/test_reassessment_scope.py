@@ -83,7 +83,7 @@ class ReassessmentScopeTests(unittest.TestCase):
         model.assert_called_once_with(src)
         self.assertEqual(1, len(update["rows"]))
 
-    def run_backfill(self, *flags):
+    def run_backfill(self, *flags, failed=(), successful=()):
         import extract_posts as posts
         from test_post_events import record, post_decision
 
@@ -102,10 +102,18 @@ class ReassessmentScopeTests(unittest.TestCase):
             result = post_decision(src, field="caption")
             result["occurrences"][0].update(starts_at=start, ends_at=end, all_day=number == 3)
             results[src["source_key"]] = result
+            if number in failed:
+                publication._save_assessment({"source": src, "source_hash": semantic.fingerprint(src),
+                                              "status": "error", "retryable": False})
+            if number in successful:
+                publication._save_assessment({"source": src, "source_hash": semantic.fingerprint(src),
+                                              "status": "complete", "result": result})
             (self.root / f"{number}.json").write_text(json.dumps(cached))
             raws.append(raw)
             events.append({"id": f"ig_saved_{number}", "source_url": raw["permalink"],
                            "starts_at": start, "ends_at": end})
+        # Failed sources never got a public listing.
+        events = [row for row in events if int(row["id"].rsplit("_", 1)[1]) not in failed]
         report = self.root / "report.json"
         with patch.object(publication, "datetime", FixedDatetime), \
              patch.object(publication, "load_registry", return_value={}), \
@@ -132,6 +140,37 @@ class ReassessmentScopeTests(unittest.TestCase):
         self.assertEqual([], updates)
         model.assert_not_called()
         complete.assert_called_once_with([], notify=False)
+
+    def test_failed_retry_requires_explicit_source_selection_before_remote_reads(self):
+        with patch.object(sys, "argv", ["assessed_events.py", "--retry-failed"]), \
+             patch.object(publication, "load_registry") as registry, \
+             self.assertRaises(SystemExit):
+            publication.main()
+        registry.assert_not_called()
+
+    def test_failed_retry_recovers_only_named_failure_without_a_listing(self):
+        updates, model, complete = self.run_backfill(
+            "--retry-failed", "--source", "instagram:post:2", failed=(2, 4))
+        self.assertEqual(["instagram:post:2"], [u["source_key"] for u in updates])
+        self.assertEqual(1, model.call_count)
+        self.assertEqual("complete", updates[0]["assessment"]["status"])
+        self.assertEqual(1, len(updates[0]["rows"]))
+        complete.assert_not_called()
+        # A preview must leave the failure selectable for a subsequent apply.
+        saved = json.loads(publication._cache_path("instagram:post:2").read_text())
+        self.assertEqual("error", saved["status"])
+
+    def test_failed_retry_apply_persists_and_publishes_without_notifications(self):
+        updates, model, complete = self.run_backfill(
+            "--retry-failed", "--source", "instagram:post:2", "--apply", failed=(2,))
+        complete.assert_called_once_with(updates, notify=False)
+        saved = json.loads(publication._cache_path("instagram:post:2").read_text())
+        self.assertEqual("complete", saved["status"])
+
+    def test_failed_retry_does_not_refresh_successful_assessments(self):
+        updates, model, _ = self.run_backfill("--retry-failed", "--source", "instagram:post:2", successful=(2,))
+        self.assertEqual([], updates)
+        model.assert_not_called()
 
 
 if __name__ == "__main__":

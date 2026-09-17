@@ -388,7 +388,21 @@ python extract_posts.py --handle acm_ucr --handle ieeeucr \
 
 # Re-inspect one source after a fix, still without publishing.
 python assessed_events.py --source instagram:post:<media_id> --report /tmp/post.json
+
+# Retry a named failed assessment even if it never produced a listing.
+# Uses saved caption/OCR, refreshes only failures, and defaults to no publication.
+# Repeat --source to select more failures; --apply publishes without notifications.
+# A retry preview writes its report only; it leaves the failed cache selectable.
+python assessed_events.py --retry-failed --source instagram:post:<media_id> \
+  --report /tmp/retry-post.json
 ```
+
+New assessments cite source fields; original text is attached by the pipeline,
+so emoji, accents, bullets and OCR line breaks are not rewritten by the model.
+Refused assessments retain both responses and validation errors in
+`validation_attempts`. Existing decisions stay cached until text changes or an
+explicit refresh/retry is requested. Gemini transport failures use at most four
+attempts with exponential backoff (5 seconds initially, capped at 30 seconds).
 
 Read `/tmp/post-pilot.json` before enabling publication: each entry carries the
 assessment's quoted evidence next to the row it produced, so a wrong date or an
@@ -443,3 +457,82 @@ expect the account you log in with to occasionally get checkpointed. For
 anything production-grade, talk to clubs about an opt-in feed (e.g. they
 use our submission form) instead of
 relying on scraping forever.
+
+### Following-feed discovery (opt-in)
+
+The default remains `profiles`. The new `following` mode reads the chronological
+Following timeline once for the configured roster, then reconciles a rotating
+batch of profiles. It uses the existing saved Instagram session in a temporary
+headless Chromium context; it does not require a separate browser login/profile.
+
+Install the optional browser dependency from `pipeline/`:
+
+```bash
+.venv/bin/python -m pip install -r requirements-following.txt
+.venv/bin/python -m playwright install chromium
+```
+
+Run a bounded pilot using exact handles from the roster:
+
+```bash
+.venv/bin/python scrape_posts.py --discovery following --handle acm_ucr --following-max-pages 10
+```
+
+`--handle` filters archived posts and profile checks. The browser still traverses
+the shared Following timeline; Instagram has no timeline filter for those handles.
+Account activation stays forward-only, so newly activated clubs do not backfill.
+
+For the complete roster:
+
+```bash
+.venv/bin/python scrape_posts.py --discovery following --reconcile-accounts 120
+```
+
+After comparing coverage, set `PIPELINE_POST_DISCOVERY=following` in `pipeline/.env`
+to use it through `run.py`/the daily runner. Revert to `profiles`, or use
+`--discovery profiles`, for a full profile scan. `--direct-feed` remains a separate
+profile-only pilot. Hosted runners need the optional dependency and Chromium too;
+the existing workflow continues to use profile mode by default.
+
+How it works and how to assess it:
+
+- The browser opens `/?variant=following` and captures a GraphQL request whose
+  variables explicitly select `pagination_source=following`. The collector
+  replays that observed query from the first page, keeping its current query ID.
+  This includes posts preloaded in the initial HTML without parsing that HTML.
+  A URL alone is insufficient proof of Following mode; an unrecognized request
+  or response fails without moving feed progress.
+- Captions, carousel images, video covers, authors and accepted collaborators are
+  normalized directly into the existing archive. No per-post metadata query is
+  needed. Ads and nested recommendations are excluded; media IDs deduplicate
+  repeated entries.
+- `data/following_checkpoint.json` is separate from profile `scanned_through`.
+  Feed progress moves only after durable page writes and either timeline
+  exhaustion or two consecutive pages older than the overlap, provided the
+  observed timeline stayed chronological. One old/already-seen post never stops
+  a scan. Out-of-order results require walking to exhaustion. The default budget
+  is 100 pages; a timeout, malformed cursor, or exhausted budget retains progress.
+  Missing state or a changed login/roster/activation reuses profile boundaries.
+- Following mode uses the saved roster (`data/followed_accounts.json` for the
+  default account source), avoiding a follow-list traversal on every run. Refresh
+  that roster with a normal profile run when subscriptions change. All roster
+  accounts need stored numeric IDs. Accounts not actually followed by this login
+  depend on profile reconciliation.
+- The oldest-attempted 120 profiles are reconciled per run, including previously
+  unreadable accounts in the rotation. For 800 accounts this takes seven runs;
+  at one run/day, a feed omission could therefore take about a week to recover.
+  Raise `--reconcile-accounts` for a shorter recovery interval. Existing profile
+  checkpoints advance only after their own completed durable scans.
+- Logs include feed pages/posts/time and `Following comparison` entries showing
+  profile posts absent from the feed in the interval it traversed. Compare several
+  runs before relying on the speedup; posts published after the feed run started
+  are excluded from this comparison. These are sampled comparisons, not proof of
+  complete recall. Use a full profile scan when comprehensive coverage is needed.
+- Posts backing upcoming events still receive the existing edit-refresh pass.
+  A normal feed failure permits only the bounded reconciliation batch and makes
+  the run fail visibly. Throttling/challenges stop collection immediately and use
+  the existing shared cooldown; there is no profile fallback after pushback.
+
+This private web interface can change. Offline tests validate the recovery and
+normalization rules; only an authenticated run can validate the current interface
+for your account, and multiple comparison runs are needed to measure recall.

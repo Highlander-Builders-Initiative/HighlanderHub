@@ -103,6 +103,16 @@ class AssessmentCacheTests(unittest.TestCase):
             publication.cached_assessment(src)
             self.assertEqual(2, model.call_count)
 
+    def test_validation_diagnostics_survive_cache_round_trip(self):
+        src = source()
+        attempts = [{"response": {"kind": "activity"}, "error": "Missing source evidence"}]
+        refusal = semantic.GroundingRejected("rejected", attempts=attempts)
+        with patch.object(semantic, "assess", side_effect=refusal) as model:
+            saved = publication.cached_assessment(src)
+            self.assertEqual(attempts, saved["validation_attempts"])
+            self.assertEqual(saved, publication.cached_assessment(src))
+            self.assertEqual(1, model.call_count)
+
     def test_reviewed_sources_survive_policy_changes_until_explicit_refresh(self):
         src = source()
         reviewed = publication.record_review(src, decision(src), reviewer="fixture review")

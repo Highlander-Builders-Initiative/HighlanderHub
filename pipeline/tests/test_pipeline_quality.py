@@ -46,6 +46,13 @@ class PipelineQualityTests(unittest.TestCase):
         for text in ("Signups close Thursday (6/11)", "6/11 (Thursday)", "Thursday\n6/11"):
             self.assertEqual({(6, 11)}, evidence_dates(text))
 
+    def test_temporal_slash_dates_keep_fraction_room_and_decimal_guards(self):
+        for text in ("Join us on 9/25", "Apply by 9/25", "Exhibition through 9/25"):
+            self.assertEqual({(9, 25)}, evidence_dates(text))
+        for text in ("Room 9/25", "Room 9/25 at 5 PM", "Save on 1/2 price boba",
+                     "Practice on 1/2 inches", "Focus on 5.12", "Join on 2/30"):
+            self.assertEqual(set(), evidence_dates(text))
+
 
     def test_midnight_repair_requires_the_printed_end(self):
         start = "2026-09-19T17:00:00-07:00"

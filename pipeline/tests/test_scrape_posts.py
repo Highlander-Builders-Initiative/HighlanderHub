@@ -248,6 +248,37 @@ class ProfileLookupTests(PostArchiveTests):
                 self.page([iphone_post()], "next"), self.page([])]):
             self.assertTrue(self.graphql_scan().complete)
 
+    def test_null_graphql_data_has_diagnostic_without_inventing_a_cooldown(self):
+        for response in ({"data": None}, {"data": {}}, {"data": {
+                "xdt_api__v1__feed__user_timeline_graphql_connection": None}}):
+            with self.subTest(response=response), patch.object(
+                    self.loader.context, "get_json", return_value=response):
+                with self.assertRaisesRegex(scrape_posts.ConnectionException, "null timeline data") as raised:
+                    self.graphql_scan()
+                self.assertIsNone(instagram_cooldown.classify(raised.exception))
+                self.remote_writes.assert_not_called()
+
+    def test_graphql_errors_preserve_cooldown_signal_even_with_partial_data(self):
+        for message, kind in (("feedback_required", instagram_cooldown.Kind.THROTTLED),
+                              ("challenge_required", instagram_cooldown.Kind.CHALLENGED)):
+            for data in (None, self.page([iphone_post()])["data"]):
+                response = {"data": data, "errors": [{"message": message}]}
+                with self.subTest(message=message, data=data), patch.object(
+                        self.loader.context, "get_json", return_value=response):
+                    with self.assertRaises(scrape_posts.ConnectionException) as raised:
+                        self.graphql_scan()
+                    self.assertEqual(kind, instagram_cooldown.classify(raised.exception).kind)
+                    self.remote_writes.assert_not_called()
+
+    def test_null_data_preserves_top_level_api_message(self):
+        with patch.object(self.loader.context, "get_json", return_value={
+                "data": None, "message": "feedback_required"}):
+            with self.assertRaises(scrape_posts.ConnectionException) as raised:
+                self.graphql_scan()
+        self.assertEqual(instagram_cooldown.Kind.THROTTLED,
+                         instagram_cooldown.classify(raised.exception).kind)
+        self.remote_writes.assert_not_called()
+
     def test_logged_out_scan_fails_before_any_request(self):
         self.loader.context.username = None
         with patch.object(self.loader.context, "get_json") as request:
@@ -260,7 +291,7 @@ class ProfileLookupTests(PostArchiveTests):
                   "scanned_through": "2026-09-10T00:00:00+00:00"}
         wrong = iphone_post()
         wrong["user"]["pk"] = "99"
-        for response in (self.page([wrong]), self.page([])):
+        for response in (self.page([wrong]), self.page([]), {"data": None}):
             scrape_posts.write_local_checkpoints({"acm.ucr": before})
             with self.subTest(response=response), \
                  patch.object(scrape_posts.instaloader, "Instaloader", return_value=self.loader), \
