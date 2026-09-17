@@ -29,6 +29,9 @@ DATA_DIR = ROOT / "data"
 POSTS_DIR = DATA_DIR / "posts"
 POST_EXTRACTED_DIR = DATA_DIR / "post_extractions"
 POST_CHECKPOINTS_FILE = DATA_DIR / "post_checkpoints.json"
+FOLLOWING_CHECKPOINT_FILE = DATA_DIR / "following_checkpoint.json"
+# Keep profile collection as the default until Following recall is measured.
+POST_DISCOVERY_MODE = os.environ.get("PIPELINE_POST_DISCOVERY", "profiles").lower()
 ACCOUNTS_FILE = ROOT / "accounts.json"
 FOLLOWED_ACCOUNTS_FILE = DATA_DIR / "followed_accounts.json"
 ACCOUNT_SOURCE = os.environ.get("PIPELINE_ACCOUNT_SOURCE", "followed").lower()

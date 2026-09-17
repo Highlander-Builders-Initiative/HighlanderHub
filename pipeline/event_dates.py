@@ -199,7 +199,7 @@ def _is_calendar_day(month: int, day: int) -> bool:
 def _bare_date_is_corroborated(text: str, span: tuple[int, int]) -> bool:
     """Whether a bare "5/28" here reads as a date rather than a fraction.
 
-    Any one of three neighbours settles it: a clock time on the flyer, a second
+    A temporal preposition, a clock time on the flyer, a second
     slash date across a range dash ("recruitment is 10/8-10/11"), or a weekday
     printed beside it ("signups close Thursday (6/11)"). A fraction or a room
     number keeps none of that company, and a flyer that prints only a date
@@ -210,6 +210,12 @@ def _bare_date_is_corroborated(text: str, span: tuple[int, int]) -> bool:
         return False
     if re.match(r"\s*(?:price|off|cups?|tbsp|tsp|inches)\b", text[end:], re.IGNORECASE):
         return False
+    # Captions often give only an all-day date: "doing it again on 9/25".
+    # Require slash notation here so "on 5.62" cannot turn a decimal into a day.
+    if "/" in text[start:end] and re.search(
+        r"\b(?:on|until|through|thru|by)\s*$", text[max(0, start-20):start], re.IGNORECASE
+    ):
+        return True
     if _OCR_CLOCK_TIME_RE.search(text):
         return True
 
