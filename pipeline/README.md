@@ -118,9 +118,9 @@ Assessment uses the Gemini API when `GEMINI_API_KEY` is set, and billed Vertex A
 otherwise. Create the key in AI Studio under a project with no billing account so
 it stays on the free tier: no charge, but Google may use the prompts to improve its
 products, and requests are capped per minute and per day. Calls are spaced to
-`FREE_TIER_RPM` in `content_assessment.py`; once the daily cap is hit, the rest of
-the run's assessments fail as retryable and the next run picks them up. For a large
-re-assessment, run with `GEMINI_API_KEY=` to use Vertex.
+`FREE_TIER_RPM` in `content_assessment.py`. Once the daily cap is hit, the rest of
+the run is assessed on billed Vertex AI (logged as a warning); the next run tries the
+free tier first again. Run with `GEMINI_API_KEY=` to skip the free tier entirely.
 
 ## Run it
 
