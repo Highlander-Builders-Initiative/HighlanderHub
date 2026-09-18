@@ -367,24 +367,28 @@ class AssessmentRequestTests(unittest.TestCase):
         self.assertNotIn("vertexai", client.call_args.kwargs)
         sleep.assert_called_once_with(60 / assess.FREE_TIER_RPM - 1)
 
-    def test_only_a_spent_daily_quota_stops_later_requests(self):
+    def test_a_spent_daily_quota_moves_the_rest_of_the_run_to_vertex(self):
         from google.genai import errors
 
         def quota(quota_id):
             return errors.APIError(429, {"error": {"status": "RESOURCE_EXHAUSTED",
                                                    "details": [{"violations": [{"quotaId": quota_id}]}]}})
 
+        src = source()
+        response = SimpleNamespace(parsed=decision(src), text="")
         with patch("config.GEMINI_API_KEY", "test-key"), patch.object(assess, "_daily_quota_spent", False), \
                 patch.object(assess, "_pace"), patch("google.genai.Client") as client:
             client.return_value.models.generate_content.side_effect = [
                 quota("GenerateRequestsPerMinutePerProjectPerModel-FreeTier"),
-                quota("GenerateRequestsPerDayPerProjectPerModel-FreeTier")]
-            for _ in range(2):
-                with self.assertRaises(errors.APIError):
-                    assess.assess(source())
-            with self.assertRaises(assess.DailyQuotaExhausted):
-                assess.assess(source())
-        self.assertEqual(2, client.return_value.models.generate_content.call_count)
+                quota("GenerateRequestsPerDayPerProjectPerModel-FreeTier"), response,
+                response]
+            with self.assertRaises(errors.APIError):
+                assess.assess(src)
+            # The request that hit the cap is answered by Vertex, and so is every later one.
+            self.assertEqual(decision(src), assess.assess(src))
+            self.assertEqual(decision(src), assess.assess(src))
+        backends = ["vertex" if call.kwargs.get("vertexai") else "gemini_api" for call in client.call_args_list]
+        self.assertEqual(["gemini_api", "gemini_api", "vertex", "vertex"], backends)
 
     def test_flex_is_refused_on_the_gemini_api(self):
         with patch("config.GEMINI_API_KEY", "test-key"), patch.object(assess, "FLEX", True), \
