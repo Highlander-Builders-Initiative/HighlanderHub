@@ -12,13 +12,13 @@ export default function TermsPage() {
     <LegalDocumentLayout
       kicker="Legal & Terms Documentation"
       title="Highlander Hub Terms of Service"
-      revisedDate="MAY 26, 2026"
+      revisedDate="SEPTEMBER 17, 2026"
     >
 
       {/* Introduction */}
       <section className="mt-8 space-y-4 text-base text-ink/80 leading-relaxed">
         <p>
-          Welcome to Highlander Hub. By accessing or using our website, database directory, or submission tools (collectively, the &ldquo;Service&rdquo;), developed and operated by the{" "}
+          Welcome to Highlander Hub. By accessing or using our website or database directory (collectively, the &ldquo;Service&rdquo;), developed and operated by the{" "}
           <a
             href={HBI_ABOUT_URL}
             target="_blank"
@@ -59,7 +59,7 @@ export default function TermsPage() {
           </h2>
           <div className="mt-4 space-y-4">
             <p>
-              Because Highlander Hub aggregates event data automatically from public feeds and relies on crowdsourced submissions:
+              Because Highlander Hub aggregates event data automatically from public Instagram posts:
             </p>
             <ul className="list-disc pl-5 space-y-2">
               <li>
@@ -78,26 +78,20 @@ export default function TermsPage() {
         {/* Section 3 */}
         <section className="scroll-mt-24">
           <h2 className="font-display text-xl font-bold tracking-tight text-ink border-b border-ink/10 pb-2">
-            3. Event Submissions & Licensing
+            3. Event Listings
           </h2>
           <div className="mt-4 space-y-4">
             <p>
-              When submitting event details, images, or metadata using our submission form, you agree to the following conditions:
+              Event titles, descriptions, times, locations, and flyer graphics shown on Highlander Hub are collected from public Instagram posts by student organizations.
             </p>
             <ul className="list-disc pl-5 space-y-2">
               <li>
-                <strong>Ownership Rights:</strong> You or your student organization retain the copyright and any other rights you already hold in the event details and flyer graphics.
+                Student organizations retain the copyright and any other rights they already hold in those materials.
               </li>
               <li>
-                <strong>Granted License:</strong> You grant Highlander Builders Initiative a worldwide, royalty-free, non-exclusive, perpetual, and transferable license to host, resize, modify, crop, publish, and display the event listing on our platform.
-              </li>
-              <li>
-                <strong>Representations:</strong> You represent and warrant that you hold all necessary permissions and rights to authorize this listing, and that the upload does not infringe upon any third-party intellectual property or copyright.
+                We host and display listings for public campus information, and we may edit or remove a listing if it is inaccurate, spam, or otherwise inappropriate.
               </li>
             </ul>
-            <p>
-              We reserve the complete right to moderate, edit, or remove any submission at our sole discretion, without notice, if we believe the content violates campus guidelines, contains spam, or is otherwise inappropriate.
-            </p>
           </div>
         </section>
 
@@ -141,7 +135,7 @@ export default function TermsPage() {
           </h2>
           <div className="mt-4 space-y-4">
             <p>
-              Users are prohibited from trying to scrape our platform excessively, inject harmful scripts, or submit false event records. We reserve the right to restrict submission capabilities or block IP ranges/domains if we detect malicious usage.
+              Users are prohibited from trying to scrape our platform excessively or inject harmful scripts. We reserve the right to block IP ranges or domains if we detect malicious usage.
             </p>
             <p>
               We reserve the right to modify, suspend, or terminate Highlander Hub, or any portion of the Service, at any time without notice or liability.

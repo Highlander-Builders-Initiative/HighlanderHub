@@ -1,6 +1,6 @@
 const isDev = process.env.NODE_ENV !== "production";
 
-// Supabase origin drives connect-src (direct flyer uploads + storage reads) and
+// Supabase origin drives connect-src (storage reads) and
 // the storage remotePattern. Derived from the same env the client uses so a
 // staging/preview project can't make CSP lie while the client talks elsewhere.
 const supabaseUrl = new URL(
@@ -14,11 +14,6 @@ const SUPABASE_ORIGIN = supabaseUrl.origin;
 // hosts are served via plain <img> client-side instead of through the optimizer.
 const imageRemotePatterns = [
   { protocol: "https", hostname: "*.cdninstagram.com" },
-  {
-    protocol: "https",
-    hostname: supabaseUrl.hostname,
-    pathname: "/storage/v1/object/public/submission-flyers/**",
-  },
   {
     protocol: "https",
     hostname: supabaseUrl.hostname,

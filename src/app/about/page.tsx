@@ -5,7 +5,6 @@ import { FaDiscord, FaInstagram, FaLinkedin } from "react-icons/fa";
 import { Masthead } from "@/components/layout/Masthead";
 import { Footer } from "@/components/layout/Footer";
 import { Reveal } from "@/components/ui/Reveal";
-import { SubmitEventCta } from "@/components/events/SubmitEventCta";
 import { HbiLink } from "@/components/analytics/HbiLink";
 import { AboutFaq } from "@/components/about/AboutFaq";
 import { HBI_ABOUT_URL } from "@/lib/hbi";
@@ -27,7 +26,7 @@ const PRINCIPLES = [
   },
   {
     title: "Not affiliated with UCR",
-    body: "Independent project. We pull from public sources and host submissions ourselves.",
+    body: "Independent project. We pull from public Instagram posts.",
   },
 ] as const;
 
@@ -36,17 +35,13 @@ const SOURCES = [
     label: "Club Instagram posts",
     body: "Flyers posted by registered student orgs. We read the image to find the title, time, and place.",
   },
-  {
-    label: "Manual submissions",
-    body: "Org leads use the submit form when something isn't in the feeds yet.",
-  },
 ] as const;
 
 const FAQS = [
   {
     id: "data-freshness",
     q: "How fresh is the data?",
-    a: "Automated sources refresh every six hours. Manual submissions are reviewed before they go live, usually within a day.",
+    a: "Listings refresh every six hours from club Instagram posts.",
   },
   {
     id: "report-wrong-event",
@@ -119,7 +114,7 @@ export default function AboutPage() {
                 Where listings come from
               </h2>
               <p className="mt-3 text-sm text-ink/70 md:text-base">
-                Four feeds, one bulletin.{" "}
+                Instagram flyers, one bulletin.{" "}
                 <Link
                   href="#faq"
                   className="interactive-focus font-medium text-ink underline decoration-ink/30 underline-offset-4 hover:decoration-ink"
@@ -220,25 +215,8 @@ export default function AboutPage() {
             Get involved
           </h2>
 
-          <Reveal
-            delay={80}
-            as="div"
-            className="mt-8 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between sm:gap-10"
-          >
-            <div className="max-w-xl">
-              <p className="font-display text-xl font-semibold tracking-[-0.02em] text-ink md:text-2xl">
-                Submit an event
-              </p>
-              <p className="mt-2 text-sm text-ink/70 md:text-base">
-                Running something this quarter? Add it through the bulletin
-                form.
-              </p>
-            </div>
-            <SubmitEventCta surface="about_page" />
-          </Reveal>
-
-          <ul className="mt-2 divide-y divide-ink/10">
-            <Reveal delay={120} as="li" className="pb-6 pt-7">
+          <ul className="mt-8 divide-y divide-ink/10">
+            <Reveal delay={80} as="li" className="py-6">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
                 <div className="max-w-xl">
                   <p className="font-display text-lg font-semibold tracking-[-0.02em] text-ink">
@@ -267,7 +245,7 @@ export default function AboutPage() {
                 </HbiLink>
               </div>
             </Reveal>
-            <Reveal delay={180} as="li" className="py-6">
+            <Reveal delay={140} as="li" className="py-6">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
                 <div className="max-w-xl">
                   <p className="font-display text-lg font-semibold tracking-[-0.02em] text-ink">

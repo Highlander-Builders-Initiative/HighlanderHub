@@ -18,7 +18,14 @@ from zoneinfo import ZoneInfo
 # Recorded for provenance; policy changes currently do not invalidate caches.
 VERSION = 5
 MAX_OCCURRENCES = 100
-MODEL = "gemini-2.5-flash-lite"
+MODEL = "gemini-3.1-flash-lite"
+# Google recommends 1.0 for Gemini 3, but cached refusals assume a repeat call
+# refuses again. In a 2026-09 trial, 0 reproduced 46/46 decisions; 1.0 changed 5.
+TEMPERATURE = 0
+# Flex PayGo halves the price for slower, more throttled responses (about 20s
+# per source in that trial, against 2s). Vertex accepts it on the global
+# endpoint for Gemini 3 models only.
+FLEX = False
 KINDS = ("activity", "deadline", "application", "service_schedule", "announcement", "uncertain")
 DATE_ROLES = ("occurrence", "recurring_hours", "cutoff", "application_window", "program_duration", "observance", "notice_period", "none", "uncertain")
 PACIFIC = ZoneInfo("America/Los_Angeles")
@@ -465,24 +472,31 @@ def _attach_source_quotes(result: dict, source: dict) -> dict:
     return result
 
 
-def assess(source: dict) -> dict:
+def assess(source: dict, *, usage: list | None = None) -> dict:
+    """Assess one source; `usage`, when given, collects token counts per model call."""
     from google import genai
     from config import GOOGLE_CLOUD_PROJECT, GOOGLE_CLOUD_LOCATION
 
+    http_options = {"retry_options": {
+        "attempts": 4, "initial_delay": 5, "max_delay": 30,
+        "exp_base": 2, "jitter": 1,
+        "http_status_codes": [408, 429, 500, 502, 503, 504],
+    }}
+    if FLEX:
+        http_options["headers"] = {"X-Vertex-AI-LLM-Shared-Request-Type": "flex"}
     client = genai.Client(vertexai=True, project=GOOGLE_CLOUD_PROJECT or None,
-                          location=GOOGLE_CLOUD_LOCATION or "global",
-                          http_options={"retry_options": {
-                              "attempts": 4, "initial_delay": 5, "max_delay": 30,
-                              "exp_base": 2, "jitter": 1,
-                              "http_status_codes": [408, 429, 500, 502, 503, 504],
-                          }})
+                          location=GOOGLE_CLOUD_LOCATION or "global", http_options=http_options)
     prompt = PROMPT + json.dumps(source, ensure_ascii=False, sort_keys=True)
     failures = []
     for attempt in range(2):
         response = client.models.generate_content(
             model=MODEL, contents=prompt,
-            config={"response_mime_type": "application/json", "response_schema": SCHEMA, "temperature": 0},
+            config={"response_mime_type": "application/json", "response_schema": SCHEMA, "temperature": TEMPERATURE},
         )
+        metadata = getattr(response, "usage_metadata", None)
+        if usage is not None and metadata is not None:
+            usage.append({key: getattr(metadata, key) or 0 for key in (
+                "prompt_token_count", "cached_content_token_count", "candidates_token_count", "thoughts_token_count")})
         parsed = response.text
         try:
             parsed = response.parsed

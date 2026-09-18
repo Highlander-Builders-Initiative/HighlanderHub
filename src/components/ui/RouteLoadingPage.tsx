@@ -1,42 +1,6 @@
 import { Footer } from "@/components/layout/Footer";
 import { Masthead } from "@/components/layout/Masthead";
 
-type LoadingVariant = "about" | "submit";
-
-const copy: Record<
-  LoadingVariant,
-  {
-    label: string;
-    title: string;
-    body: string;
-  }
-> = {
-  about: {
-    label: "About",
-    title: "Loading Highlander Hub",
-    body: "Preparing the project details.",
-  },
-  submit: {
-    label: "Submit",
-    title: "Loading submission form",
-    body: "Getting the event form ready.",
-  },
-};
-
-function LoadingBars({ count = 4 }: { count?: number }) {
-  return (
-    <div className="space-y-3" aria-hidden="true">
-      {Array.from({ length: count }).map((_, index) => (
-        <div
-          key={index}
-          className="h-3 rounded-full bg-ink/10"
-          style={{ width: `${92 - index * 13}%` }}
-        />
-      ))}
-    </div>
-  );
-}
-
 function LoadingCards() {
   return (
     <div className="grid gap-3 md:grid-cols-3" aria-hidden="true">
@@ -55,48 +19,25 @@ function LoadingCards() {
   );
 }
 
-export function RouteLoadingPage({
-  variant,
-}: {
-  variant: LoadingVariant;
-}) {
-  const content = copy[variant];
-  const isCompact = variant === "submit";
-
+export function RouteLoadingPage() {
   return (
     <main className="min-h-screen bg-canvas" aria-busy="true">
       <Masthead />
 
       <section className="border-b border-ink/10">
-        <div
-          className={`mx-auto px-4 sm:px-6 ${
-            isCompact
-              ? "max-w-3xl py-14 md:py-20"
-              : "max-w-7xl py-16 md:py-24"
-          }`}
-        >
-          <p className="text-[13px] text-muted">{content.label}</p>
+        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 md:py-24">
+          <p className="text-[13px] text-muted">About</p>
           <h1 className="mt-4 max-w-2xl font-display text-[34px] font-semibold leading-[1.05] tracking-[-0.03em] text-ink md:text-5xl">
-            {content.title}
+            Loading Highlander Hub
           </h1>
           <p className="mt-3 max-w-xl text-base text-ink/70">
-            {content.body}
+            Preparing the project details.
           </p>
         </div>
       </section>
 
-      <section
-        className={`mx-auto px-4 py-10 sm:px-6 ${
-          isCompact ? "max-w-3xl" : "max-w-7xl"
-        }`}
-      >
-        {isCompact ? (
-          <div className="rounded-xl border border-ink/15 bg-canvas p-6 sm:p-8">
-            <LoadingBars count={6} />
-          </div>
-        ) : (
-          <LoadingCards />
-        )}
+      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
+        <LoadingCards />
       </section>
 
       <Footer />

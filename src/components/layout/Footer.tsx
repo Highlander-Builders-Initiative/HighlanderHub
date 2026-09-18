@@ -26,7 +26,6 @@ const socialLinks = [
 
 const siteLinks = [
   { label: "Events", href: "/events" },
-  { label: "Submit", href: "/submit" },
   { label: "About", href: "/about" },
 ];
 

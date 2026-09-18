@@ -33,19 +33,6 @@ test("row mapping and CampusEvent carry contentKind", () => {
 
   assert.match(mapRow, /contentKind: r\.content_kind/);
   assert.match(eventType, /contentKind: EventContentKind/);
-  assert.match(eventType, /SUBMIT_CONTENT_KINDS/);
-});
-
-test("submit form exposes a required Listing type control", () => {
-  const form = read("src/components/forms/submit/SubmitForm.tsx");
-  const types = read("src/types/event.ts");
-
-  assert.match(form, /label="Listing type"/);
-  assert.match(form, /name="content_kind"/);
-  assert.match(form, /options=\{SUBMIT_CONTENT_KINDS\}/);
-  assert.match(types, /SUBMIT_CONTENT_KINDS/);
-  // No fundraiser option on the public form.
-  assert.doesNotMatch(types, /value: "fundraiser"/);
 });
 
 test("admin can edit content_kind across all four kinds", () => {
@@ -53,7 +40,6 @@ test("admin can edit content_kind across all four kinds", () => {
   const validate = read("src/app/admin/validate-event-update.ts");
   const hook = read("src/app/admin/useAdminEventEdit.ts");
   const drawer = read("src/app/admin/AdminEventEditDrawer.tsx");
-  const actions = read("src/app/admin/actions.ts");
 
   assert.match(types, /"content_kind"/);
   assert.match(types, /content_kind: EventContentKind/);
@@ -64,8 +50,6 @@ test("admin can edit content_kind across all four kinds", () => {
   assert.match(drawer, /setField\("contentKind"/);
   assert.match(drawer, /value="fundraiser"/);
   assert.match(drawer, /value="other"/);
-  // Approval copies the submitted kind into the events row.
-  assert.match(actions, /content_kind: submission\.content_kind/);
 });
 
 test("deadlines render deadline-oriented affordances", () => {

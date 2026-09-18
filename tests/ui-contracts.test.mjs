@@ -131,7 +131,6 @@ test("app routes expose loading UI while server data resolves", () => {
   const sharedLoading = read("src/components/ui/RouteLoadingPage.tsx");
   const routeLoaders = [
     "src/app/about/loading.tsx",
-    "src/app/submit/loading.tsx",
   ];
 
   assert.match(sharedLoading, /aria-busy="true"/);
@@ -250,7 +249,6 @@ test("app routes expose 500-level error boundaries", () => {
     "src/app/events/error.tsx",
     "src/app/events/[id]/error.tsx",
     "src/app/about/error.tsx",
-    "src/app/submit/error.tsx",
   ];
 
   assert.match(sharedError, /"use client"/);
@@ -371,7 +369,7 @@ test("masthead keeps navigation reachable on mobile", () => {
   assert.match(siteNav, /href: "\/events"/);
   assert.doesNotMatch(siteNav, /saved/i);
   assert.match(siteNav, /href: "\/about"/);
-  assert.match(siteNav, /href: "\/submit"/);
+  assert.doesNotMatch(siteNav, /href: "\/submit"/);
   assert.match(source, /hideOnScroll/);
   assert.match(source, /position = "sticky"/);
   assert.match(source, /position === "sticky"/);
@@ -454,83 +452,9 @@ test("badge colors avoid low-contrast accent text", () => {
   assert.doesNotMatch(source, /text-sky/);
 });
 
-test("submit form exposes client-side validation feedback accessibly", () => {
-  const source = read("src/components/forms/submit/fields.tsx");
-  const form = read("src/components/forms/submit/SubmitForm.tsx");
-  const validation = read("src/components/forms/submit/submit-validation.ts");
-
-  assert.match(form, /validateSubmissionFields/);
-  assert.match(form, /fieldErrors\.starts_at/);
-  assert.match(source, /aria-invalid=\{Boolean\(error\)\}/);
-  assert.match(source, /aria-describedby=\{describedBy \|\| undefined\}/);
-  assert.match(validation, /This field is required\./);
-  assert.match(form, /bg-ink/);
-  assert.match(form, /text-canvas/);
-  assert.doesNotMatch(source, /placeholder:text-stone-400/);
-});
-
-test("submit form tracks page-view to completion funnel events", () => {
-  const form = read("src/components/forms/submit/SubmitForm.tsx");
-  const analytics = read("src/lib/analytics.ts");
-
-  assert.match(analytics, /submit_page_view: Record<string, never>/);
-  assert.match(form, /useEffect/);
-  assert.match(form, /track\("submit_page_view", \{\}\)/);
-  assert.match(form, /track\("submission_complete", \{\}\)/);
-});
-
-test("submission Discord webhook is owned by server route", () => {
-  const form = read("src/components/forms/submit/SubmitForm.tsx");
-  const route = read("src/app/api/submissions/route.ts");
-  const discord = read("src/lib/discord.ts");
-
-  assert.match(form, /fetch\("\/api\/submissions"/);
-  assert.doesNotMatch(form, /DISCORD_WEBHOOK_URL/);
-  assert.doesNotMatch(form, /supabase\.from\("submissions"\)/);
-  assert.match(route, /parseSubmissionInsert\(body\)/);
-  assert.match(route, /supabase\.from\("submissions"\)\.insert\(row\)/);
-  assert.match(route, /notifyNewSubmission\(row\)/);
-  assert.match(discord, /DISCORD_WEBHOOK_URL/);
-  assert.match(discord, /allowed_mentions/);
-});
-
-test("submit form validation and upload helpers live in focused modules", () => {
-  const validation = read("src/components/forms/submit/submit-validation.ts");
-  const submissions = read("src/lib/submissions.ts");
-  const datetime = read("src/lib/submit-datetime.ts");
-  const flyer = read("src/lib/submission-flyer.ts");
-  const upload = read("src/components/forms/submit/use-flyer-upload.ts");
-  const picker = read("src/components/forms/submit/FlyerUpload.tsx");
-  const deleteRoute = read("src/app/api/submission-flyers/delete/route.ts");
-
-  assert.match(validation, /validateSubmissionFields/);
-  assert.match(submissions, /buildSubmissionRow/);
-  assert.match(submissions, /parseSubmissionInsert/);
-  assert.match(datetime, /computeSubmitEndsAtLocal/);
-  assert.match(datetime, /submitUpcomingFridayDateInput/);
-  assert.match(datetime, /pacificTodayKey/);
-  assert.match(flyer, /uploadSubmissionFlyer/);
-  assert.match(flyer, /submission-flyers/);
-  assert.match(flyer, /cleanupToken/);
-  assert.match(flyer, /deleteSubmissionFlyer/);
-  assert.match(upload, /useFlyerUpload/);
-  assert.match(upload, /uploadedRef/);
-  assert.doesNotMatch(upload, /\[status\]/);
-  assert.match(upload, /flyer_uploaded/);
-  assert.match(upload, /flyer_delete_error/);
-  assert.match(deleteRoute, /SUPABASE_SERVICE_ROLE_KEY/);
-  assert.match(deleteRoute, /SUPABASE_SERVICE_KEY/);
-  assert.match(deleteRoute, /bucket\.info\(body\.path\)/);
-  assert.match(deleteRoute, /bucket\.remove\(\[body\.path\]\)/);
-  assert.match(picker, /FlyerUploadedTile/);
-  assert.match(picker, /or paste a URL/);
-  assert.doesNotMatch(picker, /bg-stone-950/);
-});
-
 test("site exposes crawler and social preview metadata", () => {
   const layout = read("src/app/layout.tsx");
   const eventDetail = read("src/app/events/[id]/page.tsx");
-  const submitPage = read("src/app/submit/page.tsx");
   const seo = read("src/lib/seo.ts");
   const sitemap = read("src/app/sitemap.ts");
   const robots = read("src/app/robots.ts");
@@ -555,16 +479,12 @@ test("site exposes crawler and social preview metadata", () => {
   assert.match(eventDetail, /PostalAddress/);
   assert.match(eventDetail, /isPublicContentKind/);
 
-  assert.match(submitPage, /title: "Submit an event · Highlander Hub"/);
-  assert.match(submitPage, /description:/);
-  assert.match(submitPage, /SubmitBackButton/);
-
   assert.match(sitemap, /MetadataRoute\.Sitemap/);
   assert.match(sitemap, /getSitemapEvents/);
   assert.match(sitemap, /absoluteUrl\(`\/events\/\$\{event\.id\}`\)/);
   assert.match(sitemap, /\/events/);
   assert.match(sitemap, /\/about/);
-  assert.match(sitemap, /\/submit/);
+  assert.doesNotMatch(sitemap, /\/submit/);
 
   assert.match(robots, /MetadataRoute\.Robots/);
   assert.match(robots, /sitemap:/);
@@ -574,12 +494,12 @@ test("site exposes crawler and social preview metadata", () => {
   assert.match(manifest, /"start_url": "\/"/);
 });
 
-test("README documents the current ingestion and submission paths", () => {
+test("README documents the current Instagram ingestion path", () => {
   const readme = read("README.md");
 
   assert.match(readme, /Highlander Hub/);
   assert.match(readme, /Club Instagram posts/);
-  assert.match(readme, /\/submit/);
+  assert.doesNotMatch(readme, /\/submit/);
   assert.doesNotMatch(readme, /on the roadmap/);
 });
 

@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { getSitemapEvents } from "@/lib/events";
 import { SITE_URL, absoluteUrl } from "@/lib/seo";
 
-const routes = ["", "/events", "/about", "/submit", "/privacy", "/terms"];
+const routes = ["", "/events", "/about", "/privacy", "/terms"];
 
 export const dynamic = "force-dynamic";
 

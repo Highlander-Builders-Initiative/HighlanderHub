@@ -3,14 +3,13 @@
 import { useMemo } from "react";
 import { EventsLeftRail } from "./EventsLeftRail";
 import { EventsRightRail } from "./EventsRightRail";
-import { SubmitEventCta } from "./SubmitEventCta";
 import { formatPacificDayKey, pacificTodayKey, startOfPacificMonthKey } from "@/lib/dates";
 import type { CategoryValue } from "./events-filters";
 
 /**
  * Route-level placeholder for /events. The page chrome that does not depend on
- * data — masthead, Topics rail, mini calendar, the day heading, the search bar,
- * the Submit CTA — renders for real and in its final position, so navigating to
+ * data — masthead, Topics rail, mini calendar, the day heading, the search bar —
+ * renders for real and in its final position, so navigating to
  * /events never shows a layout that then rearranges itself. Only the feed
  * column's event rows are stubbed, because those are the part still in flight.
  *
@@ -90,18 +89,13 @@ export function EventsBrowserSkeleton() {
         </aside>
 
         <div className="min-w-0 pt-6 sm:pt-8 lg:py-8" aria-busy="true">
-          <header className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
-            <div className="min-w-0">
-              <h1 className="font-display text-[28px] font-semibold leading-[1.05] tracking-[-0.025em] text-ink sm:text-[34px]">
-                {formatPacificDayKey(todayKey)}
-              </h1>
-              <p className="mt-2 flex h-[21px] items-center">
-                <Bar className="h-3 w-52" />
-              </p>
-            </div>
-            <div className="shrink-0 self-start sm:self-end">
-              <SubmitEventCta surface="events_header" />
-            </div>
+          <header className="mb-7">
+            <h1 className="font-display text-[28px] font-semibold leading-[1.05] tracking-[-0.025em] text-ink sm:text-[34px]">
+              {formatPacificDayKey(todayKey)}
+            </h1>
+            <p className="mt-2 flex h-[21px] items-center">
+              <Bar className="h-3 w-52" />
+            </p>
           </header>
 
           {/* Filter bar: same sticky shell as the live feed, controls inert. */}

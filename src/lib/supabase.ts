@@ -14,8 +14,7 @@ const uncachedFetch: typeof fetch = (input, init) =>
   fetch(input, { ...init, cache: "no-store" });
 
 // Server-friendly singleton. We don't need session persistence — the public
-// bulletin uses the anon key, which is read-only via RLS. Submissions also use
-// the anon key (INSERT-only policy on the submissions table).
+// bulletin uses the anon key, which is read-only via RLS.
 export const supabase: SupabaseClient = createClient(url, anonKey, {
   auth: { persistSession: false },
   global: { fetch: uncachedFetch },

@@ -4,37 +4,6 @@ import type {
   EventRow,
 } from "@/lib/supabase-rows";
 
-export type SubmissionStatus = "pending" | "approved" | "rejected";
-
-/**
- * Pending row from `submissions` (admin moderation queue).
- * Columns mirror `supabase/migrations/*_init_schema.sql` — add
- * `schemas/submissions.*.json` + `npm run generate:rows` when pipeline needs it.
- */
-export interface SubmissionRow {
-  id: string;
-  title: string;
-  description: string;
-  starts_at: string;
-  ends_at: string | null;
-  location: string;
-  host: string;
-  host_handle: string | null;
-  category: EventCategory;
-  tags: string[];
-  source_url: string | null;
-  image_url: string | null;
-  is_free: boolean;
-  has_free_food: boolean;
-  rsvp_required: boolean;
-  rsvp_url: string | null;
-  submitter_name: string;
-  submitter_email: string;
-  submitter_org: string | null;
-  status: SubmissionStatus;
-  created_at: string;
-}
-
 /** Live event row for admin (generated EventRow + DB moderation columns). */
 export type AdminEventRow = EventRow & {
   is_locked: boolean;

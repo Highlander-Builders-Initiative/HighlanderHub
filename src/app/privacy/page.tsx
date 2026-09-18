@@ -4,7 +4,7 @@ import { HBI_ABOUT_URL } from "@/lib/hbi";
 
 export const metadata: Metadata = {
   title: "Privacy Policy · Highlander Hub",
-  description: "Official Privacy Policy for Highlander Hub. Details on event data aggregation, submission handling, and cookie policies.",
+  description: "Official Privacy Policy for Highlander Hub. Details on event data aggregation and cookie policies.",
 };
 
 export default function PrivacyPage() {
@@ -12,7 +12,7 @@ export default function PrivacyPage() {
     <LegalDocumentLayout
       kicker="Legal & Privacy Documentation"
       title="Highlander Hub Privacy Policy"
-      revisedDate="MAY 26, 2026"
+      revisedDate="SEPTEMBER 17, 2026"
     >
 
       {/* Introduction */}
@@ -30,7 +30,7 @@ export default function PrivacyPage() {
           . We provide a single, public index of campus and club events for the UC Riverside community.
         </p>
         <p>
-          This Privacy Policy describes how we aggregate, receive, and manage information on the Highlander Hub website. By accessing or using the website, you agree to the collection and use of information in accordance with this policy.
+          This Privacy Policy describes how we aggregate and manage information on the Highlander Hub website. By accessing or using the website, you agree to the collection and use of information in accordance with this policy.
         </p>
       </section>
 
@@ -60,19 +60,14 @@ export default function PrivacyPage() {
         {/* Section 2 */}
         <section className="scroll-mt-24">
           <h2 className="font-display text-xl font-bold tracking-tight text-ink border-b border-ink/10 pb-2">
-            2. Manual Event Submissions
+            2. Data Storage & Security
           </h2>
           <div className="mt-4 space-y-4">
             <p>
-              If you choose to submit an event manually through our submission form, we collect the details provided during that submission. This information consists of:
+              All processed event data and promotional media are hosted on secure database instances managed via Supabase. We implement standard access controls and operational safeguards to protect records from unauthorized access, modification, or disclosure.
             </p>
-            <ul className="list-disc pl-5 space-y-2">
-              <li><strong>Event Particulars:</strong> Event title, host organization, time, exact location, and text description.</li>
-              <li><strong>Media Assets:</strong> Digital flyers or promotional graphics uploaded to represent the event.</li>
-              <li><strong>Verification Info:</strong> A contact handle or email address, utilized solely by our moderation team to verify submission authenticity or clarify event specifics.</li>
-            </ul>
             <p>
-              Manual submissions are voluntary. Submitter contact details are kept strictly internal and are never shared with external agencies, marketing networks, or commercial third parties.
+              Because our platform functions as a public directory, event details displayed on the site (such as the event time, description, location, or promotional flyer) are intentionally visible to the general public.
             </p>
           </div>
         </section>
@@ -80,22 +75,7 @@ export default function PrivacyPage() {
         {/* Section 3 */}
         <section className="scroll-mt-24">
           <h2 className="font-display text-xl font-bold tracking-tight text-ink border-b border-ink/10 pb-2">
-            3. Data Storage & Security
-          </h2>
-          <div className="mt-4 space-y-4">
-            <p>
-              All processed event data, submission details, and promotional media are hosted on secure database instances managed via Supabase. We implement standard access controls and operational safeguards to protect submission records from unauthorized access, modification, or disclosure.
-            </p>
-            <p>
-              Because our platform functions as a public directory, any event detail you submit for listing (such as the event time, description, location, or promotional flyer) is intentionally made visible to the general public.
-            </p>
-          </div>
-        </section>
-
-        {/* Section 4 */}
-        <section className="scroll-mt-24">
-          <h2 className="font-display text-xl font-bold tracking-tight text-ink border-b border-ink/10 pb-2">
-            4. Cookies & Web Analytics
+            3. Cookies & Web Analytics
           </h2>
           <div className="mt-4 space-y-4">
             <p>
@@ -112,10 +92,10 @@ export default function PrivacyPage() {
           </div>
         </section>
 
-        {/* Section 5 */}
+        {/* Section 4 */}
         <section className="scroll-mt-24">
           <h2 className="font-display text-xl font-bold tracking-tight text-ink border-b border-ink/10 pb-2">
-            5. Corrections, Takedowns, & Opt-Out Rights
+            4. Corrections, Takedowns, & Opt-Out Rights
           </h2>
           <div className="mt-4 space-y-4">
             <p>
@@ -156,10 +136,10 @@ export default function PrivacyPage() {
           </div>
         </section>
 
-        {/* Section 6 */}
+        {/* Section 5 */}
         <section className="scroll-mt-24">
           <h2 className="font-display text-xl font-bold tracking-tight text-ink border-b border-ink/10 pb-2">
-            6. External Services & Affiliations
+            5. External Services & Affiliations
           </h2>
           <div className="mt-4 space-y-4">
             <p>

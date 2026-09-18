@@ -8,8 +8,6 @@ product
 
 UC Riverside undergraduates, primarily on a phone between classes, deciding what to do this week. They open Highlander Hub the way they open Instagram, looking for something to scan rather than something to search. Their context is short, distracted, and visual: walking to class, waiting for food, killing five minutes before lecture.
 
-Secondary users: club officers submitting events through `/submit`, who care that their listing lands accurately and gets seen.
-
 ## Product Purpose
 
 Highlander Hub is the one scannable place to find campus and club events at UC Riverside. It pulls from sources clubs already use (Instagram posts) so students don't have to follow forty accounts to know what's happening, and so clubs don't have to maintain yet another channel.
@@ -43,7 +41,7 @@ This should explicitly NOT look like:
 1. **Scannable beats searchable.** Students give the site five seconds before they decide whether to keep going. The page should pay off a glance, not require a query, filter, or form.
 2. **Curated, not infinite.** We're a bulletin, not a feed. The design should imply a human is looking after this: finite, edited, dated, occasionally opinionated. Empty states are honest, not padded.
 3. **Warm, not corporate.** Copy, color, and voice should feel like a campus thing. If a sentence could appear on a B2B SaaS landing, rewrite it. If a visual could appear on any university homepage, rework it.
-4. **Discovery is the front door; submission is a side door.** Students lead every tradeoff. The submit flow is clean and confident, but it never crowds the discovery surface. Browsing wins over contributing.
+4. **Discovery is the front door.** Students lead every tradeoff. Browsing wins over contributing.
 5. **Could only exist for UCR.** Built by HBI, for Highlanders. Specifics, the campus, the clubs, the language, the rhythm of the quarter, should be felt in the design, not erased into a generic events template.
 
 ## Accessibility & Inclusion

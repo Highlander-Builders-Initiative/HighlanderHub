@@ -221,7 +221,7 @@ Already in the DB shape that `src/lib/events/index.ts` maps into `CampusEvent`
 
 The Next.js app reads upcoming events from the Supabase `events` table via
 `src/lib/events/index.ts`. `assessed_events.py` publishes Instagram flyers into that
-same table with `source='instagram'`, alongside approved manual submissions.
+same table with `source='instagram'`.
 
 If `DISCORD_WEBHOOK_URL` is set, the pipeline posts newly discovered free-food
 events to Discord after Supabase upsert. The `discord_notifications` table
@@ -454,9 +454,8 @@ Scraping IG violates their terms of service. This is fine for a campus
 project pulling public-ish content from accounts you'd otherwise see by
 following them, but don't redistribute media, don't hammer the API, and
 expect the account you log in with to occasionally get checkpointed. For
-anything production-grade, talk to clubs about an opt-in feed (e.g. they
-use our submission form) instead of
-relying on scraping forever.
+anything production-grade, talk to clubs about an opt-in Instagram feed
+instead of relying on scraping forever.
 
 ### Following-feed discovery (opt-in)
 

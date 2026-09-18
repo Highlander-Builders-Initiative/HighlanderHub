@@ -21,7 +21,7 @@ CONTENT_KINDS = (
 )
 AudienceStance = Literal["student", "restricted", "unspecified"]
 
-_STUDENT_ORIGINS = frozenset({"instagram", "manual", "submission"})
+_STUDENT_ORIGINS = frozenset({"instagram", "manual"})
 
 _FUNDRAISER_TERMS = (
     "fundraiser", "fundraising", "donate", "donation", "proceeds",

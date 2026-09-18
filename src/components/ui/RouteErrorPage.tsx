@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { Footer } from "@/components/layout/Footer";
 import { Masthead } from "@/components/layout/Masthead";
 
-type RouteErrorVariant = "home" | "events" | "event" | "about" | "submit";
+type RouteErrorVariant = "home" | "events" | "event" | "about";
 
 type RouteErrorPageProps = {
   error: Error & { digest?: string };
@@ -39,11 +39,6 @@ const copy: Record<
     label: "About",
     title: "Something broke loading this page.",
     body: "Try again to reload the project details.",
-  },
-  submit: {
-    label: "Submit",
-    title: "Something broke loading the submission form.",
-    body: "Try again to reload the form before sending your event.",
   },
 };
 

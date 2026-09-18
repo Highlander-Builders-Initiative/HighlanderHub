@@ -13,15 +13,6 @@ type EventMap = {
   events_calendar_jump: { day: string };
   events_clear_filters: Record<string, never>;
   hbi_cta_click: { location: "hero" | "footer_social" | "about_page"; channel: string };
-  submit_cta_click: { surface: "events_header" | "empty_state" | "about_page" };
-  submit_page_view: Record<string, never>;
-  submission_start: Record<string, never>;
-  submission_first_blur: { field: string };
-  submission_complete: Record<string, never>;
-  submission_error: { message: string };
-  flyer_uploaded: { size: number; type: string };
-  flyer_upload_error: { message: string };
-  flyer_delete_error: { message: string };
 };
 
 export function track<K extends keyof EventMap>(

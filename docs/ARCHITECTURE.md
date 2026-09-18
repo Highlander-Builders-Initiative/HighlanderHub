@@ -8,7 +8,6 @@ Highlander Hub is a monorepo: a Next.js app, a Python ingest pipeline, and Supab
 flowchart LR
   subgraph sources [Sources]
     IG[Instagram posts]
-    SUB["/submit form"]
   end
 
   subgraph pipeline [pipeline/]
@@ -18,36 +17,33 @@ flowchart LR
 
   subgraph db [Supabase]
     EV[(events)]
-    SM[(submissions)]
     DN[(discord_notifications)]
   end
 
   subgraph app [src/]
-    SUBAPI["/api/submissions"]
     API["/api/events"]
     UI["App Router pages"]
   end
 
   IG --> SCR --> NORM --> EV
-  SUB --> SUBAPI --> SM
   EV --> DN
 
   EV --> API --> UI
   EV --> UI
 ```
 
-1. **Pipeline** (`pipeline/run.py`, scheduled in `.github/workflows/scrape.yml`) scrapes external sources, normalizes rows, and upserts into Postgres. Raw JSON lives under `pipeline/data/` (gitignored).
+1. **Pipeline** (`pipeline/run.py`, scheduled in `.github/workflows/scrape.yml`) scrapes Instagram, normalizes rows, and upserts into Postgres. Raw JSON lives under `pipeline/data/` (gitignored).
 2. **Schemas** (`schemas/*.upsert.schema.json`) define the row shape both Python mappers and TypeScript must honor. Run `npm run generate:rows` after schema edits.
-3. **App** reads `events` via `src/lib/events/` (server) and client fetch helpers in `src/lib/events/api.ts`. Manual submissions post to `/api/submissions`, then land in `submissions` for review.
+3. **App** reads `events` via `src/lib/events/` (server) and client fetch helpers in `src/lib/events/api.ts`.
 
 ## Repository layout
 
 | Path | Role |
 | --- | --- |
 | `src/app/` | Next.js routes, API handlers, route-level `loading` / `error` |
-| `src/components/` | UI by feature (`events/`, `forms/submit/`, `home/`, `layout/`, `ui/`) |
+| `src/components/` | UI by feature (`events/`, `home/`, `layout/`, `ui/`) |
 | `src/lib/events/` | Event domain: DB reader, API client, feed session/restore, validation |
-| `src/lib/` | Cross-cutting helpers (`dates`, `supabase`, `submission-flyer`, …) |
+| `src/lib/` | Cross-cutting helpers (`dates`, `supabase`, …) |
 | `src/types/` | Shared TypeScript types |
 | `pipeline/` | Python scrapers, extractors, normalizers |
 | `supabase/migrations/` | Database source of truth |
@@ -64,12 +60,7 @@ flowchart LR
 ### Event detail `/events/[id]`
 
 - `getEventById` (React `cache`) loads one row; detail page adds calendar/share/RSVP actions from `src/lib/events/actions.ts`.
-
-### Submit `/submit`
-
-- Client uploads optional flyer, validates Pacific wall-clock times, then posts the submission row to `/api/submissions`.
-- The server route inserts into `submissions` and sends a Discord webhook alert when `DISCORD_WEBHOOK_URL` is configured.
-- Pipeline-discovered free-food events are announced once through the same webhook; `discord_notifications.notification_key` prevents reposts across reruns and scraper row ID changes.
+- Pipeline-discovered free-food events are announced once through Discord; `discord_notifications.notification_key` prevents reposts across reruns and scraper row ID changes.
 
 ## Testing
 
