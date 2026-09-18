@@ -536,7 +536,7 @@ class ClassifyContentKindTests(unittest.TestCase):
                     ))
 
     def test_student_sources_bypass_audience_restrictions_but_not_fundraisers(self) -> None:
-        for origin in ("instagram", "manual", "manual", "submission"):
+        for origin in ("instagram", "manual"):
             for title, expected in (("Club Meetup", "student_event"),
                                     ("Applications Due", "student_deadline"),
                                     ("Fundraiser Deadline", "fundraiser")):

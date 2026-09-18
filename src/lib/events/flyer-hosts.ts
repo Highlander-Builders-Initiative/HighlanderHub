@@ -31,8 +31,7 @@ export function isOptimizableFlyerHost(rawUrl: string): boolean {
 
   if (
     hostname === SUPABASE_HOST &&
-    (pathname.startsWith("/storage/v1/object/public/submission-flyers/") ||
-      pathname.startsWith("/storage/v1/object/public/event-flyers/"))
+    pathname.startsWith("/storage/v1/object/public/event-flyers/")
   ) {
     return true;
   }

@@ -22,12 +22,6 @@ export const PUBLIC_CONTENT_KINDS: EventContentKind[] = [
   "student_deadline",
 ];
 
-/** Kinds the public submit form is allowed to set (no fundraiser/other). */
-export const SUBMITTABLE_CONTENT_KINDS: EventContentKind[] = [
-  "student_event",
-  "student_deadline",
-];
-
 export const EVENT_CONTENT_KIND_LABELS: Record<EventContentKind, string> = {
   student_event: "Event",
   student_deadline: "Deadline",
@@ -49,27 +43,12 @@ export function isPublicContentKind(value: unknown): value is EventContentKind {
   );
 }
 
-export function isSubmittableContentKind(
-  value: unknown
-): value is EventContentKind {
-  return (
-    isContentKind(value) && SUBMITTABLE_CONTENT_KINDS.includes(value)
-  );
-}
-
 /** Coerce an untrusted value to a known kind, falling back to `fallback`. */
 export function coerceContentKind(
   value: unknown,
   fallback: EventContentKind = "student_event"
 ): EventContentKind {
   return isContentKind(value) ? value : fallback;
-}
-
-/** Coerce to a submittable kind; non-submittable/unknown values become Event. */
-export function coerceSubmittableContentKind(
-  value: unknown
-): EventContentKind {
-  return isSubmittableContentKind(value) ? value : "student_event";
 }
 
 export function isDeadlineKind(value: unknown): boolean {

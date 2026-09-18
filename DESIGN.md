@@ -201,7 +201,7 @@ Outside those two flavors, if a shadow is visible enough to describe its blur ra
 ### Buttons
 
 - **Shape:** Gently rounded (8px, `rounded-lg`).
-- **Primary:** Solid ink background (#0f1115), canvas text (#ffffff), 12px × 24px padding (`py-3 px-6`), minimum 12-unit height for touch (`min-h-12`). Used for the single high-confidence CTA per region ("Browse events", "Submit an event").
+- **Primary:** Solid ink background (#0f1115), canvas text (#ffffff), 12px × 24px padding (`py-3 px-6`), minimum 12-unit height for touch (`min-h-12`). Used for the single high-confidence CTA per region ("Browse events").
 - **Hover / Focus:** Opacity-85 transition on hover (200ms). Focus-visible draws a 3px ink outline with 3px offset and a 5px canvas ring (defined globally via `.interactive-focus`). No background-shift on hover; no transform.
 - **Inline icon trailing:** Optional 16px stroke-current SVG, animated 2px on group-hover (`group-hover:translate-x-0.5`). Use sparingly; primary CTA buttons earn it, secondary actions do not.
 - **Secondary / Tertiary:** Not yet codified. When introduced, prefer outline-ink over filled-secondary, and prefer underlined-link over outline-button when the action is navigational.
@@ -255,7 +255,7 @@ The retired 4px side-stripe rail this replaces is documented for historical refe
 
 ### Inputs / Fields
 
-- **Style:** Canvas background, hairline ink border, 8px radius (`rounded-md`), 10–12px vertical padding, Bricolage Grotesque body text at 16px. (Spec; the submit form should be audited against this and brought into line if it drifts.)
+- **Style:** Canvas background, hairline ink border, 8px radius (`rounded-md`), 10–12px vertical padding, Bricolage Grotesque body text at 16px.
 - **Focus:** Uses the global `.interactive-focus` treatment: 3px ink outline, 3px offset, 5px canvas ring. Consistent with buttons. No glow, no border color shift.
 - **Error / Disabled:** Not yet codified. When introduced, errors use Deep Coral text and a coral-tinted background; disabled drops to muted text on surface background.
 

@@ -77,11 +77,11 @@ test("next config applies core security headers to all routes", async () => {
       `CSP should lock down ${directive}`
     );
   }
-  // The browser uploads flyers straight to Supabase storage; that origin must
-  // stay allowed in connect-src or submissions silently break.
+  // Event flyers are fetched from Supabase storage; that origin must
+  // stay allowed in connect-src or next/image and calendar reads break.
   const supabaseStoragePattern = nextConfig.images.remotePatterns.find(
     (pattern) =>
-      pattern.pathname === "/storage/v1/object/public/submission-flyers/**"
+      pattern.pathname === "/storage/v1/object/public/event-flyers/**"
   );
   assert.ok(supabaseStoragePattern);
   assert.ok(

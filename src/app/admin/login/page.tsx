@@ -54,7 +54,7 @@ export default function AdminLoginPage() {
             Highlander Hub
           </h1>
           <p className="text-xs text-muted mt-1.5 font-sans leading-relaxed">
-            Sign in to review community event submissions and manage what appears on the public calendar.
+            Sign in to manage what appears on the public calendar.
           </p>
         </header>
 

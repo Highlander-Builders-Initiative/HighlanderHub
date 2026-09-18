@@ -11,7 +11,6 @@ import type { CampusEvent } from "@/types/event";
 import { formatPacificDayKey } from "@/lib/dates";
 import type { EmptyFeedCopy } from "@/lib/events/empty-feed-copy";
 import { EventCard } from "./EventCard";
-import { SubmitEventCta } from "./SubmitEventCta";
 import { ActiveFilterChips } from "./ActiveFilterChips";
 import { EventSearchBox } from "./EventSearchBox";
 import type { EventFeedActiveFilters } from "./useEventFeedFilters";
@@ -132,20 +131,15 @@ export function EventsFeedColumn({
         </button>
       </div>
 
-      <header className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
-        <div className="min-w-0">
-          <h1 className="font-display text-[28px] font-semibold leading-[1.05] tracking-[-0.025em] text-ink sm:text-[34px]">
-            {formatPacificDayKey(todayKey)}
-          </h1>
-          <p className="mt-2 max-w-[58ch] text-[14px] text-muted">
-            {upcomingTotal}{" "}
-            {upcomingTotal === 1 ? "event" : "events"} upcoming ·{" "}
-            {summary.upcomingThisWeek} this week
-          </p>
-        </div>
-        <div className="shrink-0 self-start sm:self-end">
-          <SubmitEventCta surface="events_header" />
-        </div>
+      <header className="mb-7">
+        <h1 className="font-display text-[28px] font-semibold leading-[1.05] tracking-[-0.025em] text-ink sm:text-[34px]">
+          {formatPacificDayKey(todayKey)}
+        </h1>
+        <p className="mt-2 max-w-[58ch] text-[14px] text-muted">
+          {upcomingTotal}{" "}
+          {upcomingTotal === 1 ? "event" : "events"} upcoming ·{" "}
+          {summary.upcomingThisWeek} this week
+        </p>
       </header>
 
       <div
@@ -233,8 +227,8 @@ export function EventsFeedColumn({
           <p className="mt-3 max-w-[52ch] text-[15px] leading-[1.55] text-ink/70">
             {emptyCopy.nudge}
           </p>
-          <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm">
-            {hasActiveFilters && (
+          {hasActiveFilters && (
+            <div className="mt-7">
               <button
                 type="button"
                 onClick={onClearFilters}
@@ -242,12 +236,8 @@ export function EventsFeedColumn({
               >
                 Clear filters
               </button>
-            )}
-            <span className="text-ink/55">
-              Running something not listed?{" "}
-              <SubmitEventCta variant="link" surface="empty_state" />
-            </span>
-          </div>
+            </div>
+          )}
         </div>
       )}
 

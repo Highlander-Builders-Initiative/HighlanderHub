@@ -72,7 +72,7 @@ const EMPTY_COPY_BY_MASK: Record<number, EmptyFeedCopyFactory> = {
   }),
   0: () => ({
     headline: "The bulletin's quiet right now.",
-    nudge: "Check back later, or be the first to put something up.",
+    nudge: "Check back after the next refresh.",
   }),
 };
 

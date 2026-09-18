@@ -6,7 +6,6 @@ export const SITE_NAV_LINKS: readonly SiteNavLink[] = [
   { href: "/", label: "Home" },
   { href: "/events", label: "Events" },
   { href: "/about", label: "About" },
-  { href: "/submit", label: "Submit" },
 ];
 
 export function isNavLinkActive(href: string, pathname: string | null) {

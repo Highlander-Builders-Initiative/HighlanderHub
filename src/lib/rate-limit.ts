@@ -115,12 +115,6 @@ export function rateLimitHeaders(result: RateLimitResult): Record<string, string
 
 // --- Tunable limits (per IP) -------------------------------------------------
 
-/** Public event submissions: deliberate, low-frequency human action. */
-export const SUBMISSION_RATE_LIMIT: RateLimitConfig = {
-  limit: 5,
-  windowMs: 15 * 60_000, // 5 submissions / 15 min
-};
-
 /** Admin login: strict, to blunt password brute-force. */
 export const ADMIN_LOGIN_RATE_LIMIT: RateLimitConfig = {
   limit: 5,

@@ -15,16 +15,14 @@ when the next general meeting is.
 
 - **Club Instagram posts** — flyers posted by registered student
   organizations.
-- **Manual submissions** — events sent through the `/submit` form for review.
 
 Updates run automatically every six hours, so anything posted in the last
 day usually shows up by the next refresh.
 
 ## Get your club listed
 
-Want your org's events on the bulletin? Submit an event at `/submit`, or reach
-out to HBI with the club's Instagram handle and public events page so we can
-add it as a recurring source.
+Want your org's events on the bulletin? Reach out to HBI with the club's
+Instagram handle so we can add it as a recurring source.
 
 ## Spot something off?
 

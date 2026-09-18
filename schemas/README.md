@@ -18,7 +18,7 @@ npm run generate:rows
 
 ## Optional: Supabase CLI types
 
-For full `Database` typings (including `submissions`, joins, RPCs), you can still run:
+For full `Database` typings (including joins and RPCs), you can still run:
 
 ```bash
 supabase gen types typescript --local > src/lib/database.types.ts

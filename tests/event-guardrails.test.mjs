@@ -59,105 +59,13 @@ test("event validation helpers reject unsafe URLs and use Pacific wall-clock tim
   });
 });
 
-test("submission validation requires RSVP URL from form data", () => {
-  const result = spawnSync(
-    process.execPath,
-    [
-      "--input-type=module",
-      "--eval",
-      `
-        import { importTsModule } from "./tests/helpers/import-ts-module.mjs";
-        const submission = await importTsModule("src/components/forms/submit/submit-validation.ts");
-        const submissions = await importTsModule("src/lib/submissions.ts");
-        const form = new FormData();
-        form.set("title", "Club night");
-        form.set("starts_at", "2026-05-20T18:00");
-        form.set("location", "HUB");
-        form.set("host", "ACM");
-        form.set("submitter_name", "Taylor");
-        form.set("submitter_email", "taylor@example.com");
-        form.set("rsvp_required", "on");
-        const missing = submission.validateSubmissionFields(form);
-        form.set("rsvp_url", "https://events.example.edu/rsvp");
-        const valid = submission.validateSubmissionFields(form);
-        form.set("rsvp_url", "javascript:alert(1)");
-        const invalid = submission.validateSubmissionFields(form);
-        console.log(JSON.stringify({
-          missing,
-          valid,
-          invalid,
-          row: submissions.buildSubmissionRow(form, "2026-05-21T01:00:00.000Z", null, null)
-        }));
-      `,
-    ],
-    {
-      cwd: process.cwd(),
-      env: { ...process.env, TZ: "UTC" },
-      encoding: "utf8",
-    }
-  );
-
-  assert.equal(result.status, 0, result.stderr);
-  const parsed = JSON.parse(result.stdout.trim());
-  assert.deepEqual(parsed.missing, { rsvp_url: "This field is required." });
-  assert.deepEqual(parsed.valid, {});
-  assert.deepEqual(parsed.invalid, { rsvp_url: "Use an http(s) URL." });
-  assert.equal(parsed.row.rsvp_required, true);
-});
-
-test("submission Discord alert avoids submitter contact details", () => {
-  const result = spawnSync(
-    process.execPath,
-    [
-      "--input-type=module",
-      "--eval",
-      `
-        import { importTsModule } from "./tests/helpers/import-ts-module.mjs";
-        const discord = await importTsModule("src/lib/discord.ts");
-        const message = discord.buildSubmissionDiscordMessage({
-          title: "Club night",
-          starts_at: "2026-05-21T01:00:00.000Z",
-          location: "HUB 302",
-          host: "ACM at UCR",
-          submitter_name: "Private Person",
-          submitter_email: "private@example.com"
-        });
-        console.log(JSON.stringify({ message }));
-      `,
-    ],
-    {
-      cwd: process.cwd(),
-      env: { ...process.env, TZ: "UTC" },
-      encoding: "utf8",
-    }
-  );
-
-  assert.equal(result.status, 0, result.stderr);
-  const { message } = JSON.parse(result.stdout.trim());
-  assert.match(message, /New Highlander Hub submission needs review/);
-  assert.match(message, /Club night/);
-  assert.match(message, /Hosted by ACM at UCR/);
-  assert.match(message, /Review: \/admin/);
-  assert.doesNotMatch(message, /Private Person/);
-  assert.doesNotMatch(message, /private@example\.com/);
-});
-
-test("submission and detail surfaces use shared URL and time guards", () => {
-  const form = read("src/components/forms/submit/SubmitForm.tsx");
-  const validation = read("src/components/forms/submit/submit-validation.ts");
-  const submissions = read("src/lib/submissions.ts");
+test("event detail surfaces use shared URL and time guards", () => {
   const detail = read("src/components/events/EventDetailView.tsx");
   const actions = read("src/lib/events/actions.ts");
   const events = read("src/lib/events/index.ts");
   const mapRow = read("src/lib/events/map-event-row.ts");
   const adminEdit = read("src/app/admin/useAdminEventEdit.ts");
 
-  assert.match(validation, /normalizeHttpUrl/);
-  assert.match(submissions, /buildSubmissionRow/);
-  assert.match(submissions, /parseSubmissionInsert/);
-  assert.match(form, /validateEventTimes/);
-  assert.match(form, /fieldErrors\.ends_at/);
-  assert.match(validation, /Use an http\(s\) URL\./);
   assert.match(detail, /safeRsvpUrl/);
   assert.match(detail, /safeSourceUrl/);
   assert.match(actions, /normalizeHttpUrl\(event\.rsvpUrl\)/);
