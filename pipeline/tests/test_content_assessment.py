@@ -287,6 +287,12 @@ class ContentAssessmentTests(unittest.TestCase):
 
 
 class AssessmentRequestTests(unittest.TestCase):
+    def setUp(self):
+        # Requests go to Vertex unless a test opts in; a real key in .env must not leak in.
+        patcher = patch("config.GEMINI_API_KEY", None)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
     def field_decision(self, src):
         result = decision(src)
         for container in [result, *result["occurrences"]]:
@@ -347,6 +353,45 @@ class AssessmentRequestTests(unittest.TestCase):
             if sleeps:
                 self.assertTrue(5 <= sleeps[0] <= 6)
                 self.assertTrue(all(delay <= 30 for delay in sleeps))
+
+    def test_free_tier_uses_the_api_key_and_spaces_requests(self):
+        src = source()
+        response = SimpleNamespace(parsed=decision(src), text="")
+        with patch("config.GEMINI_API_KEY", "test-key"), patch.object(assess, "_last_request", None), \
+                patch.object(assess, "monotonic", side_effect=[100.0, 101.0, 104.0]), \
+                patch.object(assess, "sleep") as sleep, patch("google.genai.Client") as client:
+            client.return_value.models.generate_content.return_value = response
+            assess.assess(src)
+            assess.assess(src)
+        self.assertEqual("test-key", client.call_args.kwargs["api_key"])
+        self.assertNotIn("vertexai", client.call_args.kwargs)
+        sleep.assert_called_once_with(60 / assess.FREE_TIER_RPM - 1)
+
+    def test_only_a_spent_daily_quota_stops_later_requests(self):
+        from google.genai import errors
+
+        def quota(quota_id):
+            return errors.APIError(429, {"error": {"status": "RESOURCE_EXHAUSTED",
+                                                   "details": [{"violations": [{"quotaId": quota_id}]}]}})
+
+        with patch("config.GEMINI_API_KEY", "test-key"), patch.object(assess, "_daily_quota_spent", False), \
+                patch.object(assess, "_pace"), patch("google.genai.Client") as client:
+            client.return_value.models.generate_content.side_effect = [
+                quota("GenerateRequestsPerMinutePerProjectPerModel-FreeTier"),
+                quota("GenerateRequestsPerDayPerProjectPerModel-FreeTier")]
+            for _ in range(2):
+                with self.assertRaises(errors.APIError):
+                    assess.assess(source())
+            with self.assertRaises(assess.DailyQuotaExhausted):
+                assess.assess(source())
+        self.assertEqual(2, client.return_value.models.generate_content.call_count)
+
+    def test_flex_is_refused_on_the_gemini_api(self):
+        with patch("config.GEMINI_API_KEY", "test-key"), patch.object(assess, "FLEX", True), \
+                patch("google.genai.Client") as client:
+            with self.assertRaisesRegex(ValueError, "Vertex"):
+                assess.assess(source())
+        client.assert_not_called()
 
 
 if __name__ == "__main__":

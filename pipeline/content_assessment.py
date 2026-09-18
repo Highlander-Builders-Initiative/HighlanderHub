@@ -12,6 +12,7 @@ import hashlib
 import json
 import re
 from datetime import date, datetime, time, timedelta
+from time import monotonic, sleep
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -26,6 +27,11 @@ TEMPERATURE = 0
 # per source in that trial, against 2s). Vertex accepts it on the global
 # endpoint for Gemini 3 models only.
 FLEX = False
+# With GEMINI_API_KEY set, calls go to the Gemini API instead of billed Vertex.
+# A key from a project with no billing account stays on the free tier: no
+# charge, but Google may use the prompts to improve its products, and requests
+# are capped per minute and per day (current limits are shown in AI Studio).
+FREE_TIER_RPM = 15
 KINDS = ("activity", "deadline", "application", "service_schedule", "announcement", "uncertain")
 DATE_ROLES = ("occurrence", "recurring_hours", "cutoff", "application_window", "program_duration", "observance", "notice_period", "none", "uncertain")
 PACIFIC = ZoneInfo("America/Los_Angeles")
@@ -42,6 +48,27 @@ class GroundingRejected(ValueError):
     def __init__(self, message: str, *, attempts: list[dict] | None = None):
         super().__init__(message)
         self.attempts = attempts or []
+
+
+class DailyQuotaExhausted(RuntimeError):
+    """The free tier's requests-per-day cap is spent; it resets at midnight Pacific.
+
+    A transport failure, so publication keeps prior listings and the next run
+    retries. Raised without a request once one call has hit the cap, instead of
+    spending four backoff attempts on every remaining source.
+    """
+
+
+_last_request: float | None = None
+_daily_quota_spent = False
+
+
+def _pace() -> None:
+    """Space free-tier requests so none exceeds the per-minute cap."""
+    global _last_request
+    if _last_request is not None:
+        sleep(max(0.0, _last_request + 60 / FREE_TIER_RPM - monotonic()))
+    _last_request = monotonic()
 
 
 EVIDENCE_SCHEMA = {
@@ -474,25 +501,42 @@ def _attach_source_quotes(result: dict, source: dict) -> dict:
 
 def assess(source: dict, *, usage: list | None = None) -> dict:
     """Assess one source; `usage`, when given, collects token counts per model call."""
+    global _daily_quota_spent
     from google import genai
-    from config import GOOGLE_CLOUD_PROJECT, GOOGLE_CLOUD_LOCATION
+    from google.genai import errors
+    from config import GEMINI_API_KEY, GOOGLE_CLOUD_PROJECT, GOOGLE_CLOUD_LOCATION
 
+    if GEMINI_API_KEY and _daily_quota_spent:
+        raise DailyQuotaExhausted("Gemini API daily request quota is spent; it resets at midnight Pacific")
     http_options = {"retry_options": {
         "attempts": 4, "initial_delay": 5, "max_delay": 30,
         "exp_base": 2, "jitter": 1,
         "http_status_codes": [408, 429, 500, 502, 503, 504],
     }}
-    if FLEX:
-        http_options["headers"] = {"X-Vertex-AI-LLM-Shared-Request-Type": "flex"}
-    client = genai.Client(vertexai=True, project=GOOGLE_CLOUD_PROJECT or None,
-                          location=GOOGLE_CLOUD_LOCATION or "global", http_options=http_options)
+    if GEMINI_API_KEY:
+        if FLEX:
+            raise ValueError("Flex PayGo is a Vertex AI option; unset GEMINI_API_KEY to use it")
+        client = genai.Client(api_key=GEMINI_API_KEY, http_options=http_options)
+    else:
+        if FLEX:
+            http_options["headers"] = {"X-Vertex-AI-LLM-Shared-Request-Type": "flex"}
+        client = genai.Client(vertexai=True, project=GOOGLE_CLOUD_PROJECT or None,
+                              location=GOOGLE_CLOUD_LOCATION or "global", http_options=http_options)
     prompt = PROMPT + json.dumps(source, ensure_ascii=False, sort_keys=True)
     failures = []
     for attempt in range(2):
-        response = client.models.generate_content(
-            model=MODEL, contents=prompt,
-            config={"response_mime_type": "application/json", "response_schema": SCHEMA, "temperature": TEMPERATURE},
-        )
+        if GEMINI_API_KEY:
+            _pace()
+        try:
+            response = client.models.generate_content(
+                model=MODEL, contents=prompt,
+                config={"response_mime_type": "application/json", "response_schema": SCHEMA, "temperature": TEMPERATURE},
+            )
+        except errors.APIError as exc:
+            # Per-minute 429s are retried above; the per-day cap only resets tomorrow.
+            if GEMINI_API_KEY and exc.code == 429 and "PerDay" in str(exc):
+                _daily_quota_spent = True
+            raise
         metadata = getattr(response, "usage_metadata", None)
         if usage is not None and metadata is not None:
             usage.append({key: getattr(metadata, key) or 0 for key in (
