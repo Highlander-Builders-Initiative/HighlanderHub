@@ -76,9 +76,9 @@ class ReassessmentScopeTests(unittest.TestCase):
     def test_old_upload_date_does_not_suppress_first_assessment_of_new_source(self):
         src = source()
         src["posted_at"] = "2026-06-01T12:00:00Z"
-        src["source_key"] = "instagram:post:new"
+        src["source_key"] = "instagram:post:900"
         with patch.object(semantic, "assess", return_value=decision(src)) as model:
-            update = publication.make_update(src, {"media_id": "new", "handle": "club", "posted_at": src["posted_at"]},
+            update = publication.make_update(src, {"media_id": "900", "handle": "club", "posted_at": src["posted_at"]},
                                              {"status": "ok", "ocr_text": src["texts"]["ocr_text"]}, None, {}, NOW)
         model.assert_called_once_with(src)
         self.assertEqual(1, len(update["rows"]))

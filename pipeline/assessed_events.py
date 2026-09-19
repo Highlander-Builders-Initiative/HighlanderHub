@@ -232,7 +232,7 @@ def post_rows(record: dict, cached: dict, payload: dict, meta: dict, now: str) -
     ocr_text = "\n".join(str(slide.get("ocr_text") or "") for slide in slides)
     caption = str(record.get("caption") or "")
 
-    event_id = instagram_event_id(owner, starts_at)
+    event_id = instagram_event_id(owner, record.get("media_id"))
     if event_id:
         known.add(event_id)
     # The flyer is the first slide whose text was actually cited. A caption-only
@@ -265,8 +265,12 @@ def make_update(source: dict, raw: dict, cached: dict | None, prior: dict | None
     except Exception as exc:
         payload = {**payload, "status": "error", "error": f"Mapping failed: {type(exc).__name__}: {exc}"}
         rows, known = [], set()
+    # Proposed IDs are not historical aliases. Calling a replacement "known"
+    # would bypass the RPC's protection for locked/deleted legacy identities.
+    # The RPC records accepted row IDs itself and merges stored source aliases.
     return {"source_key": source["source_key"], "origin": source["origin"], "assessment": payload,
-            "rows": dedupe_event_rows(rows), "known_event_ids": sorted(known)}
+            "rows": dedupe_event_rows(rows),
+            "known_event_ids": sorted(known - {row["id"] for row in rows})}
 
 
 def publish(updates: list[dict]) -> dict:

@@ -231,7 +231,7 @@ Already in the DB shape that `src/lib/events/index.ts` maps into `CampusEvent`
 
 ```jsonc
 {
-  "id": "ig_cyber_ucr_20260516T0200Z",
+  "id": "ig_cyber_ucr_p3980467437204327812",
   "title": "Security Night Workshop",
   "description": "...",
   "starts_at": "2026-05-15T19:00:00-07:00",
@@ -404,6 +404,12 @@ with an explicit reason.
 
 Each post publishes its durable `/p/` permalink. Two unrelated clubs announcing
 the same title at the same time keep separate listings.
+
+Event IDs use `ig_<owner>_p<media_id>`: distinct posts never overwrite each other
+just because their deadlines match, and caption or date corrections retain the
+post's ID. Repeat advertisements still pass through semantic reconciliation.
+On republication, the registry retires unsupported legacy owner/time IDs and
+preserves their admin locks and tombstones; no assessment refresh is needed.
 
 Everything downstream is unchanged: caption corrections may replace or withdraw
 that post's support while another valid source keeps the event alive, errors

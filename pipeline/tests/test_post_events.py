@@ -404,7 +404,7 @@ class PostPublicationTests(unittest.TestCase):
         rows, known = self.rows()
         self.assertEqual(1, len(rows))
         row = rows[0]
-        self.assertEqual("ig_acm.ucr_20260915T2200Z", row["id"])
+        self.assertEqual("ig_acm.ucr_p700", row["id"])
         self.assertEqual("Study Jam", row["title"])
         self.assertEqual("2026-09-15T22:00:00+00:00", row["starts_at"])
         self.assertEqual("https://www.instagram.com/p/CStudy/", row["source_url"])
@@ -432,7 +432,7 @@ class PostPublicationTests(unittest.TestCase):
         self.record["posted_at"] = "2026-09-17T17:00:00+00:00"
         rows, known = self.rows()
         self.assertEqual([], rows)
-        self.assertEqual({"ig_acm.ucr_20260915T2200Z"}, known)
+        self.assertEqual({"ig_acm.ucr_p700"}, known)
 
     def test_posted_during_the_event_or_missing_post_time_stays_publishable(self):
         for posted_at in ("2026-09-15T23:00:00Z", None):
@@ -464,7 +464,7 @@ class PostPublicationTests(unittest.TestCase):
             update = publication.make_update(self.source, self.record, self.cached, None,
                                              self.meta, "2026-09-11T12:00:00Z")
         self.assertEqual("complete", update["assessment"]["status"])
-        self.assertEqual(["ig_acm.ucr_20260915T2200Z"], [row["id"] for row in update["rows"]])
+        self.assertEqual(["ig_acm.ucr_p700"], [row["id"] for row in update["rows"]])
         self.assertEqual("https://storage.example/slide1.jpg", update["rows"][0]["image_url"])
         self.assertEqual(self.record["caption"], update["rows"][0]["description"])
 
@@ -508,8 +508,8 @@ class PostPublicationTests(unittest.TestCase):
 
     def test_publication_claims_the_author_event_identity(self):
         rows, known = self.rows()
-        self.assertEqual({"ig_acm.ucr_20260915T2200Z"}, known)
-        self.assertEqual(rows[0]["id"], "ig_acm.ucr_20260915T2200Z")
+        self.assertEqual({"ig_acm.ucr_p700"}, known)
+        self.assertEqual(rows[0]["id"], "ig_acm.ucr_p700")
 
     def test_a_qr_destination_is_recovered_as_the_rsvp_link(self):
         self.cached["images"][1]["qr_urls"] = ["https://lu.ma/studyjam"]
@@ -565,13 +565,69 @@ class PostIdentityTests(unittest.TestCase):
         self.record = record(caption="Join ACM for a study jam", slides=1)
         self.meta = {"acm.ucr": {"label": "ACM at UCR"}, "ieee.ucr": {"label": "IEEE at UCR"}}
 
-    def post_row(self):
+    def post_row(self, **occurrence_changes):
         source = publication.post_source(self.record, self.cached)
         payload = {"status": "complete", "result": post_decision(source, field="slide_1_ocr"),
                    "source": source}
+        payload["result"]["occurrences"][0].update(occurrence_changes)
         rows, known = publication.post_rows(self.record, self.cached, payload, self.meta,
                                             "2026-09-11T12:00:00+00:00")
         return rows[0], known
+
+    def test_independent_deadlines_survive_publication_and_reconciliation(self):
+        from event_identity import dedupe_event_rows
+        from reconcile_events import plan
+        cases = [
+            ("acm_ucr", "2026-09-25T00:00:00-07:00", [
+                ("3980467437204327812", "ACM Spark Applications", "spark"),
+                ("3981465870551773335", "ACM Create Applications", "create")]),
+            ("ideasandsociety", "2026-09-28T00:00:00-07:00", [
+                ("3987078712734376425", "CIS Academic Book Clubs Applications", "books"),
+                ("3987591811061361059", "CIS Research Writing Groups Applications", "writing")]),
+        ]
+        for owner, start, announcements in cases:
+            with self.subTest(owner=owner):
+                rows = []
+                for media_id, title, destination in announcements:
+                    self.record.update(media_id=media_id, handle=owner, owner_username=owner,
+                                       caption=title, permalink=f"https://www.instagram.com/p/{destination}/")
+                    row, known = self.post_row(title=title, starts_at=start, ends_at=None,
+                                              rsvp_url=f"https://forms.example/{destination}")
+                    self.assertEqual({row["id"]}, known)
+                    rows.append(row)
+                self.assertNotEqual(rows[0]["id"], rows[1]["id"])
+                self.assertEqual(rows, dedupe_event_rows(rows))
+                self.assertEqual(([], set()), plan(rows))
+
+    def test_post_identity_survives_title_and_deadline_corrections(self):
+        first, _ = self.post_row()
+        corrected, _ = self.post_row(title="Updated Study Jam", starts_at="2026-09-16T16:00:00-07:00")
+        self.assertEqual(first["id"], corrected["id"])
+
+    def test_missing_media_identity_fails_mapping_instead_of_withdrawing_support(self):
+        source = publication.post_source(self.record, self.cached)
+        payload = {"status": "complete", "source": source,
+                   "result": post_decision(source, field="slide_1_ocr")}
+        for media_id in (None, "", "invalid"):
+            with self.subTest(media_id=media_id), \
+                 patch.object(publication, "cached_assessment", return_value=payload):
+                raw = {**self.record, "media_id": media_id}
+                update = publication.make_update(source, raw, self.cached, None, self.meta,
+                                                 "2026-09-11T12:00:00Z")
+                self.assertEqual("error", update["assessment"]["status"])
+                self.assertEqual([], update["rows"])
+
+    def test_repeat_advertisements_keep_separate_source_ids_but_reconcile(self):
+        from reconcile_events import plan, same_event
+        first, _ = self.post_row()
+        self.record["media_id"] = "701"
+        repeated, _ = self.post_row()
+        self.assertNotEqual(first["id"], repeated["id"])
+        self.assertTrue(same_event(first, repeated))
+        self.assertTrue(same_event({**first, "id": "ig_acm.ucr_20260915T2200Z"}, repeated))
+        updates, removed = plan([first, repeated])
+        self.assertEqual(1, len(removed))
+        self.assertEqual(([], set()), plan([r for r in [first, repeated] if r["id"] not in removed]))
 
 
     def test_unrelated_clubs_sharing_a_title_and_time_stay_separate(self):
