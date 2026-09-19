@@ -17,6 +17,32 @@ log = logging.getLogger("pipeline.reconcile_events")
 _GENERIC_WORDS = frozenset("first second third general body meeting club weekly monthly annual fall winter spring summer welcome back workshop session orientation open house social event ucr uc riverside university california of at the and for to a an".split())
 _TITLE_NOISE = frozenset("the of at and for to a an annual save date".split())
 _TITLE_QUALIFIERS = frozenset("network celebration ucr uc riverside university california".split())
+_SHORTCODE_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+_FEED_PERMALINK = re.compile(r"https?://(?:www\.)?instagram\.com/(?:p|reel|tv)/([A-Za-z0-9_-]{1,11})/?(?:[?#]|$)")
+# Current rows end in _p<media_id>; retired story reshares were keyed on the
+# original post as ig_post_<media_id>_<minute>.
+_MEDIA_ID = re.compile(r"ig_post_(\d+)_\d{8}T\d{4}Z|ig_.+_p(\d+)")
+_MENTION = re.compile(r"@([a-z0-9._]+)")
+
+
+def _source_media(row: dict) -> set[str]:
+    """Instagram post IDs a row was published from, by ID or feed permalink."""
+    media = set()
+    if match := _MEDIA_ID.fullmatch(str(row.get("id") or "")):
+        media.add(match.group(1) or match.group(2))
+    if match := _FEED_PERMALINK.match(str(row.get("source_url") or "")):
+        value = 0
+        for char in match.group(1):
+            value = value * 64 + _SHORTCODE_ALPHABET.index(char)
+        media.add(str(value))
+    return media
+
+
+def _credits(row: dict, other: dict) -> bool:
+    """Whether row's caption tags the account that published other."""
+    handle = str(other.get("host_handle") or "").casefold()
+    mentions = {m.rstrip(".") for m in _MENTION.findall(str(row.get("description") or "").casefold())}
+    return bool(handle) and handle in mentions
 
 
 def _title_words(row: dict) -> set[str]:
@@ -35,11 +61,16 @@ def _rsvp_identity(value: str | None) -> str | None:
 
 
 def same_event(left: dict, right: dict) -> bool:
-    """Require the same instant plus a distinctive title or shared signup link."""
+    """Require the same instant plus a shared source post, a distinctive title,
+    or a shared signup link."""
     start = _parse_instant(left.get("starts_at"))
     if start is None or start != _parse_instant(right.get("starts_at")):
         return False
     if event_key(left) is not None and event_key(left) == event_key(right):
+        return True
+    # A post publishes exactly one event, so one post at one instant is one event
+    # however differently a feed row and a story reshare of it were titled.
+    if _source_media(left) & _source_media(right):
         return True
     a, b = _title_words(left), _title_words(right)
     common = a & b
@@ -49,9 +80,16 @@ def same_event(left: dict, right: dict) -> bool:
     # Generic meeting titles never establish common ownership across accounts.
     if len(common) < 3 or len(common - _GENERIC_WORDS) < 2:
         return False
-    locations = [set(re.findall(r"[a-z0-9]+", str(r.get('location') or '').casefold())) for r in (left, right)]
+    # A partner's promotion tags the organizer's account; its title and place
+    # are paraphrases, but the event cannot end at a different time.
+    ends = {_parse_instant(r.get("ends_at")) for r in (left, right)} - {None}
+    if (_credits(left, right) or _credits(right, left)) and len(ends) <= 1:
+        return True
+    # Split room codes so "LOFT 84" and "LOFT84" name the same place.
+    locations = [set(re.findall(r"[a-z]+|[0-9]+", str(r.get('location') or '').casefold())) for r in (left, right)]
     same_place = bool(min(map(len, locations)) >= 2 and (locations[0] <= locations[1] or locations[1] <= locations[0]))
-    same_host = bool(left.get('host') and str(left['host']).casefold() == str(right.get('host') or '').casefold())
+    same_host = any(left.get(k) and str(left[k]).casefold() == str(right.get(k) or '').casefold()
+                    for k in ('host', 'host_handle'))
     return (same_place or same_host) and (a <= b or b <= a) and (a ^ b) <= _TITLE_QUALIFIERS
 
 

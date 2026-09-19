@@ -66,6 +66,56 @@ class CrossSourceReconciliationTests(unittest.TestCase):
         for rows in cases:
             self.assertEqual(([],set()), reconcile.plan(rows))
 
+    def test_story_reshare_and_feed_row_of_one_post_reconcile(self):
+        # September 19: both survived because the titles and hosts diverge.
+        story = self.event('ig_post_3981794780021667232_20261022T1800Z',
+                           'THE WELL\'S OPEN HOUSE "DOWN THE RABBIT HOLE: DISCOVER THE WELL"',
+                           location='HUB 381', host='The Well',
+                           source_url='https://www.instagram.com/stories/thewellucr/3983944040466618933/')
+        feed = self.event('ig_thewellucr_20261022T1800Z', "The Well's Open House: Down the Rabbit Hole",
+                          location='HUB 381', host='The Well at UCR', description='x' * 200,
+                          source_url='https://www.instagram.com/p/DdCLUGHsjWg/')
+        self.assertEqual(([], {story['id']}), reconcile.plan([story, feed]))
+        current = {**feed, 'id': 'ig_thewellucr_p3981794780021667232', 'source_url': None}
+        self.assertEqual({story['id']}, reconcile.plan([story, current])[1])
+        moved = {**feed, 'starts_at': '2026-10-23T11:00:00-07:00'}
+        self.assertEqual(([], set()), reconcile.plan([story, moved]))
+
+    def test_room_code_spacing_and_host_account_match(self):
+        a = self.event('ig_ucr_athletics_1', "Men's Basketball Tip-Off Banquet", location='LOFT 84',
+                       host='UC Riverside Athletics', host_handle='ucr_athletics')
+        b = self.event('ig_ucrmbb_1', 'UC Riverside Men’s Basketball Tip-Off Banquet', location='LOFT84',
+                       host="UCR Men's Basketball", host_handle='ucrmbb')
+        self.assertTrue(reconcile.same_event(a, b))
+        c = self.event('ig_well_1', "The Well's Open House: Down the Rabbit Hole", location='',
+                       host='The Well', host_handle='thewellucr')
+        d = {**c, 'id': 'ig_wellstory_1', 'host': 'The Well at UCR'}
+        self.assertTrue(reconcile.same_event(c, d))
+        self.assertFalse(reconcile.same_event(c, {**d, 'host_handle': 'otherclub'}))
+
+    def test_partner_promotion_tagging_the_organizer_reconciles(self):
+        organizer = self.event('ig_aspb_ucr_1', 'Once Upon a Faire', location='Bell Tower & Pierce Lawns',
+                               host='ASPB', host_handle='aspb_ucr', ends_at='2026-09-12T17:00:00-07:00',
+                               description='Join us at Once Upon a Faire ' + 'x' * 200)
+        partner = self.event('ig_rstageucr_1', 'Once Upon a Faire', location='UCR Campus',
+                             host="R'Stage", host_handle='rstageucr', ends_at=organizer['ends_at'],
+                             description="R’Stage has partnered with @aspb_ucr for Once Upon a Faire!")
+        self.assertEqual({partner['id']}, reconcile.plan([organizer, partner])[1])
+        untagged = {**partner, 'description': 'Once Upon a Faire'}
+        early = {**partner, 'ends_at': '2026-09-12T15:00:00-07:00'}
+        for other in (untagged, early):
+            self.assertEqual(([], set()), reconcile.plan([organizer, other]))
+
+    def test_paraphrased_titles_alone_never_merge_accounts(self):
+        # The CHASS story reposted the Alumni flyer, but its row carries no
+        # evidence of that; the listing is resolved by review, not by title.
+        alumni = self.event('ig_ucralumni_20261107T0800Z', 'UCR Homecoming featuring Funk Flex',
+                            location='', host='UCR Alumni Association', host_handle='ucralumni')
+        chass = self.event('ig_ucrchass_20261107T0800Z', 'Homecoming III featuring Funk Flex',
+                           location='UCR', host='UCR CHASS', host_handle='ucrchass',
+                           description='Homecoming III featuring Funk Flex')
+        self.assertEqual(([], set()), reconcile.plan([alumni, chass]))
+
     def test_lock_wins_and_deleted_group_cannot_reappear_via_another_source(self):
         campus, ig = self.event('campus_1'), self.event('ig_a_1', is_locked=True, is_free=False)
         self.assertEqual(([],{'campus_1'}), reconcile.plan([campus,ig]))
