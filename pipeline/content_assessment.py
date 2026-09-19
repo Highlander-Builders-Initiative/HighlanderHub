@@ -9,9 +9,13 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import html
 import json
+import logging
 import re
+import unicodedata
 from datetime import date, datetime, time, timedelta
+from time import monotonic, sleep
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -26,9 +30,16 @@ TEMPERATURE = 0
 # per source in that trial, against 2s). Vertex accepts it on the global
 # endpoint for Gemini 3 models only.
 FLEX = False
+# With GEMINI_API_KEY set, calls go to the Gemini API instead of billed Vertex.
+# A key from a project with no billing account stays on the free tier: no
+# charge, but Google may use the prompts to improve its products, and requests
+# are capped per minute and per day (current limits are shown in AI Studio).
+# A quota failure stops assessment so the run can publish its completed work.
+FREE_TIER_RPM = 15
 KINDS = ("activity", "deadline", "application", "service_schedule", "announcement", "uncertain")
 DATE_ROLES = ("occurrence", "recurring_hours", "cutoff", "application_window", "program_duration", "observance", "notice_period", "none", "uncertain")
 PACIFIC = ZoneInfo("America/Los_Angeles")
+log = logging.getLogger("pipeline.content_assessment")
 
 
 class GroundingRejected(ValueError):
@@ -42,6 +53,17 @@ class GroundingRejected(ValueError):
     def __init__(self, message: str, *, attempts: list[dict] | None = None):
         super().__init__(message)
         self.attempts = attempts or []
+
+
+_last_request: float | None = None
+
+
+def _pace() -> None:
+    """Space free-tier requests so none exceeds the per-minute cap."""
+    global _last_request
+    if _last_request is not None:
+        sleep(max(0.0, _last_request + 60 / FREE_TIER_RPM - monotonic()))
+    _last_request = monotonic()
 
 
 EVIDENCE_SCHEMA = {
@@ -187,8 +209,65 @@ def fingerprint(source: dict) -> str:
     return hashlib.sha256(json.dumps(source, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
 
 
+# Typographic variants the model swaps freely when it copies text.
+_TYPOGRAPHY = str.maketrans({
+    **dict.fromkeys("‐‑‒–—―−⁃", "-"),
+    **dict.fromkeys("‘’‚‛′`´", "'"),
+    **dict.fromkeys("“”„‟″«»", '"'),
+})
+_ESCAPED_RE = re.compile(r"\\(?:u([0-9a-fA-F]{4})|([nrt]))")
+
+
+def _plain(text: str) -> str:
+    """Text as a reader sees it, however the model encoded it.
+
+    Undoes HTML entities ("Le&oacute;n", even double-encoded) and JSON escapes
+    left as literal text ("Le\\u00f3n"). NFKC then unifies composed and
+    decomposed accents and maps "fancy font" letters (𝐁𝐨𝐥𝐝), fullwidth
+    characters, ligatures and no-break spaces to plain text. Dashes and quote
+    marks become their ASCII forms, which the date and time patterns accept.
+    """
+    for _ in range(3):
+        decoded = html.unescape(text)
+        if decoded == text:
+            break
+        text = decoded
+    if "\\" in text:
+        text = _ESCAPED_RE.sub(lambda m: chr(int(m[1], 16)) if m[1]
+                               else {"n": "\n", "r": "\r", "t": "\t"}[m[2]], text)
+        # An escaped emoji is a surrogate pair; rejoin it into one character.
+        text = text.encode("utf-16", "surrogatepass").decode("utf-16", "surrogatepass")
+    # Before NFKC, which would split "´" into a space and a combining accent;
+    # after, for the variants NFKC itself produces (small em dash, double prime).
+    return unicodedata.normalize("NFKC", text.translate(_TYPOGRAPHY)).translate(_TYPOGRAPHY)
+
+
 def _normalized(text: str) -> str:
+    """Decode equivalent typography while preserving punctuation and symbols."""
+    # Ignore only invisible text-layout artifacts, not arbitrary Unicode
+    # categories: currency, operators, emoji and enclosing marks carry meaning.
+    text = _plain(text).replace("\u200b", "").replace("\ufeff", "")
     return " ".join(text.split()).casefold()
+
+
+def _grounded_quote(quote: str, original: str) -> bool:
+    """Match an intact substring, never a fragment such as `21` inside `21+`."""
+    quote, original = _normalized(quote), _normalized(original)
+    if not any(char.isalnum() for char in quote):
+        return False
+
+    def attached(char: str) -> bool:
+        return (char.isalnum() or unicodedata.category(char)[0] in {"M", "S"}
+                or char in "_%/-")
+
+    offset = original.find(quote)
+    while offset >= 0:
+        end = offset + len(quote)
+        if ((offset == 0 or not attached(original[offset - 1]))
+                and (end == len(original) or not attached(original[end]))):
+            return True
+        offset = original.find(quote, offset + 1)
+    return False
 
 
 def evidence_text(evidence: Any, source: dict, *, required: bool = True, activity: bool = False) -> str:
@@ -200,12 +279,14 @@ def evidence_text(evidence: Any, source: dict, *, required: bool = True, activit
             raise ValueError("Invalid evidence object")
         field, quote = item.get("field"), item.get("quote")
         original = source["texts"].get(field)
-        if (not isinstance(quote, str) or not quote.strip() or not isinstance(original, str)
-                or _normalized(quote) not in _normalized(original)):
-            raise ValueError(f"Evidence quote {quote!r} is absent from field {field!r}; use an exact substring or quote the entire field")
+        if (not isinstance(quote, str) or not isinstance(original, str)
+                or not _grounded_quote(quote, original)):
+            raise ValueError(f"Evidence quote {quote!r} is absent from field {field!r}; "
+                             "use an intact substring including attached symbols or quote the entire field")
         if activity and field == "dates":
             raise ValueError("Dates alone cannot establish an activity")
-        quotes.append(quote)
+        # Date and time checks read the quote, so give them the decoded text.
+        quotes.append(_plain(quote))
     return "\n".join(quotes)
 
 
@@ -286,6 +367,13 @@ def _clock_supported(clock: time, text: str) -> bool:
     return (clock.hour, clock.minute) in clocks and not clock.second and not clock.microsecond
 
 
+def _next_midnight(value: datetime) -> datetime:
+    """Midnight after `value`'s date, carrying that date's own UTC offset."""
+    following = datetime.combine(value.date() + timedelta(days=1), time(0))
+    pacific = value.utcoffset() == value.replace(tzinfo=PACIFIC).utcoffset()
+    return following.replace(tzinfo=PACIFIC if pacific else value.tzinfo)
+
+
 def validate_occurrence(item: dict, source: dict) -> None:
     if not isinstance(item, dict) or not isinstance(item.get("title"), str) or not item["title"].strip():
         raise ValueError("Occurrence requires a title")
@@ -296,6 +384,16 @@ def validate_occurrence(item: dict, source: dict) -> None:
     text = evidence_text(item.get("date_evidence"), source)
     start = _instant(item.get("starts_at"))
     end = _instant(item["ends_at"]) if item.get("ends_at") else None
+    # An all-day date has no clock, and the model often writes its boundaries
+    # as 23:59:59 or leaves a one-day end empty (typically a deadline). Each has
+    # one reading: midnight on the first day, midnight after the last day.
+    if item["all_day"]:
+        if start.time() == time(23, 59, 59):
+            start = start.replace(hour=0, minute=0, second=0)
+        if end is not None and end.time() == time(23, 59, 59):
+            end = _next_midnight(end)
+        if end is None and start.time() == time(0):
+            end = _next_midnight(start)
     # Same-day midnight after an afternoon start denotes the following night
     # boundary. This convention is independent of origin; the date, clock and
     # duration checks below still require support in the cited source text.
@@ -338,7 +436,9 @@ def validate_occurrence(item: dict, source: dict) -> None:
         if end and not _clock_supported(end.time(), text):
             raise ValueError(f"Occurrence clock lacks source support: end {end.time()}; "
                              "set ends_at=null when the source supplies no end time")
-    if end and end != _instant(item["ends_at"]):
+    if start != _instant(item["starts_at"]):
+        item["starts_at"] = start.isoformat()
+    if end and (not item.get("ends_at") or end != _instant(item["ends_at"])):
         item["ends_at"] = end.isoformat()
 
 
@@ -472,27 +572,47 @@ def _attach_source_quotes(result: dict, source: dict) -> dict:
     return result
 
 
-def assess(source: dict, *, usage: list | None = None) -> dict:
-    """Assess one source; `usage`, when given, collects token counts per model call."""
+def _client(gemini_api: bool):
     from google import genai
-    from config import GOOGLE_CLOUD_PROJECT, GOOGLE_CLOUD_LOCATION
+    from config import GEMINI_API_KEY, GOOGLE_CLOUD_PROJECT, GOOGLE_CLOUD_LOCATION
 
-    http_options = {"retry_options": {
-        "attempts": 4, "initial_delay": 5, "max_delay": 30,
-        "exp_base": 2, "jitter": 1,
-        "http_status_codes": [408, 429, 500, 502, 503, 504],
+    # Overload (503 "high demand") usually clears within seconds, so server errors
+    # get three spaced retries (~5s, 10s, 20s). 429 is left out: a spent quota does
+    # not recover by waiting, and must stop assessment instead.
+    http_options = {"timeout": 60_000, "retry_options": {
+        "attempts": 4, "initial_delay": 5, "max_delay": 30, "exp_base": 2, "jitter": 1,
+        "http_status_codes": [408, 500, 502, 503, 504],
     }}
+    if gemini_api:
+        if FLEX:
+            raise ValueError("Flex PayGo is a Vertex AI option; unset GEMINI_API_KEY to use it")
+        return genai.Client(api_key=GEMINI_API_KEY, http_options=http_options)
     if FLEX:
         http_options["headers"] = {"X-Vertex-AI-LLM-Shared-Request-Type": "flex"}
-    client = genai.Client(vertexai=True, project=GOOGLE_CLOUD_PROJECT or None,
-                          location=GOOGLE_CLOUD_LOCATION or "global", http_options=http_options)
+    return genai.Client(vertexai=True, project=GOOGLE_CLOUD_PROJECT or None,
+                        location=GOOGLE_CLOUD_LOCATION or "global", http_options=http_options)
+
+
+def _generate(prompt: str):
+    """One call, retried briefly on overload; quota failures are left for the next run."""
+    from config import GEMINI_API_KEY
+
+    request = {"model": MODEL, "contents": prompt, "config": {
+        "response_mime_type": "application/json", "response_schema": SCHEMA, "temperature": TEMPERATURE}}
+    # The client must outlive the call: dropping the last reference closes its
+    # underlying HTTP session, and a temporary is collected mid-request.
+    client = _client(gemini_api=bool(GEMINI_API_KEY))
+    if GEMINI_API_KEY:
+        _pace()
+    return client.models.generate_content(**request)
+
+
+def assess(source: dict, *, usage: list | None = None) -> dict:
+    """Assess one source; `usage`, when given, collects token counts per model call."""
     prompt = PROMPT + json.dumps(source, ensure_ascii=False, sort_keys=True)
     failures = []
     for attempt in range(2):
-        response = client.models.generate_content(
-            model=MODEL, contents=prompt,
-            config={"response_mime_type": "application/json", "response_schema": SCHEMA, "temperature": TEMPERATURE},
-        )
+        response = _generate(prompt)
         metadata = getattr(response, "usage_metadata", None)
         if usage is not None and metadata is not None:
             usage.append({key: getattr(metadata, key) or 0 for key in (

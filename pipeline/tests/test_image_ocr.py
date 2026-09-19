@@ -1,15 +1,36 @@
 """Verify the image transport used by post extraction without network calls."""
 import base64
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import Mock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import image_ocr
+import instagram_cooldown
 
 
 class ImageOcrTests(unittest.TestCase):
+    def setUp(self):
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        self.enterContext(patch.object(instagram_cooldown, "INSTAGRAM_COOLDOWN_FILE",
+                                       Path(directory.name) / "cooldown.json"))
+        self.enterContext(patch.object(instagram_cooldown, "_UNSAVED", None))
+
+    def test_image_rate_limit_persists_pause_and_blocks_next_download(self):
+        import requests
+        response = Mock(status_code=429)
+        response.raise_for_status.side_effect = requests.HTTPError("429")
+        with patch("requests.get", return_value=response) as request:
+            with self.assertRaises(requests.HTTPError):
+                image_ocr._download_image("https://cdn.example/first.jpg")
+            with self.assertRaises(instagram_cooldown.CollectionPaused):
+                image_ocr._download_image("https://cdn.example/next.jpg")
+        request.assert_called_once()
+        self.assertEqual(instagram_cooldown.Kind.THROTTLED, instagram_cooldown.current().kind)
+
     def test_image_download_returns_bytes_and_reports_expired_urls(self):
         response = Mock(status_code=200, content=b"flyer")
         with patch("requests.get", return_value=response) as download:

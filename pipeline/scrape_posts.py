@@ -6,10 +6,11 @@ so the archive is a cache rather than the only record — but it is still the
 thing that makes a daily run cheap, because a post already on disk costs no
 OCR and no model call.
 
-Collection is forward-only. Each account records an activation timestamp
+Normal collection is forward-only. Each account records an activation timestamp
 before its first fetch and never imports anything published before it, so
 turning the collector on does not backfill a club's history — including an old
-post that gets pinned to the top of the profile later.
+post that gets pinned to the top of the profile later. An explicit maintenance
+PIPELINE_POST_BACKFILL_SINCE setting overrides that scan boundary.
 """
 from __future__ import annotations
 
@@ -30,6 +31,7 @@ from instaloader.exceptions import (
 
 import instagram_cooldown
 from config import (POST_CHECKPOINTS_FILE, POST_OVERLAP_DAYS, POST_DISCOVERY_MODE,
+                    POST_BACKFILL_SINCE, POST_EXTRACTED_DIR,
                     ensure_post_dirs, load_accounts)
 from post_archive import (
     hydrate_local_posts,
@@ -68,10 +70,21 @@ POSSIBLY_PINNED = 3
 ACCOUNT_SLEEP_RANGE = (5.0, 12.0)
 DIRECT_FEED_MAX_ACCOUNTS = 5
 DIRECT_FEED_MAX_PAGES = 3
+# One unreadable account says nothing about the rest, so collection moves on.
+# This many in a row points at the session, network or API instead: stop asking.
+MAX_CONSECUTIVE_FAILURES = 5
 
 
 class DirectFeedLimitReached(RuntimeError):
     """The pilot budget ended before coverage was established."""
+
+
+class EmptyFeed(RuntimeError):
+    """The profile shows no posts at all: none published, or private to us."""
+
+
+class PartialCollection(RuntimeError):
+    """Some accounts or posts failed on their own; the rest was collected."""
 
 
 def _direct_feed_page(L: instaloader.Instaloader, handle: str,
@@ -163,6 +176,9 @@ def write_local_checkpoints(checkpoints: dict[str, dict[str, Any]]) -> None:
     """
     merged = load_local_checkpoints()
     merged.update(checkpoints)
+    # Retire legacy sweep markers while preserving incremental checkpoints.
+    for entry in merged.values():
+        entry.pop("backfill", None)
     _write_json(
         POST_CHECKPOINTS_FILE,
         {"generated_at": _iso(_utc_now()), "accounts": merged},
@@ -389,6 +405,12 @@ def _graphql_feed_posts(L: instaloader.Instaloader, handle: str,
         diagnostic = {key: response[key] for key in
                       ("errors", "message", "status", "feedback_title") if key in response}
         if response.get("errors") or response.get("status") == "fail":
+            if any(isinstance(err, dict) and err.get("description") == "User lookup returned null"
+                   for err in response.get("errors") or []):
+                # The query addresses the handle, so a deleted, deactivated or
+                # renamed account has nothing to look up. Skip it, not the run.
+                raise ProfileNotExistsException(
+                    f"{handle}: no Instagram account has this handle (deleted, deactivated or renamed)")
             raise ConnectionException(f"{handle}: GraphQL feed error: {json.dumps(diagnostic)}")
         data = response.get("data")
         page = data.get("xdt_api__v1__feed__user_timeline_graphql_connection") if isinstance(data, dict) else None
@@ -421,6 +443,9 @@ def _graphql_feed_posts(L: instaloader.Instaloader, handle: str,
                     f"does not match stored ID {user_id}, and the account is not an "
                     "accepted coauthor; cannot verify feed membership"
                 )
+        if not edges and not verified_account and not page_info["has_next_page"]:
+            # Nothing to verify and nothing to collect; coverage is not advanced.
+            raise EmptyFeed(f"{handle}: empty GraphQL feed (no posts, or a private profile)")
         if not edges and (not verified_account or page_info["has_next_page"]):
             raise RuntimeError(f"{handle}: empty GraphQL feed cannot verify account identity/coverage")
         verified_account = True
@@ -455,6 +480,7 @@ def scan_account(
     now: datetime,
     *,
     direct_feed: bool = False,
+    backfill_since: datetime | None = None,
 ) -> AccountResult:
     """Walk one profile's feed back to its boundary and save what is new.
 
@@ -464,10 +490,9 @@ def scan_account(
     a busy account at the same newest-first prefix without ever catching up.
     """
     handle = account["handle"]
-    # `scan_boundary` is the single owner of the activation invariant: it never
-    # returns an instant before the account was activated, so reaching the
-    # boundary is the only stop condition this loop needs.
-    boundary = scan_boundary(checkpoint, now)
+    # A maintenance backfill bypasses both activation and recent progress without
+    # changing the stored activation used by normal incremental collection.
+    boundary = backfill_since or scan_boundary(checkpoint, now)
     user_id = account.get("instagram_user_id")
     if not user_id:
         raise ValueError(f"{handle}: missing instagram_user_id; run resolve_ids.py first")
@@ -570,6 +595,21 @@ def refresh_post(
     return refreshed
 
 
+def failed_downloads(handles: set[str]) -> dict[str, dict[str, Any]]:
+    """Refresh expired/missing image URLs before retrying saved download errors."""
+    failed = set()
+    for path in POST_EXTRACTED_DIR.glob("*.json"):
+        try:
+            cached = _read_json(path)
+        except (ValueError, OSError):
+            continue
+        if (isinstance(cached, dict) and cached.get("status") == "error"
+                and (cached.get("result") or {}).get("stage") == "download"):
+            failed.add(str(cached.get("media_id")))
+    return {str(record["media_id"]): record for record in iter_local_posts(handles)
+            if str(record["media_id"]) in failed and record.get("shortcode")}
+
+
 def _sleep_between_accounts() -> None:
     time.sleep(random.uniform(*ACCOUNT_SLEEP_RANGE))
 
@@ -580,6 +620,13 @@ def main(handles: list[str] | None = None, *, direct_feed: bool = False,
     """Collect posts; direct-feed pilots require at most five explicit handles."""
     wanted = {handle.strip().lower() for handle in (handles or []) if handle.strip()}
     mode = discovery or POST_DISCOVERY_MODE
+    backfill_since = _parse_instant(POST_BACKFILL_SINCE)
+    if POST_BACKFILL_SINCE:
+        if backfill_since is None:
+            raise ValueError("PIPELINE_POST_BACKFILL_SINCE must be an ISO date or timestamp")
+        if direct_feed:
+            raise ValueError("Historical backfill cannot use the bounded --direct-feed pilot")
+        mode = "profiles"
     if mode not in ("profiles", "following"):
         raise ValueError("PIPELINE_POST_DISCOVERY/--discovery must be profiles or following")
     if direct_feed and mode != "profiles":
@@ -593,6 +640,10 @@ def main(handles: list[str] | None = None, *, direct_feed: bool = False,
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
     )
+    if backfill_since is not None:
+        log.info("Historical sweep: accounts.json profiles, posts since %s inclusive; "
+                 "remove PIPELINE_POST_BACKFILL_SINCE to restore incremental scans",
+                 _iso(backfill_since))
     # First: with a pause in force nothing below is worth doing, and extraction
     # restores the archive for itself.
     instagram_cooldown.ensure_collection_allowed("posts")
@@ -612,6 +663,9 @@ def main(handles: list[str] | None = None, *, direct_feed: bool = False,
         compress_json=False,
         quiet=True,
         rate_controller=PacedRateController,
+        max_connection_attempts=1,
+        request_timeout=60,
+        fatal_status_codes=[401, 403],
     )
     L.context.user_agent = (
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
@@ -630,6 +684,10 @@ def main(handles: list[str] | None = None, *, direct_feed: bool = False,
         "unchanged": 0, "refreshed": 0, "incomplete": 0, "errors": 0, "skipped": 0,
     }
     paused: instagram_cooldown.Pause | None = None
+    failures: list[str] = []
+    # Set once failures run together; the rest of the work would only repeat them.
+    stopped: str | None = None
+    streak = 0
     try:
         # The fast path uses the saved roster: enumerating all followees on each
         # run would add another account-sized request sequence before discovery.
@@ -663,9 +721,7 @@ def main(handles: list[str] | None = None, *, direct_feed: bool = False,
                 block = instagram_cooldown.classify(exc)
                 if block is not None:
                     raise instagram_cooldown.stop(block, "posts", exc) from exc
-                totals["errors"] += 1
-                log.warning("Following discovery failed; retaining progress and running "
-                            "bounded profile reconciliation: %s", exc)
+                raise RuntimeError(f"Following discovery stopped: {exc}") from exc
             accounts = following_feed.select_reconciliation(
                 accounts, checkpoints, reconcile_accounts)
             log.info("Following mode: reconciling %d profiles this run", len(accounts))
@@ -684,22 +740,38 @@ def main(handles: list[str] | None = None, *, direct_feed: bool = False,
                 checkpoint["last_status"] = "incomplete"
                 write_local_checkpoints({handle: checkpoint})
             try:
-                result = scan_account(L, account, checkpoint, now, direct_feed=direct_feed)
+                result = scan_account(L, account, checkpoint, now, direct_feed=direct_feed,
+                                      backfill_since=backfill_since)
             except (ProfileNotExistsException, PrivateProfileNotFollowedException,
-                    QueryReturnedNotFoundException) as exc:
+                    QueryReturnedNotFoundException, EmptyFeed) as exc:
                 totals["skipped"] += 1
-                log.info("%s: no readable feed (%s)", handle, exc)
+                log.warning("%s: skipped, no readable feed (%s)", handle, exc)
+                streak += 1
+                if streak >= MAX_CONSECUTIVE_FAILURES:
+                    stopped = f"{streak} unreadable accounts in a row; last {handle}: {exc}"
+                    break
                 continue
             except (Exception, SystemExit) as exc:  # noqa: BLE001 - per-account isolation.
                 # Pushback does not get better by asking more accounts: stop, and
                 # keep every checkpoint so the interval is re-walked later.
                 block = instagram_cooldown.classify(exc, lone_400=True)
                 totals["errors"] += 1
+                failure = f"{handle}: {type(exc).__name__}: {exc}"
+                failures.append(failure)
+                checkpoint.update(last_scan_at=_iso(now), last_status="error", last_error=failure)
+                write_local_checkpoints({handle: checkpoint})
                 if block is not None:
                     paused = instagram_cooldown.pause(block, "posts", f"{handle}: {exc}")
                     break
-                log.warning("%s: post scan failed: %s", handle, exc, exc_info=True)
+                log.warning("%s: post scan failed; continuing: %s", handle, exc, exc_info=True)
+                streak += 1
+                if streak >= MAX_CONSECUTIVE_FAILURES:
+                    stopped = f"{streak} failed accounts in a row; last {failure}"
+                    break
+                if index < len(accounts):
+                    _sleep_between_accounts()
                 continue
+            streak = 0
 
             totals["scanned"] += result.scanned
             totals["discovered"] += result.discovered
@@ -727,8 +799,8 @@ def main(handles: list[str] | None = None, *, direct_feed: bool = False,
                 totals["incomplete"] += 1
             checkpoint["last_scan_at"] = _iso(now)
             checkpoint["last_status"] = "complete" if result.complete else "incomplete"
-            if mode == "following":
-                write_local_checkpoints({handle: checkpoint})
+            checkpoint.pop("last_error", None)
+            write_local_checkpoints({handle: checkpoint})
             log.info(
                 "%s: %d in window, %d new, %d updated, %d unchanged%s",
                 handle, result.scanned, result.discovered, result.updated,
@@ -737,10 +809,12 @@ def main(handles: list[str] | None = None, *, direct_feed: bool = False,
             if index < len(accounts):
                 _sleep_between_accounts()
 
-        if paused is None and not direct_feed:
+        if paused is None and stopped is None and not direct_feed:
             # Posts outside the overlap that still back an upcoming event.
             # Anything already fetched by discovery this run is skipped.
-            for media_id, record in sorted(refresh_candidates(now).items()):
+            refresh = refresh_candidates(now) if backfill_since is None else {}
+            refresh.update(failed_downloads({account["handle"] for account in accounts}))
+            for media_id, record in sorted(refresh.items()):
                 if media_id in fetched:
                     continue
                 try:
@@ -748,13 +822,21 @@ def main(handles: list[str] | None = None, *, direct_feed: bool = False,
                 except (Exception, SystemExit) as exc:  # noqa: BLE001
                     block = instagram_cooldown.classify(exc, lone_400=True)
                     totals["errors"] += 1
+                    failure = f"refresh {media_id}: {type(exc).__name__}: {exc}"
+                    failures.append(failure)
                     if block is not None:
                         paused = instagram_cooldown.pause(
                             block, "posts", f"refresh {media_id}: {exc}"
                         )
                         break
-                    log.warning("post %s: refresh failed: %s", media_id, exc)
+                    log.warning("post %s: refresh failed; continuing: %s", media_id, exc)
+                    streak += 1
+                    if streak >= MAX_CONSECUTIVE_FAILURES:
+                        stopped = f"{streak} failures in a row; last {failure}"
+                        break
+                    _sleep_between_accounts()
                     continue
+                streak = 0
                 totals["refreshed"] += 1
                 fetched.add(media_id)
                 _sleep_between_accounts()
@@ -774,10 +856,15 @@ def main(handles: list[str] | None = None, *, direct_feed: bool = False,
                 f"Direct-feed pilot left {totals['incomplete']} account(s) incomplete; "
                 "checkpoints were retained. Rerun without --direct-feed to finish coverage."
             )
-        if totals["errors"]:
+        if stopped is not None:
             raise RuntimeError(
-                f"Instagram post collection hit {totals['errors']} failure(s); "
-                "checkpoints for those accounts were retained."
+                f"Instagram post collection stopped after {stopped}. Checkpoints were "
+                "retained; check the session and network before rerunning."
+            )
+        if totals["errors"]:
+            raise PartialCollection(
+                f"Instagram post collection hit {totals['errors']} failure(s) and continued "
+                f"past them; checkpoints for those accounts were retained. First: {failures[0]}"
             )
     except Exception as exc:
         # Pushback outside the per-account loops, such as on the follow list. A

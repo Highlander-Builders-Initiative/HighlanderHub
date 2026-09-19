@@ -200,6 +200,8 @@ class CollectionRestartTests(CooldownFileCase):
             patch.object(scrape_posts, "_attach_http_error_logger"),
             patch.object(scrape_posts, "_persist_rotated_session"),
             patch.object(scrape_posts.instaloader, "Instaloader", return_value=Mock()),
+            # Profile mode loads accounts through Instagram; do not inherit .env.
+            patch.object(scrape_posts, "POST_DISCOVERY_MODE", "profiles"),
             patch.object(scrape_posts, "_load_scrape_accounts",
                          side_effect=TooManyRequestsException("429 Too Many Requests")),
         ):
