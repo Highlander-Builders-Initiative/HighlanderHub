@@ -1,0 +1,19 @@
+{
+  "finished_at": "2026-09-19T06:21:18.213091+00:00",
+  "ok": false,
+  "resume": {
+    "checkpoints": "/Users/kevinlin/Documents/GitHub/HighlanderHub/pipeline/data/post_checkpoints.json",
+    "command": "pipeline/.venv/bin/python pipeline/run.py",
+    "cooldown": "/Users/kevinlin/Documents/GitHub/HighlanderHub/pipeline/data/instagram_cooldown.json",
+    "instructions": "Resolve the reported error or wait for the Instagram cooldown, then rerun. Completed backfill accounts are skipped; unfinished accounts restart at page one. Post extractions and assessments reuse their saved caches."
+  },
+  "seconds": 22.2,
+  "stages": [
+    {
+      "error": "KeyboardInterrupt: interrupted; saved work retained for resume",
+      "name": "instagram.posts.scrape",
+      "ok": false,
+      "seconds": 22.2
+    }
+  ]
+}
