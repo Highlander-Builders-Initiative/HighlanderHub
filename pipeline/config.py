@@ -35,6 +35,12 @@ POST_DISCOVERY_MODE = os.environ.get("PIPELINE_POST_DISCOVERY", "profiles").lowe
 ACCOUNTS_FILE = ROOT / "accounts.json"
 FOLLOWED_ACCOUNTS_FILE = DATA_DIR / "followed_accounts.json"
 ACCOUNT_SOURCE = os.environ.get("PIPELINE_ACCOUNT_SOURCE", "followed").lower()
+# Opt-in historical maintenance sweep. Removing this setting restores normal discovery
+# and roster selection without rewriting any account's activation timestamp.
+POST_BACKFILL_SINCE = os.environ.get("PIPELINE_POST_BACKFILL_SINCE", "").strip()
+if POST_BACKFILL_SINCE:
+    ACCOUNT_SOURCE = "accounts_json"
+    POST_DISCOVERY_MODE = "profiles"
 
 # Authenticate using credentials or a saved Instaloader session file.
 IG_USERNAME = os.environ.get("IG_USERNAME")

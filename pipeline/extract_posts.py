@@ -1,8 +1,8 @@
-"""OCR Instagram feed posts and cache per-slide evidence for assessment.
+"""OCR the first slide of Instagram feed posts for assessment.
 
-A post is a caption plus an ordered list of images. Each image is read once and
-cached under a signature-free media key, so editing a caption reuses the image
-OCR already paid for and a re-signed CDN URL costs nothing at all.
+Only the first slide and the caption supply event details. The first image is
+cached under a signature-free media key, so editing a caption reuses its OCR
+and a re-signed CDN URL costs nothing at all.
 
 Publication itself lives in `assessed_events`, which reads the caches this
 module writes. Nothing here decides whether a post is an event.
@@ -32,17 +32,14 @@ log = logging.getLogger("pipeline.extract_posts")
 # Bump when the meaning of a cached extraction changes — a new media type
 # becoming readable, a different OCR engine, a different slide decomposition.
 # A bump invalidates post extractions.
-EXTRACTION_VERSION = 1
+EXTRACTION_VERSION = 2
 
-# Statuses that will not be reprocessed. `unsupported_media` stays terminal
-# only while `_readable_slides` still refuses the post (over-long carousels).
-# A prior video skip is reopened without bumping EXTRACTION_VERSION.
+# Retain unsupported_media for reading legacy caches, but reopen those skips:
+# carousel length no longer prevents reading the first slide.
+# A failed post stays retryable and extraction moves on; this many failures in a
+# row means the cause is shared (Vision, network, an Instagram pause), so stop.
+MAX_CONSECUTIVE_FAILURES = 3
 TERMINAL_STATUSES = {"ok", "no_text", "unsupported_media", "no_media"}
-
-# How many slides of one carousel are read. Instagram allows 20; a carousel
-# longer than this is not a single-event announcement, and reading only the
-# first twelve would assess a subset of the evidence. Skipped, not truncated.
-MAX_SLIDES = 12
 
 
 class Stats(dict):
@@ -80,7 +77,7 @@ def fingerprint(record: dict[str, Any]) -> str:
         "owner_username": record.get("owner_username"),
         "media": [
             [entry.get("media_key"), bool(entry.get("is_video"))]
-            for entry in (record.get("media") or [])
+            for entry in _readable_slides(record)
         ],
     }
     return hashlib.sha256(
@@ -210,37 +207,27 @@ def _upload_flyer(record: dict[str, Any], media_key: str, image: bytes) -> str |
         return None
 
 
-def _readable_slides(record: dict[str, Any]) -> tuple[list[dict[str, Any]], str | None]:
-    """The slides to read, plus the reason this post cannot be read.
+def _readable_slides(record: dict[str, Any]) -> list[dict[str, Any]]:
+    """Read only the first slide, using its cover JPEG when it is a video.
 
-    Video slides use the cover JPEG Instagram already exposes. An over-long
-    carousel is skipped rather than truncated to its first slides, because reading a subset would assess part
-    of the evidence as if it were all of it.
+    Slice before filtering so an invalid first entry never selects slide two.
     """
-    media = [entry for entry in (record.get("media") or []) if isinstance(entry, dict)]
-    if not media:
-        return [], None
-    if len(media) > MAX_SLIDES:
-        return [], f"Carousel has {len(media)} slides, more than the {MAX_SLIDES} this version reads"
-    return media, None
+    return [entry for entry in (record.get("media") or [])[:1] if isinstance(entry, dict)]
 
 
 def _cached_decision_still_applies(record: dict[str, Any], payload: Any) -> bool:
     """True when a terminal cache is still the decision for this record.
 
-    `unsupported_media` is only terminal while this version still cannot read
-    the post. A video skip from the previous policy is reopened once covers
-    are treated as slides; an over-long carousel stays skipped.
+    Legacy video and long-carousel skips are reopened under first-slide reading.
     """
     if not (isinstance(payload, dict) and payload.get("status") in TERMINAL_STATUSES
             and payload.get("fingerprint") == fingerprint(record)):
         return False
-    if payload.get("status") == "unsupported_media":
-        return _readable_slides(record)[1] is not None
-    return True
+    return payload.get("status") != "unsupported_media"
 
 
-def process_post(record: dict[str, Any], stats: Stats | None = None) -> dict[str, Any]:
+def process_post(record: dict[str, Any], stats: Stats | None = None, *,
+                 cached_only: bool = False) -> dict[str, Any]:
     """Return this post's extraction, reading only what is not already cached."""
     stats = stats if stats is not None else Stats()
     media_id = str(record.get("media_id") or "")
@@ -279,24 +266,23 @@ def process_post(record: dict[str, Any], stats: Stats | None = None) -> dict[str
     # A changed fingerprint invalidates the decision, never the image work:
     # slides whose media key is unchanged keep their OCR and QR results.
     reusable = {**known_images(remote), **known_images(cached)}
-    slides, unsupported = _readable_slides(record)
-    if unsupported is not None:
-        stats.bump("skipped")
-        log.info("extract %s: unsupported_media (%s)", label, unsupported)
-        return _persist(media_id, {
-            "status": "unsupported_media", "media_id": media_id, "handle": handle,
-            "fingerprint": digest, "extraction_version": EXTRACTION_VERSION,
-            "caption": record.get("caption"), "images": list(reusable.values()),
-            "result": {"reason": unsupported}, "extracted_at": _utc_now(),
-        })
+    slides = _readable_slides(record)
+    selected_keys = {slide.get("media_key") for slide in slides}
+    reusable = {key: entry for key, entry in reusable.items() if key in selected_keys}
+    if cached_only and any(
+        not slide.get("image_url")
+        or reusable.get(slide.get("media_key"), {}).get("qr_scan_version") != QR_SCAN_VERSION
+        for slide in slides
+    ):
+        stats.bump("pending")
+        return {"status": "pending", "media_id": media_id, "handle": handle}
 
     images: list[dict[str, Any]] = []
     for slide in slides:
         key = str(slide.get("media_key") or "")
         if not slide.get("image_url"):
-            # An image slide the collector recorded without a URL. Reading the
-            # rest would assess part of the post's evidence as if it were all
-            # of it; the next collection run re-signs the URL.
+            # A missing first-slide URL stays retryable; never fall back to a
+            # later slide. The next collection run refreshes the URL.
             stats.bump("failed")
             log.warning("extract %s: slide %s has no image URL", label, key or slide.get("index"))
             return _persist_error(record, digest, "download",
@@ -340,16 +326,12 @@ def process_post(record: dict[str, Any], stats: Stats | None = None) -> dict[str
             "qr_urls": qr_urls,
             "qr_scan_version": QR_SCAN_VERSION,
         }
-        # Only a slide that can be chosen as the flyer is stored durably: the
-        # first slide, or one whose text can be cited as event evidence.
+        # Keep the first slide as the flyer even when only the caption has text.
         if ocr_text.strip() or entry["index"] == 0:
             durable = _upload_flyer(record, key or media_id, image)
             if durable:
                 entry["image_url"] = durable
         images.append(entry)
-        # A carousel may repeat the same image; the second copy is the same
-        # media and must not be read again within this run either.
-        reusable.setdefault(key, entry)
 
     if not images:
         stats.bump("skipped")
@@ -423,7 +405,8 @@ def _known_handles() -> set[str] | None:
         return None
 
 
-def extract_all(handles: Iterable[str] | None = None) -> tuple[list[tuple[dict, dict]], Stats]:
+def extract_all(handles: Iterable[str] | None = None, *,
+                cached_only: bool = False) -> tuple[list[tuple[dict, dict]], Stats]:
     """Read every archived post once. Returns (record, extraction) pairs.
 
     `handles` None leaves the roster to decide; a caller-supplied set filters
@@ -439,8 +422,27 @@ def extract_all(handles: Iterable[str] | None = None) -> tuple[list[tuple[dict, 
     stats = Stats()
     roster = set(handles) if handles is not None else _known_handles()
     processed: list[tuple[dict[str, Any], dict[str, Any]]] = []
+    streak = 0
     for record in iter_local_posts(roster):
-        processed.append((record, process_post(record, stats)))
+        try:
+            cached = process_post(record, stats, cached_only=cached_only)
+        except (Exception, SystemExit) as exc:
+            cached = {"status": "error", "media_id": record["media_id"],
+                      "result": {"error": f"{type(exc).__name__}: {exc}"}}
+        processed.append((record, cached))
+        if cached.get("status") != "error":
+            streak = 0
+            continue
+        failed = {"handle": record.get("handle"), "media_id": record["media_id"],
+                  "detail": cached.get("result") or cached.get("error")}
+        stats.bump("errors")
+        stats.setdefault("first_error", failed)
+        streak += 1
+        if streak >= MAX_CONSECUTIVE_FAILURES:
+            stats["stopped_at"] = failed
+            log.error("Extraction stopped after %d failures in a row: %s", streak, failed)
+            break
+        log.warning("Extraction failed; continuing: %s", failed)
     stats["posts"] = len(processed)
     log.info("extract posts: %s", dict(sorted(stats.items())))
     return processed, stats

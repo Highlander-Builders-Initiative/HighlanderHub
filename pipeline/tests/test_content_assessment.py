@@ -45,10 +45,32 @@ class ContentAssessmentTests(unittest.TestCase):
     def test_all_day_repair_identifies_boundary_error_before_date_support(self):
         src = source("Workshop September 15, 2026")
         result = decision(src)
-        result["occurrences"][0].update(all_day=True, starts_at="2026-09-15T00:00:00-07:00",
-                                        ends_at="2026-09-15T23:59:59-07:00")
+        result["occurrences"][0].update(all_day=True, starts_at="2026-09-15T09:00:00-07:00",
+                                        ends_at="2026-09-16T00:00:00-07:00")
         with self.assertRaisesRegex(ValueError, "midnight boundaries.*Workshop"):
             assess.validate(result, src)
+
+    def test_all_day_boundaries_written_as_end_of_day_or_left_open_are_repaired(self):
+        for text, starts_at, ends_at, expected in (
+            # A deadline: all day, no end, sometimes pinned to the last second.
+            ("Applications due September 28, 2026", "2026-09-28T23:59:59-07:00", None,
+             ("2026-09-28T00:00:00-07:00", "2026-09-29T00:00:00-07:00")),
+            ("Applications due September 28, 2026", "2026-09-28T00:00:00-07:00", None,
+             ("2026-09-28T00:00:00-07:00", "2026-09-29T00:00:00-07:00")),
+            ("Open house October 6-7, 2026", "2026-10-06T00:00:00-07:00", "2026-10-07T23:59:59-07:00",
+             ("2026-10-06T00:00:00-07:00", "2026-10-08T00:00:00-07:00")),
+            # The day after the last included day can change offset.
+            ("Book sale October 31, 2026", "2026-10-31T00:00:00-07:00", "2026-10-31T23:59:59-07:00",
+             ("2026-10-31T00:00:00-07:00", "2026-11-01T00:00:00-07:00")),
+            ("Book sale November 1, 2026", "2026-11-01T00:00:00-07:00", None,
+             ("2026-11-01T00:00:00-07:00", "2026-11-02T00:00:00-08:00")),
+        ):
+            with self.subTest(text=text, starts_at=starts_at, ends_at=ends_at):
+                src = source(text)
+                result = decision(src)
+                result["occurrences"][0].update(all_day=True, starts_at=starts_at, ends_at=ends_at)
+                occurrence = assess.validate(result, src)["occurrences"][0]
+                self.assertEqual(expected, (occurrence["starts_at"], occurrence["ends_at"]))
 
     def test_timezone_repair_identifies_correct_offset_and_occurrence(self):
         src = source("ID Camp November 21, 2026, 9-11 AM")
@@ -74,6 +96,77 @@ class ContentAssessmentTests(unittest.TestCase):
         result["occurrences"][0]["activity_evidence"] = [{"field":"ocr_text", "quote":"Invented workshop"}]
         with self.assertRaisesRegex(ValueError, "absent"):
             assess.validate(result, src)
+
+    def test_quotes_match_however_the_model_encodes_characters(self):
+        for text, quote in (
+            ("Nuevo León", "Nuevo Le&oacute;n"),
+            ("Nuevo León", "Nuevo Le&#243;n"),
+            ("Nuevo León", "Nuevo Le&#xF3;n"),
+            ("Nuevo León", "Nuevo Le&amp;oacute;n"),
+            ("Nuevo León", "Nuevo Le\\u00f3n"),
+            ("Nuevo León", "Nuevo León"),
+            ("𝐖𝐞𝐥𝐜𝐨𝐦𝐞 𝐁𝐚𝐜𝐤", "Welcome Back"),
+            ("Wel​come Back", "Welcome Back"),
+            ("Practice Info:\nMonday", "Practice Info:\\nMonday"),
+            ("Mayor Ishii’s program", "Mayor Ishii's program"),
+            ('my Debut Film “Common Sense” will be screened',
+             'my Debut Film "Common Sense" will be screened'),
+            ("6:00 PM – 8:30 PM", "6:00 PM - 8:30 PM"),
+            ("Admission €5", "Admission &euro;5"),
+            ("Ages 21+", "Ages 21\\u002b"),
+            ("Join 🎉 us at HUB", "Join \\ud83c\\udf89 us at HUB"),
+        ):
+            with self.subTest(quote=quote):
+                src = source(text)
+                self.assertTrue(assess.evidence_text([{"field": "ocr_text", "quote": quote}], src))
+
+    def test_character_leniency_does_not_admit_different_words_or_numbers(self):
+        for text, quote in (("Sept. 22", "Sept. 23"), ("Sept. 22", "Sept 22"),
+                            ("Nuevo León", "Nuevo Leon"), ("Join us 🎉", "🎉"), ("Workshop", "Invented")):
+            with self.subTest(quote=quote), self.assertRaisesRegex(ValueError, "absent"):
+                assess.evidence_text([{"field": "ocr_text", "quote": quote}], source(text))
+
+    def test_grounding_preserves_meaningful_symbols_and_complete_tokens(self):
+        for text, quote in (
+            ("Admission $5", "Admission €5"),
+            ("Admission $5", "Admission 5"),
+            ("Admission $5", "5"),
+            ("Ages 21+", "Ages 21"),
+            ("Ages 21+ only", "Ages 21 only"),
+            ("Discount 50%", "Discount 50"),
+            ("Ages ≥21", "Ages 21"),
+            ("Ages ≥21", "Ages ≤21"),
+            ("September 15-17", "September 15 17"),
+            ("September 15-17", "September 15"),
+            ("September 15", "September 1"),
+            ("NotWorkshop", "Workshop"),
+            ("my Debut Film “Common Sense” will be screened",
+             "my Debut Film —Common Sense— will be screened"),
+            ("⚫ 1:30 pm - 3:00 pm", "• 1:30 pm - 3:00 pm"),
+            ("🗓 When: Every Tuesday", "🕰️ When: Every Tuesday"),
+            ("Join 🎉us at HUB", "Join us at HUB"),
+        ):
+            with self.subTest(text=text, quote=quote), self.assertRaisesRegex(ValueError, "absent"):
+                assess.evidence_text([{"field": "ocr_text", "quote": quote}], source(text))
+
+    def test_grounding_accepts_intact_substrings_and_later_valid_matches(self):
+        for text, quote in (
+            ("Details: Admission $5. Register today!", "Admission $5"),
+            ("(Ages 21+), bring ID.", "Ages 21+"),
+            ("Workshop September 15, 2026.", "September 15"),
+            ("Ages 21+ at first; Ages 21 at second.", "Ages 21"),
+            ("NotWorkshop. Workshop!", "Workshop"),
+        ):
+            with self.subTest(text=text, quote=quote):
+                self.assertEqual(quote, assess.evidence_text(
+                    [{"field": "ocr_text", "quote": quote}], source(text)))
+
+    def test_date_and_time_checks_read_the_decoded_quote(self):
+        src = source("Workshop September 15, 2026, 3–5 PM")
+        result = decision(src)
+        encoded = [{"field": "ocr_text", "quote": "Workshop September 15, 2026, 3&ndash;5 PM"}]
+        result["date_evidence"] = result["occurrences"][0]["date_evidence"] = encoded
+        self.assertEqual(result, assess.validate(result, src))
 
     def test_location_citations_are_grounded_and_required_for_named_locations(self):
         src = source("Workshop September 15, 2026, 3-5 PM in HUB 302")
@@ -343,7 +436,8 @@ class AssessmentRequestTests(unittest.TestCase):
             client.return_value.models.generate_content.return_value = response
             assess.assess(src)
         options = types.HttpRetryOptions(**client.call_args.kwargs["http_options"]["retry_options"])
-        for code, expected in ((429, 4), (503, 4), (400, 1), (403, 1)):
+        self.assertEqual(60_000, client.call_args.kwargs["http_options"]["timeout"])
+        for code, expected in ((429, 1), (500, 4), (503, 4), (400, 1), (403, 1)):
             operation = Mock(side_effect=errors.APIError(code, {"error": {"message": "test"}}))
             sleeps = []
             retry = tenacity.Retrying(**_api_client.retry_args(options), sleep=sleeps.append)
@@ -357,7 +451,8 @@ class AssessmentRequestTests(unittest.TestCase):
     def test_free_tier_uses_the_api_key_and_spaces_requests(self):
         src = source()
         response = SimpleNamespace(parsed=decision(src), text="")
-        with patch("config.GEMINI_API_KEY", "test-key"), patch.object(assess, "_last_request", None), \
+        with patch("config.GEMINI_API_KEY", "test-key"), patch.object(assess, "FLEX", False), \
+                patch.object(assess, "_last_request", None), \
                 patch.object(assess, "monotonic", side_effect=[100.0, 101.0, 104.0]), \
                 patch.object(assess, "sleep") as sleep, patch("google.genai.Client") as client:
             client.return_value.models.generate_content.return_value = response
@@ -367,28 +462,17 @@ class AssessmentRequestTests(unittest.TestCase):
         self.assertNotIn("vertexai", client.call_args.kwargs)
         sleep.assert_called_once_with(60 / assess.FREE_TIER_RPM - 1)
 
-    def test_a_spent_daily_quota_moves_the_rest_of_the_run_to_vertex(self):
+    def test_a_spent_daily_quota_stops_without_switching_to_vertex(self):
         from google.genai import errors
-
-        def quota(quota_id):
-            return errors.APIError(429, {"error": {"status": "RESOURCE_EXHAUSTED",
-                                                   "details": [{"violations": [{"quotaId": quota_id}]}]}})
-
-        src = source()
-        response = SimpleNamespace(parsed=decision(src), text="")
-        with patch("config.GEMINI_API_KEY", "test-key"), patch.object(assess, "_daily_quota_spent", False), \
-                patch.object(assess, "_pace"), patch("google.genai.Client") as client:
-            client.return_value.models.generate_content.side_effect = [
-                quota("GenerateRequestsPerMinutePerProjectPerModel-FreeTier"),
-                quota("GenerateRequestsPerDayPerProjectPerModel-FreeTier"), response,
-                response]
+        with patch("config.GEMINI_API_KEY", "test-key"), patch.object(assess, "FLEX", False), \
+             patch.object(assess, "_pace"), patch("google.genai.Client") as client:
+            client.return_value.models.generate_content.side_effect = errors.APIError(
+                429, {"error": {"message": "GenerateRequestsPerDayPerProjectPerModel-FreeTier"}})
             with self.assertRaises(errors.APIError):
-                assess.assess(src)
-            # The request that hit the cap is answered by Vertex, and so is every later one.
-            self.assertEqual(decision(src), assess.assess(src))
-            self.assertEqual(decision(src), assess.assess(src))
-        backends = ["vertex" if call.kwargs.get("vertexai") else "gemini_api" for call in client.call_args_list]
-        self.assertEqual(["gemini_api", "gemini_api", "vertex", "vertex"], backends)
+                assess.assess(source())
+        client.assert_called_once()
+        self.assertEqual("test-key", client.call_args.kwargs["api_key"])
+        client.return_value.models.generate_content.assert_called_once()
 
     def test_flex_is_refused_on_the_gemini_api(self):
         with patch("config.GEMINI_API_KEY", "test-key"), patch.object(assess, "FLEX", True), \

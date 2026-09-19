@@ -118,9 +118,8 @@ Assessment uses the Gemini API when `GEMINI_API_KEY` is set, and billed Vertex A
 otherwise. Create the key in AI Studio under a project with no billing account so
 it stays on the free tier: no charge, but Google may use the prompts to improve its
 products, and requests are capped per minute and per day. Calls are spaced to
-`FREE_TIER_RPM` in `content_assessment.py`. Once the daily cap is hit, the rest of
-the run is assessed on billed Vertex AI (logged as a warning); the next run tries the
-free tier first again. Run with `GEMINI_API_KEY=` to skip the free tier entirely.
+`FREE_TIER_RPM` in `content_assessment.py`. A quota failure stops assessment and publishes completed results; it does not
+automatically switch to billed Vertex AI. Run with `GEMINI_API_KEY=` to skip the free tier entirely.
 
 ## Run it
 
@@ -178,11 +177,12 @@ failing with `400 ... "invalid request"`, quit Safari and re-run
 ### When Instagram pushes back
 
 A 429, checkpoint, challenge, `feedback_required` reply, logged-out redirect,
-or a 400 on a single post request stops collection and records a pause in
+HTTP 401/403, or a 400 on a single post request stops collection and records a pause in
 `data/instagram_cooldown.json` for `PIPELINE_INSTAGRAM_COOLDOWN_HOURS` (default
 24). A 429 is never waited out and retried. Until the pause ends, collection
-fails before sending a request; extraction and publication still process the
-saved archive.
+fails before sending a request. After any collection failure, `run.py` processes
+only cached image results for publication, without more Instagram/CDN downloads.
+Image HTTP 401/403/429 responses also persist this shared pause.
 
 A successful `import_safari_session.py` run lifts a pause classified as a session
 challenge. Rate limits and `feedback_required` action restrictions keep their
@@ -190,6 +190,31 @@ original cooldown even after a session refresh, including pauses older runs
 misclassified as challenges. The deadline is the collector's waiting period,
 not a promise that Instagram will remove its restriction then. A pause file
 that can't be read keeps collection paused until you check it and delete it.
+
+### Stopping and resuming an interrupted run
+
+Collection stops at its first operational failure, with one request attempt and
+60-second feed timeouts. Ordinary missing/private profiles are still skipped.
+OCR/extraction stops at the first failed post and passes its completed results
+to publication. Assessment likewise stops at its first service/transport failure
+and publishes the completed prefix. Database publication failures leave local
+post, OCR, and assessment caches available for the next attempt. No background
+retry or automatic wakeup is scheduled.
+
+After a run, inspect `data/last_run.json` for stage outcomes, the failing account
+or post, and recovery instructions; `data/run_history.jsonl` keeps prior reports.
+Account checkpoints retain `last_error` and normal incremental progress, and
+post caches retain per-post failure details. Resolve the reported problem or wait
+for the Instagram cooldown, then rerun the same command from the repository root:
+
+```bash
+pipeline/.venv/bin/python pipeline/run.py
+```
+
+A failed extraction can appear as a successful extraction stage only in older
+run reports; the runner now marks it failed while retaining its completed posts
+for publication. A completed run exits zero; a blocked or partially failed run
+exits nonzero. No requests are made to Instagram to validate the offline tests.
 
 ## Supabase row shapes
 
@@ -256,7 +281,7 @@ and retain the scan checkpoint. An empty first page cannot prove
 account identity and also retains the checkpoint, even for a truly empty feed.
 Missing IDs require `resolve_ids.py`; there is no automatic profile-lookup fallback.
 
-Collection is **forward-only**. Before an account's first fetch the run records
+Normal collection is **forward-only**. Before an account's first fetch the run records
 an `activated_at` timestamp, and nothing published before it is ever imported —
 including an old post the club pins to the top of its profile later. Activation
 is claimed through `claim_post_activation`, which inserts only when absent.
@@ -265,6 +290,33 @@ durable row is missing. Progress is mirrored only after the stored activation
 matches the scan's boundary. Losing `data/` recovers the durable activation;
 if both copies are lost before a claim succeeds, the original boundary cannot
 be recovered.
+
+For an opt-in historical maintenance sweep, set this in `pipeline/.env`, then run `run.py`
+as usual:
+
+```bash
+PIPELINE_POST_BACKFILL_SINCE=2025-08-01
+```
+
+This accepts publication times from **August 1, 2025 at 00:00 UTC**, inclusive,
+overriding both activation and the recent scan checkpoint. It forces the
+`accounts.json` roster and profile discovery, so a normal `run.py` visits every
+configured account rather than Following mode's bounded reconciliation batch.
+There is no post/page cap. Explicit `scrape_posts.py --handle` filters still
+apply; the bounded `--direct-feed` pilot cannot be combined with a backfill.
+The normal activation timestamps, pacing, identity checks, and cooldown remain
+in place. Private/unreadable accounts can be skipped, and Instagram pushback
+still stops collection before the remaining accounts.
+
+**Remove or blank `PIPELINE_POST_BACKFILL_SINCE` after the sweep.** Every run with
+this setting enabled scans each selected account from its first page back to the
+cutoff, including accounts scanned successfully before. There are no per-account
+backfill completion markers; legacy markers are removed when checkpoints are saved.
+Unchanged posts and image results still reuse their caches. Failed image downloads
+get their post URL refreshed on the next collection run if discovery did not fetch
+them. Removing the setting restores normal incremental discovery using the existing
+activation timestamps and scan checkpoints.
+This changes post collection dates, not event eligibility or publication rules.
 
 Each run re-walks a seven-day overlap behind the last successful scan, bounded
 by activation. `Post.is_pinned` is documented upstream as "now likely returns
@@ -303,30 +355,30 @@ discovery already fetched this run. Requests stay sequential under Instaloader's
 rate controller — the optimization here is avoiding repeated collection, OCR and
 model work, not fetching harder.
 
-### Per-slide extraction
+### First-slide extraction
 
-`extract_posts.py` reads each image once and caches the result under a
+`extract_posts.py` downloads and reads **only the first slide of each post**,
+plus its caption, and caches the image result under a
 signature-free media key derived from the CDN path. The extraction fingerprint
-covers the caption, publication context, ordered media identities, and
+covers the caption, publication context, first-slide media identity, and
 `EXTRACTION_VERSION` — deliberately not the signed URL, which Instagram rotates
 on every fetch:
 
 * An unchanged rerun makes **zero** OCR and model calls.
 * A refreshed CDN URL alone changes nothing and costs nothing.
-* A caption edit expires the assessment but reuses every image's OCR.
-* A replaced or added slide reads only that slide.
-* A carousel repeating one image reads it once.
+* A caption edit expires the assessment but reuses the first image's OCR.
+* Replacing the first slide reads its new image; changes to later slides do not
+  trigger downloads, OCR, or reassessment.
+* Older full-carousel extractions are rebuilt using only the first slide,
+  reusing its cached OCR and QR results when available.
 
 A failed image download or an incomplete OCR is a **retryable error**, never a
-negative decision: the slides that succeeded are kept inside the error payload
-and matched by media key on retry, so a partial media failure costs only the
-slides that actually failed. Video slides use Instagram's cover JPEG, so a
-Reel or a carousel mixing video with images is read, not skipped. An over-long carousel is skipped as
-`unsupported_media` rather than truncated. That status is terminal only while
-this version still cannot read the post.
+negative decision. A missing or failed first image does not fall back to later
+slides. If the first slide is a video, Instagram's cover JPEG is read. Carousel
+length no longer causes a skip: even a 20-slide carousel reads only slide one.
 
-Only slides that can actually be chosen as the flyer are stored durably: the
-lead image, and any slide whose text can be cited as evidence.
+Only the first slide is stored as the flyer. Event details or QR codes that
+appear exclusively on later slides are not read.
 
 ### Publication
 
@@ -410,8 +462,9 @@ New assessments cite source fields; original text is attached by the pipeline,
 so emoji, accents, bullets and OCR line breaks are not rewritten by the model.
 Refused assessments retain both responses and validation errors in
 `validation_attempts`. Existing decisions stay cached until text changes or an
-explicit refresh/retry is requested. Gemini transport failures use at most four
-attempts with exponential backoff (5 seconds initially, capped at 30 seconds).
+explicit refresh/retry is requested. Gemini transport calls have one attempt and a 60-second timeout. A transport or
+quota failure ends assessment for this run; completed updates are still published.
+A content validation rejection is recorded per post and does not stop other posts.
 
 Read `/tmp/post-pilot.json` before enabling publication: each entry carries the
 assessment's quoted evidence next to the row it produced, so a wrong date or an
@@ -453,7 +506,7 @@ also retain progress. To finish coverage, rerun those handles without
 on a busy account may only revisit the same newest pages. Collection writes raw
 posts and checkpoints; it does not publish events or send notifications.
 
-Out of scope in this version: historical backfill, comments, profile-link
+Out of scope for the direct-feed pilot: historical backfill, comments, profile-link
 crawling, and any schedule change. A missing post or a failed
 fetch never proves an event was cancelled.
 

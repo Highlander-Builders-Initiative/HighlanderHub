@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib
 import json
+import os
 import sys
 import tempfile
 import unittest
@@ -18,6 +19,28 @@ class ConfigAccountSourceTests(unittest.TestCase):
     def setUp(self) -> None:
         sys.modules.pop("config", None)
         self.config = importlib.import_module("config")
+
+    def test_backfill_forces_curated_roster_for_collection_and_publication(self) -> None:
+        with patch.dict(os.environ, {"PIPELINE_POST_BACKFILL_SINCE": "2025-08-01",
+                                     "PIPELINE_ACCOUNT_SOURCE": "followed",
+                                     "PIPELINE_POST_DISCOVERY": "following"}):
+            importlib.reload(self.config)
+        self.addCleanup(importlib.reload, self.config)
+        self.assertEqual("profiles", self.config.POST_DISCOVERY_MODE)
+        self.assertEqual("accounts_json", self.config.ACCOUNT_SOURCE)
+        with patch.object(self.config, "load_curated_accounts", return_value=[{"handle": "curated"}]), \
+             patch.object(self.config, "load_followed_accounts_cache") as followed:
+            self.assertEqual({"curated": {"handle": "curated"}}, self.config.load_account_meta())
+            followed.assert_not_called()
+
+    def test_blank_backfill_restores_original_settings(self) -> None:
+        with patch.dict(os.environ, {"PIPELINE_POST_BACKFILL_SINCE": "",
+                                     "PIPELINE_ACCOUNT_SOURCE": "followed",
+                                     "PIPELINE_POST_DISCOVERY": "following"}):
+            importlib.reload(self.config)
+        self.addCleanup(importlib.reload, self.config)
+        self.assertEqual("following", self.config.POST_DISCOVERY_MODE)
+        self.assertEqual("followed", self.config.ACCOUNT_SOURCE)
 
     def test_followed_cache_wins_when_followed_source_is_enabled(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
