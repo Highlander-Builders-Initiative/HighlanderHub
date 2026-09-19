@@ -52,6 +52,7 @@ class InstagramPosts:
     """Keep extracted posts available for publication."""
 
     posts: list[tuple[dict, dict]] = field(default_factory=list)
+    cached_only: bool = False
 
     @cached_property
     def meta(self) -> dict[str, dict[str, Any]]:
@@ -59,7 +60,12 @@ class InstagramPosts:
         return load_account_meta()
 
     def extract_posts(self) -> None:
-        self.posts, _ = extract_posts.extract_all(set(self.meta))
+        self.posts, stats = extract_posts.extract_all(set(self.meta), cached_only=self.cached_only)
+        if stats.get("stopped_at"):
+            raise RuntimeError(f"Extraction stopped at {stats['stopped_at']}; completed posts retained")
+        if stats.get("errors"):
+            raise RuntimeError(f"Extraction failed for {stats['errors']} post(s) and continued past them; "
+                               f"first: {stats['first_error']}")
 
     def publish(self) -> None:
         assessed_events.publish_posts(
@@ -73,6 +79,10 @@ def _safe(name: str, fn, results: list[StageResult]) -> bool:
     started = time.monotonic()
     try:
         fn()
+    except KeyboardInterrupt:
+        results.append(StageResult(name, False, time.monotonic() - started,
+                                   "KeyboardInterrupt: interrupted; saved work retained for resume"))
+        raise
     except (Exception, SystemExit) as e:  # noqa: BLE001 — per-source isolation
         log.error("%s failed: %s", name, e, exc_info=True)
         results.append(
@@ -130,11 +140,21 @@ def _write_history(results: list[StageResult], total_seconds: float) -> None:
             }
             for r in results
         ],
+        "resume": {
+            "command": "pipeline/.venv/bin/python pipeline/run.py",
+            "instructions": "Resolve the reported error or wait for the Instagram cooldown, then rerun. "
+                            "With PIPELINE_POST_BACKFILL_SINCE set, every selected account restarts at page one. "
+                            "Post extractions and assessments reuse their saved caches.",
+            "checkpoints": str(DATA_DIR / "post_checkpoints.json"),
+            "cooldown": str(DATA_DIR / "instagram_cooldown.json"),
+        },
     }
     try:
         RUN_HISTORY.parent.mkdir(parents=True, exist_ok=True)
         with RUN_HISTORY.open("a", encoding="utf-8") as f:
             f.write(json.dumps(record, ensure_ascii=False) + "\n")
+        from post_archive import write_json
+        write_json(RUN_HISTORY.with_name("last_run.json"), record)
     except OSError as e:
         log.warning("could not append to %s: %s", RUN_HISTORY, e)
 
@@ -146,9 +166,20 @@ def _report(results: list[StageResult], total_seconds: float) -> None:
 
 def _run_stages(results: list[StageResult]) -> None:
     # Extraction and publication still process the archive after collection fails.
-    _safe("instagram.posts.scrape", scrape_posts.main, results)
+    partial = []
 
-    posts = InstagramPosts()
+    def collect() -> None:
+        try:
+            scrape_posts.main()
+        except scrape_posts.PartialCollection as exc:
+            partial.append(exc)
+            raise
+
+    collected = _safe("instagram.posts.scrape", collect, results)
+
+    # A few unreadable accounts leave everything else collected and readable;
+    # only a stopped collection limits extraction to work already paid for.
+    posts = InstagramPosts(cached_only=not (collected or partial))
     _safe("instagram.posts.extract", posts.extract_posts, results)
     _safe("instagram.publish", posts.publish, results)
     _safe("events.reconcile", reconcile_events.main, results)

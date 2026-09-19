@@ -51,6 +51,7 @@ class FollowingTests(unittest.TestCase):
             (feed, "FOLLOWING_CHECKPOINT_FILE", self.root / "following.json"),
             (post_archive, "POSTS_DIR", self.root / "posts"),
             (scrape_posts, "POST_CHECKPOINTS_FILE", self.root / "profiles.json"),
+            (scrape_posts, "POST_BACKFILL_SINCE", ""),
             (instagram_cooldown, "INSTAGRAM_COOLDOWN_FILE", self.root / "cooldown.json"),
             (instagram_cooldown, "_UNSAVED", None),
         ):
@@ -231,10 +232,11 @@ class FollowingTests(unittest.TestCase):
         self.assertNotEqual(CHECKPOINTS["club"]["scanned_through"], saved["club"]["scanned_through"])
         self.assertEqual(["50"], [c.args[1]["media_id"] for c in self.refresh.call_args_list])
 
-    def test_main_feed_failure_reconciles_bounded_batch_and_reports_failure(self):
-        with self.assertRaisesRegex(RuntimeError, "1 failure"):
+    def test_main_feed_failure_stops_without_profile_fallback(self):
+        with self.assertRaisesRegex(RuntimeError, "Following discovery stopped"):
             self.run_main(failure=RuntimeError("unknown feed format"))
-        self.scan.assert_called_once()
+        self.scan.assert_not_called()
+        self.refresh.assert_not_called()
 
     def test_main_pushback_stops_without_profile_fallback_or_refresh(self):
         with self.assertRaises(instagram_cooldown.CollectionStopped):

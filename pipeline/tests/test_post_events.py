@@ -79,10 +79,43 @@ class PostExtractionTests(unittest.TestCase):
         with self.ocr("", "Study Jam September 15") as vision:
             first = posts.process_post(item)
             self.assertEqual("ok", first["status"])
-            self.assertEqual(2, vision.call_count)
+            self.assertEqual(1, vision.call_count)
             second = posts.process_post(item)
-            self.assertEqual(2, vision.call_count)
+            self.assertEqual(1, vision.call_count)
         self.assertEqual(first, second)
+
+    def test_cached_only_extraction_leaves_unread_posts_pending_without_requests(self):
+        with patch.object(posts, "_download_image") as download, self.ocr("unused") as vision:
+            result = posts.process_post(record(), cached_only=True)
+        self.assertEqual("pending", result["status"])
+        download.assert_not_called()
+        vision.assert_not_called()
+        self.assertFalse(posts._cache_path("700").exists())
+
+    def test_extraction_continues_past_an_isolated_failure(self):
+        records = [record(media_id=str(n)) for n in range(3)]
+        with patch.object(posts, "ensure_post_dirs"), patch.object(posts, "hydrate_local_posts"), \
+             patch.object(posts, "iter_local_posts", return_value=iter(records)), \
+             patch.object(posts, "process_post", side_effect=[
+                 {"status": "ok"}, {"status": "error", "result": {"error": "URL expired"}},
+                 {"status": "ok"}]):
+            processed, stats = posts.extract_all({"acm.ucr"})
+        self.assertEqual(["0", "1", "2"], [row[0]["media_id"] for row in processed])
+        self.assertEqual(1, stats["errors"])
+        self.assertEqual("1", stats["first_error"]["media_id"])
+        self.assertNotIn("stopped_at", stats)
+
+    def test_extraction_stops_when_failures_run_together_and_returns_the_completed_prefix(self):
+        limit = posts.MAX_CONSECUTIVE_FAILURES
+        records = [record(media_id=str(n)) for n in range(limit + 2)]
+        failure = {"status": "error", "result": {"error": "OCR timeout"}}
+        with patch.object(posts, "ensure_post_dirs"), patch.object(posts, "hydrate_local_posts"), \
+             patch.object(posts, "iter_local_posts", return_value=iter(records)), \
+             patch.object(posts, "process_post", side_effect=[{"status": "ok"}] + [failure] * limit
+                          + [AssertionError("Must stop after the failures")]) as process:
+            processed, stats = posts.extract_all({"acm.ucr"})
+        self.assertEqual(limit + 1, process.call_count)
+        self.assertEqual(str(limit), stats["stopped_at"]["media_id"])
 
     def test_a_refreshed_cdn_url_alone_reuses_every_cache(self):
         item = record()
@@ -92,7 +125,7 @@ class PostExtractionTests(unittest.TestCase):
             for slide in resigned["media"]:
                 slide["image_url"] = slide["image_url"].replace("oh=sig", "oh=fresh")
             posts.process_post(resigned)
-            self.assertEqual(2, vision.call_count)
+            self.assertEqual(1, vision.call_count)
 
     def test_a_caption_edit_reuses_image_ocr_and_only_reassesses(self):
         item = record()
@@ -101,45 +134,57 @@ class PostExtractionTests(unittest.TestCase):
             edited = record(caption="Study Jam moved to Tuesday")
             second = posts.process_post(edited)
             # No image changed, so no image was read again...
-            self.assertEqual(2, vision.call_count)
+            self.assertEqual(1, vision.call_count)
         # ...but the assessment inputs did change, so the decision expires.
         self.assertNotEqual(first["fingerprint"], second["fingerprint"])
         self.assertEqual([entry["ocr_text"] for entry in posts.ordered_slides(first)],
                          [entry["ocr_text"] for entry in posts.ordered_slides(second)])
 
-    def test_a_replaced_slide_reads_only_the_slide_that_changed(self):
+    def test_a_replaced_first_slide_is_read_again(self):
         item = record()
         with self.ocr("", "Study Jam September 15") as vision:
             posts.process_post(item)
             swapped = copy.deepcopy(item)
-            swapped["media"][1]["media_key"] = "700_1b_n"
-            swapped["media"][1]["image_url"] = "https://cdn.example/v/t51/700_1b_n.jpg?oh=x"
+            swapped["media"][0]["media_key"] = "700_0b_n"
+            swapped["media"][0]["image_url"] = "https://cdn.example/v/t51/700_0b_n.jpg?oh=x"
             posts.process_post(swapped)
-            self.assertEqual(3, vision.call_count)
+            self.assertEqual(2, vision.call_count)
 
-    def test_a_partial_media_failure_is_retryable_and_keeps_paid_slides(self):
+    def test_first_slide_download_failure_retries_without_reading_later_slides(self):
         item = record(slides=3)
-        calls = {"n": 0}
-
-        def flaky(url):
-            calls["n"] += 1
-            if calls["n"] == 3:
-                raise RuntimeError("connection reset")
-            return b"bytes"
-
-        with patch.object(posts, "_download_image", side_effect=flaky), \
-             self.ocr("Slide one", "Slide two") as vision:
+        with patch.object(posts, "_download_image", side_effect=RuntimeError("connection reset")) as download, \
+             self.ocr("should not run") as vision:
             failed = posts.process_post(item)
         self.assertEqual("error", failed["status"])
         self.assertEqual("download", failed["result"]["stage"])
-        self.assertEqual(2, vision.call_count)
-        # The retry re-reads only the slide that actually failed.
-        with self.ocr("Slide three") as vision:
+        download.assert_called_once_with(item["media"][0]["image_url"])
+        vision.assert_not_called()
+        with self.ocr("Slide one") as vision:
             repaired = posts.process_post(item)
         self.assertEqual("ok", repaired["status"])
-        self.assertEqual(1, vision.call_count)
-        self.assertEqual(["Slide one", "Slide two", "Slide three"],
+        vision.assert_called_once()
+        self.assertEqual(["Slide one"],
                          [entry["ocr_text"] for entry in posts.ordered_slides(repaired)])
+
+    def test_later_slide_changes_do_not_invalidate_extraction(self):
+        item = record(slides=3)
+        with self.ocr("First slide") as vision:
+            original = posts.process_post(item)
+            item["media"][1]["media_key"] = "replacement"
+            item["media"].append({"index": 3, "media_key": "added"})
+            self.assertEqual(original, posts.process_post(item))
+        vision.assert_called_once()
+
+    def test_only_first_slide_is_downloaded_read_and_scanned_for_qr_codes(self):
+        item = record(slides=20)
+        with self.ocr("First slide") as vision, \
+             patch.object(posts, "_download_image", return_value=b"first") as download, \
+             patch.object(posts, "qr_rsvp_urls", return_value=[]) as qr:
+            result = posts.process_post(item)
+        download.assert_called_once_with(item["media"][0]["image_url"])
+        vision.assert_called_once_with(b"first")
+        qr.assert_called_once_with(b"first")
+        self.assertEqual([0], [image["index"] for image in result["images"]])
 
     def test_an_ocr_failure_never_becomes_a_negative_decision(self):
         with patch.object(posts, "_vision_ocr", side_effect=RuntimeError("vision 503")):
@@ -160,14 +205,14 @@ class PostExtractionTests(unittest.TestCase):
         self.assertEqual("Study Jam September 15, 2026, 3-5 PM",
                          result["images"][0]["ocr_text"])
 
-    def test_a_mixed_carousel_reads_image_slides_and_video_covers(self):
+    def test_a_mixed_carousel_reads_only_the_first_image(self):
         item = record(slides=2)
         item["media"][1]["is_video"] = True
         item["has_video"] = True
         with self.ocr("", "Study Jam September 15") as vision:
             result = posts.process_post(item)
         self.assertEqual("ok", result["status"])
-        self.assertEqual(2, vision.call_count)
+        self.assertEqual(1, vision.call_count)
 
     def test_a_cached_video_skip_is_reopened_once_covers_are_readable(self):
         item = record(slides=1)
@@ -184,22 +229,24 @@ class PostExtractionTests(unittest.TestCase):
         self.assertEqual("ok", result["status"])
         vision.assert_called_once()
 
-    def test_an_over_long_carousel_is_skipped_rather_than_truncated(self):
-        item = record(slides=posts.MAX_SLIDES + 1)
-        with self.ocr("Slide text") as vision:
+    def test_a_legacy_long_carousel_skip_is_reopened(self):
+        item = record(slides=20)
+        posts._write_cache(item["media_id"], {
+            "status": "unsupported_media", "fingerprint": "legacy-version-1",
+            "extraction_version": 1, "images": []})
+        with self.ocr("First slide") as vision:
             result = posts.process_post(item)
-        self.assertEqual("unsupported_media", result["status"])
-        self.assertIn("more than", result["result"]["reason"])
-        vision.assert_not_called()
+        self.assertEqual("ok", result["status"])
+        vision.assert_called_once()
 
     def test_a_slide_recorded_without_a_url_is_retryable_not_partial(self):
         item = record(slides=3)
-        item["media"][1]["image_url"] = None
+        item["media"][0]["image_url"] = None
         with self.ocr("Slide one") as vision:
             result = posts.process_post(item)
-        # One slide read, then a stop — never a decision made on two of three.
+        # A missing first slide never falls back to another image.
         self.assertEqual("error", result["status"])
-        self.assertEqual(1, vision.call_count)
+        vision.assert_not_called()
 
     def test_a_post_with_no_text_anywhere_is_terminal(self):
         with self.ocr("", ""):
@@ -228,7 +275,7 @@ class PostExtractionTests(unittest.TestCase):
         vision.assert_not_called()
         self.assertEqual("ok", result["status"])
         self.assertEqual(posts.fingerprint(item), result["fingerprint"])
-        self.assertEqual(["", "Study Jam September 15"],
+        self.assertEqual([""],
                          [entry["ocr_text"] for entry in posts.ordered_slides(result)])
 
     def test_a_remote_cache_survives_local_cache_loss(self):
@@ -242,6 +289,27 @@ class PostExtractionTests(unittest.TestCase):
             recovered = posts.process_post(item)
         vision.assert_not_called()
         self.assertEqual(original["fingerprint"], recovered["fingerprint"])
+
+    def test_legacy_carousel_cache_reuses_first_slide_and_drops_later_evidence(self):
+        item = record(caption="Join us")
+        legacy = {"status": "ok", "fingerprint": "legacy-version-1", "extraction_version": 1,
+                  "images": [{"index": n, "media_key": f"700_{n}_n", "ocr_text": text,
+                              "qr_urls": [], "qr_scan_version": posts.QR_SCAN_VERSION}
+                             for n, text in enumerate(["Club announcement", "September 15 event"])]}
+        for location in ("local", "remote"):
+            with self.subTest(location=location):
+                posts._cache_path("700").unlink(missing_ok=True)
+                if location == "local":
+                    posts._write_cache("700", legacy)
+                with patch.object(posts, "_load_remote_cache", return_value=legacy if location == "remote" else None), \
+                     patch.object(posts, "_download_image") as download, self.ocr("unused") as vision:
+                    result = posts.process_post(item)
+                download.assert_not_called()
+                vision.assert_not_called()
+                self.assertEqual(posts.EXTRACTION_VERSION, result["extraction_version"])
+                self.assertEqual([0], [image["index"] for image in result["images"]])
+                source = publication.post_source(item, result)
+                self.assertEqual({"caption": "Join us", "slide_1_ocr": "Club announcement"}, source["texts"])
 
     def test_extraction_restores_missing_raw_posts_and_reuses_their_durable_ocr(self):
         item = {**record(), "posted_at": "2026-09-01T17:00:00+00:00"}
@@ -274,13 +342,12 @@ class PostExtractionTests(unittest.TestCase):
         self.assertEqual("ok", result["status"])
         self.assertEqual(1, vision.call_count)
 
-    def test_only_flyer_candidates_are_stored_durably(self):
-        # The lead image (a caption-only event's flyer) and any image whose
-        # text could be cited — never a blank middle slide.
+    def test_only_the_first_slide_is_stored_as_a_flyer(self):
+        # Even a blank first slide is kept for caption-only events.
         with self.ocr("", "Study Jam September 15", "") as _:
             posts.process_post(record(slides=3))
         stored = [call.args[1] for call in self.upload_flyer.call_args_list]
-        self.assertEqual(["700_0_n", "700_1_n"], stored)
+        self.assertEqual(["700_0_n"], stored)
 
 
 class PostSourceTests(unittest.TestCase):
@@ -643,6 +710,35 @@ class PilotDryRunTests(unittest.TestCase):
 
 
 class PostUpdateBatchTests(unittest.TestCase):
+    @staticmethod
+    def update(n, status="complete"):
+        assessment = ({"status": "error", "retryable": True, "error": "Gemini 503"}
+                      if status == "error" else {"status": status})
+        return {"source_key": f"instagram:post:{n}", "assessment": assessment, "rows": []}
+
+    def test_an_isolated_model_failure_does_not_stop_assessment(self):
+        processed = [(record(media_id=str(n)), {"status": "ok", "images": []}) for n in range(3)]
+        updates = [self.update(0), self.update(1, "error"), self.update(2)]
+        with patch.object(publication, "load_registry", return_value={}), \
+             patch.object(publication, "make_update", side_effect=updates) as assess, \
+             patch.object(publication, "publish", return_value={}) as publish:
+            with self.assertRaisesRegex(RuntimeError, "1 source assessment.*Gemini 503"):
+                publication.publish_posts(processed, "2026-09-18T00:00:00Z", meta={}, notify=False)
+        self.assertEqual(3, assess.call_count)
+        publish.assert_called_once_with(updates)
+
+    def test_transport_roadblock_publishes_completed_updates_without_assessing_more(self):
+        limit = publication.MAX_CONSECUTIVE_FAILURES
+        processed = [(record(media_id=str(n)), {"status": "ok", "images": []}) for n in range(limit + 2)]
+        updates = [self.update(0)] + [self.update(n, "error") for n in range(1, limit + 1)]
+        with patch.object(publication, "load_registry", return_value={}), \
+             patch.object(publication, "make_update", side_effect=updates) as assess, \
+             patch.object(publication, "publish", return_value={}) as publish:
+            with self.assertRaisesRegex(RuntimeError, "Gemini 503"):
+                publication.publish_posts(processed, "2026-09-18T00:00:00Z", meta={}, notify=False)
+        self.assertEqual(limit + 1, assess.call_count)
+        publish.assert_called_once_with(updates)
+
     def test_only_usable_and_retryable_extractions_produce_updates(self):
         cached_ok = {"status": "ok", "images": [
             {"media_key": "a", "index": 0, "ocr_text": "Study Jam September 15, 2026, 3-5 PM"}]}

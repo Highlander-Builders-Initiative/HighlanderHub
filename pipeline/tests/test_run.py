@@ -33,6 +33,7 @@ class RunMainTests(unittest.TestCase):
             name: types.SimpleNamespace(main=Mock(name=f"{name}.main"))
             for name in self.stage_names
         }
+        self.fake_modules["scrape_posts"].PartialCollection = type("PartialCollection", (RuntimeError,), {})
         self.fake_modules["extract_posts"].extract_all = Mock(
             name="extract_posts.extract_all", return_value=([], {})
         )
@@ -142,13 +143,21 @@ class RunMainTests(unittest.TestCase):
             2, len(self.history.read_text(encoding="utf-8").strip().splitlines())
         )
 
+    def test_partial_collection_still_extracts_new_posts_in_full(self) -> None:
+        scrape = self.fake_modules["scrape_posts"]
+        scrape.main.side_effect = scrape.PartialCollection("1 failure(s) and continued past them")
+        with self.assertRaises(SystemExit):
+            self.run.main()
+        self.fake_modules["extract_posts"].extract_all.assert_called_once_with({"acm.ucr"}, cached_only=False)
+        self.assertIn("continued past them", self._history()["stages"][0]["error"])
+
     def test_failed_collection_still_publishes_extracted_archive(self) -> None:
         archived = [({"media_id": "700"}, {"status": "ok"})]
         self.fake_modules["scrape_posts"].main.side_effect = RuntimeError("collection paused")
         self.fake_modules["extract_posts"].extract_all.return_value = (archived, {})
         with self.assertRaises(SystemExit):
             self.run.main()
-        self.fake_modules["extract_posts"].extract_all.assert_called_once_with({"acm.ucr"})
+        self.fake_modules["extract_posts"].extract_all.assert_called_once_with({"acm.ucr"}, cached_only=True)
         published = self.fake_modules["assessed_events"].publish_posts.call_args
         self.assertEqual(archived, published.args[0])
         self.assertEqual({"acm.ucr": {}}, published.kwargs["meta"])
@@ -161,6 +170,27 @@ class RunMainTests(unittest.TestCase):
         loader.return_value = {}
         self.run.main()
         loader.assert_called_once()
+
+    def test_extraction_roadblock_publishes_partial_results_and_writes_resume_report(self):
+        completed = [({"media_id": "1"}, {"status": "ok"})]
+        self.fake_modules["extract_posts"].extract_all.return_value = (
+            completed, {"stopped_at": {"handle": "club", "media_id": "2", "detail": "OCR timeout"}})
+        with self.assertRaises(SystemExit):
+            self.run.main()
+        self.assertEqual(completed, self.fake_modules["assessed_events"].publish_posts.call_args.args[0])
+        report = json.loads(self.history.with_name("last_run.json").read_text())
+        self.assertFalse(report["ok"])
+        self.assertIn("OCR timeout", report["stages"][1]["error"])
+        self.assertIn("run.py", report["resume"]["command"])
+
+    def test_interruption_is_recorded_as_incomplete_instead_of_success(self):
+        self.fake_modules["scrape_posts"].main.side_effect = KeyboardInterrupt()
+        with self.assertRaises(KeyboardInterrupt):
+            self.run.main()
+        report = json.loads(self.history.with_name("last_run.json").read_text())
+        self.assertFalse(report["ok"])
+        self.assertIn("interrupted", report["stages"][0]["error"])
+        self.fake_modules["extract_posts"].extract_all.assert_not_called()
 
     def test_failed_metadata_load_is_retried_by_publication(self) -> None:
         loader = self.run.load_account_meta

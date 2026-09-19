@@ -21,6 +21,9 @@ from instagram_rows import build_instagram_row, instagram_event_id
 
 log = logging.getLogger("pipeline.assessed_events")
 CACHE_DIR = DATA_DIR / "assessments"
+# A failed call is retried next run and assessment moves on; this many in a row
+# means the model is down or the quota is spent, so stop spending calls.
+MAX_CONSECUTIVE_FAILURES = 3
 
 
 def _cache_path(source_key: str) -> Path:
@@ -298,11 +301,14 @@ def _complete(updates: list[dict], *, notify: bool) -> None:
             notify_free_food_events(published_rows)
     failed = [item["source_key"] for item in updates if item["assessment"]["status"] == "error"]
     if failed:
-        raise RuntimeError(f"{len(failed)} source assessment(s) failed; previous listings retained: {', '.join(failed)}")
+        first = next(item for item in updates if item["assessment"]["status"] == "error")
+        raise RuntimeError(f"{len(failed)} source assessment(s) failed; previous listings retained: {', '.join(failed)}; "
+                           f"first failure: {first['assessment'].get('error')}")
 
 
 def post_updates(processed: list[tuple[dict, dict]], meta: dict, now: str,
-                 registry: dict | None = None, stats: dict | None = None) -> list[dict]:
+                 registry: dict | None = None, stats: dict | None = None,
+                 *, stop_on_error: bool = False) -> list[dict]:
     """Build publication updates for collected posts.
 
     A usable extraction (`ok`) and a retryable failure (`error`) produce an
@@ -319,6 +325,7 @@ def post_updates(processed: list[tuple[dict, dict]], meta: dict, now: str,
     """
     registry = load_registry() if registry is None else registry
     updates = []
+    streak = 0
     for record, cached in processed:
         status = cached.get("status")
         if status not in {"ok", "error", "no_text"}:
@@ -343,16 +350,36 @@ def post_updates(processed: list[tuple[dict, dict]], meta: dict, now: str,
                             "assessment": {"status": "error", "error": "Post extraction failed"},
                             "rows": [], "known_event_ids": []})
         elif any(source["texts"].values()):
-            update = make_update(source, record, cached, prior, meta, now, stats=stats)
+            try:
+                update = make_update(source, record, cached, prior, meta, now, stats=stats)
+            except (Exception, SystemExit) as exc:
+                if not stop_on_error:
+                    raise
+                update = {"source_key": source["source_key"], "origin": "instagram",
+                          "assessment": {"status": "error", "retryable": True,
+                                         "error": f"{type(exc).__name__}: {exc}"},
+                          "rows": [], "known_event_ids": []}
             if update is not None:
                 updates.append(update)
+                failure = update.get("assessment") or {}
+                if not (stop_on_error and failure.get("status") == "error"
+                        and failure.get("retryable") is not False):
+                    streak = 0
+                    continue
+                streak += 1
+                if streak >= MAX_CONSECUTIVE_FAILURES:
+                    log.error("Assessment stopped after %d failures in a row at %s: %s",
+                              streak, source["source_key"], failure.get("error"))
+                    break
+                log.warning("Assessment failed for %s; continuing: %s", source["source_key"], failure.get("error"))
     return updates
 
 
 def publish_posts(processed: list[tuple[dict, dict]], now: str, *, notify: bool,
                   meta: dict | None = None) -> None:
     stats: dict[str, int] = {}
-    updates = post_updates(processed, meta if meta is not None else load_account_meta(), now, stats=stats)
+    updates = post_updates(processed, meta if meta is not None else load_account_meta(), now,
+                           stats=stats, stop_on_error=True)
     log.info("Instagram publication: %d post source(s); %s",
              len(processed), dict(sorted(stats.items())) or "fully cached")
     _complete(updates, notify=notify)
