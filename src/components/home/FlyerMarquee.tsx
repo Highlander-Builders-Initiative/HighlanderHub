@@ -370,6 +370,7 @@ function FlyerTileSet({
             event={event}
             size="medium"
             aspectClassName="aspect-[4/5]"
+            sizes="(min-width: 768px) 244px, (min-width: 640px) 200px, 160px"
             decorative={decorative}
             hoverCaption
           />

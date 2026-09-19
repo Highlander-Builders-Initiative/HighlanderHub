@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import {
-  EVENT_DETAIL_FLYER_FRAME_CLASS,
+  EVENT_DETAIL_FLYER_CLASS,
   EVENT_DETAIL_MOBILE_FLYER_CLASS,
   EVENT_MODAL_ASIDE_CLASS,
   EVENT_MODAL_CONTAINER_CLASS,
@@ -45,8 +45,9 @@ function EventModalSkeleton() {
         Loading event
       </p>
 
+      {/* The same 4:5 placeholder the real flyer holds until it loads. */}
       <div className={EVENT_DETAIL_MOBILE_FLYER_CLASS}>
-        <div className="relative aspect-[4/5] w-full bg-ink/[0.04]" />
+        <div className={`flyer-poster ${EVENT_DETAIL_FLYER_CLASS}`} />
       </div>
 
       <div className="flex flex-wrap items-center gap-2 md:pr-12">
@@ -62,9 +63,7 @@ function EventModalSkeleton() {
 
       <div className={EVENT_MODAL_FLYER_GRID_CLASS}>
         <div className={EVENT_MODAL_ASIDE_CLASS}>
-          <div className={EVENT_DETAIL_FLYER_FRAME_CLASS}>
-            <div className="relative aspect-[4/5] w-full bg-ink/[0.04]" />
-          </div>
+          <div className={`flyer-poster ${EVENT_DETAIL_FLYER_CLASS}`} />
         </div>
 
         <div className="min-w-0">

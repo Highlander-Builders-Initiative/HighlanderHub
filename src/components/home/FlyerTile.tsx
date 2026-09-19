@@ -27,12 +27,18 @@ const META_CLASSES: Record<FlyerTileSize, string> = {
   wide: "text-[10px]",
 };
 
+// A flyer within ~8% of its tile's shape fills the tile edge to edge (the trim
+// is imperceptible). Any other shape (squares, reel covers, landscape posts)
+// is pinned whole on the tile instead of being cut down to fit it.
+const FILL_TOLERANCE = 0.08;
+
 export function FlyerTile({
   event,
   size,
   className = "",
   enterDelayMs = 0,
   aspectClassName = "aspect-[4/5] md:aspect-auto",
+  sizes = "(max-width: 768px) 100vw, 50vw",
   decorative = false,
   hoverCaption = false,
 }: {
@@ -43,6 +49,8 @@ export function FlyerTile({
   /** Aspect-ratio utilities for the tile. The mosaic lets its grid drive
    *  height on desktop; the marquee needs a fixed ratio at every breakpoint. */
   aspectClassName?: string;
+  /** Rendered tile widths, so the browser fetches a flyer no larger than needed. */
+  sizes?: string;
   /** A repeated tile in a looping marquee: kept out of the tab order and the
    *  accessibility tree so screen readers see each event only once. */
   decorative?: boolean;
@@ -52,6 +60,7 @@ export function FlyerTile({
 }) {
   const router = useRouter();
   const [imageBroken, setImageBroken] = useState(false);
+  const [pinned, setPinned] = useState(false);
   const showImage = !!event.imageUrl && !imageBroken;
   const href = `/events/${event.id}`;
 
@@ -98,9 +107,21 @@ export function FlyerTile({
         <EventFlyerImage
           src={event.imageUrl!}
           alt={eventFlyerAlt(event)}
-          fill
-          sizes="(max-width: 768px) 100vw, 50vw"
-          className="object-cover"
+          width={1000}
+          height={1250}
+          sizes={sizes}
+          className={
+            pinned
+              ? "absolute inset-0 m-auto h-auto max-h-[calc(100%-1.5rem)] w-auto max-w-[calc(100%-1.5rem)] rounded-md shadow-[0_1px_2px_rgba(15,17,21,0.08),0_4px_12px_-2px_rgba(15,17,21,0.08)] ring-1 ring-ink/10"
+              : "absolute inset-0 h-full w-full object-cover"
+          }
+          onLoad={(img) => {
+            const tile = img.parentElement;
+            if (!tile?.clientHeight || !img.naturalHeight) return;
+            const flyerRatio = img.naturalWidth / img.naturalHeight;
+            const tileRatio = tile.clientWidth / tile.clientHeight;
+            setPinned(Math.abs(Math.log(flyerRatio / tileRatio)) > FILL_TOLERANCE);
+          }}
           onError={() => setImageBroken(true)}
         />
       ) : (
