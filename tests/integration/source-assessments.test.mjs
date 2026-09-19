@@ -135,7 +135,7 @@ test('a post publishes one listing with its source and flyer', async () => {
   const [instagram] = importerBatches;
   await reset();
   const written = await publish(instagram);
-  assert.deepEqual(await ids(), ['ig_acm.ucr_20260915T2200Z']);
+  assert.deepEqual(await ids(), ['ig_acm.ucr_p700']);
   assert.deepEqual(instagram.map(i => i.source_key), ['instagram:post:700']);
   const row = (await db.query('select source_url, image_url, description from events')).rows[0];
   assert.equal(row.source_url, 'https://www.instagram.com/p/CStudy/');
@@ -176,21 +176,64 @@ test('an unrelated club posting the same title and time keeps its own listing', 
   await reset();
   await publish(instagram);
   await publish(otherClub);
-  assert.deepEqual(await ids(), ['ig_acm.ucr_20260915T2200Z', 'ig_ieee.ucr_20260915T2200Z']);
+  assert.deepEqual(await ids(), ['ig_acm.ucr_p700', 'ig_ieee.ucr_p800']);
 });
+
+test('same-owner deadlines split legacy collisions without losing source ownership', async () => {
+  const deadlines = importerBatches[4];
+  await reset();
+  const legacy = deadlines.map((item, index) => ({ ...item,
+    rows: [{ ...item.rows[0], id: index < 2 ? 'ig_acm_ucr_20260925T0700Z' : 'ig_ideasandsociety_20260928T0700Z' }],
+    known_event_ids: [],
+  }));
+  await publish(legacy);
+  assert.equal((await ids()).length, 2); // Reproduce the old overwrite.
+  const expected = deadlines.flatMap(item => item.rows.map(row => row.id)).sort();
+  assert.equal(new Set(expected).size, 4);
+  assert.deepEqual(await publish(deadlines), { written: 4, deleted: 2 });
+  await publish(deadlines); // Idempotent replay.
+  assert.deepEqual(await ids(), expected);
+  for (const item of deadlines) {
+    const saved = (await db.query('select * from source_assessments where source_key=$1', [item.source_key])).rows[0];
+    assert.deepEqual(saved.event_ids, [item.rows[0].id]);
+    const event = (await db.query('select * from events where id=$1', [item.rows[0].id])).rows[0];
+    assert.equal(event.title, item.rows[0].title);
+    assert.equal(event.rsvp_url, item.rows[0].rsvp_url);
+    assert.equal(event.source_url, item.rows[0].source_url);
+  }
+  await publish([{ ...deadlines[0], rows: [] }]);
+  assert.deepEqual(await ids(), expected.filter(id => id !== deadlines[0].rows[0].id));
+});
+
+for (const override of ['lock', 'tombstone']) {
+  test(`legacy ${override} remains authoritative when a colliding deadline splits`, async () => {
+    const deadlines = importerBatches[4].slice(0, 2);
+    const oldId = 'ig_acm_ucr_20260925T0700Z';
+    await reset();
+    await publish(deadlines.map(item => ({ ...item, rows: [{ ...item.rows[0], id: oldId }], known_event_ids: [] })));
+    if (override === 'lock') {
+      await db.query('update events set is_locked=true where id=$1', [oldId]);
+    } else {
+      await db.query('insert into deleted_events(event_id) values ($1)', [oldId]);
+      await db.query('delete from events where id=$1', [oldId]);
+    }
+    await publish(deadlines);
+    assert.deepEqual(await ids(), override === 'lock' ? [oldId] : []);
+  });
+}
 
 test('admin locks and tombstones bind a post-supported listing', async () => {
   const [instagram, withdrawn] = importerBatches;
   await reset();
   await publish(instagram);
-  await db.exec("update events set is_locked=true, title='Admin title' where id='ig_acm.ucr_20260915T2200Z'");
+  await db.exec("update events set is_locked=true, title='Admin title' where id='ig_acm.ucr_p700'");
   await publish(instagram);
   assert.equal((await db.query('select title from events')).rows[0].title, 'Admin title');
   await publish(withdrawn);
-  assert.deepEqual(await ids(), ['ig_acm.ucr_20260915T2200Z']);
+  assert.deepEqual(await ids(), ['ig_acm.ucr_p700']);
 
   await reset();
-  await db.exec("insert into deleted_events(event_id) values ('ig_acm.ucr_20260915T2200Z')");
+  await db.exec("insert into deleted_events(event_id) values ('ig_acm.ucr_p700')");
   await publish(instagram);
   assert.deepEqual(await ids(), []);
 });

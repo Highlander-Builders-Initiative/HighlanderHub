@@ -31,6 +31,8 @@ def event_key(row: dict[str, Any]) -> str | None:
         return None
     # A generic title and time do not establish that two clubs posted the same
     # event. Use the existing ID's account prefix, including anonymized hosts.
+    # Both legacy <owner>_<minute> and current <owner>_p<media_id> IDs keep the
+    # owner intact when their final underscore-delimited component is removed.
     row_id = str(row.get("id") or "")
     if row_id.startswith("ig_"):
         return f"{row_id.rsplit('_', 1)[0]}|{title}|{starts_at.strftime('%Y%m%dT%H%MZ')}"

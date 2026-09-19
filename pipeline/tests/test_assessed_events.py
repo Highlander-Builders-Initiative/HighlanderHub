@@ -129,7 +129,7 @@ class AssessmentCacheTests(unittest.TestCase):
 class SourcePublicationTests(unittest.TestCase):
     def test_shared_builder_returns_classification_without_publication_gating(self):
         from instagram_rows import build_instagram_row
-        raw = {"id": "123", "handle": "club"}
+        raw = {"media_id": "123", "handle": "club"}
         occurrence = {"title": "Bake sale fundraiser", "starts_at": "2026-09-15T15:00:00-07:00"}
         for kind in (None, "activity"):
             with self.subTest(kind=kind):

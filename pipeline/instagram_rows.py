@@ -39,11 +39,17 @@ def _bool_or_default(value: Any, default: bool) -> bool:
     return default
 
 
-def instagram_event_id(handle: str, starts_at: str) -> str | None:
-    start = normalize_timestamptz(starts_at)
-    if not handle or not start:
+def instagram_event_id(handle: str, media_id: str) -> str | None:
+    """Identify the post's single announcement independently of its event date.
+
+    Keep the owner prefix for repeat-ad reconciliation, including private hosts.
+    Semantic duplicates are reconciled after publication, never by primary key.
+    """
+    if not media_id or not re.fullmatch(r"[0-9]+", str(media_id)):
+        raise ValueError("Instagram publication requires a numeric post media_id")
+    if not handle:
         return None
-    return f"ig_{handle}_{datetime.fromisoformat(start).strftime('%Y%m%dT%H%MZ')}"
+    return f"ig_{handle}_p{media_id}"
 
 
 def _caption_rsvp_url(caption: str) -> str | None:
@@ -72,7 +78,7 @@ def build_instagram_row(
                  raw.get("media_id") or raw.get("id"), starts_at)
         return None
 
-    event_id = instagram_event_id(identity_handle, starts_at)
+    event_id = instagram_event_id(identity_handle, raw.get("media_id"))
     if not event_id:
         return None
     description = str(occurrence.get("description") or "")

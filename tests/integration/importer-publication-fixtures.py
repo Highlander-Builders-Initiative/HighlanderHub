@@ -91,4 +91,22 @@ with tempfile.TemporaryDirectory() as directory, \
         publication.publish_posts([(emptied, empty_cache)], "2026-09-11T22:00:00Z",
                                   notify=False, meta=meta)
 
+    # Independent applications from the same owner with identical deadlines.
+    deadlines = []
+    for owner, media_id, title, day in [
+        ("acm_ucr", "3980467437204327812", "ACM Spark Applications", 25),
+        ("acm_ucr", "3981465870551773335", "ACM Create Applications", 25),
+        ("ideasandsociety", "3987078712734376425", "CIS Academic Book Clubs Applications", 28),
+        ("ideasandsociety", "3987591811061361059", "CIS Research Writing Groups Applications", 28),
+    ]:
+        item = {**post, "media_id": media_id, "handle": owner, "owner_username": owner,
+                "caption": f"{title} due September {day}, 2026. https://forms.example/{media_id}",
+                "permalink": f"https://www.instagram.com/p/{media_id}/"}
+        occurrence = {**occurrence, "title": title, "starts_at": f"2026-09-{day}T00:00:00-07:00",
+                      "ends_at": None, "all_day": True}
+        cache = {"status": "ok", "images": []}
+        review(publication.post_source(item, cache), "caption")
+        deadlines.append((item, cache))
+    publication.publish_posts(deadlines, "2026-09-19T19:00:00Z", notify=False)
+
 print(json.dumps(batches))
