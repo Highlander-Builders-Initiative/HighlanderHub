@@ -163,8 +163,8 @@ class ProfileLookupTests(PostArchiveTests):
         self.assertEqual("next", variables["after"])
         self.assertEqual("acm.ucr", variables["username"])
 
-    def test_wrong_or_missing_owner_rejects_entire_page_even_outside_window(self):
-        for owner in ({"pk": "99"}, {}, None):
+    def test_missing_owner_rejects_entire_page_even_outside_window(self):
+        for owner in ({}, None, "invalid"):
             bad = iphone_post("701", posted_at="2020-01-01T00:00:00+00:00")
             bad["user"] = owner
             with self.subTest(owner=owner), \
@@ -174,16 +174,57 @@ class ProfileLookupTests(PostArchiveTests):
                 self.remote_writes.assert_not_called()
                 self.assertEqual([], list((self.root / "posts").glob("*/*.json")))
 
-    def test_owner_validation_applies_to_later_pages(self):
+    def test_unrelated_post_on_later_page_is_skipped(self):
         wrong = iphone_post("701")
         wrong["user"]["pk"] = "99"
         with patch.object(self.loader.context, "get_json", side_effect=[
                 self.page([iphone_post()], "next"), self.page([wrong])]):
-            with self.assertRaisesRegex(RuntimeError, "author ID"):
-                self.graphql_scan()
+            result = self.graphql_scan()
+        self.assertTrue(result.complete)
+        self.assertEqual(["700"], result.media_ids)
         self.assertTrue((self.root / "posts" / "acm.ucr" / "700.json").exists())
         self.assertFalse((self.root / "posts" / "acm.ucr" / "701.json").exists())
+        self.assertEqual(["700"], [r["media_id"] for r in self.remote_writes.call_args.args[0]])
+
+    def test_unrelated_old_post_does_not_abort_or_end_scan(self):
+        unrelated = iphone_post("701", posted_at="2020-01-01T00:00:00+00:00")
+        unrelated["user"].update(pk="50975358797", username="womenofzpb")
+        unrelated["code"] = "DdR_1emlkUR"
+        with patch.object(self.loader.context, "get_json", return_value=self.page([
+                iphone_post("702"), iphone_post("703"), iphone_post("704"),
+                unrelated, iphone_post()])):
+            result = self.graphql_scan()
+        self.assertTrue(result.complete)
+        self.assertEqual(["702", "703", "704", "700"], result.media_ids)
+        self.assertFalse((self.root / "posts" / "acm.ucr" / "701.json").exists())
+
+    def test_unrelated_only_pages_do_not_hide_later_matching_posts(self):
+        def unrelated(media_id):
+            post = iphone_post(media_id)
+            post["user"]["pk"] = "99"
+            return post
+
+        with patch.object(self.loader.context, "get_json", side_effect=[
+                self.page([unrelated("701")], "second"),
+                self.page([iphone_post()], "third"),
+                self.page([unrelated("702")], "fourth"),
+                self.page([iphone_post("703")])]) as request:
+            result = self.graphql_scan()
+        self.assertTrue(result.complete)
+        self.assertEqual(["700", "703"], result.media_ids)
+        self.assertEqual(4, request.call_count)
+
+    def test_only_unrelated_posts_never_establish_coverage(self):
+        unrelated = iphone_post()
+        unrelated["user"]["pk"] = "99"
+        for pages in ([self.page([unrelated])],
+                      [self.page([unrelated], "next"), self.page([])]):
+            with self.subTest(pages=len(pages)), patch.object(
+                    self.loader.context, "get_json", side_effect=pages):
+                with self.assertRaisesRegex(RuntimeError, "cannot verify"):
+                    self.graphql_scan()
         self.remote_writes.assert_not_called()
+        self.assertEqual([], list((self.root / "posts").glob("*/*.json")))
 
     def test_accepted_coauthor_validates_feed_without_changing_original_author(self):
         collaboration = iphone_post()

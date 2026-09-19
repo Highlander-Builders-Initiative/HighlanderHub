@@ -306,7 +306,7 @@ def _complete(updates: list[dict], *, notify: bool) -> None:
     failed = [item["source_key"] for item in updates if item["assessment"]["status"] == "error"]
     if failed:
         first = next(item for item in updates if item["assessment"]["status"] == "error")
-        raise RuntimeError(f"{len(failed)} source assessment(s) failed; previous listings retained: {', '.join(failed)}; "
+        raise RuntimeError(f"{len(failed)} source assessment(s) failed; existing listings, if any, retained: {', '.join(failed)}; "
                            f"first failure: {first['assessment'].get('error')}")
 
 

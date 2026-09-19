@@ -1,0 +1,671 @@
+[
+  {
+    "source_key": "instagram:post:3988684512718732494",
+    "origin": "instagram",
+    "assessment": {
+      "version": 6,
+      "model": "gemini-3.1-flash-lite",
+      "source_hash": "1ce63708e5c4ed77c6afcbb540135c57b8dbf599a8cf3526c86f06185c20fd43",
+      "source": {
+        "source_key": "instagram:post:3988684512718732494",
+        "origin": "instagram",
+        "posted_at": "2026-09-18T05:11:41+00:00",
+        "texts": {
+          "caption": "⚡️OUR WELCOME WEEK SCHEDULE IS OFFICIALLY HEREEE! 👀👀👀 \n\nMark your calendars because we will have an event for you every day of WELCOME WEEK which is from September 21st through the 25th.\n\nDAY 1: Boba Evening 7-8:30pm @ Hub Area\nDAY 2: Rock Climbing 2-3:30pm @ Hanger 18 & PICK UP - LOT 13\nDAY 3: Matcha & Thrifting 2-4pm @ Downtown Claremont\nDAY 4: Picnic Social 4-6pm @ Hub Lawn\nDAY 5: Laser Tag/Bowling/Arcade starting from 7pm @ Main Event & PICK UP - LOT 13\n\nDON’T MISS OUT AND COME JOIN US! 😍🫰\n\n#ucr #cki #club",
+          "slide_1_ocr": "WELCOME\nWEEK\nSep 21-25\n25\nDay 1: Boba 7-8pm @Hub Area\n26\nDay 2: Rock Climbing 2-3:30pm @Hanger 18\nDay 3: Matcha&Thrifting @DT Claremont\nDay 4: Picnic Social @Hub Lawn\nDay 5: LaserTag/Bowling/Arcade @Main Event\nCKI\nCircle K\nInternational\nCAL-NEV-HA\nINTERNATIONAL\nDISTRICT"
+        },
+        "source_occurrences": []
+      },
+      "assessed_at": "2026-09-19T20:38:43.247942+00:00",
+      "status": "complete",
+      "result": {
+        "kind": "activity",
+        "date_role": "occurrence",
+        "reason": "The source lists a series of daily events for Welcome Week from September 21st to 25th, 2026.",
+        "activity_evidence": [
+          {
+            "field": "caption",
+            "quote": "⚡️OUR WELCOME WEEK SCHEDULE IS OFFICIALLY HEREEE! 👀👀👀 \n\nMark your calendars because we will have an event for you every day of WELCOME WEEK which is from September 21st through the 25th.\n\nDAY 1: Boba Evening 7-8:30pm @ Hub Area\nDAY 2: Rock Climbing 2-3:30pm @ Hanger 18 & PICK UP - LOT 13\nDAY 3: Matcha & Thrifting 2-4pm @ Downtown Claremont\nDAY 4: Picnic Social 4-6pm @ Hub Lawn\nDAY 5: Laser Tag/Bowling/Arcade starting from 7pm @ Main Event & PICK UP - LOT 13\n\nDON’T MISS OUT AND COME JOIN US! 😍🫰\n\n#ucr #cki #club"
+          }
+        ],
+        "date_evidence": [
+          {
+            "field": "caption",
+            "quote": "⚡️OUR WELCOME WEEK SCHEDULE IS OFFICIALLY HEREEE! 👀👀👀 \n\nMark your calendars because we will have an event for you every day of WELCOME WEEK which is from September 21st through the 25th.\n\nDAY 1: Boba Evening 7-8:30pm @ Hub Area\nDAY 2: Rock Climbing 2-3:30pm @ Hanger 18 & PICK UP - LOT 13\nDAY 3: Matcha & Thrifting 2-4pm @ Downtown Claremont\nDAY 4: Picnic Social 4-6pm @ Hub Lawn\nDAY 5: Laser Tag/Bowling/Arcade starting from 7pm @ Main Event & PICK UP - LOT 13\n\nDON’T MISS OUT AND COME JOIN US! 😍🫰\n\n#ucr #cki #club"
+          }
+        ],
+        "use_source_occurrences": false,
+        "occurrences": [
+          {
+            "title": "Boba Evening",
+            "starts_at": "2026-09-21T19:00:00-07:00",
+            "ends_at": "2026-09-21T20:30:00-07:00",
+            "all_day": false,
+            "location": "Hub Area",
+            "location_evidence": [
+              {
+                "field": "caption",
+                "quote": "⚡️OUR WELCOME WEEK SCHEDULE IS OFFICIALLY HEREEE! 👀👀👀 \n\nMark your calendars because we will have an event for you every day of WELCOME WEEK which is from September 21st through the 25th.\n\nDAY 1: Boba Evening 7-8:30pm @ Hub Area\nDAY 2: Rock Climbing 2-3:30pm @ Hanger 18 & PICK UP - LOT 13\nDAY 3: Matcha & Thrifting 2-4pm @ Downtown Claremont\nDAY 4: Picnic Social 4-6pm @ Hub Lawn\nDAY 5: Laser Tag/Bowling/Arcade starting from 7pm @ Main Event & PICK UP - LOT 13\n\nDON’T MISS OUT AND COME JOIN US! 😍🫰\n\n#ucr #cki #club"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "caption",
+                "quote": "⚡️OUR WELCOME WEEK SCHEDULE IS OFFICIALLY HEREEE! 👀👀👀 \n\nMark your calendars because we will have an event for you every day of WELCOME WEEK which is from September 21st through the 25th.\n\nDAY 1: Boba Evening 7-8:30pm @ Hub Area\nDAY 2: Rock Climbing 2-3:30pm @ Hanger 18 & PICK UP - LOT 13\nDAY 3: Matcha & Thrifting 2-4pm @ Downtown Claremont\nDAY 4: Picnic Social 4-6pm @ Hub Lawn\nDAY 5: Laser Tag/Bowling/Arcade starting from 7pm @ Main Event & PICK UP - LOT 13\n\nDON’T MISS OUT AND COME JOIN US! 😍🫰\n\n#ucr #cki #club"
+              }
+            ],
+            "date_evidence": [
+              {
+                "field": "caption",
+                "quote": "⚡️OUR WELCOME WEEK SCHEDULE IS OFFICIALLY HEREEE! 👀👀👀 \n\nMark your calendars because we will have an event for you every day of WELCOME WEEK which is from September 21st through the 25th.\n\nDAY 1: Boba Evening 7-8:30pm @ Hub Area\nDAY 2: Rock Climbing 2-3:30pm @ Hanger 18 & PICK UP - LOT 13\nDAY 3: Matcha & Thrifting 2-4pm @ Downtown Claremont\nDAY 4: Picnic Social 4-6pm @ Hub Lawn\nDAY 5: Laser Tag/Bowling/Arcade starting from 7pm @ Main Event & PICK UP - LOT 13\n\nDON’T MISS OUT AND COME JOIN US! 😍🫰\n\n#ucr #cki #club"
+              }
+            ]
+          },
+          {
+            "title": "Rock Climbing",
+            "starts_at": "2026-09-22T14:00:00-07:00",
+            "ends_at": "2026-09-22T15:30:00-07:00",
+            "all_day": false,
+            "location": "Hanger 18",
+            "location_evidence": [
+              {
+                "field": "caption",
+                "quote": "⚡️OUR WELCOME WEEK SCHEDULE IS OFFICIALLY HEREEE! 👀👀👀 \n\nMark your calendars because we will have an event for you every day of WELCOME WEEK which is from September 21st through the 25th.\n\nDAY 1: Boba Evening 7-8:30pm @ Hub Area\nDAY 2: Rock Climbing 2-3:30pm @ Hanger 18 & PICK UP - LOT 13\nDAY 3: Matcha & Thrifting 2-4pm @ Downtown Claremont\nDAY 4: Picnic Social 4-6pm @ Hub Lawn\nDAY 5: Laser Tag/Bowling/Arcade starting from 7pm @ Main Event & PICK UP - LOT 13\n\nDON’T MISS OUT AND COME JOIN US! 😍🫰\n\n#ucr #cki #club"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "caption",
+                "quote": "⚡️OUR WELCOME WEEK SCHEDULE IS OFFICIALLY HEREEE! 👀👀👀 \n\nMark your calendars because we will have an event for you every day of WELCOME WEEK which is from September 21st through the 25th.\n\nDAY 1: Boba Evening 7-8:30pm @ Hub Area\nDAY 2: Rock Climbing 2-3:30pm @ Hanger 18 & PICK UP - LOT 13\nDAY 3: Matcha & Thrifting 2-4pm @ Downtown Claremont\nDAY 4: Picnic Social 4-6pm @ Hub Lawn\nDAY 5: Laser Tag/Bowling/Arcade starting from 7pm @ Main Event & PICK UP - LOT 13\n\nDON’T MISS OUT AND COME JOIN US! 😍🫰\n\n#ucr #cki #club"
+              }
+            ],
+            "date_evidence": [
+              {
+                "field": "caption",
+                "quote": "⚡️OUR WELCOME WEEK SCHEDULE IS OFFICIALLY HEREEE! 👀👀👀 \n\nMark your calendars because we will have an event for you every day of WELCOME WEEK which is from September 21st through the 25th.\n\nDAY 1: Boba Evening 7-8:30pm @ Hub Area\nDAY 2: Rock Climbing 2-3:30pm @ Hanger 18 & PICK UP - LOT 13\nDAY 3: Matcha & Thrifting 2-4pm @ Downtown Claremont\nDAY 4: Picnic Social 4-6pm @ Hub Lawn\nDAY 5: Laser Tag/Bowling/Arcade starting from 7pm @ Main Event & PICK UP - LOT 13\n\nDON’T MISS OUT AND COME JOIN US! 😍🫰\n\n#ucr #cki #club"
+              }
+            ]
+          },
+          {
+            "title": "Matcha & Thrifting",
+            "starts_at": "2026-09-23T14:00:00-07:00",
+            "ends_at": "2026-09-23T16:00:00-07:00",
+            "all_day": false,
+            "location": "Downtown Claremont",
+            "location_evidence": [
+              {
+                "field": "caption",
+                "quote": "⚡️OUR WELCOME WEEK SCHEDULE IS OFFICIALLY HEREEE! 👀👀👀 \n\nMark your calendars because we will have an event for you every day of WELCOME WEEK which is from September 21st through the 25th.\n\nDAY 1: Boba Evening 7-8:30pm @ Hub Area\nDAY 2: Rock Climbing 2-3:30pm @ Hanger 18 & PICK UP - LOT 13\nDAY 3: Matcha & Thrifting 2-4pm @ Downtown Claremont\nDAY 4: Picnic Social 4-6pm @ Hub Lawn\nDAY 5: Laser Tag/Bowling/Arcade starting from 7pm @ Main Event & PICK UP - LOT 13\n\nDON’T MISS OUT AND COME JOIN US! 😍🫰\n\n#ucr #cki #club"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "caption",
+                "quote": "⚡️OUR WELCOME WEEK SCHEDULE IS OFFICIALLY HEREEE! 👀👀👀 \n\nMark your calendars because we will have an event for you every day of WELCOME WEEK which is from September 21st through the 25th.\n\nDAY 1: Boba Evening 7-8:30pm @ Hub Area\nDAY 2: Rock Climbing 2-3:30pm @ Hanger 18 & PICK UP - LOT 13\nDAY 3: Matcha & Thrifting 2-4pm @ Downtown Claremont\nDAY 4: Picnic Social 4-6pm @ Hub Lawn\nDAY 5: Laser Tag/Bowling/Arcade starting from 7pm @ Main Event & PICK UP - LOT 13\n\nDON’T MISS OUT AND COME JOIN US! 😍🫰\n\n#ucr #cki #club"
+              }
+            ],
+            "date_evidence": [
+              {
+                "field": "caption",
+                "quote": "⚡️OUR WELCOME WEEK SCHEDULE IS OFFICIALLY HEREEE! 👀👀👀 \n\nMark your calendars because we will have an event for you every day of WELCOME WEEK which is from September 21st through the 25th.\n\nDAY 1: Boba Evening 7-8:30pm @ Hub Area\nDAY 2: Rock Climbing 2-3:30pm @ Hanger 18 & PICK UP - LOT 13\nDAY 3: Matcha & Thrifting 2-4pm @ Downtown Claremont\nDAY 4: Picnic Social 4-6pm @ Hub Lawn\nDAY 5: Laser Tag/Bowling/Arcade starting from 7pm @ Main Event & PICK UP - LOT 13\n\nDON’T MISS OUT AND COME JOIN US! 😍🫰\n\n#ucr #cki #club"
+              }
+            ]
+          },
+          {
+            "title": "Picnic Social",
+            "starts_at": "2026-09-24T16:00:00-07:00",
+            "ends_at": "2026-09-24T18:00:00-07:00",
+            "all_day": false,
+            "location": "Hub Lawn",
+            "location_evidence": [
+              {
+                "field": "caption",
+                "quote": "⚡️OUR WELCOME WEEK SCHEDULE IS OFFICIALLY HEREEE! 👀👀👀 \n\nMark your calendars because we will have an event for you every day of WELCOME WEEK which is from September 21st through the 25th.\n\nDAY 1: Boba Evening 7-8:30pm @ Hub Area\nDAY 2: Rock Climbing 2-3:30pm @ Hanger 18 & PICK UP - LOT 13\nDAY 3: Matcha & Thrifting 2-4pm @ Downtown Claremont\nDAY 4: Picnic Social 4-6pm @ Hub Lawn\nDAY 5: Laser Tag/Bowling/Arcade starting from 7pm @ Main Event & PICK UP - LOT 13\n\nDON’T MISS OUT AND COME JOIN US! 😍🫰\n\n#ucr #cki #club"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "caption",
+                "quote": "⚡️OUR WELCOME WEEK SCHEDULE IS OFFICIALLY HEREEE! 👀👀👀 \n\nMark your calendars because we will have an event for you every day of WELCOME WEEK which is from September 21st through the 25th.\n\nDAY 1: Boba Evening 7-8:30pm @ Hub Area\nDAY 2: Rock Climbing 2-3:30pm @ Hanger 18 & PICK UP - LOT 13\nDAY 3: Matcha & Thrifting 2-4pm @ Downtown Claremont\nDAY 4: Picnic Social 4-6pm @ Hub Lawn\nDAY 5: Laser Tag/Bowling/Arcade starting from 7pm @ Main Event & PICK UP - LOT 13\n\nDON’T MISS OUT AND COME JOIN US! 😍🫰\n\n#ucr #cki #club"
+              }
+            ],
+            "date_evidence": [
+              {
+                "field": "caption",
+                "quote": "⚡️OUR WELCOME WEEK SCHEDULE IS OFFICIALLY HEREEE! 👀👀👀 \n\nMark your calendars because we will have an event for you every day of WELCOME WEEK which is from September 21st through the 25th.\n\nDAY 1: Boba Evening 7-8:30pm @ Hub Area\nDAY 2: Rock Climbing 2-3:30pm @ Hanger 18 & PICK UP - LOT 13\nDAY 3: Matcha & Thrifting 2-4pm @ Downtown Claremont\nDAY 4: Picnic Social 4-6pm @ Hub Lawn\nDAY 5: Laser Tag/Bowling/Arcade starting from 7pm @ Main Event & PICK UP - LOT 13\n\nDON’T MISS OUT AND COME JOIN US! 😍🫰\n\n#ucr #cki #club"
+              }
+            ]
+          },
+          {
+            "title": "Laser Tag/Bowling/Arcade",
+            "starts_at": "2026-09-25T19:00:00-07:00",
+            "ends_at": null,
+            "all_day": false,
+            "location": "Main Event",
+            "location_evidence": [
+              {
+                "field": "caption",
+                "quote": "⚡️OUR WELCOME WEEK SCHEDULE IS OFFICIALLY HEREEE! 👀👀👀 \n\nMark your calendars because we will have an event for you every day of WELCOME WEEK which is from September 21st through the 25th.\n\nDAY 1: Boba Evening 7-8:30pm @ Hub Area\nDAY 2: Rock Climbing 2-3:30pm @ Hanger 18 & PICK UP - LOT 13\nDAY 3: Matcha & Thrifting 2-4pm @ Downtown Claremont\nDAY 4: Picnic Social 4-6pm @ Hub Lawn\nDAY 5: Laser Tag/Bowling/Arcade starting from 7pm @ Main Event & PICK UP - LOT 13\n\nDON’T MISS OUT AND COME JOIN US! 😍🫰\n\n#ucr #cki #club"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "caption",
+                "quote": "⚡️OUR WELCOME WEEK SCHEDULE IS OFFICIALLY HEREEE! 👀👀👀 \n\nMark your calendars because we will have an event for you every day of WELCOME WEEK which is from September 21st through the 25th.\n\nDAY 1: Boba Evening 7-8:30pm @ Hub Area\nDAY 2: Rock Climbing 2-3:30pm @ Hanger 18 & PICK UP - LOT 13\nDAY 3: Matcha & Thrifting 2-4pm @ Downtown Claremont\nDAY 4: Picnic Social 4-6pm @ Hub Lawn\nDAY 5: Laser Tag/Bowling/Arcade starting from 7pm @ Main Event & PICK UP - LOT 13\n\nDON’T MISS OUT AND COME JOIN US! 😍🫰\n\n#ucr #cki #club"
+              }
+            ],
+            "date_evidence": [
+              {
+                "field": "caption",
+                "quote": "⚡️OUR WELCOME WEEK SCHEDULE IS OFFICIALLY HEREEE! 👀👀👀 \n\nMark your calendars because we will have an event for you every day of WELCOME WEEK which is from September 21st through the 25th.\n\nDAY 1: Boba Evening 7-8:30pm @ Hub Area\nDAY 2: Rock Climbing 2-3:30pm @ Hanger 18 & PICK UP - LOT 13\nDAY 3: Matcha & Thrifting 2-4pm @ Downtown Claremont\nDAY 4: Picnic Social 4-6pm @ Hub Lawn\nDAY 5: Laser Tag/Bowling/Arcade starting from 7pm @ Main Event & PICK UP - LOT 13\n\nDON’T MISS OUT AND COME JOIN US! 😍🫰\n\n#ucr #cki #club"
+              }
+            ]
+          }
+        ],
+        "schedule": null
+      }
+    },
+    "rows": [],
+    "known_event_ids": []
+  },
+  {
+    "source_key": "instagram:post:3989114880493230451",
+    "origin": "instagram",
+    "assessment": {
+      "version": 6,
+      "model": "gemini-3.1-flash-lite",
+      "source_hash": "afcb4cd913bf2bfde690da1f434a6f80e519e4f3ba63bf924c1096ab1c82cadf",
+      "source": {
+        "source_key": "instagram:post:3989114880493230451",
+        "origin": "instagram",
+        "posted_at": "2026-09-18T19:31:58+00:00",
+        "texts": {
+          "caption": "National Hazing Prevention Week is almost here!\n\nJoin us September 21–25 for a week of education, awareness, and action as we come together to build a safer Highlander community. From educational webinars to Purple with a Purpose and our Pledge to Lead event, there are plenty of ways to get involved and take a stand against hazing.\n\n📲 Check out the schedule and join us next week!\n\n#NHPW2026 #LeadTheChangeUCR",
+          "slide_1_ocr": "NATIONAL HAZING\nPREVENTION WEEK\n21\nMON\nWEBINAR: Building an Effective Hazing\nPrevention System: The Four-Domain\nFramework in Action\n→ 9 AM\nWEBINAR: The Charge for Change:\nAuthors and Contributor's Vision for\nPolicy and Practice Reform at the Top\n→ 9 AM\n23\nWED\n22\nTUE\nWear purple to show\nawareness to the issue of\nhazing!\nPledge to Lead: Take the anti-hazing\npledge and grab a free popsicle!\n(Outside the FSIC, HUB 2 101A)\n11 AM - 3 PM\nUC RIVERSIDE Student Life\n24\nTHUR"
+        },
+        "source_occurrences": []
+      },
+      "assessed_at": "2026-09-19T20:38:47.994723+00:00",
+      "status": "error",
+      "error": "GroundingRejected: Assessment failed validation after retry: Occurrence start date lacks source support: 2026-09-22; cite a printed date or explicit relative date, never posted_at alone. In this occurrence's date_evidence, cite both caption and slide when the month/range and day/time are split across fields; top-level citations do not supply occurrence evidence. Do not guess activity/date associations (occurrence \"WEBINAR: The Charge for Change: Authors and Contributor's Vision for Policy and Practice Reform at the Top\")",
+      "retryable": false,
+      "validation_attempts": [
+        {
+          "response": {
+            "kind": "activity",
+            "date_role": "occurrence",
+            "reason": "The source lists specific events occurring during National Hazing Prevention Week, including webinars and a tabling event.",
+            "activity_evidence": [
+              {
+                "field": "slide_1_ocr"
+              }
+            ],
+            "date_evidence": [
+              {
+                "field": "slide_1_ocr"
+              }
+            ],
+            "use_source_occurrences": false,
+            "occurrences": [
+              {
+                "title": "WEBINAR: Building an Effective Hazing Prevention System: The Four-Domain Framework in Action",
+                "starts_at": "2026-09-21T09:00:00-07:00",
+                "ends_at": null,
+                "all_day": false,
+                "location": "",
+                "location_evidence": [],
+                "activity_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "date_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ]
+              },
+              {
+                "title": "WEBINAR: The Charge for Change: Authors and Contributor's Vision for Policy and Practice Reform at the Top",
+                "starts_at": "2026-09-22T09:00:00-07:00",
+                "ends_at": null,
+                "all_day": false,
+                "location": "",
+                "location_evidence": [],
+                "activity_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "date_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ]
+              },
+              {
+                "title": "Pledge to Lead",
+                "starts_at": "2026-09-23T11:00:00-07:00",
+                "ends_at": "2026-09-23T15:00:00-07:00",
+                "all_day": false,
+                "location": "Outside the FSIC, HUB 2 101A",
+                "location_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "date_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ]
+              }
+            ],
+            "schedule": null
+          },
+          "error": "Occurrence start date lacks source support: 2026-09-21; cite a printed date or explicit relative date, never posted_at alone. In this occurrence's date_evidence, cite both caption and slide when the month/range and day/time are split across fields; top-level citations do not supply occurrence evidence. Do not guess activity/date associations (occurrence 'WEBINAR: Building an Effective Hazing Prevention System: The Four-Domain Framework in Action')"
+        },
+        {
+          "response": {
+            "kind": "activity",
+            "date_role": "occurrence",
+            "reason": "The source lists specific events occurring during National Hazing Prevention Week, including webinars and a tabling event, with dates and times provided in the slide.",
+            "activity_evidence": [
+              {
+                "field": "slide_1_ocr"
+              }
+            ],
+            "date_evidence": [
+              {
+                "field": "caption"
+              },
+              {
+                "field": "slide_1_ocr"
+              }
+            ],
+            "use_source_occurrences": false,
+            "occurrences": [
+              {
+                "title": "WEBINAR: Building an Effective Hazing Prevention System: The Four-Domain Framework in Action",
+                "starts_at": "2026-09-21T09:00:00-07:00",
+                "ends_at": null,
+                "all_day": false,
+                "location": "",
+                "location_evidence": [],
+                "activity_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "date_evidence": [
+                  {
+                    "field": "caption"
+                  },
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ]
+              },
+              {
+                "title": "WEBINAR: The Charge for Change: Authors and Contributor's Vision for Policy and Practice Reform at the Top",
+                "starts_at": "2026-09-22T09:00:00-07:00",
+                "ends_at": null,
+                "all_day": false,
+                "location": "",
+                "location_evidence": [],
+                "activity_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "date_evidence": [
+                  {
+                    "field": "caption"
+                  },
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ]
+              },
+              {
+                "title": "Pledge to Lead",
+                "starts_at": "2026-09-23T11:00:00-07:00",
+                "ends_at": "2026-09-23T15:00:00-07:00",
+                "all_day": false,
+                "location": "Outside the FSIC, HUB 2 101A",
+                "location_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "date_evidence": [
+                  {
+                    "field": "caption"
+                  },
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ]
+              }
+            ],
+            "schedule": null
+          },
+          "error": "Occurrence start date lacks source support: 2026-09-22; cite a printed date or explicit relative date, never posted_at alone. In this occurrence's date_evidence, cite both caption and slide when the month/range and day/time are split across fields; top-level citations do not supply occurrence evidence. Do not guess activity/date associations (occurrence \"WEBINAR: The Charge for Change: Authors and Contributor's Vision for Policy and Practice Reform at the Top\")"
+        }
+      ]
+    },
+    "rows": [],
+    "known_event_ids": []
+  },
+  {
+    "source_key": "instagram:post:3987093638713207499",
+    "origin": "instagram",
+    "assessment": {
+      "version": 6,
+      "model": "gemini-3.1-flash-lite",
+      "source_hash": "5eae7b0e0637d1c75b5b3ac3284de538b3f820af62231dc51bf398903f54200f",
+      "source": {
+        "source_key": "instagram:post:3987093638713207499",
+        "origin": "instagram",
+        "posted_at": "2026-09-16T00:31:18+00:00",
+        "texts": {
+          "caption": "Save the date! Our first meeting of the year is on September 28th. See you there!",
+          "slide_1_ocr": "THE\nD\nREACH\nINITIATIVE\nFIRST\nMeeting\nSSC120\nSEPT.28 at 5pm\nfood provided\nWhat To Expect\nJoin us and learn about our\nmission and how you can\nearn volunteer hours! BB5\nL\nך\nSCAN HERE!"
+        },
+        "source_occurrences": []
+      },
+      "assessed_at": "2026-09-19T20:38:54.164199+00:00",
+      "status": "complete",
+      "result": {
+        "kind": "activity",
+        "date_role": "occurrence",
+        "reason": "The source announces a specific first meeting for The Reach Initiative with a date, time, and location.",
+        "activity_evidence": [
+          {
+            "field": "slide_1_ocr",
+            "quote": "THE\nD\nREACH\nINITIATIVE\nFIRST\nMeeting\nSSC120\nSEPT.28 at 5pm\nfood provided\nWhat To Expect\nJoin us and learn about our\nmission and how you can\nearn volunteer hours! BB5\nL\nך\nSCAN HERE!"
+          },
+          {
+            "field": "caption",
+            "quote": "Save the date! Our first meeting of the year is on September 28th. See you there!"
+          }
+        ],
+        "date_evidence": [
+          {
+            "field": "slide_1_ocr",
+            "quote": "THE\nD\nREACH\nINITIATIVE\nFIRST\nMeeting\nSSC120\nSEPT.28 at 5pm\nfood provided\nWhat To Expect\nJoin us and learn about our\nmission and how you can\nearn volunteer hours! BB5\nL\nך\nSCAN HERE!"
+          },
+          {
+            "field": "caption",
+            "quote": "Save the date! Our first meeting of the year is on September 28th. See you there!"
+          }
+        ],
+        "use_source_occurrences": false,
+        "occurrences": [
+          {
+            "title": "The Reach Initiative First Meeting",
+            "starts_at": "2026-09-28T17:00:00-07:00",
+            "ends_at": null,
+            "all_day": false,
+            "location": "SSC120",
+            "location_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "THE\nD\nREACH\nINITIATIVE\nFIRST\nMeeting\nSSC120\nSEPT.28 at 5pm\nfood provided\nWhat To Expect\nJoin us and learn about our\nmission and how you can\nearn volunteer hours! BB5\nL\nך\nSCAN HERE!"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "THE\nD\nREACH\nINITIATIVE\nFIRST\nMeeting\nSSC120\nSEPT.28 at 5pm\nfood provided\nWhat To Expect\nJoin us and learn about our\nmission and how you can\nearn volunteer hours! BB5\nL\nך\nSCAN HERE!"
+              }
+            ],
+            "date_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "THE\nD\nREACH\nINITIATIVE\nFIRST\nMeeting\nSSC120\nSEPT.28 at 5pm\nfood provided\nWhat To Expect\nJoin us and learn about our\nmission and how you can\nearn volunteer hours! BB5\nL\nך\nSCAN HERE!"
+              }
+            ]
+          }
+        ],
+        "schedule": null
+      }
+    },
+    "rows": [
+      {
+        "id": "ig_thereachinitiative.ucr_p3987093638713207499",
+        "title": "The Reach Initiative First Meeting",
+        "description": "Save the date! Our first meeting of the year is on September 28th. See you there!",
+        "starts_at": "2026-09-29T00:00:00+00:00",
+        "ends_at": null,
+        "location": "SSC120",
+        "host": "The Reach Initiative at UCR",
+        "host_handle": "thereachinitiative.ucr",
+        "category": "community",
+        "content_kind": "student_event",
+        "tags": [],
+        "source": "instagram",
+        "source_url": "https://www.instagram.com/p/DdVAIo1uGrL/",
+        "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/thereachinitiative.ucr/posts/3987093638713207499/811962615_17891471469673867_1445704489475576459_n.jpg",
+        "is_free": true,
+        "has_free_food": false,
+        "rsvp_required": true,
+        "rsvp_url": "https://qrfy.io/uLR5Yj5QFN",
+        "scraped_at": "2026-09-19T20:38:41.897556+00:00"
+      }
+    ],
+    "known_event_ids": []
+  },
+  {
+    "source_key": "instagram:post:3987615353597995139",
+    "origin": "instagram",
+    "assessment": {
+      "version": 6,
+      "model": "gemini-3.1-flash-lite",
+      "source_hash": "e2ef2529f5b6ef5a56c427471f265ee30427ea5b904e62ae7ea3639e0d09780d",
+      "source": {
+        "source_key": "instagram:post:3987615353597995139",
+        "origin": "instagram",
+        "posted_at": "2026-09-16T17:46:55+00:00",
+        "texts": {
+          "caption": "Ready for a healing journey? 🧘‍♂️ Join us for a campus yoga session open to all UCR students, staff, and faculty!\n\n📅 When: Mondays at 10:00 AM\n🗓️ Dates: Oct 5, Oct 12, Oct 19, Oct 26, Nov 2, and Nov 9\n📍Location: HUB 265\n- All levels welcome: From beginners to advanced yogis.\n- What to bring: Just yourself! (Feel free to bring your own mat if you prefer).\n\n⚠️ Spaces are limited and registration is required! Scan the QR code or click the link in our bio to sign up.\n\nregistration Link: http://tinyurl.com/3644u8v2",
+          "slide_1_ocr": "fall 2026\nAs Healing\nYOGA\nSELF REGULATION • EMPOWERMENT\nthe\nMONDAYS AT 10 AM\nDates: October 5, 12, 19, 26 &\nNovemeber 2, 9\nUCR\nCARE\nCAMPUS ADVOCACY,\nRESOURCES & EDUCATION\nng\nREGISTRATION LINK:\nHTTP://TINYURL.COM/3644U8V2\nmy\n23\n13"
+        },
+        "source_occurrences": []
+      },
+      "assessed_at": "2026-09-19T20:38:56.442242+00:00",
+      "status": "complete",
+      "result": {
+        "kind": "activity",
+        "date_role": "occurrence",
+        "reason": "The source advertises a series of yoga sessions with specific dates, times, and a location.",
+        "activity_evidence": [
+          {
+            "field": "caption",
+            "quote": "Ready for a healing journey? 🧘‍♂️ Join us for a campus yoga session open to all UCR students, staff, and faculty!\n\n📅 When: Mondays at 10:00 AM\n🗓️ Dates: Oct 5, Oct 12, Oct 19, Oct 26, Nov 2, and Nov 9\n📍Location: HUB 265\n- All levels welcome: From beginners to advanced yogis.\n- What to bring: Just yourself! (Feel free to bring your own mat if you prefer).\n\n⚠️ Spaces are limited and registration is required! Scan the QR code or click the link in our bio to sign up.\n\nregistration Link: http://tinyurl.com/3644u8v2"
+          },
+          {
+            "field": "slide_1_ocr",
+            "quote": "fall 2026\nAs Healing\nYOGA\nSELF REGULATION • EMPOWERMENT\nthe\nMONDAYS AT 10 AM\nDates: October 5, 12, 19, 26 &\nNovemeber 2, 9\nUCR\nCARE\nCAMPUS ADVOCACY,\nRESOURCES & EDUCATION\nng\nREGISTRATION LINK:\nHTTP://TINYURL.COM/3644U8V2\nmy\n23\n13"
+          }
+        ],
+        "date_evidence": [
+          {
+            "field": "caption",
+            "quote": "Ready for a healing journey? 🧘‍♂️ Join us for a campus yoga session open to all UCR students, staff, and faculty!\n\n📅 When: Mondays at 10:00 AM\n🗓️ Dates: Oct 5, Oct 12, Oct 19, Oct 26, Nov 2, and Nov 9\n📍Location: HUB 265\n- All levels welcome: From beginners to advanced yogis.\n- What to bring: Just yourself! (Feel free to bring your own mat if you prefer).\n\n⚠️ Spaces are limited and registration is required! Scan the QR code or click the link in our bio to sign up.\n\nregistration Link: http://tinyurl.com/3644u8v2"
+          },
+          {
+            "field": "slide_1_ocr",
+            "quote": "fall 2026\nAs Healing\nYOGA\nSELF REGULATION • EMPOWERMENT\nthe\nMONDAYS AT 10 AM\nDates: October 5, 12, 19, 26 &\nNovemeber 2, 9\nUCR\nCARE\nCAMPUS ADVOCACY,\nRESOURCES & EDUCATION\nng\nREGISTRATION LINK:\nHTTP://TINYURL.COM/3644U8V2\nmy\n23\n13"
+          }
+        ],
+        "use_source_occurrences": false,
+        "occurrences": [
+          {
+            "title": "Yoga Session",
+            "starts_at": "2026-10-05T10:00:00-07:00",
+            "ends_at": null,
+            "all_day": false,
+            "location": "HUB 265",
+            "location_evidence": [
+              {
+                "field": "caption",
+                "quote": "Ready for a healing journey? 🧘‍♂️ Join us for a campus yoga session open to all UCR students, staff, and faculty!\n\n📅 When: Mondays at 10:00 AM\n🗓️ Dates: Oct 5, Oct 12, Oct 19, Oct 26, Nov 2, and Nov 9\n📍Location: HUB 265\n- All levels welcome: From beginners to advanced yogis.\n- What to bring: Just yourself! (Feel free to bring your own mat if you prefer).\n\n⚠️ Spaces are limited and registration is required! Scan the QR code or click the link in our bio to sign up.\n\nregistration Link: http://tinyurl.com/3644u8v2"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "caption",
+                "quote": "Ready for a healing journey? 🧘‍♂️ Join us for a campus yoga session open to all UCR students, staff, and faculty!\n\n📅 When: Mondays at 10:00 AM\n🗓️ Dates: Oct 5, Oct 12, Oct 19, Oct 26, Nov 2, and Nov 9\n📍Location: HUB 265\n- All levels welcome: From beginners to advanced yogis.\n- What to bring: Just yourself! (Feel free to bring your own mat if you prefer).\n\n⚠️ Spaces are limited and registration is required! Scan the QR code or click the link in our bio to sign up.\n\nregistration Link: http://tinyurl.com/3644u8v2"
+              }
+            ],
+            "date_evidence": [
+              {
+                "field": "caption",
+                "quote": "Ready for a healing journey? 🧘‍♂️ Join us for a campus yoga session open to all UCR students, staff, and faculty!\n\n📅 When: Mondays at 10:00 AM\n🗓️ Dates: Oct 5, Oct 12, Oct 19, Oct 26, Nov 2, and Nov 9\n📍Location: HUB 265\n- All levels welcome: From beginners to advanced yogis.\n- What to bring: Just yourself! (Feel free to bring your own mat if you prefer).\n\n⚠️ Spaces are limited and registration is required! Scan the QR code or click the link in our bio to sign up.\n\nregistration Link: http://tinyurl.com/3644u8v2"
+              }
+            ]
+          },
+          {
+            "title": "Yoga Session",
+            "starts_at": "2026-10-12T10:00:00-07:00",
+            "ends_at": null,
+            "all_day": false,
+            "location": "HUB 265",
+            "location_evidence": [
+              {
+                "field": "caption",
+                "quote": "Ready for a healing journey? 🧘‍♂️ Join us for a campus yoga session open to all UCR students, staff, and faculty!\n\n📅 When: Mondays at 10:00 AM\n🗓️ Dates: Oct 5, Oct 12, Oct 19, Oct 26, Nov 2, and Nov 9\n📍Location: HUB 265\n- All levels welcome: From beginners to advanced yogis.\n- What to bring: Just yourself! (Feel free to bring your own mat if you prefer).\n\n⚠️ Spaces are limited and registration is required! Scan the QR code or click the link in our bio to sign up.\n\nregistration Link: http://tinyurl.com/3644u8v2"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "caption",
+                "quote": "Ready for a healing journey? 🧘‍♂️ Join us for a campus yoga session open to all UCR students, staff, and faculty!\n\n📅 When: Mondays at 10:00 AM\n🗓️ Dates: Oct 5, Oct 12, Oct 19, Oct 26, Nov 2, and Nov 9\n📍Location: HUB 265\n- All levels welcome: From beginners to advanced yogis.\n- What to bring: Just yourself! (Feel free to bring your own mat if you prefer).\n\n⚠️ Spaces are limited and registration is required! Scan the QR code or click the link in our bio to sign up.\n\nregistration Link: http://tinyurl.com/3644u8v2"
+              }
+            ],
+            "date_evidence": [
+              {
+                "field": "caption",
+                "quote": "Ready for a healing journey? 🧘‍♂️ Join us for a campus yoga session open to all UCR students, staff, and faculty!\n\n📅 When: Mondays at 10:00 AM\n🗓️ Dates: Oct 5, Oct 12, Oct 19, Oct 26, Nov 2, and Nov 9\n📍Location: HUB 265\n- All levels welcome: From beginners to advanced yogis.\n- What to bring: Just yourself! (Feel free to bring your own mat if you prefer).\n\n⚠️ Spaces are limited and registration is required! Scan the QR code or click the link in our bio to sign up.\n\nregistration Link: http://tinyurl.com/3644u8v2"
+              }
+            ]
+          },
+          {
+            "title": "Yoga Session",
+            "starts_at": "2026-10-19T10:00:00-07:00",
+            "ends_at": null,
+            "all_day": false,
+            "location": "HUB 265",
+            "location_evidence": [
+              {
+                "field": "caption",
+                "quote": "Ready for a healing journey? 🧘‍♂️ Join us for a campus yoga session open to all UCR students, staff, and faculty!\n\n📅 When: Mondays at 10:00 AM\n🗓️ Dates: Oct 5, Oct 12, Oct 19, Oct 26, Nov 2, and Nov 9\n📍Location: HUB 265\n- All levels welcome: From beginners to advanced yogis.\n- What to bring: Just yourself! (Feel free to bring your own mat if you prefer).\n\n⚠️ Spaces are limited and registration is required! Scan the QR code or click the link in our bio to sign up.\n\nregistration Link: http://tinyurl.com/3644u8v2"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "caption",
+                "quote": "Ready for a healing journey? 🧘‍♂️ Join us for a campus yoga session open to all UCR students, staff, and faculty!\n\n📅 When: Mondays at 10:00 AM\n🗓️ Dates: Oct 5, Oct 12, Oct 19, Oct 26, Nov 2, and Nov 9\n📍Location: HUB 265\n- All levels welcome: From beginners to advanced yogis.\n- What to bring: Just yourself! (Feel free to bring your own mat if you prefer).\n\n⚠️ Spaces are limited and registration is required! Scan the QR code or click the link in our bio to sign up.\n\nregistration Link: http://tinyurl.com/3644u8v2"
+              }
+            ],
+            "date_evidence": [
+              {
+                "field": "caption",
+                "quote": "Ready for a healing journey? 🧘‍♂️ Join us for a campus yoga session open to all UCR students, staff, and faculty!\n\n📅 When: Mondays at 10:00 AM\n🗓️ Dates: Oct 5, Oct 12, Oct 19, Oct 26, Nov 2, and Nov 9\n📍Location: HUB 265\n- All levels welcome: From beginners to advanced yogis.\n- What to bring: Just yourself! (Feel free to bring your own mat if you prefer).\n\n⚠️ Spaces are limited and registration is required! Scan the QR code or click the link in our bio to sign up.\n\nregistration Link: http://tinyurl.com/3644u8v2"
+              }
+            ]
+          },
+          {
+            "title": "Yoga Session",
+            "starts_at": "2026-10-26T10:00:00-07:00",
+            "ends_at": null,
+            "all_day": false,
+            "location": "HUB 265",
+            "location_evidence": [
+              {
+                "field": "caption",
+                "quote": "Ready for a healing journey? 🧘‍♂️ Join us for a campus yoga session open to all UCR students, staff, and faculty!\n\n📅 When: Mondays at 10:00 AM\n🗓️ Dates: Oct 5, Oct 12, Oct 19, Oct 26, Nov 2, and Nov 9\n📍Location: HUB 265\n- All levels welcome: From beginners to advanced yogis.\n- What to bring: Just yourself! (Feel free to bring your own mat if you prefer).\n\n⚠️ Spaces are limited and registration is required! Scan the QR code or click the link in our bio to sign up.\n\nregistration Link: http://tinyurl.com/3644u8v2"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "caption",
+                "quote": "Ready for a healing journey? 🧘‍♂️ Join us for a campus yoga session open to all UCR students, staff, and faculty!\n\n📅 When: Mondays at 10:00 AM\n🗓️ Dates: Oct 5, Oct 12, Oct 19, Oct 26, Nov 2, and Nov 9\n📍Location: HUB 265\n- All levels welcome: From beginners to advanced yogis.\n- What to bring: Just yourself! (Feel free to bring your own mat if you prefer).\n\n⚠️ Spaces are limited and registration is required! Scan the QR code or click the link in our bio to sign up.\n\nregistration Link: http://tinyurl.com/3644u8v2"
+              }
+            ],
+            "date_evidence": [
+              {
+                "field": "caption",
+                "quote": "Ready for a healing journey? 🧘‍♂️ Join us for a campus yoga session open to all UCR students, staff, and faculty!\n\n📅 When: Mondays at 10:00 AM\n🗓️ Dates: Oct 5, Oct 12, Oct 19, Oct 26, Nov 2, and Nov 9\n📍Location: HUB 265\n- All levels welcome: From beginners to advanced yogis.\n- What to bring: Just yourself! (Feel free to bring your own mat if you prefer).\n\n⚠️ Spaces are limited and registration is required! Scan the QR code or click the link in our bio to sign up.\n\nregistration Link: http://tinyurl.com/3644u8v2"
+              }
+            ]
+          },
+          {
+            "title": "Yoga Session",
+            "starts_at": "2026-11-02T10:00:00-08:00",
+            "ends_at": null,
+            "all_day": false,
+            "location": "HUB 265",
+            "location_evidence": [
+              {
+                "field": "caption",
+                "quote": "Ready for a healing journey? 🧘‍♂️ Join us for a campus yoga session open to all UCR students, staff, and faculty!\n\n📅 When: Mondays at 10:00 AM\n🗓️ Dates: Oct 5, Oct 12, Oct 19, Oct 26, Nov 2, and Nov 9\n📍Location: HUB 265\n- All levels welcome: From beginners to advanced yogis.\n- What to bring: Just yourself! (Feel free to bring your own mat if you prefer).\n\n⚠️ Spaces are limited and registration is required! Scan the QR code or click the link in our bio to sign up.\n\nregistration Link: http://tinyurl.com/3644u8v2"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "caption",
+                "quote": "Ready for a healing journey? 🧘‍♂️ Join us for a campus yoga session open to all UCR students, staff, and faculty!\n\n📅 When: Mondays at 10:00 AM\n🗓️ Dates: Oct 5, Oct 12, Oct 19, Oct 26, Nov 2, and Nov 9\n📍Location: HUB 265\n- All levels welcome: From beginners to advanced yogis.\n- What to bring: Just yourself! (Feel free to bring your own mat if you prefer).\n\n⚠️ Spaces are limited and registration is required! Scan the QR code or click the link in our bio to sign up.\n\nregistration Link: http://tinyurl.com/3644u8v2"
+              }
+            ],
+            "date_evidence": [
+              {
+                "field": "caption",
+                "quote": "Ready for a healing journey? 🧘‍♂️ Join us for a campus yoga session open to all UCR students, staff, and faculty!\n\n📅 When: Mondays at 10:00 AM\n🗓️ Dates: Oct 5, Oct 12, Oct 19, Oct 26, Nov 2, and Nov 9\n📍Location: HUB 265\n- All levels welcome: From beginners to advanced yogis.\n- What to bring: Just yourself! (Feel free to bring your own mat if you prefer).\n\n⚠️ Spaces are limited and registration is required! Scan the QR code or click the link in our bio to sign up.\n\nregistration Link: http://tinyurl.com/3644u8v2"
+              }
+            ]
+          },
+          {
+            "title": "Yoga Session",
+            "starts_at": "2026-11-09T10:00:00-08:00",
+            "ends_at": null,
+            "all_day": false,
+            "location": "HUB 265",
+            "location_evidence": [
+              {
+                "field": "caption",
+                "quote": "Ready for a healing journey? 🧘‍♂️ Join us for a campus yoga session open to all UCR students, staff, and faculty!\n\n📅 When: Mondays at 10:00 AM\n🗓️ Dates: Oct 5, Oct 12, Oct 19, Oct 26, Nov 2, and Nov 9\n📍Location: HUB 265\n- All levels welcome: From beginners to advanced yogis.\n- What to bring: Just yourself! (Feel free to bring your own mat if you prefer).\n\n⚠️ Spaces are limited and registration is required! Scan the QR code or click the link in our bio to sign up.\n\nregistration Link: http://tinyurl.com/3644u8v2"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "caption",
+                "quote": "Ready for a healing journey? 🧘‍♂️ Join us for a campus yoga session open to all UCR students, staff, and faculty!\n\n📅 When: Mondays at 10:00 AM\n🗓️ Dates: Oct 5, Oct 12, Oct 19, Oct 26, Nov 2, and Nov 9\n📍Location: HUB 265\n- All levels welcome: From beginners to advanced yogis.\n- What to bring: Just yourself! (Feel free to bring your own mat if you prefer).\n\n⚠️ Spaces are limited and registration is required! Scan the QR code or click the link in our bio to sign up.\n\nregistration Link: http://tinyurl.com/3644u8v2"
+              }
+            ],
+            "date_evidence": [
+              {
+                "field": "caption",
+                "quote": "Ready for a healing journey? 🧘‍♂️ Join us for a campus yoga session open to all UCR students, staff, and faculty!\n\n📅 When: Mondays at 10:00 AM\n🗓️ Dates: Oct 5, Oct 12, Oct 19, Oct 26, Nov 2, and Nov 9\n📍Location: HUB 265\n- All levels welcome: From beginners to advanced yogis.\n- What to bring: Just yourself! (Feel free to bring your own mat if you prefer).\n\n⚠️ Spaces are limited and registration is required! Scan the QR code or click the link in our bio to sign up.\n\nregistration Link: http://tinyurl.com/3644u8v2"
+              }
+            ]
+          }
+        ],
+        "schedule": null
+      }
+    },
+    "rows": [],
+    "known_event_ids": []
+  }
+]

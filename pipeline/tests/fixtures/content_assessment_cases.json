@@ -319,5 +319,193 @@
       "2026-09-18T00:00:00-07:00"
     ],
     "synthetic": true
+  },
+  {
+    "name": "Hot Scots with Chancellor Hu Video Release",
+    "expected_kind": "announcement",
+    "expected_date_role": "notice_period",
+    "expected_starts_at": [],
+    "source": {
+      "origin": "instagram",
+      "posted_at": "2026-09-18T17:46:54+00:00",
+      "source_key": "instagram:post:3989062746896826756",
+      "source_occurrences": [],
+      "texts": {
+        "caption": "Can Chancellor Hu handle the heat? 🌶️🔥🍗 Find out when the official 2026 “Welcome Back” video drops Monday! Rate your own spice tolerance from 1-10 below 👇 (Anything under a 5, don’t even bother). 🥵😂\n\n🎥 Audio Description: Plates of chicken wings & bottles of sauces sitting on a table while text pops up on screen “Hot Scots with Chancellor Hu, 9.21.26” then a bear paw reaches and grabs a wing off the plate. \n\n#ucr #UCRiverside #WelcomeWeek26 #HotOnes",
+        "slide_1_ocr": "SAUG\nLia\nHOT\nSCOTS\nWITH CHANCELLOR HU\nOTS\nHOT\nSCOTS\nSHUFFLE"
+      }
+    },
+    "synthetic": false
+  },
+  {
+    "name": "ScotSurplus Open During Move In",
+    "expected_kind": "announcement",
+    "expected_date_role": "notice_period",
+    "expected_starts_at": [],
+    "source": {
+      "origin": "instagram",
+      "posted_at": "2026-09-19T15:27:06+00:00",
+      "source_key": "instagram:post:3989718067656891303",
+      "source_occurrences": [],
+      "texts": {
+        "caption": "Welcome Highlanders… come by ScotSurplus during Move In!!!\nLots of gently used desks, monitors, computers and much much more 🐻🐻🐻",
+        "slide_1_ocr": "FIORAL ROKEN\nDENOVACE DAMAGED\nCHON CONTENTS BUTOSE\nBUNING RECEPT\nmons\nScotSurplus\nOpen Today\nDuring Move In"
+      }
+    },
+    "synthetic": false
+  },
+  {
+    "name": "dated video drop",
+    "expected_kind": "announcement",
+    "expected_date_role": "notice_period",
+    "expected_starts_at": [],
+    "source": {
+      "source_key": "instagram:post:test-dated-video-drop",
+      "origin": "instagram",
+      "posted_at": "2026-09-19T15:00:00Z",
+      "texts": {
+        "caption": "The campus welcome video drops Monday, September 21, 2026! Watch on our profile and comment with your favorite moment."
+      },
+      "source_occurrences": []
+    },
+    "synthetic": true
+  },
+  {
+    "name": "recorded premiere",
+    "expected_kind": "announcement",
+    "expected_date_role": "notice_period",
+    "expected_starts_at": [],
+    "source": {
+      "source_key": "instagram:post:test-recorded-premiere",
+      "origin": "instagram",
+      "posted_at": "2026-09-19T15:00:00Z",
+      "texts": {
+        "caption": "The recorded campus tour premieres September 21, 2026 at 5 PM on our channel. Watch whenever you like."
+      },
+      "source_occurrences": []
+    },
+    "synthetic": true
+  },
+  {
+    "name": "shop opening notice",
+    "expected_kind": "announcement",
+    "expected_date_role": "notice_period",
+    "expected_starts_at": [],
+    "source": {
+      "source_key": "instagram:post:test-shop-opening-notice",
+      "origin": "instagram",
+      "posted_at": "2026-09-19T15:00:00Z",
+      "texts": {
+        "caption": "Campus Surplus is open today during move-in! Come by for gently used desks and monitors."
+      },
+      "source_occurrences": []
+    },
+    "synthetic": true
+  },
+  {
+    "name": "resource availability notice",
+    "expected_kind": "announcement",
+    "expected_date_role": "notice_period",
+    "expected_starts_at": [],
+    "source": {
+      "source_key": "instagram:post:test-resource-availability-notice",
+      "origin": "instagram",
+      "posted_at": "2026-09-19T15:00:00Z",
+      "texts": {
+        "caption": "The student equipment lending desk is available today. Stop by to borrow a calculator."
+      },
+      "source_occurrences": []
+    },
+    "synthetic": true
+  },
+  {
+    "name": "video screening",
+    "expected_kind": "activity",
+    "expected_date_role": "occurrence",
+    "expected_starts_at": [
+      "2026-09-21T17:00:00-07:00"
+    ],
+    "source": {
+      "source_key": "instagram:post:test-video-screening",
+      "origin": "instagram",
+      "posted_at": "2026-09-19T15:00:00Z",
+      "texts": {
+        "caption": "Join our welcome-video screening and discussion September 21, 2026 at 5 PM in the student center."
+      },
+      "source_occurrences": []
+    },
+    "synthetic": true
+  },
+  {
+    "name": "live online Q&A",
+    "expected_kind": "activity",
+    "expected_date_role": "occurrence",
+    "expected_starts_at": [
+      "2026-09-21T17:00:00-07:00"
+    ],
+    "source": {
+      "source_key": "instagram:post:test-live-online-Q&A",
+      "origin": "instagram",
+      "posted_at": "2026-09-19T15:00:00Z",
+      "texts": {
+        "caption": "Join our live online Q&A with the chancellor September 21, 2026 at 5 PM. Submit questions during the livestream."
+      },
+      "source_occurrences": []
+    },
+    "synthetic": true
+  },
+  {
+    "name": "shop dated operating hours",
+    "expected_kind": "service_schedule",
+    "expected_date_role": "occurrence",
+    "expected_starts_at": [
+      "2026-09-19T10:00:00-07:00"
+    ],
+    "source": {
+      "source_key": "instagram:post:test-shop-dated-operating-hours",
+      "origin": "instagram",
+      "posted_at": "2026-09-19T15:00:00Z",
+      "texts": {
+        "caption": "Campus Surplus shopping hours today, September 19, 2026: 10 AM to 2 PM. Browse used desks and monitors."
+      },
+      "source_occurrences": []
+    },
+    "synthetic": true
+  },
+  {
+    "name": "shop grand opening",
+    "expected_kind": "activity",
+    "expected_date_role": "occurrence",
+    "expected_starts_at": [
+      "2026-09-19T00:00:00-07:00"
+    ],
+    "source": {
+      "source_key": "instagram:post:test-shop-grand-opening",
+      "origin": "instagram",
+      "posted_at": "2026-09-19T15:00:00Z",
+      "texts": {
+        "caption": "Join the Campus Surplus grand-opening celebration September 19, 2026! Ribbon cutting, music and refreshments."
+      },
+      "source_occurrences": []
+    },
+    "synthetic": true
+  },
+  {
+    "name": "date only special sale",
+    "expected_kind": "activity",
+    "expected_date_role": "occurrence",
+    "expected_starts_at": [
+      "2026-09-19T00:00:00-07:00"
+    ],
+    "source": {
+      "source_key": "instagram:post:test-date-only-special-sale",
+      "origin": "instagram",
+      "posted_at": "2026-09-19T15:00:00Z",
+      "texts": {
+        "caption": "Campus Surplus special move-in sale September 19, 2026! One-day clearance sale with half-price desks and monitors."
+      },
+      "source_occurrences": []
+    },
+    "synthetic": true
   }
 ]

@@ -1,5 +1,6 @@
 """Assessment caching, source adaptation, and publication-boundary regressions."""
 import copy
+import json
 import sys
 import tempfile
 import unittest
@@ -38,6 +39,26 @@ class AssessmentCacheTests(unittest.TestCase):
             self.assertEqual(2, model.call_count)
             publication.cached_assessment(changed, refresh=True)
             self.assertEqual(3, model.call_count)
+
+    def test_reviewed_notices_replace_cached_activity_and_produce_no_rows(self):
+        cases = json.loads((Path(__file__).parent / "fixtures/content_assessment_cases.json").read_text())
+        keys = {"instagram:post:3989062746896826756", "instagram:post:3989718067656891303"}
+        for case in (case for case in cases if case["source"]["source_key"] in keys):
+            src = case["source"]
+            evidence = [{"field": field, "quote": text} for field, text in src["texts"].items() if text]
+            prior = {"status": "complete", "source": src, "source_hash": semantic.fingerprint(src),
+                     "assessed_at": "2026-09-19T18:30:00+00:00", "result": {"kind": "activity"}}
+            publication._save_assessment(prior)
+            result = {"kind": "announcement", "date_role": "notice_period",
+                      "reason": "Source advertises a release or opening notice without an occasion.",
+                      "activity_evidence": evidence, "date_evidence": evidence,
+                      "occurrences": [], "schedule": None, "use_source_occurrences": False}
+            reviewed = publication.record_review(src, result, reviewer="regression review")
+            with self.subTest(source_key=src["source_key"]), patch.object(semantic, "assess") as model:
+                payload = publication.cached_assessment(src, prior)
+                self.assertEqual(reviewed, payload)
+                self.assertEqual(([], set()), publication.post_rows({}, {}, payload, {}, "2026-09-19T19:00:00Z"))
+                model.assert_not_called()
 
     def test_rule_validation_changes_do_not_reassess_previously_accepted_sources(self):
         src = source()
