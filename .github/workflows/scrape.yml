@@ -12,7 +12,9 @@ name: Scrape sources
 #                            (`instaloader -l <user>` then
 #                             `base64 -i ~/.config/instaloader/session-<user>`)
 #   GOOGLE_VISION_API_KEY  - OCR
+#   GEMINI_API_KEY         - optional; free-tier Gemini API key for assessment
 #   GOOGLE_CLOUD_PROJECT   - billed GCP project with Vertex AI API enabled
+#                            (assessment uses it when GEMINI_API_KEY is unset)
 #   GOOGLE_APPLICATION_CREDENTIALS_B64
 #                          - base64 service-account JSON with Vertex AI access
 #
@@ -84,6 +86,7 @@ jobs:
         env:
           IG_USERNAME: ${{ secrets.IG_USERNAME }}
           GOOGLE_VISION_API_KEY: ${{ secrets.GOOGLE_VISION_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GOOGLE_CLOUD_PROJECT: ${{ secrets.GOOGLE_CLOUD_PROJECT }}
           GOOGLE_CLOUD_LOCATION: global
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}

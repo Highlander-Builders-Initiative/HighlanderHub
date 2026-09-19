@@ -63,6 +63,9 @@ class PostArchiveTests(unittest.TestCase):
         for module, target, value in (
             (post_archive, "POSTS_DIR", self.root / "posts"),
             (scrape_posts, "POST_CHECKPOINTS_FILE", self.root / "post_checkpoints.json"),
+            (scrape_posts, "POST_BACKFILL_SINCE", ""),
+            (scrape_posts, "POST_DISCOVERY_MODE", "profiles"),
+            (scrape_posts, "POST_EXTRACTED_DIR", self.root / "extractions"),
             (instagram_cooldown, "INSTAGRAM_COOLDOWN_FILE", self.root / "instagram_cooldown.json"),
             (instagram_cooldown, "_UNSAVED", None),
         ):
@@ -233,6 +236,12 @@ class ProfileLookupTests(PostArchiveTests):
         self.remote_writes.assert_not_called()
         self.assertEqual([], list((self.root / "posts").glob("*/*.json")))
 
+    def test_an_empty_profile_is_reported_as_an_empty_feed(self):
+        with patch.object(self.loader.context, "get_json", return_value=self.page([])):
+            with self.assertRaises(scrape_posts.EmptyFeed):
+                self.graphql_scan()
+        self.remote_writes.assert_not_called()
+
     def test_empty_first_page_and_malformed_pagination_do_not_establish_coverage(self):
         malformed = self.page([iphone_post()])
         del malformed["data"]["xdt_api__v1__feed__user_timeline_graphql_connection"]["page_info"]
@@ -291,7 +300,8 @@ class ProfileLookupTests(PostArchiveTests):
                   "scanned_through": "2026-09-10T00:00:00+00:00"}
         wrong = iphone_post()
         wrong["user"]["pk"] = "99"
-        for response in (self.page([wrong]), self.page([]), {"data": None}):
+        # An empty feed is skipped rather than failed; see the EmptyFeed tests.
+        for response in (self.page([wrong]), {"data": None}):
             scrape_posts.write_local_checkpoints({"acm.ucr": before})
             with self.subTest(response=response), \
                  patch.object(scrape_posts.instaloader, "Instaloader", return_value=self.loader), \
@@ -309,9 +319,39 @@ class ProfileLookupTests(PostArchiveTests):
                  patch.object(scrape_posts, "ensure_post_dirs"):
                 with self.assertRaisesRegex(RuntimeError, "1 failure"):
                     scrape_posts.main()
-                self.assertEqual(before, scrape_posts.load_local_checkpoints()["acm.ucr"])
-                self.assertEqual(before, remote_checkpoints.call_args.args[0]["acm.ucr"])
+                saved = scrape_posts.load_local_checkpoints()["acm.ucr"]
+                self.assertEqual(before, {key: saved[key] for key in before})
+                self.assertEqual("error", saved["last_status"])
+                self.assertTrue(saved["last_error"])
+                self.assertEqual(saved, remote_checkpoints.call_args.args[0]["acm.ucr"])
                 self.remote_writes.assert_not_called()
+
+    def test_missing_handle_is_skipped_and_the_run_continues(self):
+        missing = {"errors": [{"message": "execution error", "code": 4630001, "summary": "Bad Request",
+                               "description": "User lookup returned null", "severity": "CRITICAL"}],
+                   "status": "ok"}
+        accounts = [{"handle": "gone.ucr", "instagram_user_id": 7},
+                    {"handle": "acm.ucr", "instagram_user_id": 42}]
+        with patch.object(scrape_posts.instaloader, "Instaloader", return_value=self.loader), \
+             patch.object(self.loader, "close"), \
+             patch.object(self.loader.context, "get_json", side_effect=[missing, self.page([iphone_post()])]), \
+             patch.object(scrape_posts, "_login"), \
+             patch.object(scrape_posts, "_attach_http_error_logger"), \
+             patch.object(scrape_posts, "_persist_rotated_session"), \
+             patch.object(scrape_posts, "_sleep_between_accounts"), \
+             patch.object(scrape_posts, "_load_scrape_accounts", return_value=accounts), \
+             patch.object(scrape_posts, "resolve_checkpoints", return_value={
+                 "gone.ucr": {"activated_at": "2026-09-01T00:00:00+00:00"},
+                 "acm.ucr": {"activated_at": "2026-09-01T00:00:00+00:00"}}), \
+             patch.object(scrape_posts, "_write_remote_checkpoints"), \
+             patch.object(scrape_posts, "refresh_candidates", return_value={}), \
+             patch.object(scrape_posts, "hydrate_local_posts"), \
+             patch.object(scrape_posts, "ensure_post_dirs"):
+            scrape_posts.main()
+        saved = scrape_posts.load_local_checkpoints()
+        self.assertEqual("complete", saved["acm.ucr"]["last_status"])
+        self.assertNotIn("scanned_through", saved["gone.ucr"])
+        self.assertTrue((self.root / "posts" / "acm.ucr" / "700.json").exists())
 
     def test_missing_id_fails_without_falling_back_to_username_lookup(self):
         loader = Mock()
@@ -494,6 +534,26 @@ class MediaIdentityTests(unittest.TestCase):
 
 
 class ActivationBoundaryTests(PostArchiveTests):
+    def test_backfill_overrides_activation_and_progress_without_mutating_them(self):
+        checkpoint = {"activated_at": "2026-09-10T00:00:00+00:00",
+                      "scanned_through": "2026-09-11T00:00:00+00:00"}
+        before = dict(checkpoint)
+        posts = [FakePost("1", "2020-01-01T00:00:00+00:00"),
+                 FakePost("2", "2026-09-11T09:00:00+00:00"),
+                 FakePost("3", "2025-08-15T00:00:00+00:00"),
+                 FakePost("4", "2025-08-01T00:00:00+00:00"),
+                 FakePost("5", "2025-07-31T23:59:59+00:00")]
+        with patch.object(scrape_posts, "_graphql_feed_posts", return_value=iter(posts)):
+            result = scrape_posts.scan_account(
+                Mock(), {"handle": "acm.ucr", "instagram_user_id": 42}, checkpoint,
+                instant("2026-09-11T12:00:00+00:00"),
+                backfill_since=instant("2025-08-01T00:00:00+00:00"))
+        self.assertEqual(["2", "3", "4"], result.media_ids)
+        self.assertTrue(result.complete)
+        self.assertEqual(before, checkpoint)
+        # Removing the override immediately restores the activation boundary.
+        self.assertEqual(["2"], self.scan(posts, checkpoint).media_ids)
+
     def test_posts_published_before_activation_are_never_imported(self):
         checkpoint = {"activated_at": "2026-09-10T00:00:00+00:00"}
         result = self.scan([
@@ -884,6 +944,120 @@ class ArchiveRestoreTests(unittest.TestCase):
 
 class CollectionRunTests(PostArchiveTests):
     """The collector entrypoint end to end, with Instagram mocked out."""
+
+    def test_backfill_refreshes_failed_download_not_refetched_by_discovery(self):
+        accounts = [{"handle": "acm.ucr", "instagram_user_id": 42}]
+        with patch.object(scrape_posts, "POST_BACKFILL_SINCE", "2025-08-01"):
+            self.run_main(accounts, {"acm.ucr": [FakePost("7", "2025-08-02T00:00:00+00:00")]})
+            post_archive.write_json(scrape_posts.POST_EXTRACTED_DIR / "7.json", {
+                "media_id": "7", "status": "error", "result": {"stage": "download", "error": "expired"}})
+            with patch.object(scrape_posts, "refresh_post") as refresh:
+                self.run_main(accounts, {})
+            refresh.assert_called_once()
+            self.assertEqual("7", refresh.call_args.args[1]["media_id"])
+
+    def test_backfill_rerun_revisits_successful_accounts_and_retries_failed_accounts(self):
+        accounts = [{"handle": h, "instagram_user_id": n + 1}
+                    for n, h in enumerate(["first", "second", "third"])]
+        def fail():
+            raise ConnectionException("network down")
+        feeds = {"first": [FakePost("1", "2025-08-02T00:00:00+00:00")],
+                 "second": _Exploding(fail),
+                 "third": [FakePost("3", "2025-08-02T00:00:00+00:00")]}
+        with patch.object(scrape_posts, "POST_BACKFILL_SINCE", "2025-08-01"):
+            with self.assertRaisesRegex(scrape_posts.PartialCollection, "second.*network down"):
+                self.run_main(accounts, feeds)
+            saved = scrape_posts.load_local_checkpoints()
+            self.assertEqual("complete", saved["first"]["last_status"])
+            self.assertEqual("error", saved["second"]["last_status"])
+            # One failed account does not cost the rest of the roster.
+            self.assertEqual("complete", saved["third"]["last_status"])
+            self.assertTrue(all("backfill" not in row for row in saved.values()))
+            # Previously successful accounts must also collect newly added posts.
+            feeds["first"].insert(0, FakePost("4", "2025-08-03T00:00:00+00:00"))
+            feeds["third"].insert(0, FakePost("5", "2025-08-03T00:00:00+00:00"))
+            feeds["second"] = [FakePost("2", "2025-08-02T00:00:00+00:00")]
+            self.run_main(accounts, feeds)
+        saved = scrape_posts.load_local_checkpoints()
+        self.assertTrue(all(row["last_status"] == "complete" and "backfill" not in row
+                            for row in saved.values()))
+        self.assertNotIn("last_error", saved["second"])
+        self.assertEqual({"1", "2", "3", "4", "5"},
+                         {path.stem for path in (self.root / "posts").glob("*/*.json")})
+
+    def test_failures_in_a_row_stop_collection_before_the_rest_of_the_roster(self):
+        limit = scrape_posts.MAX_CONSECUTIVE_FAILURES
+        accounts = [{"handle": f"club_{n}", "instagram_user_id": n + 1} for n in range(limit + 2)]
+        def fail():
+            raise ConnectionException("network down")
+        feeds = {a["handle"]: _Exploding(fail) for a in accounts[:limit]}
+        feeds[accounts[-1]["handle"]] = _Exploding(lambda: self.fail("fetched after the stop"))
+        with self.assertRaisesRegex(RuntimeError, f"stopped after {limit} failed accounts in a row") as raised:
+            self.run_main(accounts, feeds)
+        self.assertNotIsInstance(raised.exception, scrape_posts.PartialCollection)
+
+    def test_empty_and_missing_feeds_are_skipped_without_stopping(self):
+        accounts = [{"handle": h, "instagram_user_id": n + 1}
+                    for n, h in enumerate(["empty", "gone", "live"])]
+        def raiser(exc):
+            def raise_now():
+                raise exc
+            return _Exploding(raise_now)
+        feeds = {"empty": raiser(scrape_posts.EmptyFeed("empty: empty GraphQL feed")),
+                 "gone": raiser(scrape_posts.ProfileNotExistsException("gone: no account")),
+                 "live": [FakePost("9", "2026-09-11T09:00:00+00:00")]}
+        self.run_main(accounts, feeds)
+        saved = scrape_posts.load_local_checkpoints()
+        self.assertEqual("complete", saved["live"]["last_status"])
+        # Skipped accounts claim no coverage, so the next run looks again.
+        self.assertNotIn("scanned_through", saved["empty"])
+        self.assertNotIn("scanned_through", saved["gone"])
+
+    def test_legacy_backfill_markers_do_not_skip_accounts_and_are_removed(self):
+        accounts = [{"handle": "first", "instagram_user_id": 1}]
+        checkpoint = {"activated_at": "2026-09-01T00:00:00+00:00",
+                      "scanned_through": "2026-09-10T00:00:00+00:00",
+                      "backfill": {"since": "2025-08-01T00:00:00+00:00", "user_id": "1",
+                                   "completed_at": "2026-09-10T00:00:00+00:00"}}
+        for cutoff in ("2025-08-01", "2026-08-01", "2025-01-01"):
+            with self.subTest(cutoff=cutoff):
+                post_archive.write_json(scrape_posts.POST_CHECKPOINTS_FILE,
+                                        {"accounts": {"first": dict(checkpoint), "untouched": dict(checkpoint)}})
+                with patch.object(scrape_posts, "POST_BACKFILL_SINCE", cutoff):
+                    self.run_main(accounts, {"first": [FakePost("1", "2026-08-02T00:00:00+00:00")]})
+                self.assertTrue((self.root / "posts" / "first" / "1.json").exists())
+                saved = scrape_posts.load_local_checkpoints()
+                self.assertTrue(all("backfill" not in row for row in saved.values()))
+                self.assertEqual(checkpoint["activated_at"], saved["first"]["activated_at"])
+                self.assertEqual({key: value for key, value in checkpoint.items() if key != "backfill"},
+                                 saved["untouched"])
+                (self.root / "posts" / "first" / "1.json").unlink()
+
+    def test_backfill_scans_entire_roster_even_when_following_is_configured(self):
+        accounts = [{"handle": f"club_{n}", "instagram_user_id": n + 1}
+                    for n in range(123)]
+        checkpoint = {"activated_at": "2026-09-10T00:00:00+00:00",
+                      "scanned_through": "2026-09-11T00:00:00+00:00"}
+        scrape_posts.write_local_checkpoints({a["handle"]: dict(checkpoint) for a in accounts})
+        posts = {a["handle"]: [FakePost(str(n), "2025-08-01T00:00:00+00:00")]
+                 for n, a in enumerate(accounts)}
+        with patch.object(scrape_posts, "POST_BACKFILL_SINCE", "2025-08-01"), \
+             patch.object(scrape_posts, "POST_DISCOVERY_MODE", "following"):
+            self.run_main(accounts, posts)
+        self.assertEqual(123, len(list((self.root / "posts").glob("*/*.json"))))
+        self.assertTrue(all(row["activated_at"] == checkpoint["activated_at"]
+                            and row["last_status"] == "complete"
+                            for row in scrape_posts.load_local_checkpoints().values()))
+
+    def test_invalid_backfill_and_bounded_pilot_fail_before_any_instagram_request(self):
+        with patch.object(scrape_posts.instaloader, "Instaloader") as loader:
+            with patch.object(scrape_posts, "POST_BACKFILL_SINCE", "not-a-date"):
+                with self.assertRaisesRegex(ValueError, "ISO date"):
+                    scrape_posts.main()
+            with patch.object(scrape_posts, "POST_BACKFILL_SINCE", "2025-08-01"):
+                with self.assertRaisesRegex(ValueError, "bounded"):
+                    scrape_posts.main(["acm.ucr"], direct_feed=True)
+            loader.assert_not_called()
 
     def run_main(self, accounts, posts_by_handle, *, refresh=None, handles=None, direct_feed=False):
         def get_posts(loader, handle, user_id):

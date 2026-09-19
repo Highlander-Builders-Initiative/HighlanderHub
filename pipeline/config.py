@@ -35,12 +35,20 @@ POST_DISCOVERY_MODE = os.environ.get("PIPELINE_POST_DISCOVERY", "profiles").lowe
 ACCOUNTS_FILE = ROOT / "accounts.json"
 FOLLOWED_ACCOUNTS_FILE = DATA_DIR / "followed_accounts.json"
 ACCOUNT_SOURCE = os.environ.get("PIPELINE_ACCOUNT_SOURCE", "followed").lower()
+# Opt-in historical maintenance sweep. Removing this setting restores normal discovery
+# and roster selection without rewriting any account's activation timestamp.
+POST_BACKFILL_SINCE = os.environ.get("PIPELINE_POST_BACKFILL_SINCE", "").strip()
+if POST_BACKFILL_SINCE:
+    ACCOUNT_SOURCE = "accounts_json"
+    POST_DISCOVERY_MODE = "profiles"
 
 # Authenticate using credentials or a saved Instaloader session file.
 IG_USERNAME = os.environ.get("IG_USERNAME")
 IG_PASSWORD = os.environ.get("IG_PASSWORD")
 SESSION_FILE = os.environ.get("IG_SESSION_FILE")  # absolute path, optional
 GOOGLE_VISION_API_KEY = os.environ.get("GOOGLE_VISION_API_KEY")
+# Assessment uses the Gemini API with this key, otherwise Vertex AI below.
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 GOOGLE_CLOUD_PROJECT = os.environ.get("GOOGLE_CLOUD_PROJECT")
 GOOGLE_CLOUD_LOCATION = os.environ.get("GOOGLE_CLOUD_LOCATION") or "global"
 
