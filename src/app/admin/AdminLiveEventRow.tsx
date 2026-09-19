@@ -3,6 +3,7 @@
 import React, { useMemo, useState } from "react";
 import { IoPencil, IoTrash } from "react-icons/io5";
 import { EventListRowTimeColumn } from "@/components/events/EventListRowTimeColumn";
+import { FlyerPoster } from "@/components/events/FlyerPoster";
 import { eventRowToCampusEvent } from "@/lib/events/map-event-row";
 import type { AdminEventRow } from "./types";
 
@@ -39,28 +40,23 @@ export function AdminLiveEventRow({
         />
 
         {showImage ? (
-          <div className="relative shrink-0 self-stretch py-2 pl-2">
-            <div className="relative h-full w-[80px] min-h-[4.5rem] overflow-hidden rounded-md bg-surface">
-              {/* Plain img bypasses the next/image optimizer for arbitrary hosts;
-                  CSP img-src still governs which hosts load, so blocked/broken
-                  flyers fall back via onError. */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={campusEvent.imageUrl!}
-                alt={`${campusEvent.title} flyer`}
-                className="absolute inset-0 h-full w-full object-cover"
-                onError={() => setImageBroken(true)}
-              />
-              <span
-                aria-hidden
-                className="pointer-events-none absolute inset-0 rounded-md ring-1 ring-inset ring-ink/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]"
-              />
-            </div>
+          // Same whole-flyer 4:5 slot as the public EventCard, so review shows
+          // exactly what students see. EventFlyerImage keeps arbitrary hosts
+          // off the next/image optimizer; CSP img-src still governs which hosts
+          // load, so blocked/broken flyers fall back via onError.
+          <div className="my-2 ml-3 flex h-[var(--flyer-max-h)] w-[var(--flyer-max-w)] shrink-0 items-center justify-center self-center [--flyer-max-h:100px] [--flyer-max-w:80px]">
+            <FlyerPoster
+              src={campusEvent.imageUrl!}
+              alt={`${campusEvent.title} flyer`}
+              sizes="80px"
+              className="rounded bg-ink/[0.05] shadow-[0_1px_2px_rgba(15,17,21,0.06),0_3px_8px_-2px_rgba(15,17,21,0.08)] ring-1 ring-ink/10"
+              onError={() => setImageBroken(true)}
+            />
           </div>
         ) : (
-          <div className="relative shrink-0 self-stretch py-2 pl-2">
+          <div className="my-2 ml-3 h-[100px] w-[80px] shrink-0 self-center">
             <div
-              className="flex h-full w-[80px] min-h-[4.5rem] items-center justify-center rounded-md border border-dashed border-ink/15 bg-surface text-[9px] font-sans text-muted text-center px-1 leading-tight"
+              className="flex h-full w-full items-center justify-center rounded border border-dashed border-ink/15 bg-surface text-[9px] font-sans text-muted text-center px-1 leading-tight"
               aria-label="No flyer image"
             >
               No flyer

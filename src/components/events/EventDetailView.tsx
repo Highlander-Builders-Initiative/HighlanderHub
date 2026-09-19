@@ -9,6 +9,7 @@ import { EventCalendarMenu } from "@/components/events/EventCalendarMenu";
 import { ShareButton } from "@/components/events/ShareButton";
 import { EventBackButton } from "@/components/events/EventBackButton";
 import { EventFlyerImage } from "@/components/events/EventFlyerImage";
+import { FlyerPoster } from "@/components/events/FlyerPoster";
 import { TrackedAnchor } from "@/components/events/TrackedAnchor";
 import { normalizeHttpUrl } from "@/lib/events/validation";
 import { isDeadlineKind } from "@/lib/events/content-kind";
@@ -39,14 +40,19 @@ export const EVENT_DETAIL_CONTAINER_CLASS =
   "relative mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6";
 export const EVENT_DETAIL_FLYER_GRID_CLASS =
   "mt-6 grid grid-cols-1 gap-10 md:mt-10 md:grid-cols-[minmax(0,18rem)_minmax(0,1fr)] md:gap-12 lg:grid-cols-[minmax(0,21rem)_minmax(0,1fr)] lg:gap-14";
+// Rails bound the flyer (see .flyer-poster) to their width, with tall reel
+// covers capped above the fold.
 export const EVENT_DETAIL_ASIDE_CLASS =
-  "hidden space-y-6 md:sticky md:top-24 md:block md:self-start";
-export const EVENT_DETAIL_FLYER_FRAME_CLASS =
-  "relative w-full overflow-hidden rounded-xl border border-ink/10 bg-surface shadow-card";
+  "hidden space-y-6 md:sticky md:top-24 md:block md:self-start [--flyer-max-h:min(32rem,70dvh)] [--flyer-max-w:18rem] lg:[--flyer-max-w:21rem]";
+// The flyer is shown whole at its own shape, so the frame (edge, hairline,
+// lift) is drawn on the image itself rather than on a fixed crop box. Its
+// fill is the placeholder until the image paints over it.
+export const EVENT_DETAIL_FLYER_CLASS =
+  "block rounded-xl bg-ink/[0.04] shadow-card ring-1 ring-ink/10";
 // Phone hero: capped by viewport height so the title still shows beneath it,
 // and narrow enough at 375px to clear the overlay's close button.
 export const EVENT_DETAIL_MOBILE_FLYER_CLASS =
-  "relative mx-auto mb-6 w-[min(16.25rem,32dvh)] overflow-hidden rounded-xl border border-ink/10 bg-surface shadow-card md:hidden";
+  "mb-6 flex justify-center md:hidden [--flyer-max-h:min(20.3125rem,40dvh)] [--flyer-max-w:min(16.25rem,100vw_-_2.5rem)]";
 export const EVENT_DETAIL_TILE_CLASS =
   "flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-ink/15 bg-canvas md:h-14 md:w-14";
 export const EVENT_DETAIL_MOBILE_BAR_CLASS =
@@ -59,7 +65,7 @@ export const EVENT_MODAL_CONTAINER_CLASS =
 export const EVENT_MODAL_FLYER_GRID_CLASS =
   "mt-6 grid grid-cols-1 gap-8 md:mt-8 md:grid-cols-[minmax(0,15rem)_minmax(0,1fr)] md:gap-10";
 export const EVENT_MODAL_ASIDE_CLASS =
-  "hidden space-y-6 md:sticky md:top-8 md:block md:self-start";
+  "hidden space-y-6 md:sticky md:top-8 md:block md:self-start [--flyer-max-h:min(32rem,70dvh)] [--flyer-max-w:15rem]";
 // Sticky, not fixed: the panel's open animation leaves a transform on it,
 // which would make a fixed bar position against the panel anyway.
 export const EVENT_MODAL_MOBILE_BAR_CLASS =
@@ -114,39 +120,40 @@ export function EventDetailView({
   const Title = isModal ? "h2" : "h1";
 
   // Rendered in both the phone hero and the desktop rail. Identical src and
-  // sizes let the browser resolve one URL, so the flyer downloads once.
-  const flyer = event.imageUrl
-    ? (() => {
-        const image = (
-          <EventFlyerImage
-            src={event.imageUrl}
-            alt={`Flyer for ${event.title}`}
-            fill
-            sizes={
-              isModal
-                ? "(max-width: 768px) 80vw, 15rem"
-                : "(max-width: 768px) 80vw, (max-width: 1024px) 18rem, 21rem"
-            }
-            className="object-cover"
-            priority
-          />
-        );
-        // The flyer opens the original post when one is on file.
-        return safeSourceUrl ? (
-          <a
-            href={safeSourceUrl}
-            target="_blank"
-            rel="noreferrer"
-            aria-label={`View original post on ${sourceLabel}`}
-            className="interactive-focus relative block aspect-[4/5] w-full transition-opacity hover:opacity-90"
-          >
-            {image}
-          </a>
-        ) : (
-          <div className="relative aspect-[4/5] w-full">{image}</div>
-        );
-      })()
-    : null;
+  // sizes let the browser resolve one URL, so the flyer downloads once. The
+  // hero sits above the title, so it holds its space until the shape is known.
+  const renderFlyer = (placement: "hero" | "rail") => {
+    if (!event.imageUrl) return null;
+    const image = (
+      <FlyerPoster
+        src={event.imageUrl}
+        alt={`Flyer for ${event.title}`}
+        sizes={
+          isModal
+            ? "(max-width: 768px) 80vw, 15rem"
+            : "(max-width: 768px) 80vw, (max-width: 1024px) 18rem, 21rem"
+        }
+        className={EVENT_DETAIL_FLYER_CLASS}
+        reserveSpace={placement === "hero"}
+        priority
+      />
+    );
+    // The flyer opens the original post when one is on file. The link hugs
+    // the flyer so its focus ring traces the same edge.
+    return safeSourceUrl ? (
+      <a
+        href={safeSourceUrl}
+        target="_blank"
+        rel="noreferrer"
+        aria-label={`View original post on ${sourceLabel}`}
+        className="interactive-focus block w-fit max-w-full rounded-xl transition-opacity hover:opacity-90"
+      >
+        {image}
+      </a>
+    ) : (
+      image
+    );
+  };
 
   return (
     <>
@@ -179,8 +186,10 @@ export function EventDetailView({
         {!isModal && <EventBackButton />}
 
         <article className={isModal ? undefined : "mt-7 md:mt-10"}>
-          {flyer && (
-            <div className={EVENT_DETAIL_MOBILE_FLYER_CLASS}>{flyer}</div>
+          {hasImage && (
+            <div className={EVENT_DETAIL_MOBILE_FLYER_CLASS}>
+              {renderFlyer("hero")}
+            </div>
           )}
 
           {/* Header: pills + title sit full-bleed across both columns for
@@ -245,13 +254,13 @@ export function EventDetailView({
                 : "mt-6 max-w-3xl md:mt-8"
             }
           >
-            {flyer && (
+            {hasImage && (
               <aside
                 className={
                   isModal ? EVENT_MODAL_ASIDE_CLASS : EVENT_DETAIL_ASIDE_CLASS
                 }
               >
-                <div className={EVENT_DETAIL_FLYER_FRAME_CLASS}>{flyer}</div>
+                {renderFlyer("rail")}
 
                 <dl className="space-y-4 text-[14px]">
                   {showHostedBy && (

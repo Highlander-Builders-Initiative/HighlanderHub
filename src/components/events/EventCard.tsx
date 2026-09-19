@@ -4,7 +4,7 @@ import Link from "next/link";
 import { memo, type MouseEvent, useLayoutEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { type CampusEvent } from "@/types/event";
-import { EventFlyerImage } from "@/components/events/EventFlyerImage";
+import { FlyerPoster } from "@/components/events/FlyerPoster";
 import { eventFlyerAlt, eventListLinkLabel } from "@/lib/events/a11y";
 import { isDeadlineKind } from "@/lib/events/content-kind";
 import { track } from "@/lib/analytics";
@@ -86,33 +86,29 @@ function EventCardComponent({
         compact={compact}
       />
 
-      {/* Portrait flyer thumbnail framed into the row: a small inset frame
-         with a hairline ring + top-edge highlight gives it haptic depth at
-         this size without the over-stated double-bezel a hero card would use. */}
+      {/* Flyer pinned whole in a fixed 4:5 slot (Instagram's portrait post).
+         Squares, reel covers and landscape posts keep their own shape inside
+         it, so nothing is cropped and every row keeps the same rhythm. */}
       {showImage && (
-        <div className="relative shrink-0 self-stretch py-2 pl-2">
-          <div className="relative h-full w-[80px] overflow-hidden rounded-lg bg-surface">
-            <EventFlyerImage
-              src={event.imageUrl!}
-              alt={eventFlyerAlt(event)}
-              fill
-              sizes="80px"
-              className="object-cover"
-              onError={() => setImageBroken(true)}
-            />
-            <span
-              aria-hidden
-              className="pointer-events-none absolute inset-0 rounded-lg ring-1 ring-inset ring-ink/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]"
-            />
-          </div>
+        <div className="my-2 ml-3 flex h-[var(--flyer-max-h)] w-[var(--flyer-max-w)] shrink-0 items-center justify-center self-center [--flyer-max-h:100px] [--flyer-max-w:80px] sm:[--flyer-max-h:110px] sm:[--flyer-max-w:88px]">
+          <FlyerPoster
+            src={event.imageUrl!}
+            alt={eventFlyerAlt(event)}
+            sizes="(min-width: 640px) 88px, 80px"
+            className="rounded bg-ink/[0.05] shadow-[0_1px_2px_rgba(15,17,21,0.06),0_3px_8px_-2px_rgba(15,17,21,0.08)] ring-1 ring-ink/10"
+            onError={() => setImageBroken(true)}
+          />
         </div>
       )}
 
-      {/* Text block. Right-padding is widened in list mode to reserve room for
-         the magnetic chevron without clipping the meta line. */}
+      {/* Text block. Where a pointer can hover, list mode widens the right
+         padding to reserve room for the magnetic chevron; touch screens never
+         show it, so the title gets that width back. */}
       <div
         className={`flex min-w-0 flex-1 flex-col justify-center gap-1 pl-4 sm:pl-5 ${
-          compact ? "pr-4 py-2.5" : "pr-10 py-3 sm:py-3.5"
+          compact
+            ? "pr-4 py-2.5"
+            : "pr-4 py-3 sm:py-3.5 [@media(hover:hover)]:pr-10"
         }`}
       >
         <h3 className="font-display text-[17px] font-semibold leading-[1.25] tracking-[-0.015em] text-ink line-clamp-2 break-words group-hover:underline group-hover:decoration-ink/30 group-hover:underline-offset-[5px] group-hover:decoration-[1.5px]">
@@ -188,11 +184,12 @@ function EventCardComponent({
 
       {/* Magnetic hover affordance: a feather-light chevron that fades in from
          the right with a small diagonal translate. Reads as "openable" without
-         the heaviness of a button. List surface only. */}
+         the heaviness of a button. List surface, hover-capable pointers only
+         (a tap's sticky hover would flash it over the title). */}
       {!compact && (
         <span
           aria-hidden
-          className="pointer-events-none absolute right-3.5 top-1/2 -translate-x-1 -translate-y-1/2 text-ink/40 opacity-0 transition-[opacity,transform,color] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-0 group-hover:text-ink group-hover:opacity-100"
+          className="pointer-events-none absolute right-3.5 top-1/2 hidden [@media(hover:hover)]:block -translate-x-1 -translate-y-1/2 text-ink/40 opacity-0 transition-[opacity,transform,color] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-0 group-hover:text-ink group-hover:opacity-100"
         >
           <svg
             viewBox="0 0 24 24"

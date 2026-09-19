@@ -212,20 +212,22 @@ Outside those two flavors, if a shadow is visible enough to describe its blur ra
 - **Background:** Canvas (#ffffff) on Surface (#fafafa) page; never bare-on-canvas. Cards sit on a tonal step.
 - **Border:** Hairline ink-tinted (`border-ink/15`). Hover darkens to full ink edge.
 - **Shadow Strategy:** Reach for `card` at rest, `cardHover` on hover. See Elevation.
-- **Internal Padding:** 16px (`p-4`) for compact, 16–20px (`px-4 py-3` to `px-5 py-4`) for text rows. Image cards use a `4/5` aspect ratio with bottom-anchored overlay copy.
+- **Internal Padding:** 16px (`p-4`) for compact, 16–20px (`px-4 py-3` to `px-5 py-4`) for text rows. Image tiles use a `4/5` frame (Instagram's portrait post) with bottom-anchored overlay copy; flyers of other shapes follow The Whole-Flyer Rule.
 - **Card-Hover Treatment:** 1px transform-Y lift, 180ms ease, border darkens to ink. Defined globally via `.card-hover`. Hover is canceled under `prefers-reduced-motion`.
 
 ### Event Card (signature)
 
-Editorial listing row. Every card shares the same skeleton: a typographic **time anchor** at the left edge, an optional 88px portrait flyer thumbnail, then the text block. A 6px colored **category dot** leads the title (see Category Dot below).
+Editorial listing row. Every card shares the same skeleton: a typographic **time anchor** at the left edge, an optional flyer in a fixed 4:5 slot, then the text block. A 6px colored **category dot** leads the title (see Category Dot below).
 
 - **Time column** (`w-16 sm:w-[68px]`, hairline `border-r` to its right): big mono digit (`font-mono text-[22px] tabular-nums`) over a small `text-[12px]` AM/PM period. The eye anchors here first.
-- **Flyer thumb** (`w-[88px]`, optional, hairline `border-r` after): square-ish portrait crop of the event flyer with a subtle hover scale (`group-hover:scale-[1.03]`). Renders only when `event.imageUrl` is present and the image loads successfully.
-- **Text block** (`flex-1`, `px-4 sm:px-5`): leading 6px category dot, then the title in `font-display text-[17px] font-semibold` with `line-clamp-2`, then a meta row (`location · host · category`, optional `Free` pill in `bg-leaf/10 text-deep-leaf`).
+- **Flyer slot** (80×100 on phones, 88×110 from `sm`; optional): the flyer is pinned whole at its own shape (`FlyerPoster`), centered in the slot, 4px radius, `ring-ink/10` hairline, a quiet paper shadow. A 4:5 placeholder holds the slot while the image loads. Renders only when `event.imageUrl` is present and the image loads successfully. See The Whole-Flyer Rule.
+- **Text block** (`flex-1`, `px-4 sm:px-5`): leading 6px category dot, then the title in `font-display text-[17px] font-semibold` with `line-clamp-2`, then a meta row (`location · host · category`, optional `Free` pill in `bg-leaf/10 text-deep-leaf`). The wider right padding that makes room for the hover chevron applies only where a pointer can hover; touch screens give that width back to the title.
 
 Compact variant (used in calendar popouts): `text-base` time digit, `w-[52px]` time column, no flyer thumb, no category text or Free pill in the meta row. The dot stays.
 
 The earlier 4px colored side-stripe rail has been retired in favor of the leading dot. See Category Dot below for the rationale.
+
+**The Whole-Flyer Rule.** A flyer is never cropped to fit a box. Club posts arrive in every Instagram shape (4:5 and 3:4 portrait, 1:1, 9:16 reel covers, landscape), so each surface gives the flyer a fixed slot for rhythm and shows the flyer whole, at its own shape, inside it. The frame (radius, hairline, shadow) is drawn on the flyer itself, never on an empty crop box. `FlyerPoster` and `.flyer-poster` implement it: the slot sets `--flyer-max-w` / `--flyer-max-h`, and until the image reports its shape the poster holds a 4:5 placeholder, so space is reserved and nothing shifts. Where the flyer sits above text (the phone detail hero), a shape that arrives after first paint centers in the reserved space instead of resizing it. One exception: a wall tile fills edge to edge when the flyer is within ~8% of the tile's shape, because a trim that small cannot be seen; every other shape is pinned whole on the tile. (The earlier story-era thumbnail, a tall crop stretched to the row's height, cut the sides off every post.)
 
 ### Category Dot (signature)
 
@@ -301,6 +303,7 @@ A 1px ink-tinted divider (`.hairline` in `globals.css`). The system's preferred 
 
 A continuously scrolling, full-bleed strip of upcoming event flyers representing the physical campus bulletin wall, alive.
 - **Scroll Track:** Continuous flex row of `FlyerTile` components (`gap-3 py-3`).
+- **Tiles:** Fixed 4:5 frames, so the loop's geometry never changes as images load. Portrait posts fill the tile; squares, reel covers and landscape posts are pinned whole on it (The Whole-Flyer Rule).
 - **Velocity:** Gentle, automated horizontal crawl (32px per second, `SPEED_PX_PER_SEC`), implemented via a requestAnimationFrame loop with sub-pixel carry to avoid jumping.
 - **Micro-interactions:** Auto-scrolling pauses instantly on pointer enter/focus capture and resumes on pointer leave/blur capture.
 - **Accessibility:** Repeated decorative clone cards are kept out of the focus order (`tabIndex={-1}`) and hidden from screen readers (`aria-hidden="true"`) to prevent double-announcement.

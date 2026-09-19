@@ -210,6 +210,19 @@ body {
   animation-delay: -15s;
 }
 
+/* ----- Whole-flyer poster -----
+   Club flyers come in every Instagram post shape (4:5, 3:4, 1:1, 9:16 reel
+   covers, landscape), so none is cropped to a box. The poster takes its own
+   ratio, contained within --flyer-max-w x --flyer-max-h (set by the slot).
+   Until FlyerPoster knows the ratio it holds Instagram's portrait 4:5, so
+   the space is reserved and a flyer that paints early still shows whole. */
+.flyer-poster {
+  --flyer-ratio: 0.8;
+  width: min(var(--flyer-max-w), var(--flyer-max-h) * var(--flyer-ratio));
+  height: min(var(--flyer-max-h), var(--flyer-max-w) / var(--flyer-ratio));
+  object-fit: contain;
+}
+
 /* ----- Flyer marquee focal spotlight -----
    Each tile carries a JS-written --focal (0..1) that intensifies as it
    approaches the marquee's focal point — viewport center at rest,
