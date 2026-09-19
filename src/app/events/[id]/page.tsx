@@ -37,20 +37,9 @@ function eventJsonLd(
   registrationUrl: string | null
 ): Record<string, unknown> {
   const url = absoluteUrl(`/events/${event.id}`);
-  const offers =
-    event.isFree || registrationUrl
-      ? {
-          "@type": "Offer",
-          url: registrationUrl ?? url,
-          ...(event.isFree
-            ? {
-                price: "0",
-                priceCurrency: "USD",
-                availability: "https://schema.org/InStock",
-              }
-            : {}),
-        }
-      : undefined;
+  const offers = registrationUrl
+    ? { "@type": "Offer", url: registrationUrl }
+    : undefined;
 
   return {
     "@context": "https://schema.org",

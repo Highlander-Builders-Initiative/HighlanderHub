@@ -190,15 +190,6 @@ export function AdminEventEditDrawer({
                 <label className="flex items-center gap-2 cursor-pointer font-sans text-sm text-ink">
                   <input
                     type="checkbox"
-                    checked={form.isFree}
-                    onChange={(e) => setField("isFree", e.target.checked)}
-                    className="h-4 w-4 accent-ink rounded text-ink outline-none interactive-focus"
-                  />
-                  <span>This event is FREE</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer font-sans text-sm text-ink">
-                  <input
-                    type="checkbox"
                     checked={form.rsvpRequired}
                     onChange={(e) => setField("rsvpRequired", e.target.checked)}
                     className="h-4 w-4 accent-ink rounded text-ink outline-none interactive-focus"

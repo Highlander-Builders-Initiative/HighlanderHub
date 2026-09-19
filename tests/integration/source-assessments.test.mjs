@@ -15,7 +15,8 @@ for (const name of ['20260513073310_init_schema.sql', '20260527000000_add_event_
   '20260529000000_deleted_events.sql', '20260530000000_event_content_kind.sql',
   '20260531000000_event_has_free_food.sql', '20260909000000_event_content_kind_application.sql',
   '20260911000000_source_assessments.sql', '20260912000000_source_assessment_fanout_overrides.sql',
-  '20260913000000_instagram_posts.sql', '20260916000000_instagram_only_publication.sql']) {
+  '20260913000000_instagram_posts.sql', '20260916000000_instagram_only_publication.sql',
+  '20260919000000_drop_event_is_free.sql']) {
   await db.exec(await readFile(new URL(name, migrations), 'utf8'));
 }
 
@@ -23,7 +24,7 @@ function row(id, extra = {}) {
   return { id, title: 'Workshop', description: 'An actual workshop',
     starts_at: '2026-09-15T22:00:00Z', ends_at: '2026-09-16T00:00:00Z',
     location: 'HUB', host: 'Club', category: 'academic', content_kind: 'student_event',
-    tags: [], source: 'instagram', is_free: true, has_free_food: false,
+    tags: [], source: 'instagram', has_free_food: false,
     rsvp_required: false, scraped_at: '2026-09-11T19:00:00Z', ...extra };
 }
 const update = (key, rows = [], aliases = [], status = 'complete') => ({

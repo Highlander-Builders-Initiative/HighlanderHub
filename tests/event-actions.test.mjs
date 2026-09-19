@@ -18,7 +18,6 @@ const event = {
   contentKind: "student_event",
   tags: [],
   source: "manual",
-  isFree: true,
   rsvpRequired: false,
   scrapedAt: "2026-05-30T12:00:00.000Z",
 };

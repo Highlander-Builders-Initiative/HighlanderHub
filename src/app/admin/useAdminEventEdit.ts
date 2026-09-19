@@ -17,7 +17,6 @@ type EditFormState = {
   contentKind: string;
   imageUrl: string;
   rsvpUrl: string;
-  isFree: boolean;
   hasFreeFood: boolean;
   rsvpRequired: boolean;
 };
@@ -38,7 +37,6 @@ const initialFormState: EditFormState = {
   contentKind: "student_event",
   imageUrl: "",
   rsvpUrl: "",
-  isFree: true,
   hasFreeFood: false,
   rsvpRequired: false,
 };
@@ -58,7 +56,6 @@ function formReducer(state: EditFormState, action: EditFormAction): EditFormStat
       contentKind: event.content_kind,
       imageUrl: event.image_url || "",
       rsvpUrl: event.rsvp_url || "",
-      isFree: event.is_free,
       hasFreeFood: event.has_free_food,
       rsvpRequired: event.rsvp_required,
     };
@@ -92,7 +89,6 @@ export function buildAdminEventUpdatePayload(
       content_kind: form.contentKind as AdminEventUpdatePayload["content_kind"],
       image_url: form.imageUrl || null,
       rsvp_url: form.rsvpUrl || null,
-      is_free: form.isFree,
       has_free_food: form.hasFreeFood,
       rsvp_required: form.rsvpRequired,
     },

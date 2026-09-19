@@ -24,7 +24,6 @@ export const ADMIN_EVENT_UPDATE_KEYS = [
   "content_kind",
   "image_url",
   "rsvp_url",
-  "is_free",
   "has_free_food",
   "rsvp_required",
 ] as const;
@@ -41,7 +40,6 @@ export type AdminEventUpdatePayload = {
   content_kind: EventContentKind;
   image_url: string | null;
   rsvp_url: string | null;
-  is_free: boolean;
   has_free_food: boolean;
   rsvp_required: boolean;
 };

@@ -34,7 +34,6 @@ export interface CampusEvent {
   source: EventSource;
   sourceUrl?: string;
   imageUrl?: string;
-  isFree: boolean;
   hasFreeFood: boolean;
   rsvpRequired: boolean;
   rsvpUrl?: string;

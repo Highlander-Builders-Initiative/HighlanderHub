@@ -108,7 +108,6 @@ def build_instagram_row(
         "content_kind": content_kind, "tags": tags, "source": "instagram",
         "source_url": normalize_http_url(raw.get("permalink")),
         "image_url": normalize_http_url(image_url),
-        "is_free": _bool_or_default(occurrence.get("is_free"), True),
         "has_free_food": detect_free_food(text, title, description, *tags),
         "rsvp_required": bool(rsvp_url) or _bool_or_default(occurrence.get("rsvp_required"), False)
                          or bool(_RSVP_TERMS.search(text)),

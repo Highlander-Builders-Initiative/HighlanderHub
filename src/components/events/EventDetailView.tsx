@@ -208,11 +208,6 @@ export function EventDetailView({
                 </span>
               )}
               <CategoryBadge category={event.category} />
-              {event.isFree && !isDeadline && (
-                <span className="inline-flex items-center rounded-full bg-leaf/10 px-2.5 py-0.5 text-[12px] font-medium text-deep-leaf">
-                  Free
-                </span>
-              )}
               {event.hasFreeFood && (
                 <span className="inline-flex items-center rounded-full bg-gold/15 px-2.5 py-0.5 text-[12px] font-medium text-deep-gold">
                   Free food
@@ -321,14 +316,16 @@ export function EventDetailView({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 md:gap-4">
-                  <div aria-hidden className={EVENT_DETAIL_TILE_CLASS}>
-                    <LocationPinIcon />
+                {event.location?.trim() ? (
+                  <div className="flex items-center gap-3 md:gap-4">
+                    <div aria-hidden className={EVENT_DETAIL_TILE_CLASS}>
+                      <LocationPinIcon />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-[15px] text-ink">{event.location}</div>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <div className="text-[15px] text-ink">{event.location}</div>
-                  </div>
-                </div>
+                ) : null}
               </section>
 
               {/* Registration card — desktop only; mobile is served by the
