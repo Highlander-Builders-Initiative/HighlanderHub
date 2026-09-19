@@ -230,3 +230,32 @@ test("calendar jumps leave the selected day below the sticky search bar", async 
     return headerBox.y - (searchBox.y + searchBox.height + 8);
   }).toBeGreaterThan(0);
 });
+
+test("calendar jumps back to a day that is already loaded", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto("/events");
+
+  // A month fetch finishing mid-jump re-runs the scroll effect on its own and
+  // would hide the bug, so start from a settled calendar.
+  const calendarRail = page.locator(
+    'aside[aria-label="Calendar and time filter"]'
+  );
+  await expect(calendarRail.getByRole("heading", { level: 2 })).toHaveText(
+    /may 2026/i
+  );
+  await expect(calendarRail.locator('[aria-busy="true"]')).toHaveCount(0);
+
+  const dayKey = "2026-05-20";
+  const dayHeader = page.locator(`[data-day-key="${dayKey}"]`);
+  const headerTop = () =>
+    dayHeader.evaluate((el) => el.getBoundingClientRect().top);
+
+  await page.evaluate(() =>
+    window.scrollTo(0, document.documentElement.scrollHeight)
+  );
+  await expect.poll(headerTop).toBeLessThan(0);
+
+  await page.getByRole("button", { name: `Jump to ${dayKey}` }).click();
+
+  await expect.poll(headerTop).toBeGreaterThanOrEqual(0);
+});

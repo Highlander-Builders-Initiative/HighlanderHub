@@ -6,6 +6,7 @@ import {
   useLayoutEffect,
   useMemo,
   useRef,
+  useState,
   type Dispatch,
   type SetStateAction,
 } from "react";
@@ -74,6 +75,9 @@ export function useEventFeedNavigation({
   const daySectionRefs = useRef<Map<string, HTMLElement>>(new Map());
   const userInitiatedScrollRef = useRef(0);
   const pendingCalendarScrollRef = useRef<string | null>(null);
+  // Re-runs the jump effect on every click; a day that is already loaded
+  // changes none of its other dependencies.
+  const [calendarJumpCount, setCalendarJumpCount] = useState(0);
   const calendarJumpSuppressUntilRef = useRef(0);
   const pendingLoadAnchorRef = useRef<{
     dayKey: string;
@@ -119,6 +123,7 @@ export function useEventFeedNavigation({
     (dayKey: string) => {
       const now = Date.now();
       pendingCalendarScrollRef.current = dayKey;
+      setCalendarJumpCount((count) => count + 1);
       calendarJumpSuppressUntilRef.current = now + 1200;
       userInitiatedScrollRef.current = now;
       setObservedDayKey(dayKey);
@@ -158,6 +163,7 @@ export function useEventFeedNavigation({
 
     return () => window.clearTimeout(timeoutId);
   }, [
+    calendarJumpCount,
     dayKeys,
     isCalendarLoading,
     isLoadingMore,
