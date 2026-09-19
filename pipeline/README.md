@@ -244,7 +244,6 @@ Already in the DB shape that `src/lib/events/index.ts` maps into `CampusEvent`
   "source": "instagram",
   "source_url": "https://www.instagram.com/p/SecurityNight/",
   "image_url": "https://...supabase.co/storage/v1/object/public/event-flyers/instagram/cyber_ucr/posts/3894795737410658765/flyer.jpg",
-  "is_free": true,
   "rsvp_required": true,
   "rsvp_url": "https://lu.ma/...",
   "scraped_at": "2026-05-14T12:00:00+00:00"

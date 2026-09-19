@@ -16,7 +16,6 @@
     "content_kind",
     "tags",
     "source",
-    "is_free",
     "has_free_food",
     "rsvp_required",
     "scraped_at"
@@ -65,7 +64,6 @@
     },
     "source_url": { "type": ["string", "null"] },
     "image_url": { "type": ["string", "null"] },
-    "is_free": { "type": "boolean" },
     "has_free_food": { "type": "boolean" },
     "rsvp_required": { "type": "boolean" },
     "rsvp_url": { "type": ["string", "null"] },

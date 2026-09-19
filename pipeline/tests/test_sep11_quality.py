@@ -23,11 +23,11 @@ class CrossSourceReconciliationTests(unittest.TestCase):
         return {'id':eid, 'title':title, 'starts_at':'2026-09-12T14:00:00-07:00',
                 'ends_at':None, 'source':'instagram' if eid.startswith('ig_') else 'campus_website',
                 'location':'UCR ARTS', 'host':'UCR Arts', 'has_free_food':False,
-                'is_free':True, 'rsvp_url':None, 'is_locked':False, **extra}
+                'rsvp_url':None, 'is_locked':False, **extra}
 
     def test_campus_metadata_wins_and_rerun_is_idempotent(self):
         campus = self.event('campus_1', ends_at='2026-09-12T15:30:00-07:00', rsvp_url='https://example.org/register')
-        ig = self.event('ig_arts_1', is_free=False)
+        ig = self.event('ig_arts_1')
         for rows in ([campus, ig], [ig, campus]):
             before = copy.deepcopy(rows)
             updates, deleted = reconcile.plan(rows)
@@ -50,8 +50,8 @@ class CrossSourceReconciliationTests(unittest.TestCase):
         self.assertEqual('2026-11-09T07:59:59+00:00', updates[0]['ends_at'])
 
     def test_shared_rsvp_confirms_physician_day_despite_title_variation(self):
-        a = self.event('campus_1', '4th Annual National Latino Physician Day Celebration', rsvp_url='https://ucr.qualtrics.com/jfe/form/ONE', is_free=True)
-        b = self.event('ig_ppac_1', 'NATIONAL LATINO PHYSICIAN DAY', rsvp_url=a['rsvp_url']+'?utm_source=instagram', host='GradSuccess', is_free=False)
+        a = self.event('campus_1', '4th Annual National Latino Physician Day Celebration', rsvp_url='https://ucr.qualtrics.com/jfe/form/ONE')
+        b = self.event('ig_ppac_1', 'NATIONAL LATINO PHYSICIAN DAY', rsvp_url=a['rsvp_url']+'?utm_source=instagram', host='GradSuccess')
         self.assertEqual({'ig_ppac_1'}, reconcile.plan([a,b])[1])
 
     def test_distinct_clubs_dates_places_and_registration_forms_stay_separate(self):
@@ -117,7 +117,7 @@ class CrossSourceReconciliationTests(unittest.TestCase):
         self.assertEqual(([], set()), reconcile.plan([alumni, chass]))
 
     def test_lock_wins_and_deleted_group_cannot_reappear_via_another_source(self):
-        campus, ig = self.event('campus_1'), self.event('ig_a_1', is_locked=True, is_free=False)
+        campus, ig = self.event('campus_1'), self.event('ig_a_1', is_locked=True)
         self.assertEqual(([],{'campus_1'}), reconcile.plan([campus,ig]))
         self.assertEqual(([],{'campus_1'}), reconcile.plan([campus], [self.event('ig_old_1')]))
         self.assertEqual(([],set()), reconcile.plan([ig], [campus]))

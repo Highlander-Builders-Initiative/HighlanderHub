@@ -19,7 +19,6 @@ function richEvent(id, startsAt) {
     category: "social",
     tags: [],
     source: "manual",
-    isFree: true,
     rsvpRequired: false,
     scrapedAt: "2026-05-18T12:00:00.000Z",
   };
