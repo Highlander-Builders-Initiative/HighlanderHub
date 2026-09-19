@@ -40,7 +40,7 @@ _OCR_DATE_RE = re.compile(
     r"jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|"
     r"jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?|tember)?|oct(?:ober)?|"
     r"nov(?:ember)?|dec(?:ember)?"
-    r")\.?\s+(\d{1,2})(?:st|nd|rd|th)?\b",
+    r")(?:\.\s*|\s+)(\d{1,2})(?:st|nd|rd|th)?\b",
     re.IGNORECASE,
 )
 

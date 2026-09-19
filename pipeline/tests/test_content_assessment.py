@@ -29,6 +29,73 @@ def decision(src, kind="activity", role="occurrence"):
 
 
 class ContentAssessmentTests(unittest.TestCase):
+    def test_service_occurrences_require_operating_hours(self):
+        src = source("Shop open September 15, 2026")
+        result = decision(src, "service_schedule")
+        result["occurrences"][0].update(all_day=True, starts_at="2026-09-15T00:00:00-07:00",
+                                        ends_at="2026-09-16T00:00:00-07:00")
+        with self.assertRaisesRegex(ValueError, "explicit operating hours"):
+            assess.validate(result, src)
+
+        src = source("Shop open September 15, 2026 at 3 PM")
+        result = decision(src, "service_schedule")
+        result["occurrences"][0]["ends_at"] = None
+        with self.assertRaisesRegex(ValueError, "explicit operating hours"):
+            assess.validate(result, src)
+
+        src = source("Shop open September 15, 2026, 3-5 PM")
+        result = decision(src, "service_schedule")
+        self.assertEqual(result, assess.validate(result, src))
+
+    def test_saved_refusals_distinguish_parser_defects_from_model_errors(self):
+        cases = json.loads((Path(__file__).parent / "fixtures/assessment_refusals.json").read_text())
+        for media_id in ("3988684512718732494", "3987093638713207499"):
+            case = cases[media_id]
+            for attempt in case["attempts"]:
+                with self.subTest(media_id=media_id):
+                    result = assess._attach_source_quotes(attempt["response"], case["source"])
+                    self.assertEqual(result, assess.validate(result, case["source"]))
+
+        case = cases["3989114880493230451"]
+        result = assess._attach_source_quotes(case["attempts"][0]["response"], case["source"])
+        with self.assertRaisesRegex(ValueError, "both caption and slide"):
+            assess.validate(result, case["source"])
+        # Only the first webinar has an unambiguous association in this OCR.
+        # A top-level caption citation cannot repair its occurrence evidence.
+        result["occurrences"] = result["occurrences"][:1]
+        caption = {"field": "caption", "quote": case["source"]["texts"]["caption"]}
+        result["date_evidence"].append(caption)
+        with self.assertRaisesRegex(ValueError, "lacks source support"):
+            assess.validate(result, case["source"])
+        result["occurrences"][0]["date_evidence"].append(caption)
+        self.assertEqual(result, assess.validate(result, case["source"]))
+
+        case = cases["3987615353597995139"]
+        for attempt, error in zip(case["attempts"], ("end 11:00:00", "offset disagrees")):
+            result = assess._attach_source_quotes(attempt["response"], case["source"])
+            with self.subTest(error=error), self.assertRaisesRegex(ValueError, error):
+                assess.validate(result, case["source"])
+
+    def test_compact_dotted_month_dates_keep_token_and_year_boundaries(self):
+        for text in ("SEPT.28 at 5pm", "Sept. 28 at 5pm", "September 28 at 5pm"):
+            self.assertTrue(assess._day_supported(date(2026, 9, 28), text, source(text)))
+        for text in ("SEPT28", "SEPT.280", "SEPT.28x", "SEPT.28, 2025"):
+            self.assertFalse(assess._day_supported(date(2026, 9, 28), text, source(text)))
+
+    def test_ordinal_dates_require_bounded_unambiguous_range_and_day_label(self):
+        for separator in ("-", "through the ", "to ", "thru "):
+            text = f"September 21st {separator}25th, 2026. DAY 2: Rock Climbing"
+            self.assertTrue(assess._day_supported(date(2026, 9, 22), text, source(text)))
+            self.assertFalse(assess._day_supported(date(2025, 9, 22), text, source(text)))
+            self.assertFalse(assess._day_supported(date(2026, 9, 23), text, source(text)))
+        for text in ("DAY 2: Rock Climbing", "September 21-25. Rock Climbing",
+                     "September 21-25. DAY 0: Rock Climbing",
+                     "September 21-25. DAY 7: Rock Climbing",
+                     "September 25-21. DAY 2: Rock Climbing",
+                     "September 21-25. October 21-25. DAY 2: Rock Climbing"):
+            with self.subTest(text=text):
+                self.assertFalse(assess._day_supported(date(2026, 9, 22), text, source(text)))
+
     def test_unrelated_founding_year_does_not_override_event_year(self):
         src = source("Workshop September 15, 3-5 PM. Women's Resource Center, since 1962.")
         self.assertEqual(decision(src), assess.validate(decision(src), src))

@@ -1,0 +1,905 @@
+{
+  "3989114880493230451": {
+    "source": {
+      "origin": "instagram",
+      "posted_at": "2026-09-18T19:31:58+00:00",
+      "source_key": "instagram:post:3989114880493230451",
+      "source_occurrences": [],
+      "texts": {
+        "caption": "National Hazing Prevention Week is almost here!\n\nJoin us September 21–25 for a week of education, awareness, and action as we come together to build a safer Highlander community. From educational webinars to Purple with a Purpose and our Pledge to Lead event, there are plenty of ways to get involved and take a stand against hazing.\n\n📲 Check out the schedule and join us next week!\n\n#NHPW2026 #LeadTheChangeUCR",
+        "slide_1_ocr": "NATIONAL HAZING\nPREVENTION WEEK\n21\nMON\nWEBINAR: Building an Effective Hazing\nPrevention System: The Four-Domain\nFramework in Action\n→ 9 AM\nWEBINAR: The Charge for Change:\nAuthors and Contributor's Vision for\nPolicy and Practice Reform at the Top\n→ 9 AM\n23\nWED\n22\nTUE\nWear purple to show\nawareness to the issue of\nhazing!\nPledge to Lead: Take the anti-hazing\npledge and grab a free popsicle!\n(Outside the FSIC, HUB 2 101A)\n11 AM - 3 PM\nUC RIVERSIDE Student Life\n24\nTHUR"
+      }
+    },
+    "attempts": [
+      {
+        "error": "Occurrence start date lacks source support: 2026-09-21; cite a printed date or explicit relative date, never posted_at alone (occurrence 'WEBINAR: Building an Effective Hazing Prevention System: The Four-Domain Framework in Action')",
+        "response": {
+          "activity_evidence": [
+            {
+              "field": "slide_1_ocr"
+            }
+          ],
+          "date_evidence": [
+            {
+              "field": "slide_1_ocr"
+            }
+          ],
+          "date_role": "occurrence",
+          "kind": "activity",
+          "occurrences": [
+            {
+              "activity_evidence": [
+                {
+                  "field": "slide_1_ocr"
+                }
+              ],
+              "all_day": false,
+              "date_evidence": [
+                {
+                  "field": "slide_1_ocr"
+                }
+              ],
+              "ends_at": null,
+              "location": "",
+              "location_evidence": [],
+              "starts_at": "2026-09-21T09:00:00-07:00",
+              "title": "WEBINAR: Building an Effective Hazing Prevention System: The Four-Domain Framework in Action"
+            },
+            {
+              "activity_evidence": [
+                {
+                  "field": "slide_1_ocr"
+                }
+              ],
+              "all_day": false,
+              "date_evidence": [
+                {
+                  "field": "slide_1_ocr"
+                }
+              ],
+              "ends_at": null,
+              "location": "",
+              "location_evidence": [],
+              "starts_at": "2026-09-21T09:00:00-07:00",
+              "title": "WEBINAR: The Charge for Change: Authors and Contributor's Vision for Policy and Practice Reform at the Top"
+            },
+            {
+              "activity_evidence": [
+                {
+                  "field": "slide_1_ocr"
+                }
+              ],
+              "all_day": false,
+              "date_evidence": [
+                {
+                  "field": "slide_1_ocr"
+                }
+              ],
+              "ends_at": "2026-09-23T15:00:00-07:00",
+              "location": "Outside the FSIC, HUB 2 101A",
+              "location_evidence": [
+                {
+                  "field": "slide_1_ocr"
+                }
+              ],
+              "starts_at": "2026-09-23T11:00:00-07:00",
+              "title": "Pledge to Lead"
+            }
+          ],
+          "reason": "The source lists specific events occurring during National Hazing Prevention Week, including webinars and a pledge event.",
+          "schedule": null,
+          "use_source_occurrences": false
+        }
+      },
+      {
+        "error": "Occurrence start date lacks source support: 2026-09-21; cite a printed date or explicit relative date, never posted_at alone (occurrence 'WEBINAR: Building an Effective Hazing Prevention System: The Four-Domain Framework in Action')",
+        "response": {
+          "activity_evidence": [
+            {
+              "field": "slide_1_ocr"
+            }
+          ],
+          "date_evidence": [
+            {
+              "field": "slide_1_ocr"
+            }
+          ],
+          "date_role": "occurrence",
+          "kind": "activity",
+          "occurrences": [
+            {
+              "activity_evidence": [
+                {
+                  "field": "slide_1_ocr"
+                }
+              ],
+              "all_day": false,
+              "date_evidence": [
+                {
+                  "field": "slide_1_ocr"
+                }
+              ],
+              "ends_at": null,
+              "location": "",
+              "location_evidence": [],
+              "starts_at": "2026-09-21T09:00:00-07:00",
+              "title": "WEBINAR: Building an Effective Hazing Prevention System: The Four-Domain Framework in Action"
+            },
+            {
+              "activity_evidence": [
+                {
+                  "field": "slide_1_ocr"
+                }
+              ],
+              "all_day": false,
+              "date_evidence": [
+                {
+                  "field": "slide_1_ocr"
+                }
+              ],
+              "ends_at": null,
+              "location": "",
+              "location_evidence": [],
+              "starts_at": "2026-09-21T09:00:00-07:00",
+              "title": "WEBINAR: The Charge for Change: Authors and Contributor's Vision for Policy and Practice Reform at the Top"
+            },
+            {
+              "activity_evidence": [
+                {
+                  "field": "slide_1_ocr"
+                }
+              ],
+              "all_day": false,
+              "date_evidence": [
+                {
+                  "field": "slide_1_ocr"
+                }
+              ],
+              "ends_at": "2026-09-23T15:00:00-07:00",
+              "location": "Outside the FSIC, HUB 2 101A",
+              "location_evidence": [
+                {
+                  "field": "slide_1_ocr"
+                }
+              ],
+              "starts_at": "2026-09-23T11:00:00-07:00",
+              "title": "Pledge to Lead"
+            }
+          ],
+          "reason": "The source provides a schedule of specific events occurring during National Hazing Prevention Week, including webinars and a pledge event with explicit dates and times.",
+          "schedule": null,
+          "use_source_occurrences": false
+        }
+      }
+    ]
+  },
+  "3987093638713207499": {
+    "source": {
+      "origin": "instagram",
+      "posted_at": "2026-09-16T00:31:18+00:00",
+      "source_key": "instagram:post:3987093638713207499",
+      "source_occurrences": [],
+      "texts": {
+        "caption": "Save the date! Our first meeting of the year is on September 28th. See you there!",
+        "slide_1_ocr": "THE\nD\nREACH\nINITIATIVE\nFIRST\nMeeting\nSSC120\nSEPT.28 at 5pm\nfood provided\nWhat To Expect\nJoin us and learn about our\nmission and how you can\nearn volunteer hours! BB5\nL\nך\nSCAN HERE!"
+      }
+    },
+    "attempts": [
+      {
+        "error": "Occurrence start date lacks source support: 2026-09-28; cite a printed date or explicit relative date, never posted_at alone (occurrence 'The Reach Initiative First Meeting')",
+        "response": {
+          "activity_evidence": [
+            {
+              "field": "slide_1_ocr"
+            },
+            {
+              "field": "caption"
+            }
+          ],
+          "date_evidence": [
+            {
+              "field": "slide_1_ocr"
+            },
+            {
+              "field": "caption"
+            }
+          ],
+          "date_role": "occurrence",
+          "kind": "activity",
+          "occurrences": [
+            {
+              "activity_evidence": [
+                {
+                  "field": "slide_1_ocr"
+                }
+              ],
+              "all_day": false,
+              "date_evidence": [
+                {
+                  "field": "slide_1_ocr"
+                }
+              ],
+              "ends_at": null,
+              "location": "SSC120",
+              "location_evidence": [
+                {
+                  "field": "slide_1_ocr"
+                }
+              ],
+              "starts_at": "2026-09-28T17:00:00-07:00",
+              "title": "The Reach Initiative First Meeting"
+            }
+          ],
+          "reason": "The source announces a specific first meeting for The Reach Initiative with a date, time, and location.",
+          "schedule": null,
+          "use_source_occurrences": false
+        }
+      },
+      {
+        "error": "Occurrence start date lacks source support: 2026-09-28; cite a printed date or explicit relative date, never posted_at alone (occurrence 'The Reach Initiative First Meeting')",
+        "response": {
+          "activity_evidence": [
+            {
+              "field": "slide_1_ocr"
+            },
+            {
+              "field": "caption"
+            }
+          ],
+          "date_evidence": [
+            {
+              "field": "slide_1_ocr"
+            },
+            {
+              "field": "caption"
+            }
+          ],
+          "date_role": "occurrence",
+          "kind": "activity",
+          "occurrences": [
+            {
+              "activity_evidence": [
+                {
+                  "field": "slide_1_ocr"
+                }
+              ],
+              "all_day": false,
+              "date_evidence": [
+                {
+                  "field": "slide_1_ocr"
+                }
+              ],
+              "ends_at": null,
+              "location": "SSC120",
+              "location_evidence": [
+                {
+                  "field": "slide_1_ocr"
+                }
+              ],
+              "starts_at": "2026-09-28T17:00:00-07:00",
+              "title": "The Reach Initiative First Meeting"
+            }
+          ],
+          "reason": "The source announces a specific first meeting for The Reach Initiative with a date, time, and location.",
+          "schedule": null,
+          "use_source_occurrences": false
+        }
+      }
+    ]
+  },
+  "3988684512718732494": {
+    "source": {
+      "origin": "instagram",
+      "posted_at": "2026-09-18T05:11:41+00:00",
+      "source_key": "instagram:post:3988684512718732494",
+      "source_occurrences": [],
+      "texts": {
+        "caption": "⚡️OUR WELCOME WEEK SCHEDULE IS OFFICIALLY HEREEE! 👀👀👀 \n\nMark your calendars because we will have an event for you every day of WELCOME WEEK which is from September 21st through the 25th.\n\nDAY 1: Boba Evening 7-8:30pm @ Hub Area\nDAY 2: Rock Climbing 2-3:30pm @ Hanger 18 & PICK UP - LOT 13\nDAY 3: Matcha & Thrifting 2-4pm @ Downtown Claremont\nDAY 4: Picnic Social 4-6pm @ Hub Lawn\nDAY 5: Laser Tag/Bowling/Arcade starting from 7pm @ Main Event & PICK UP - LOT 13\n\nDON’T MISS OUT AND COME JOIN US! 😍🫰\n\n#ucr #cki #club",
+        "slide_1_ocr": "WELCOME\nWEEK\nSep 21-25\n25\nDay 1: Boba 7-8pm @Hub Area\n26\nDay 2: Rock Climbing 2-3:30pm @Hanger 18\nDay 3: Matcha&Thrifting @DT Claremont\nDay 4: Picnic Social @Hub Lawn\nDay 5: LaserTag/Bowling/Arcade @Main Event\nCKI\nCircle K\nInternational\nCAL-NEV-HA\nINTERNATIONAL\nDISTRICT"
+      }
+    },
+    "attempts": [
+      {
+        "error": "Occurrence start date lacks source support: 2026-09-22; cite a printed date or explicit relative date, never posted_at alone (occurrence 'Rock Climbing')",
+        "response": {
+          "activity_evidence": [
+            {
+              "field": "caption"
+            }
+          ],
+          "date_evidence": [
+            {
+              "field": "caption"
+            }
+          ],
+          "date_role": "occurrence",
+          "kind": "activity",
+          "occurrences": [
+            {
+              "activity_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "all_day": false,
+              "date_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "ends_at": "2026-09-21T20:30:00-07:00",
+              "location": "Hub Area",
+              "location_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "starts_at": "2026-09-21T19:00:00-07:00",
+              "title": "Boba Evening"
+            },
+            {
+              "activity_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "all_day": false,
+              "date_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "ends_at": "2026-09-22T15:30:00-07:00",
+              "location": "Hanger 18",
+              "location_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "starts_at": "2026-09-22T14:00:00-07:00",
+              "title": "Rock Climbing"
+            },
+            {
+              "activity_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "all_day": false,
+              "date_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "ends_at": "2026-09-23T16:00:00-07:00",
+              "location": "Downtown Claremont",
+              "location_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "starts_at": "2026-09-23T14:00:00-07:00",
+              "title": "Matcha & Thrifting"
+            },
+            {
+              "activity_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "all_day": false,
+              "date_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "ends_at": "2026-09-24T18:00:00-07:00",
+              "location": "Hub Lawn",
+              "location_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "starts_at": "2026-09-24T16:00:00-07:00",
+              "title": "Picnic Social"
+            },
+            {
+              "activity_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "all_day": false,
+              "date_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "ends_at": null,
+              "location": "Main Event",
+              "location_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "starts_at": "2026-09-25T19:00:00-07:00",
+              "title": "Laser Tag/Bowling/Arcade"
+            }
+          ],
+          "reason": "The source lists specific daily events for Welcome Week with times and locations.",
+          "schedule": null,
+          "use_source_occurrences": false
+        }
+      },
+      {
+        "error": "Occurrence start date lacks source support: 2026-09-22; cite a printed date or explicit relative date, never posted_at alone (occurrence 'Rock Climbing')",
+        "response": {
+          "activity_evidence": [
+            {
+              "field": "caption"
+            }
+          ],
+          "date_evidence": [
+            {
+              "field": "caption"
+            },
+            {
+              "field": "slide_1_ocr"
+            }
+          ],
+          "date_role": "occurrence",
+          "kind": "activity",
+          "occurrences": [
+            {
+              "activity_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "all_day": false,
+              "date_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "ends_at": "2026-09-21T20:30:00-07:00",
+              "location": "Hub Area",
+              "location_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "starts_at": "2026-09-21T19:00:00-07:00",
+              "title": "Boba Evening"
+            },
+            {
+              "activity_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "all_day": false,
+              "date_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "ends_at": "2026-09-22T15:30:00-07:00",
+              "location": "Hanger 18",
+              "location_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "starts_at": "2026-09-22T14:00:00-07:00",
+              "title": "Rock Climbing"
+            },
+            {
+              "activity_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "all_day": false,
+              "date_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "ends_at": "2026-09-23T16:00:00-07:00",
+              "location": "Downtown Claremont",
+              "location_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "starts_at": "2026-09-23T14:00:00-07:00",
+              "title": "Matcha & Thrifting"
+            },
+            {
+              "activity_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "all_day": false,
+              "date_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "ends_at": "2026-09-24T18:00:00-07:00",
+              "location": "Hub Lawn",
+              "location_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "starts_at": "2026-09-24T16:00:00-07:00",
+              "title": "Picnic Social"
+            },
+            {
+              "activity_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "all_day": false,
+              "date_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "ends_at": null,
+              "location": "Main Event",
+              "location_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "starts_at": "2026-09-25T19:00:00-07:00",
+              "title": "Laser Tag/Bowling/Arcade"
+            }
+          ],
+          "reason": "The source provides a schedule for Welcome Week from September 21st to 25th, 2026, with specific activities, times, and locations for each day.",
+          "schedule": null,
+          "use_source_occurrences": false
+        }
+      }
+    ]
+  },
+  "3987615353597995139": {
+    "source": {
+      "origin": "instagram",
+      "posted_at": "2026-09-16T17:46:55+00:00",
+      "source_key": "instagram:post:3987615353597995139",
+      "source_occurrences": [],
+      "texts": {
+        "caption": "Ready for a healing journey? 🧘‍♂️ Join us for a campus yoga session open to all UCR students, staff, and faculty!\n\n📅 When: Mondays at 10:00 AM\n🗓️ Dates: Oct 5, Oct 12, Oct 19, Oct 26, Nov 2, and Nov 9\n📍Location: HUB 265\n- All levels welcome: From beginners to advanced yogis.\n- What to bring: Just yourself! (Feel free to bring your own mat if you prefer).\n\n⚠️ Spaces are limited and registration is required! Scan the QR code or click the link in our bio to sign up.\n\nregistration Link: http://tinyurl.com/3644u8v2",
+        "slide_1_ocr": "fall 2026\nAs Healing\nYOGA\nSELF REGULATION • EMPOWERMENT\nthe\nMONDAYS AT 10 AM\nDates: October 5, 12, 19, 26 &\nNovemeber 2, 9\nUCR\nCARE\nCAMPUS ADVOCACY,\nRESOURCES & EDUCATION\nng\nREGISTRATION LINK:\nHTTP://TINYURL.COM/3644U8V2\nmy\n23\n13"
+      }
+    },
+    "attempts": [
+      {
+        "error": "Occurrence clock lacks source support: end 11:00:00; set ends_at=null when the source supplies no end time (occurrence 'Yoga Session')",
+        "response": {
+          "activity_evidence": [
+            {
+              "field": "caption"
+            },
+            {
+              "field": "slide_1_ocr"
+            }
+          ],
+          "date_evidence": [
+            {
+              "field": "caption"
+            },
+            {
+              "field": "slide_1_ocr"
+            }
+          ],
+          "date_role": "occurrence",
+          "kind": "activity",
+          "occurrences": [
+            {
+              "activity_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "all_day": false,
+              "date_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "ends_at": "2026-10-05T11:00:00-07:00",
+              "location": "HUB 265",
+              "location_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "starts_at": "2026-10-05T10:00:00-07:00",
+              "title": "Yoga Session"
+            },
+            {
+              "activity_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "all_day": false,
+              "date_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "ends_at": "2026-10-12T11:00:00-07:00",
+              "location": "HUB 265",
+              "location_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "starts_at": "2026-10-12T10:00:00-07:00",
+              "title": "Yoga Session"
+            },
+            {
+              "activity_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "all_day": false,
+              "date_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "ends_at": "2026-10-19T11:00:00-07:00",
+              "location": "HUB 265",
+              "location_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "starts_at": "2026-10-19T10:00:00-07:00",
+              "title": "Yoga Session"
+            },
+            {
+              "activity_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "all_day": false,
+              "date_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "ends_at": "2026-10-26T11:00:00-07:00",
+              "location": "HUB 265",
+              "location_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "starts_at": "2026-10-26T10:00:00-07:00",
+              "title": "Yoga Session"
+            },
+            {
+              "activity_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "all_day": false,
+              "date_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "ends_at": "2026-11-02T11:00:00-07:00",
+              "location": "HUB 265",
+              "location_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "starts_at": "2026-11-02T10:00:00-07:00",
+              "title": "Yoga Session"
+            },
+            {
+              "activity_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "all_day": false,
+              "date_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "ends_at": "2026-11-09T11:00:00-07:00",
+              "location": "HUB 265",
+              "location_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "starts_at": "2026-11-09T10:00:00-07:00",
+              "title": "Yoga Session"
+            }
+          ],
+          "reason": "The source advertises a series of yoga sessions with specific dates and times.",
+          "schedule": null,
+          "use_source_occurrences": false
+        }
+      },
+      {
+        "error": "Occurrence offset disagrees with America/Los_Angeles: 2026-11-02T10:00:00-07:00 should use 2026-11-02T10:00:00-08:00 for that local date and clock (occurrence 'Yoga Session')",
+        "response": {
+          "activity_evidence": [
+            {
+              "field": "caption"
+            },
+            {
+              "field": "slide_1_ocr"
+            }
+          ],
+          "date_evidence": [
+            {
+              "field": "caption"
+            },
+            {
+              "field": "slide_1_ocr"
+            }
+          ],
+          "date_role": "occurrence",
+          "kind": "activity",
+          "occurrences": [
+            {
+              "activity_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "all_day": false,
+              "date_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "ends_at": null,
+              "location": "HUB 265",
+              "location_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "starts_at": "2026-10-05T10:00:00-07:00",
+              "title": "Yoga Session"
+            },
+            {
+              "activity_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "all_day": false,
+              "date_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "ends_at": null,
+              "location": "HUB 265",
+              "location_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "starts_at": "2026-10-12T10:00:00-07:00",
+              "title": "Yoga Session"
+            },
+            {
+              "activity_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "all_day": false,
+              "date_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "ends_at": null,
+              "location": "HUB 265",
+              "location_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "starts_at": "2026-10-19T10:00:00-07:00",
+              "title": "Yoga Session"
+            },
+            {
+              "activity_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "all_day": false,
+              "date_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "ends_at": null,
+              "location": "HUB 265",
+              "location_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "starts_at": "2026-10-26T10:00:00-07:00",
+              "title": "Yoga Session"
+            },
+            {
+              "activity_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "all_day": false,
+              "date_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "ends_at": null,
+              "location": "HUB 265",
+              "location_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "starts_at": "2026-11-02T10:00:00-07:00",
+              "title": "Yoga Session"
+            },
+            {
+              "activity_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "all_day": false,
+              "date_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "ends_at": null,
+              "location": "HUB 265",
+              "location_evidence": [
+                {
+                  "field": "caption"
+                }
+              ],
+              "starts_at": "2026-11-09T10:00:00-07:00",
+              "title": "Yoga Session"
+            }
+          ],
+          "reason": "The source advertises a series of yoga sessions with specific dates and a start time.",
+          "schedule": null,
+          "use_source_occurrences": false
+        }
+      }
+    ]
+  }
+}

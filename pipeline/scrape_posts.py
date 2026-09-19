@@ -387,19 +387,20 @@ class AccountResult(NamedTuple):
 
 
 def _graphql_feed_posts(L: instaloader.Instaloader, handle: str,
-                        user_id: str) -> instaloader.NodeIterator:
+                        user_id: str) -> Iterable[instaloader.Post]:
     """The logged-in 4.15.3 get_posts query, without its metadata lookup.
 
-    The query addresses a handle, so validate every post against the stored ID
-    as its author or an accepted coauthor, including pinned/out-of-window entries.
-    An empty first page cannot establish identity; fail without advancing coverage.
+    A profile can show unrelated posts. Only yield posts whose author or accepted
+    coauthor matches the stored ID; require at least one match to verify coverage.
+    Keep raw pages intact so skipped entries cannot truncate upstream pagination.
     """
     if not L.context.is_logged_in:
         raise RuntimeError(f"{handle}: GraphQL post collection requires login")
     verified_account = False
+    saw_entries = False
 
     def extract_page(response: dict[str, Any]) -> dict[str, Any]:
-        nonlocal verified_account
+        nonlocal saw_entries
         # HTTP 200 can still contain an API refusal. Keep its message in an
         # Instaloader exception so the collector's cooldown classifier sees it.
         diagnostic = {key: response[key] for key in
@@ -427,37 +428,26 @@ def _graphql_feed_posts(L: instaloader.Instaloader, handle: str,
             node = edge.get("node") if isinstance(edge, dict) else None
             if not isinstance(node, dict):
                 raise RuntimeError(f"{handle}: malformed GraphQL feed node")
-            owner = node.get("user") or {}
-            owner_id = owner.get("pk")
-            # A collaboration appears on each accepted coauthor's profile,
-            # while `user` still identifies its original author. Invitations
-            # and ordinary tags do not establish that account's membership.
-            coauthors = node.get("coauthor_producers") or []
-            is_coauthor = isinstance(coauthors, list) and any(
-                isinstance(author, dict) and str(author.get("pk")) == user_id
-                for author in coauthors
-            )
-            if not owner_id or (str(owner_id) != user_id and not is_coauthor):
+            owner = node.get("user")
+            if not isinstance(owner, dict) or not owner.get("pk"):
                 raise RuntimeError(
-                    f"{handle}: GraphQL post {node.get('code')!r} author ID {owner_id!r} "
-                    f"does not match stored ID {user_id}, and the account is not an "
-                    "accepted coauthor; cannot verify feed membership"
+                    f"{handle}: GraphQL post {node.get('code')!r} has no verifiable author ID"
                 )
-        if not edges and not verified_account and not page_info["has_next_page"]:
+        if not edges and not saw_entries and not page_info["has_next_page"]:
             # Nothing to verify and nothing to collect; coverage is not advanced.
             raise EmptyFeed(f"{handle}: empty GraphQL feed (no posts, or a private profile)")
         if not edges and (not verified_account or page_info["has_next_page"]):
             raise RuntimeError(f"{handle}: empty GraphQL feed cannot verify account identity/coverage")
-        verified_account = True
+        saw_entries = saw_entries or bool(edges)
         return page
 
     # Keep this aligned with Profile.get_posts in the pinned Instaloader version.
     # NodeIterator retains upstream pagination, transport, and rate control.
-    return instaloader.NodeIterator(
+    nodes = instaloader.NodeIterator(
         context=L.context,
         query_hash=None,
         edge_extractor=extract_page,
-        node_wrapper=lambda node: instaloader.Post.from_iphone_struct(L.context, node),
+        node_wrapper=lambda node: node,
         query_variables={
             "data": {
                 "count": 12,
@@ -468,9 +458,30 @@ def _graphql_feed_posts(L: instaloader.Instaloader, handle: str,
             "username": handle,
         },
         query_referer=f"https://www.instagram.com/{handle}/",
-        is_first=lambda post, first: first is None or post.date_local > first.date_local,
         doc_id="7898261790222653",
     )
+    for node in nodes:
+        owner_id = node["user"]["pk"]
+        # Invitations and ordinary tags do not establish profile membership.
+        coauthors = node.get("coauthor_producers") or []
+        is_coauthor = isinstance(coauthors, list) and any(
+            isinstance(author, dict) and str(author.get("pk")) == user_id
+            for author in coauthors
+        )
+        if str(owner_id) != user_id and not is_coauthor:
+            log.warning(
+                "%s: skipping GraphQL post %r by author ID %r; stored ID %s is "
+                "neither author nor accepted coauthor",
+                handle, node.get("code"), owner_id, user_id,
+            )
+            continue
+        verified_account = True
+        yield instaloader.Post.from_iphone_struct(L.context, node)
+    if not verified_account:
+        raise RuntimeError(
+            f"{handle}: stored ID {user_id} is not an author and not an accepted coauthor "
+            "of any returned post; cannot verify feed membership"
+        )
 
 
 def scan_account(

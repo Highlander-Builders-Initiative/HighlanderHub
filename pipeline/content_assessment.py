@@ -20,7 +20,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 # Recorded for provenance; policy changes currently do not invalidate caches.
-VERSION = 5
+VERSION = 7
 MAX_OCCURRENCES = 100
 MODEL = "gemini-3.1-flash-lite"
 # Google recommends 1.0 for Gemini 3, but cached refusals assume a repeat call
@@ -135,6 +135,24 @@ dates, not the campaign span. Exact clock times are optional for all-day events.
 An application or booking window is not an occasion. Fundraising and audience
 eligibility are separate downstream policies, not reasons to invent an event.
 
+Distinguish an occasion from content publication or ordinary availability:
+- A video, episode, recording, or social-media post dropping on a date is an
+  announcement/notice_period, even when viewers are invited to watch or comment.
+  A separately advertised screening, watch party, live Q&A, or live participatory
+  session IS an activity, including online sessions. Extract that occasion,
+  not the media release date. A premiere/release label alone proves neither.
+- A shop or service saying 'open today', 'come by', or 'available during move-in'
+  without operating hours or a separately advertised occasion is an
+  announcement/notice_period. Routine shopping or access to a resource does not
+  make this an all-day activity. A dated service session with explicit operating
+  hours can be service_schedule/occurrence; recurring hours require a bounded
+  schedule. An advertised open house, grand-opening celebration, special sale,
+  or workshop is an activity even if held in a shop or service office.
+- Missing clock times do not establish all-day availability. Date-only
+  occurrences remain valid for independently established occasions such as a
+  festival, exhibition, or special sale. Decide what is advertised before
+  converting its dates into timestamps; correct citations alone are insufficient.
+
 For program-related sources, apply these rules IN ORDER to the advertised action:
 1. A separately advertised orientation, info session, workshop, graduation or
 other occasion is activity/occurrence. This takes precedence over background
@@ -163,6 +181,11 @@ only `field`; the application attaches that field's original text as the quote.
 Do not transcribe or rewrite quotes. Cite only fields that support the specific
 claim, and keep each activity associated with its own date, time and location
 when a field describes several activities.
+Each occurrence's date_evidence must include every field needed to establish
+its full date and clock: if the slide prints day numbers and the caption supplies
+the month/range, cite BOTH on that occurrence, not only at the top level.
+Do not assign activities to dates from ambiguous OCR reading order. Extract
+only clearly associated activities; if none are clear, return uncertain.
 Activity evidence must describe the actual activity/action/service, not just a
 date. Date evidence must connect that activity/action to its dates. Never cite
 metadata (posted_at, audiences, origin) as activity evidence. Do not invent
@@ -178,6 +201,9 @@ occurrence never spans more than 24 hours: anything longer is an all-day
 activity, a schedule, or separate occurrences, never one clock-bounded range.
 Every starts_at and ends_at MUST include the correct numeric UTC offset, such
 as 2026-09-15T15:00:00-07:00. Never return timezone-naive timestamps.
+Compute the America/Los_Angeles offset separately for EACH occurrence's date;
+November dates after the DST transition use -08:00, even when earlier sessions
+use -07:00. A start time alone never supports an end time: use ends_at=null.
 Deadlines MUST return one occurrence at the cutoff timestamp (ends_at=null),
 with evidence of the action and cutoff, even though they are not gatherings.
 Allowed kind/role pairs: activity/occurrence; deadline/cutoff;
@@ -307,11 +333,31 @@ def _day_supported(day: date, text: str, source: dict) -> bool:
     if day.isoformat() in iso_days:
         return True
     days = evidence_dates(text)
-    # A month-name range names its last day only once: September 6th-12th.
-    for match in re.finditer(_OCR_DATE_RE.pattern + r"\s*[-–—]\s*(\d{1,2})(?:st|nd|rd|th)?\b", text, re.I):
-        days.add((_MONTHS[match.group(1).lower().rstrip('.')], int(match.group(3))))
+    # A range prints its month once. Interior days require an explicit Day N
+    # label; a campaign span alone does not establish individual activities.
+    ranges = list(re.finditer(
+        _OCR_DATE_RE.pattern + r"\s*(?:[-–—]|to|through|thru)\s*(?:the\s+)?"
+        r"(\d{1,2})(?:st|nd|rd|th)?\b(?:\s*,?\s*((?:19|20)\d{2})\b)?", text, re.I))
+    range_years = set()
+    ordinals = {int(n) for n in re.findall(r"\bday\s+(\d{1,2})\s*:", text, re.I)}
+    for match in ranges:
+        month = _MONTHS[match[1].lower().rstrip('.')]
+        first, last = int(match[2]), int(match[3])
+        try:
+            first_day, last_day = date(day.year, month, first), date(day.year, month, last)
+        except ValueError:
+            continue
+        if first_day > last_day:
+            continue
+        days.add((month, last))
+        ordinal_match = (len(ranges) == 1 and first_day <= day <= last_day
+                         and (day - first_day).days + 1 in ordinals)
+        if ordinal_match:
+            days.add((day.month, day.day))
+        if match[4] and (ordinal_match or (day.month, day.day) in {(month, first), (month, last)}):
+            range_years.add(int(match[4]))
     if (day.month, day.day) in days:
-        years = set()
+        years = range_years
         labeled = _labeled_date(text)
         if labeled and labeled[:2] == (day.month, day.day):
             years.add(labeled[2])
@@ -422,7 +468,10 @@ def validate_occurrence(item: dict, source: dict) -> None:
     # Use the supplied offset for sources that explicitly name another zone.
     if not _day_supported(start.date(), text, source):
         raise ValueError(f"Occurrence start date lacks source support: {start.date()}; "
-                         "cite a printed date or explicit relative date, never posted_at alone")
+                         "cite a printed date or explicit relative date, never posted_at alone. "
+                         "In this occurrence's date_evidence, cite both caption and slide when "
+                         "the month/range and day/time are split across fields; top-level citations "
+                         "do not supply occurrence evidence. Do not guess activity/date associations")
     if item["all_day"] and (end is None or start.time() != time(0) or end.time() != time(0)):
         raise ValueError("All-day occurrences use midnight boundaries: starts_at is 00:00:00 on the first day; "
                          "ends_at is 00:00:00 on the day AFTER the last included day, never 23:59:59")
@@ -526,6 +575,10 @@ def validate(result: Any, source: dict) -> dict:
     for item in result["occurrences"]:
         try:
             validate_occurrence(item, source)
+            if kind == "service_schedule" and (item["all_day"] or not item["ends_at"]):
+                raise ValueError("Service availability requires explicit operating hours; "
+                                 "an opening notice without hours is announcement/notice_period, "
+                                 "not an all-day service occurrence")
         except ValueError as exc:
             title = item.get("title") if isinstance(item, dict) else None
             raise ValueError(f"{exc} (occurrence {title!r})") from exc
