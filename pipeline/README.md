@@ -34,6 +34,7 @@ Optional repository **Actions variables**:
 | Variable | Default | Meaning |
 | --- | --- | --- |
 | `APIFY_POSTS_PER_PROFILE` | `100` | Actor export cap per profile, 1–500 |
+| `APIFY_TIMEOUT_SECONDS` | `3600` | Shared collection time allowance in seconds, 60–3600; unfinished paid work resumes next invocation |
 | `APIFY_MAX_CHARGE_USD` | `10` | Combined charge ceilings for all batches in one collection cycle; excludes Google API costs |
 | `APIFY_DISCOVERY_OVERLAP_SECONDS` | `300` | Discovery overlap behind each successful checkpoint (0–3600 seconds) |
 | `APIFY_INCOMPLETE_RETRY_HOURS` | `8` | Wait before retrying a profile whose discovery was incomplete (at least 8 hours) |
@@ -64,6 +65,10 @@ persisted: the archive still stores one routing handle per media ID.
 A profile advances only after `Finished scraping posts`, durable archival, and
 no failure or cap. Null/error profile rows override completion, even if the
 actor run says `SUCCEEDED`. `Scraped N/N posts` also prevents checkpoint advance.
+That log counter counts emitted posts, so heavy `shouldSkip` filtering can hide
+a truncated feed walk below the apparent cap. The whole-date `fromDate` bounds
+the walk during routine discovery; exhaustive backfill coverage still requires
+independent verification when skipped nodes could exhaust the cap.
 No automatic quarantine follows a lookup failure: known real accounts failed
 in the evaluation. Check failed clubs again on the normal eight-hour cadence;
 use the diagnostic errors to investigate roster problems.
@@ -163,10 +168,17 @@ its existing charge; skipping the job does not abort it in Apify.
 
 The total `APIFY_MAX_CHARGE_USD` ceiling is split across the whole plan, **not
 multiplied by the number of actors**. All of it is available to discovery,
-divided by profile count with at least $0.01 reserved per actor start. Unused ceilings are
-not reallocated. A budget too small for all groups fails before any new paid run.
-The 30-minute collection time allowance is also shared across the plan; remaining
-batches resume next invocation. A successful actor status does not establish
+with a $0.25 floor per batch and the remainder divided by profile count. The
+floor reserves $0.20 for the feed and $0.05 for details; it is a spending ceiling,
+not a minimum charge. At the pinned rates this allows about 200 feed posts or
+32 detail lookups with headroom, before additional profile-failure charges.
+Unused ceilings are not reallocated. A budget below $0.25 times the number of
+groups fails before any new paid run and reports the minimum required budget.
+The 60-minute collection time allowance is also shared across the plan; remaining
+batches resume next invocation. If a successful feed leaves less than 60 seconds
+for required details, its batch stays pending without advancing checkpoints.
+The next invocation reuses that paid feed dataset and attempts enrichment before
+starting later batches. A successful actor status does not establish
 complete coverage if its charge ceiling was reached. Such results are saved but
 do not advance collection checkpoints.
 
@@ -174,16 +186,31 @@ New hpix runs reserve 80% of each batch ceiling for discovery and 20% for
 conditional details. The detail run has its own durable `*-details.json` intent
 and ID. Recovery resumes that paid request, even when some posts were already
 saved; it never launches a replacement because the remaining shortcode set shrank.
+Detail intents deliberately stay unconsumed, including terminal failures. Fresh
+UUID cycle filenames let a later eligible discovery plan retry failed details;
+reusing those filenames across cycles would keep replaying the failed request.
 Unused detail budget is not spent. Detail failures retain affected checkpoints.
+Headroom uses events that the run can emit: feed post/profile charges for
+discovery and individual-post charges for details. Delayed billing counters use
+the corresponding row price as an output-based lower bound. Missing coauthor
+data in details cannot establish that a post is an unrelated repost.
 
 Measured rates: $0.00099/profile post, $0.00149/individual-post lookup,
 $0.00005/start at 1 GB, and zero post/profile events for a successful quiet scan.
 Some lookup failures can bill $0.00299/profile despite `scrape_profile_data: false`.
-The 25-profile batching means roughly 26 discovery starts per full pass when
-cutoffs align, not one: about $0.117/month at three passes/day. Other cutoff
-groups, detail starts, failures and overlap add to this. At the observed 1,320
+New plans use up to 100 profiles per batch, grouped within the same cutoff
+hour and ordered oldest first, including within each hour. For 647 aligned
+profiles this needs seven feed starts, about $0.0315/month at three passes/day.
+The local 647-profile checkpoint snapshot produces nine batches instead of 28;
+its smallest batch receives $0.30 under the default $10 cycle ceiling. Other
+cutoff groups, details, failures and overlap add costs. At the observed 1,320
 new posts/month, post fees would be $1.31 before those additions; this is a
 projection, not a verified monthly bill or guaranteed $0 invoice.
+
+The 369-second roster probe used one actor run. Runtime for the new 100-profile
+production batch plan has not been measured live. Saved plans retain their
+original batch sizes, ordering and reservations so already-paid recovery is
+preserved; the new grouping and budget floor apply when the next plan is built.
 
 The retired official actor billed quiet diagnostics too: its one-row-per-check
 scenario cost $157.22/month for 647 profiles at this cadence. See
@@ -222,7 +249,7 @@ python3 -m venv .venv
 ```
 
 Local limits use the same environment variables; `APIFY_TIMEOUT_SECONDS` defaults
-to 1800. Never schedule local runs and Actions concurrently against one database.
+to 3600. Never schedule local runs and Actions concurrently against one database.
 
 The old direct collectors (`scrape_posts.py`, `following_feed.py` and login
 utilities) are retained for manual rollback only. `run.py` never imports them;
