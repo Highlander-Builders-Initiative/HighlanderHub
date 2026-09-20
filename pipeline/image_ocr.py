@@ -16,17 +16,10 @@ def _download_image(url: str | None) -> bytes:
         raise ValueError("media has no image_url")
 
     import requests
-    import instagram_cooldown
-
-    instagram_cooldown.ensure_collection_allowed("post images")
+    # Apify supplies signed CDN URLs; an expired image does not invalidate
+    # an Instagram login or warrant a day-long pause of unrelated downloads.
     resp = requests.get(url, timeout=10)
-    if resp.status_code in {401, 403, 429}:
-        kind = (instagram_cooldown.Kind.THROTTLED if resp.status_code == 429
-                else instagram_cooldown.Kind.CHALLENGED)
-        instagram_cooldown.pause(
-            instagram_cooldown.Block(kind, f"image HTTP {resp.status_code}"),
-            "post images", f"First-slide download returned HTTP {resp.status_code}")
-    if resp.status_code in {404, 410}:
+    if resp.status_code in {401, 403, 404, 410}:
         raise ImageExpired(f"image URL returned HTTP {resp.status_code}")
     resp.raise_for_status()
     return resp.content
