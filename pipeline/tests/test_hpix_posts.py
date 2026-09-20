@@ -92,6 +92,59 @@ class HpixCollectionTests(unittest.TestCase):
         self.assertIsNone(json.loads(self.path.read_text())['halt_reason'])
         self.assertTrue(all(self.status(h)['last_status'] == 'incomplete' for h in ACCOUNTS))
 
+    def test_media_error_retains_only_its_profile_without_systemic_halt(self):
+        for kind, source in [('post', 'https://www.instagram.com/club/posts'),
+                             ('reel', 'https://instagram.com/CLUB/reels/'),
+                             ('post', 'club'), ('profile', 'https://www.instagram.com/club/')]:
+            with self.subTest(kind=kind, source=source):
+                self.api.items.return_value = [{'kind': kind, 'input': source,
+                                               'error': 'Deleted or restricted post'}]
+                with self.assertRaises(apify.PartialCollection) as raised:
+                    self.collect()
+                self.assertNotIsInstance(raised.exception, apify.CollectionHalted)
+                self.assertEqual(STATE['club']['scanned_through'], self.status('club')['scanned_through'])
+                self.assertEqual('incomplete', self.status('club')['last_status'])
+                self.assertEqual('ok', self.status('quiet')['last_status'])
+                saved = json.loads(self.path.read_text())
+                self.assertEqual(0, saved['invalid'])
+                self.assertIsNone(saved['halt_reason'])
+                self.assertIn('club: Deleted or restricted post', saved['errors'])
+        self.api.details.assert_not_called()
+        self.write.assert_not_called()
+
+    def test_unattributable_error_still_halts(self):
+        for source in [None, 'https://example.com/club/posts',
+                       'https://www.instagram.com/stranger/posts',
+                       'https://www.instagram.com/p/ABC/']:
+            with self.subTest(source=source):
+                self.api.items.return_value = [{'kind': 'post', 'input': source,
+                                               'error': 'Deleted or restricted post'}]
+                with self.assertRaises(apify.CollectionHalted): self.collect()
+                self.assertEqual(1, json.loads(self.path.read_text())['invalid'])
+
+    def test_deleted_post_row_from_report_does_not_poison_quiet_profile(self):
+        accounts = {'deltagamma_ucr': {'handle': 'deltagamma_ucr'}, 'quiet': ACCOUNTS['quiet']}
+        state = {h: copy.deepcopy(STATE['club']) for h in accounts}
+        self.api.items.return_value = [{'kind': 'post',
+            'input': 'https://www.instagram.com/deltagamma_ucr/posts',
+            'error': 'Deleted or restricted post'}]
+        self.api.run_log.return_value = '\n'.join(
+            f'INFO  Crawler: [{h}] Finished scraping posts' for h in accounts)
+        with self.assertRaises(apify.PartialCollection) as raised:
+            apify.collect(self.api, accounts, state, NOW, limit=100, max_charge=1, timeout=300)
+        self.assertNotIsInstance(raised.exception, apify.CollectionHalted)
+        self.assertEqual('incomplete', self.status('deltagamma_ucr')['last_status'])
+        self.assertEqual('ok', self.status('quiet')['last_status'])
+        self.assertIsNone(json.loads(self.path.read_text())['halt_reason'])
+
+    def test_media_error_does_not_mask_malformed_output(self):
+        self.api.items.return_value = [
+            {'kind': 'post', 'input': 'https://www.instagram.com/club/posts',
+             'error': 'Deleted or restricted post'},
+            {'kind': 'post', 'input': 'quiet', 'data': {}}]
+        with self.assertRaises(apify.CollectionHalted): self.collect()
+        self.assertEqual(1, json.loads(self.path.read_text())['invalid'])
+
     def test_empty_dataset_without_completion_advances_nothing(self):
         self.api.items.return_value = []; self.api.run_log.return_value = 'Finished crawler'
         with self.assertRaises(apify.PartialCollection): self.collect()
@@ -128,8 +181,56 @@ class HpixCollectionTests(unittest.TestCase):
         self.assertEqual('456', self.write.call_args.args[0]['media_id'])
         self.assertEqual('ok', self.status('club')['last_status'])
 
+    def test_verified_repost_only_feed_advances_and_excludes_repost_next_cycle(self):
+        repost = row(owner='partner', owner_id='77')
+        self.api.items.return_value = [repost]
+        self.detail(coauthor_producers=[])
+        self.collect()
+        self.assertEqual('ok', self.status('club')['last_status'])
+        self.assertEqual(NOW.isoformat(), self.status('club')['scanned_through'])
+        self.assertEqual([], json.loads(self.path.read_text())['errors'])
+        self.api.details.assert_called_once()
+
+        state = {r['handle']: r for r in self.upsert.call_args.args[1]}
+        later = NOW.replace(hour=8)
+        self.path.write_text(json.dumps({'id': 'next-feed', 'actor_id': apify.HPIX_ACTOR_ID,
+            'posts_per_profile': 100, 'started_at': later.isoformat(), 'consumed': False}))
+        def filtered_items(_):
+            cutoff = apify.parse_instant(self.api.run.call_args.args[0]['onlyPostsNewerThan'])
+            self.assertGreater(cutoff.timestamp(), repost['data']['taken_at_timestamp'])
+            return []
+        self.api.items.side_effect = filtered_items
+        apify.collect(self.api, ACCOUNTS, state, later, limit=100, max_charge=1, timeout=300)
+        self.assertEqual(later.isoformat(), self.status('club')['scanned_through'])
+        self.api.details.assert_called_once()
+        self.mirror.assert_not_called()
+        self.write.assert_not_called()
+
+    def test_verified_repost_requires_completion_and_uncapped_run(self):
+        for log in ['Finished crawler', 'INFO  Crawler: [club] Scraped 100/100 posts\n'
+                    'INFO  Crawler: [club] Finished scraping posts']:
+            with self.subTest(log=log):
+                self.api.items.return_value = [row(owner='partner', owner_id='77')]
+                self.api.run_log.return_value = log
+                self.detail(coauthor_producers=[])
+                with self.assertRaises(apify.PartialCollection): self.collect()
+                self.assertEqual(STATE['club']['scanned_through'], self.status('club')['scanned_through'])
+                self.write.assert_not_called()
+
+    def test_verified_repost_counts_as_valid_output_alongside_malformed_row(self):
+        self.api.items.return_value = [row(owner='partner', owner_id='77'),
+                                      {'kind': 'post', 'input': 'quiet', 'data': {}}]
+        self.detail(coauthor_producers=[])
+        with self.assertRaises(apify.PartialCollection) as raised: self.collect()
+        self.assertNotIsInstance(raised.exception, apify.CollectionHalted)
+        self.assertEqual('ok', self.status('club')['last_status'])
+        self.assertEqual('incomplete', self.status('quiet')['last_status'])
+        self.assertEqual(1, json.loads(self.path.read_text())['invalid'])
+        self.write.assert_not_called()
+
     def test_wrong_detail_identity_and_unaccepted_collaboration_retain_checkpoint(self):
-        for changes in ({'id': '999_77'}, {'code': 'OTHER'}, {'coauthor_producers': []},
+        for changes in ({'id': '999_77'}, {'code': 'OTHER'},
+                        {'coauthor_producers': [], 'image_versions2': {'candidates': []}},
                         {'coauthor_producers': [{'username': 'club', 'pk': '999'}]}):
             with self.subTest(changes=changes):
                 self.api.items.return_value = [row(owner='partner', owner_id='77')]

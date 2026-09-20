@@ -393,11 +393,16 @@ def prepare_hpix(api, run, rows, accounts, boundaries, known, now, *, max_charge
     for row in rows:
         handle = row.get("input") if isinstance(row, dict) else None
         try:
-            if row.get("kind") == "profile" and (row.get("data") is None or row.get("error")):
+            if row.get("error") or (row.get("kind") == "profile" and row.get("data") is None):
+                # Media fetch failures can identify the profile by a feed URL.
+                # Keep these attributable failures out of schema-failure counts.
+                if isinstance(handle, str) and "://" in handle:
+                    parsed = urlsplit(handle)
+                    handle = profile_handle(parsed._replace(path=parsed.path.strip("/").split("/")[0]).geturl())
                 mapped.append({"scraped_username": handle, "_profile_failure": True,
                                "_collection_error": row.get("error") or "profile retrieval failed"})
                 continue
-            if row.get("kind") not in {"post", "reel"} or row.get("error"):
+            if row.get("kind") not in {"post", "reel"}:
                 raise ValueError("profile retrieval failed or unexpected row kind")
             item = hpix_item(row)
             handle, media_id, posted = identity(item, accounts, now)
@@ -529,8 +534,6 @@ def collect(api: ApifyClient, accounts: dict, state: dict, now: datetime,
     validated = 0
     invalid = 0
     outside_actor_cutoff = 0
-    unrelated_handles = set()
-    matched_handles = set()
     detail_info = {}
     source = api.items(dataset)
     if hpix:
@@ -582,15 +585,15 @@ def collect(api: ApifyClient, accounts: dict, state: dict, now: datetime,
                     ignored_old += 1
                     continue
                 if hpix and item.get("_unrelated"):
-                    unrelated_handles.add(handle)
+                    # Details verified this rejection. Explicit profile completion
+                    # still proves coverage when every result is an unrelated repost.
+                    validated += 1
                     continue
                 if media_id in known or media_id in seen:
                     validated += 1
-                    matched_handles.add(handle)
                     continue
                 record = normalize(item, accounts, observed_at)
                 validated += 1
-                matched_handles.add(handle)
             except (ValueError, TypeError, KeyError, AttributeError, OverflowError, OSError) as exc:
                 invalid += 1
                 handle = item.get("scraped_username") if isinstance(item, dict) else None
@@ -633,8 +636,6 @@ def collect(api: ApifyClient, accounts: dict, state: dict, now: datetime,
     if limited:
         successful = False
         errors.append(limited)
-    # A feed consisting solely of unrelated reposts is not ownership evidence.
-    bad.update(unrelated_handles - matched_handles)
     updates = []
     for handle, entry in state.items():
         coverage = handle in completed if official or hpix else bool(counts[handle])
