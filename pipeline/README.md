@@ -36,42 +36,53 @@ Optional repository **Actions variables**:
 | `APIFY_POSTS_PER_PROFILE` | `100` | Actor export cap per profile, 1–500 |
 | `APIFY_MAX_CHARGE_USD` | `10` | Combined charge ceilings for all batches in one collection cycle; excludes Google API costs |
 | `APIFY_DISCOVERY_OVERLAP_SECONDS` | `300` | Discovery overlap behind each successful checkpoint (0–3600 seconds) |
-| `APIFY_INCOMPLETE_RETRY_HOURS` | `24` | Wait before retrying a profile whose discovery was incomplete (at least 8 hours) |
+| `APIFY_INCOMPLETE_RETRY_HOURS` | `8` | Wait before retrying a profile whose discovery was incomplete (at least 8 hours) |
 
-The actor is [apify/instagram-post-scraper](https://apify.com/apify/instagram-post-scraper),
-ID `nH2AHrwxeTRJoN5hX`, pinned to build `0.0.599`. Input is `username`,
-`resultsLimit`, `onlyPostsNewerThan` (UTC `Z`, not `+00:00`), `skipPinnedPosts`
-and `dataDetailLevel`. A run starts asynchronously, is polled with a 30-minute
-actor timeout, and its dataset is read in pages. The token is sent only in an
-Authorization header.
+New collection uses [hpix/instagram-scraper](https://apify.com/hpix/instagram-scraper),
+ID `JER1eC8E7teQWMN3p`, pinned to build `1.2.17`, with 1 GB memory.
+It requests profile posts and reels, raw media data, and no profile records.
+Both `scrape_detailed_data` and `scrape_restricted_posts` are explicitly false:
+their documented restricted-post event costs $0.10 per result.
 
-Both settings that look optional are load-bearing, and both were measured
-against this build rather than taken from its documentation:
+`fromDate` accepts only `YYYY-MM-DD`. A verified server-side `custom_functions`
+`shouldSkip` checks the native post timestamp against the precise checkpoint
+before export/billing. `shouldContinue` always returns true so an old pin does
+not stop traversal. `fromDate` provides the coarse pagination boundary. Unknown
+or malformed timestamps are exported for validation rather than silently skipped.
+If the actor exports anything older than the precise paid cutoff, collection
+halts. The exact timestamp filter was checked against live output and settled
+charges; relying on `item.kind` in this hook does not work in build 1.2.17.
 
-- **`skipPinnedPosts: true`.** `onlyPostsNewerThan` on its own still exports —
-  and bills for — pinned posts of any age; a 2022 pin came back against a
-  three-day window. With both set, pins older than the window are dropped and
-  pins inside it are kept, so a club that pins its current flyer is not missed.
-- **`dataDetailLevel: "detailedData"`.** `basicData` omits `inputUrl`, which is
-  the only field that routes a post back to the requested profile, and omits
-  `childPosts`, which carries every carousel slide after the cover. It is
-  cheaper per item and unusable.
+A new post whose owner differs from the requested club gets one individual-post
+lookup per shortcode in that batch to recover accepted coauthors. Saved media
+IDs skip enrichment and processing. Details must preserve the exact media ID,
+shortcode and timestamp and pass the same ownership and media validation.
+A valid unrelated repost is skipped; a feed containing only unrelated reposts
+cannot establish ownership coverage. Multiple club associations are not yet
+persisted: the archive still stores one routing handle per media ID.
 
-Coverage is read from the run log, not inferred from the dataset: a profile
-advances its checkpoint only when the log acknowledges it by name, in one of
-three forms — the cutoff was reached, the feed ran out (`[END-OF-RESULTS]`), or
-nothing public sits in the window (`NO RESULTS`). That last form arrives
-alongside a `no_items` error record, so an inactive club reports as covered
-instead of being retried forever. An unrecognised log contract fails closed and
-advances nothing.
+A profile advances only after `Finished scraping posts`, durable archival, and
+no failure or cap. Null/error profile rows override completion, even if the
+actor run says `SUCCEEDED`. `Scraped N/N posts` also prevents checkpoint advance.
+No automatic quarantine follows a lookup failure: known real accounts failed
+in the evaluation. Check failed clubs again on the normal eight-hour cadence;
+use the diagnostic errors to investigate roster problems.
+
+Already-paid official (`apify/instagram-post-scraper`, build `0.0.599`) and
+legacy runs are still resumed and ingested with their own adapters and billing
+checks. Official runs retain `no_items` plus explicit completion as the sole
+benign error case. New paid starts use hpix. Tokens stay in Authorization headers.
 
 The previous actor, `sones/instagram-posts-scraper-lowcost`
 (`Y5mzw9TLFReI0d6gQ`), treated its `newerThan` as a pagination hint and exported
-whole pages regardless of date: of 5,199 billed items on 2026-09-20, 5,160 were
+old boundary-page posts: of 5,199 billed items on 2026-09-20, 5,160 were
 flagged `is_newer_than_cutoff: false`, reaching back to 2016. Its datasets also
 used flattened `image_url` fields and rounded `pk` past 2**53. Both shapes are
 still read so already-paid datasets stay ingestible; the composite `id` takes
 precedence over `pk` because only it preserves the exact media ID.
+A later test of the same build with `postsPerProfile: 5` returned exactly five
+posts per profile, contradicting its documented whole-page soft limit. It
+still exported old posts and an old pin; reducing the cap is not a date filter.
 
 ## Accounts and incremental collection
 
@@ -88,8 +99,9 @@ and only imports posts from activation onward. Existing accounts keep their
 activation and progress, with a five-minute overlap by default. A new deployment therefore
 **does not automatically import historical posts**.
 
-The actor's `newerThan` only controls pagination; the adapter also filters each
-post's timestamp. Discovery groups accounts whose individual cutoffs fall in the
+The current actor's `onlyPostsNewerThan`, together with `skipPinnedPosts`, filters
+exported posts by date. The legacy actor's `newerThan` only controlled pagination.
+The adapter also checks each post's timestamp. Discovery groups accounts whose individual cutoffs fall in the
 same UTC hour, using the oldest cutoff within that group. Grouping adds less than
 an hour of lookback, and an account stalled weeks ago cannot pull current
 accounts back with it. This replaces the former shared seven-day/old-event scan.
@@ -113,24 +125,24 @@ can use that link to check for edits or cancellations. Opening an event does not
 trigger an API refresh; HighlanderHub shows the saved event information.
 
 The five-minute overlap is for discovering new posts near the previous boundary,
-not for refreshing known posts. A profile with an incomplete scan waits 24 hours
-before discovery retries, retaining its previous checkpoint. Healthy profiles
-remain eligible every eight hours.
+not for refreshing known posts. By default an incomplete profile becomes eligible
+again after eight hours, retaining its previous checkpoint. Healthy profiles
+remain eligible every eight hours. An explicitly configured longer retry interval
+still takes precedence; clear an old Actions variable set to `24` to use `8`.
 
-**Zero duplicate Apify charges are not guaranteed.** This actor has no known-post
-exclusion list or strict output-date filter. It may return old posts from its
-first/boundary pages and charge for those output items even though we ignore
-them. A five-minute overlap can miss posts first exposed by Instagram later than
+**Zero duplicate Apify charges are not guaranteed.** The current actor has no
+known-post exclusion list. Overlap, shared batch cutoffs, and incomplete scans
+can return already-saved posts and bill them again. The old actor also billed
+historical boundary-page posts. A five-minute overlap can miss posts first exposed by Instagram later than
 that overlap; increase it if monitoring shows late visibility.
 
 Raw posts are mirrored before local processing. Failed/aborted/timed-out runs,
 missing profiles, malformed records, and profiles
 hitting the export limit do not advance the affected checkpoints. Saved valid
-posts can still be published, but the workflow exits nonzero. An empty profile
-is conservatively reported as incomplete because an empty dataset cannot prove
-whether the account is empty, private or failed. A nonempty uncapped successful
-result relies on the actor's pagination correctness; its public dataset contract
-does not expose a complete per-profile coverage certificate.
+posts can still be published, but the workflow exits nonzero. An empty dataset
+alone does not prove coverage; the current adapter additionally requires the
+explicit per-profile log acknowledgements described above. Unacknowledged
+profiles remain incomplete.
 
 A cap failure needs investigation or a larger `APIFY_POSTS_PER_PROFILE` (maximum
 500); repeating the same capped input cannot recover deeper history. Missing
@@ -158,12 +170,28 @@ batches resume next invocation. A successful actor status does not establish
 complete coverage if its charge ceiling was reached. Such results are saved but
 do not advance collection checkpoints.
 
-Every dataset item is billed at `post` $0.0017 plus `post-details` $0.0010,
-and a profile with nothing in its window emits one billable `no_items` record.
-A full-roster daily pass is therefore roughly one item per profile — about
-$2.30 across ~830 accounts — rising only with the number of real posts found.
-Charges settle asynchronously after a run reports SUCCEEDED, so the cost read
-back moments after a run finishes can understate the final total.
+New hpix runs reserve 80% of each batch ceiling for discovery and 20% for
+conditional details. The detail run has its own durable `*-details.json` intent
+and ID. Recovery resumes that paid request, even when some posts were already
+saved; it never launches a replacement because the remaining shortcode set shrank.
+Unused detail budget is not spent. Detail failures retain affected checkpoints.
+
+Measured rates: $0.00099/profile post, $0.00149/individual-post lookup,
+$0.00005/start at 1 GB, and zero post/profile events for a successful quiet scan.
+Some lookup failures can bill $0.00299/profile despite `scrape_profile_data: false`.
+The 25-profile batching means roughly 26 discovery starts per full pass when
+cutoffs align, not one: about $0.117/month at three passes/day. Other cutoff
+groups, detail starts, failures and overlap add to this. At the observed 1,320
+new posts/month, post fees would be $1.31 before those additions; this is a
+projection, not a verified monthly bill or guaranteed $0 invoice.
+
+The retired official actor billed quiet diagnostics too: its one-row-per-check
+scenario cost $157.22/month for 647 profiles at this cadence. See
+[the cost investigation](../docs/apify-cost-investigation.md) for provider
+comparisons, measured migration checks, and remaining reliability limits.
+Charges settle asynchronously; usage read immediately after `SUCCEEDED` can
+understate the final total. Batch reports include separate feed/detail run IDs
+and usage. `APIFY_MAX_CHARGE_USD` covers both and remains a per-cycle ceiling.
 
 Collection halts rather than continuing to spend when a run is aborted, when
 every relevant record fails the output contract, or when the actor exports a

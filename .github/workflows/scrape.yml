@@ -75,7 +75,7 @@ jobs:
           # This ceiling is shared across all discovery batches.
           APIFY_TIMEOUT_SECONDS: '1800'
           APIFY_DISCOVERY_OVERLAP_SECONDS: ${{ vars.APIFY_DISCOVERY_OVERLAP_SECONDS || '300' }}
-          APIFY_INCOMPLETE_RETRY_HOURS: ${{ vars.APIFY_INCOMPLETE_RETRY_HOURS || '24' }}
+          APIFY_INCOMPLETE_RETRY_HOURS: ${{ vars.APIFY_INCOMPLETE_RETRY_HOURS || '8' }}
           PIPELINE_ACCOUNT_SOURCE: accounts_json
           # Historical imports are explicit local maintenance, never scheduled.
           PIPELINE_POST_BACKFILL_SINCE: ''

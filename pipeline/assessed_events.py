@@ -303,11 +303,23 @@ def _complete(updates: list[dict], *, notify: bool) -> None:
             log.warning("Could not resolve published rows for Discord notification: %s", exc)
         else:
             notify_free_food_events(published_rows)
-    failed = [item["source_key"] for item in updates if item["assessment"]["status"] == "error"]
-    if failed:
-        first = next(item for item in updates if item["assessment"]["status"] == "error")
+    # A refusal is a decision about this exact source text, not an outage. It is
+    # already recorded, costs nothing to keep, and cannot change until the text
+    # does or a refresh is asked for. Reporting it as a run failure would leave
+    # every future run red — a refused source carries no occurrence dates, so
+    # `_source_is_past` can never age it out — and bury the failures that a
+    # rerun could still clear.
+    refused = sorted({item["source_key"] for item in updates
+                      if item["assessment"]["status"] == "error"
+                      and item["assessment"].get("retryable") is False})
+    if refused:
+        log.info("%d source(s) stay refused and publish nothing: %s", len(refused), ", ".join(refused))
+    unresolved = [item for item in updates if item["assessment"]["status"] == "error"
+                  and item["assessment"].get("retryable") is not False]
+    if unresolved:
+        failed = [item["source_key"] for item in unresolved]
         raise RuntimeError(f"{len(failed)} source assessment(s) failed; existing listings, if any, retained: {', '.join(failed)}; "
-                           f"first failure: {first['assessment'].get('error')}")
+                           f"first failure: {unresolved[0]['assessment'].get('error')}")
 
 
 def post_updates(processed: list[tuple[dict, dict]], meta: dict, now: str,
