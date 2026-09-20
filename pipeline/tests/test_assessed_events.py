@@ -170,6 +170,43 @@ class SourcePublicationTests(unittest.TestCase):
             publish.assert_called_once_with(updates)
             notify.assert_not_called()
 
+    def test_a_refused_source_does_not_fail_publication_forever(self):
+        # A refusal carries no occurrence dates, so `_source_is_past` can never
+        # age it out. Failing the run on one would mean every later run is red.
+        updates = [{"source_key":"instagram:a", "assessment":{"status":"complete"}, "rows":[{"id":"ig_a"}]},
+                   {"source_key":"instagram:b",
+                    "assessment":{"status":"error", "retryable":False, "error":"GroundingRejected: no printed date"},
+                    "rows":[]}]
+        with patch.object(publication, "publish", return_value={"written":1}) as publish, \
+             self.assertLogs("pipeline.assessed_events", level="INFO") as logged:
+            publication._complete(updates, notify=False)
+        publish.assert_called_once_with(updates)
+        self.assertIn("instagram:b", "\n".join(logged.output))
+
+    def test_a_retryable_failure_still_fails_publication_beside_a_refusal(self):
+        updates = [{"source_key":"instagram:refused",
+                    "assessment":{"status":"error", "retryable":False, "error":"GroundingRejected: no printed date"},
+                    "rows":[]},
+                   {"source_key":"instagram:outage",
+                    "assessment":{"status":"error", "retryable":True, "error":"RuntimeError: unavailable"},
+                    "rows":[]}]
+        with patch.object(publication, "publish", return_value={"written":0}):
+            with self.assertRaises(RuntimeError) as raised:
+                publication._complete(updates, notify=False)
+        # Only the failure a rerun could clear is counted, named, and reported.
+        self.assertIn("1 source assessment(s) failed", str(raised.exception))
+        self.assertIn("instagram:outage", str(raised.exception))
+        self.assertNotIn("instagram:refused", str(raised.exception))
+        self.assertIn("RuntimeError: unavailable", str(raised.exception))
+
+    def test_an_error_without_a_verdict_is_treated_as_retryable(self):
+        # Extraction failures and mapping failures carry no `retryable` key.
+        updates = [{"source_key":"instagram:a", "assessment":{"status":"error", "error":"Post extraction failed"},
+                    "rows":[]}]
+        with patch.object(publication, "publish", return_value={"written":0}):
+            with self.assertRaisesRegex(RuntimeError, "1 source assessment"):
+                publication._complete(updates, notify=False)
+
     def test_notifications_use_only_rows_that_exist_after_publication(self):
         requested = {"id":"ig_suppressed", "title":"Candidate", "has_free_food":True}
         published = {"id":"ig_published", "title":"Stored", "has_free_food":True}

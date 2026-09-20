@@ -95,7 +95,7 @@ class ApiTests(unittest.TestCase):
             self.assertEqual(done, self.api.run({**self.input, "onlyPostsNewerThan": "2026-09-13T00:00:00Z"},
                                                 max_charge=2, timeout=60))
         self.assertEqual(["POST", "GET", "GET"], [call.args[0] for call in self.api.request.call_args_list])
-        self.assertEqual(2, self.api.request.call_args_list[0].kwargs["params"]["maxTotalChargeUsd"])
+        self.assertEqual(1.6, self.api.request.call_args_list[0].kwargs["params"]["maxTotalChargeUsd"])
         self.assertEqual("run1", json.loads(self.path.read_text())["id"])
 
     def test_dataset_pages_until_empty_not_only_first_thousand(self):
@@ -323,11 +323,11 @@ class PlanningTests(unittest.TestCase):
 
     def test_recent_incomplete_profile_waits_without_losing_progress(self):
         original = copy.deepcopy(self.state)
-        self.state["stale"].update(last_scan_at="2026-09-19T16:00:00+00:00", last_status="incomplete")
+        self.state["stale"].update(last_scan_at="2026-09-19T17:00:00+00:00", last_status="incomplete")
         jobs = self.jobs()
         self.assertFalse(any("stale" in j["handles"] for j in jobs))
         self.assertEqual(original["stale"]["scanned_through"], self.state["stale"]["scanned_through"])
-        self.state["stale"]["last_scan_at"] = "2026-09-18T16:00:00+00:00"
+        self.state["stale"]["last_scan_at"] = "2026-09-19T16:00:00+00:00"
         self.assertTrue(any("stale" in j["handles"] for j in self.jobs()))
 
     def test_hour_grouping_adds_less_than_an_hour_to_any_account(self):
@@ -545,6 +545,18 @@ class OfficialActorTests(unittest.TestCase):
         self.assertEqual("incomplete", self.checkpoint("officialhoucr")["last_status"])
         self.assertEqual(OFFICIAL_STATE["officialhoucr"]["scanned_through"],
                          self.checkpoint("officialhoucr")["scanned_through"])
+
+    def test_completion_signal_cannot_override_a_profile_failure(self):
+        for error in ("not_found", "blocked", "rate_limited", "unknown_error"):
+            with self.subTest(error=error):
+                self.api.items.return_value = [FIXTURE["image"],
+                                              {**FIXTURE["no_items"], "error": error}]
+                with self.assertRaises(apify.PartialCollection):
+                    self.collect()
+                self.assertEqual("incomplete", self.checkpoint("officialhoucr")["last_status"])
+                self.assertEqual(OFFICIAL_STATE["officialhoucr"]["scanned_through"],
+                                 self.checkpoint("officialhoucr")["scanned_through"])
+                self.assertEqual("ok", self.checkpoint("ucr_athletics")["last_status"])
 
     def test_post_older_than_the_paid_cutoff_halts_the_plan(self):
         # The previous actor billed for 5,160 such posts before anyone noticed.
