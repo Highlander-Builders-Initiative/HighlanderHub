@@ -144,6 +144,9 @@ def _write_history(results: list[StageResult], total_seconds: float) -> None:
             "command": "pipeline/.venv/bin/python pipeline/run.py",
             "instructions": "Resolve the reported API/configuration error, then rerun. "
                             "Unfinished Apify batches resume without repeating completed batches. "
+                            "A CollectionHalted stage stops paid batches on purpose and keeps "
+                            "doing so until its cause is reviewed and apify_posts.py is rerun "
+                            "with --resume-halted. "
                             "Post extractions and assessments reuse their saved caches.",
             "checkpoints": "Supabase instagram_post_checkpoints",
             "apify_plan": str(DATA_DIR / "apify_plan.json"),

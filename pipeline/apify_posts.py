@@ -1,7 +1,7 @@
-"""Collect public Instagram posts using sones/instagram-posts-scraper-lowcost.
+"""Collect date-filtered Instagram posts with a pinned, verified Apify build.
 
-The actor's newerThan is a pagination hint, not a filter or coverage guarantee.
-Only a successful, uncapped, nonempty profile result advances its checkpoint.
+Already-paid legacy datasets remain readable; new runs filter before billing.
+Checkpoints require explicit profile completion, durable writes and no cap.
 """
 from __future__ import annotations
 
@@ -16,6 +16,7 @@ from pathlib import Path
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Any
+from urllib.parse import urlsplit
 
 import requests
 
@@ -25,7 +26,9 @@ from post_archive import (_mirrored_media_ids as known_post_ids,
                           parse_instant, read_json, write_json, write_post)
 
 log = logging.getLogger("pipeline.apify_posts")
-ACTOR_ID = "Y5mzw9TLFReI0d6gQ"
+ACTOR_ID = "nH2AHrwxeTRJoN5hX"  # apify/instagram-post-scraper
+ACTOR_BUILD = "0.0.599"
+LEGACY_ACTOR_ID = "Y5mzw9TLFReI0d6gQ"
 API = "https://api.apify.com/v2"
 RUN_FILE = DATA_DIR / "apify_run.json"
 TERMINAL = {"SUCCEEDED", "FAILED", "ABORTED", "TIMED-OUT"}
@@ -34,10 +37,15 @@ PLAN_FILE = DATA_DIR / "apify_plan.json"
 RUNS_DIR = DATA_DIR / "apify_runs"
 DISCOVERY_OVERLAP_SECONDS = 300
 INCOMPLETE_RETRY_HOURS = 24
+BATCH_SIZE = 25
 
 
 class PartialCollection(RuntimeError):
     """Saved records may be extracted despite incomplete account coverage."""
+
+
+class CollectionHalted(PartialCollection):
+    """Do not start another paid batch until the cause has been reviewed."""
 
 
 class ApifyClient:
@@ -60,23 +68,22 @@ class ApifyClient:
         saved = read_json(self.run_file) if self.run_file.exists() else {}
         if saved and not saved.get("consumed"):
             # Reuse even when the rolling date boundary changed since failure.
-            if saved.get("usernames") != actor_input["usernames"]:
+            if saved.get("usernames") != actor_input["username"]:
                 raise RuntimeError("Unconsumed Apify run has a different roster; resolve data/apify_run.json first")
             if not saved.get("id"):
                 raise RuntimeError("Apify start outcome unknown; inspect Console and resolve the saved run intent before retrying")
             run = self.request("GET", f"actor-runs/{saved['id']}")["data"]
         else:
-            write_json(self.run_file, {"starting": True, "usernames": actor_input["usernames"],
-                                       "newer_than": actor_input["newerThan"],
-                                       "posts_per_profile": actor_input["postsPerProfile"], "consumed": False})
+            metadata = {"usernames": actor_input["username"],
+                        "newer_than": actor_input["onlyPostsNewerThan"],
+                        "posts_per_profile": actor_input["resultsLimit"],
+                        "actor_id": ACTOR_ID, "build": ACTOR_BUILD, "consumed": False}
+            write_json(self.run_file, {**metadata, "starting": True})
             run = self.request("POST", f"acts/{ACTOR_ID}/runs", json=actor_input,
-                               params={"build": "latest", "timeout": timeout,
+                               params={"build": ACTOR_BUILD, "timeout": timeout,
                                        "memory": 512, "maxTotalChargeUsd": max_charge})["data"]
-            write_json(self.run_file, {"id": run["id"], "input_hash": digest,
-                                 "usernames": actor_input["usernames"],
-                                 "posts_per_profile": actor_input["postsPerProfile"],
-                                 "newer_than": actor_input["newerThan"],
-                                 "started_at": run["startedAt"], "consumed": False})
+            write_json(self.run_file, {**metadata, "id": run["id"], "input_hash": digest,
+                                      "started_at": run["startedAt"]})
         log.info("Apify run: https://console.apify.com/actors/runs/%s", run["id"])
         deadline = time.monotonic() + timeout + 120
         while run["status"] not in TERMINAL:
@@ -85,6 +92,16 @@ class ApifyClient:
             time.sleep(10)
             run = self.request("GET", f"actor-runs/{run['id']}")["data"]
         return run
+
+    def completed_profiles(self, run_id: str) -> set[str]:
+        """Pinned build's explicit cutoff acknowledgement, including empty feeds.
+
+        SUCCEEDED and a short dataset alone do not prove per-profile coverage.
+        If the log contract changes, fail closed without advancing checkpoints.
+        """
+        response = self.session.get(f"{API}/logs/{run_id}", timeout=60)
+        response.raise_for_status()
+        return completed_profiles_from_log(response.text)
 
     def items(self, dataset: str):
         offset = 0
@@ -105,11 +122,94 @@ def _handle(value: Any) -> str:
     return value.lower()
 
 
-def normalize(item: dict, accounts: dict, seen_at: datetime) -> dict:
-    """Map the actor's native Instagram output into the existing post archive."""
+def profile_handle(url: str) -> str:
+    parsed = urlsplit(url)
+    if parsed.scheme != "https" or parsed.netloc not in {"instagram.com", "www.instagram.com"}:
+        raise ValueError("invalid input profile URL")
+    return _handle(parsed.path.strip("/"))
+
+
+# Verified against build 0.0.599: coverage ends in exactly one of three ways --
+# the cutoff is reached, the feed runs out, or nothing public sits in the window.
+COMPLETION_SIGNALS = (
+    re.compile(r"INFO\s+No more posts within the wanted time range, finishing "
+               r"https://www\.instagram\.com/([A-Za-z0-9_.]+)(?=\s|$)"),
+    re.compile(r"INFO\s+NO RESULTS: zero public posts for "
+               r"https://www\.instagram\.com/([A-Za-z0-9_.]+) within the given requirements"),
+    re.compile(r"INFO\s+\[END-OF-RESULTS\]: ([A-Za-z0-9_.]+) confirmed end of results at pos \d+"),
+)
+
+
+def completed_profiles_from_log(text: str) -> set[str]:
+    """Only an explicit per-profile acknowledgement may advance a checkpoint.
+
+    An unrecognised log contract therefore fails closed rather than treating a
+    short dataset as proof that the profile was scanned to its cutoff.
+    """
+    handles = set()
+    for pattern in COMPLETION_SIGNALS:
+        for match in pattern.findall(text):
+            try:
+                handles.add(_handle(match))
+            except ValueError:
+                continue
+    return handles
+
+
+def official_item(item: dict) -> dict:
+    """Map verified detailedData output to our native ingestion contract."""
+    handle = profile_handle(item.get("inputUrl", ""))
+    timestamp = parse_instant(item.get("timestamp"))
+    kinds = {"Image": 1, "Video": 2, "Sidecar": 8}
+    def media(node):
+        return {"media_type": kinds.get(node.get("type")), "image_url": node.get("displayUrl")}
+    return {**media(item), "id": item.get("id"), "pk": item.get("id"),
+            "code": item.get("shortCode"), "scraped_username": handle,
+            "taken_at": timestamp.timestamp() if timestamp else None,
+            "user": {"username": item.get("ownerUsername"), "pk": item.get("ownerId")},
+            "coauthor_producers": item.get("coauthorProducers") or [],
+            "caption": {"text": item.get("caption")},
+            "carousel_media": [media(node) for node in (item.get("childPosts") or [])]}
+
+
+def identity(item: dict, accounts: dict, seen_at: datetime) -> tuple[str, str, datetime]:
+    """Validate routing/date before inspecting irrelevant historical media.
+
+    The legacy actor rounded numeric pk values in JavaScript. Its composite
+    string id retains the exact Instagram media ID and must take precedence.
+    """
     handle = _handle(item.get("scraped_username"))
     if handle not in accounts:
         raise ValueError(f"unrequested profile: {handle}")
+    value = item.get("id")
+    if isinstance(value, str) and re.fullmatch(r"[0-9]+(?:_[0-9]+)?", value):
+        media_id = value.split("_")[0]
+    else:
+        value = item.get("pk")
+        if isinstance(value, bool) or isinstance(value, float) or (
+                isinstance(value, int) and value > 2**53 - 1):
+            raise ValueError(f"{handle}: unsafe numeric media identity")
+        media_id = str(value or "")
+    if not re.fullmatch(r"[0-9]+", media_id):
+        raise ValueError(f"{handle}: invalid media identity")
+    taken_at = item.get("taken_at")
+    if isinstance(taken_at, bool) or not isinstance(taken_at, (int, float)) or taken_at <= 0:
+        raise ValueError(f"{handle}: invalid taken_at")
+    posted_at = datetime.fromtimestamp(taken_at, timezone.utc)
+    if posted_at > seen_at + timedelta(minutes=5):
+        raise ValueError(f"{handle}: future taken_at")
+    return handle, media_id, posted_at
+
+
+def owner_userid(owner: dict) -> Any:
+    """Keep one numeric owner identity: this actor reports IDs as strings."""
+    value = owner.get("pk") or owner.get("id")
+    return int(value) if isinstance(value, str) and value.isdigit() else value
+
+
+def normalize(item: dict, accounts: dict, seen_at: datetime) -> dict:
+    """Map the actor's native Instagram output into the existing post archive."""
+    handle, media_id, posted_at = identity(item, accounts, seen_at)
     owner = item.get("user") or {}
     owner_name = _handle(owner.get("username"))
     authors = [owner, *(item.get("coauthor_producers") or [])]
@@ -118,16 +218,9 @@ def normalize(item: dict, accounts: dict, seen_at: datetime) -> dict:
                (not expected_id or str(author.get("pk") or author.get("id")) == str(expected_id))
                for author in authors):
         raise ValueError(f"{handle}: owner/accepted coauthor does not match roster")
-    media_id = str(item.get("pk") or str(item.get("id") or "").split("_")[0])
     shortcode = item.get("code")
     if not media_id.isascii() or not media_id.isdigit() or not isinstance(shortcode, str) or not re.fullmatch(r"[A-Za-z0-9_-]+", shortcode):
         raise ValueError(f"{handle}: invalid media identity")
-    taken_at = item.get("taken_at")
-    if isinstance(taken_at, bool) or not isinstance(taken_at, (int, float)) or taken_at <= 0:
-        raise ValueError(f"{handle}: invalid taken_at")
-    posted_at = datetime.fromtimestamp(taken_at, timezone.utc)
-    if posted_at > seen_at + timedelta(minutes=5):
-        raise ValueError(f"{handle}: future taken_at")
     kind = item.get("media_type")
     if kind not in (1, 2, 8):
         raise ValueError(f"{handle}: unsupported media_type")
@@ -139,6 +232,10 @@ def normalize(item: dict, accounts: dict, seen_at: datetime) -> dict:
         candidates = (node.get("image_versions2") or {}).get("candidates") or []
         candidates = [entry for entry in candidates if isinstance(entry.get("url"), str)
                       and entry["url"].startswith("https://")]
+        # Actual sones 1.5.10 datasets use flattened image_url fields, including
+        # each carousel child, rather than the shape in the actor's README.
+        if not candidates and isinstance(node.get("image_url"), str) and node["image_url"].startswith("https://"):
+            candidates = [{"url": node["image_url"]}]
         if not candidates:
             raise ValueError(f"{handle}: missing image/cover at slide {index}")
         best = max(candidates, key=lambda entry: (entry.get("width") or 0) * (entry.get("height") or 0))
@@ -150,7 +247,7 @@ def normalize(item: dict, accounts: dict, seen_at: datetime) -> dict:
     if caption is not None and (not isinstance(caption, dict) or (text is not None and not isinstance(text, str))):
         raise ValueError(f"{handle}: invalid caption")
     return {"media_id": media_id, "handle": handle, "owner_username": owner_name,
-            "owner_userid": owner.get("pk"), "shortcode": shortcode,
+            "owner_userid": owner_userid(owner), "shortcode": shortcode,
             "permalink": f"https://www.instagram.com/p/{shortcode}/",
             "posted_at": iso(posted_at), "typename": {1: "GraphImage", 2: "GraphVideo", 8: "GraphSidecar"}[kind],
             "caption": text, "caption_mentions": re.findall(r"@([\w.]+)", text or ""),
@@ -190,6 +287,18 @@ def mirror(records: list[dict]) -> None:
 def charge_limit_reason(run: dict, max_charge: float, exported: int) -> str | None:
     """A charge-limited success is not evidence of complete profile coverage."""
     events = ((run.get("pricingInfo") or {}).get("pricingPerEvent") or {}).get("actorChargeEvents") or {}
+    if run.get("actId") == ACTOR_ID:
+        try:
+            post_price = float(events["post"]["eventPriceUsd"])
+            detail_price = float(events["post-details"]["eventPriceUsd"])
+            charged = run["chargedEventCounts"]
+            total = charged.get("post", 0) * post_price + charged.get("post-details", 0) * detail_price
+            ceiling = (run.get("options") or {}).get("maxTotalChargeUsd") or max_charge
+            if total + post_price + detail_price > float(ceiling) + 1e-9:
+                return "Actor reached its charge ceiling; retaining collection checkpoints"
+            return None
+        except (KeyError, TypeError, ValueError):
+            return "Cannot verify actor charge-limit coverage from run pricing metadata"
     try:
         post_price = float(events["apify-default-dataset-item"]["eventPriceUsd"])
         start_price = float(events["apify-actor-start"]["eventPriceUsd"])
@@ -224,11 +333,20 @@ def collect(api: ApifyClient, accounts: dict, state: dict, now: datetime,
     # local cache must not turn previously saved posts into editable new input.
     known = known_post_ids()
     requested_cutoff = cutoff or iso(oldest - timedelta(seconds=1))
-    run = api.run({"usernames": sorted(accounts), "postsPerProfile": limit,
-                   "newerThan": requested_cutoff,
-                   "proxy": {"useApifyProxy": True}}, max_charge=max_charge, timeout=timeout)
+    # The schema accepts UTC Z, not an explicit +00:00 suffix. Measured against
+    # build 0.0.599: the cutoff alone still exports (and charges for) pinned
+    # posts of any age, while skipPinnedPosts with it drops only the pins older
+    # than the window and keeps the ones inside it.
+    actor_cutoff = iso(parse_instant(requested_cutoff)).replace("+00:00", "Z")
+    run = api.run({"username": sorted(accounts), "resultsLimit": limit,
+                   "onlyPostsNewerThan": actor_cutoff, "skipPinnedPosts": True,
+                   "dataDetailLevel": "detailedData"}, max_charge=max_charge, timeout=timeout)
     observed_at = max(now, datetime.now(timezone.utc))
     saved = read_json(api.run_file)
+    actor_id = run.get("actId", saved.get("actor_id", LEGACY_ACTOR_ID))
+    if actor_id not in {ACTOR_ID, LEGACY_ACTOR_ID}:
+        raise CollectionHalted(f"Unsupported saved actor {actor_id}; no new paid batches started")
+    official = actor_id == ACTOR_ID
     limit = saved["posts_per_profile"]
     scan_start = parse_instant(saved["started_at"])
     if scan_start is None:
@@ -240,8 +358,16 @@ def collect(api: ApifyClient, accounts: dict, state: dict, now: datetime,
     dataset = run.get("defaultDatasetId")
     if not dataset:
         raise RuntimeError("Apify run has no dataset")
+    # Needed before the loop: a profile with nothing inside the window reports
+    # an error item, and only the log separates that from a private or blocked
+    # one. Treating the empty case as a failure would strand its checkpoint.
+    completed = api.completed_profiles(run["id"]) if official else set()
     pending = []
     exported = 0
+    ignored_old = 0
+    validated = 0
+    invalid = 0
+    outside_actor_cutoff = 0
 
     def flush() -> None:
         if pending:
@@ -253,10 +379,38 @@ def collect(api: ApifyClient, accounts: dict, state: dict, now: datetime,
     try:
         for item in api.items(dataset):
             exported += 1
+            original = item
             try:
+                if official:
+                    if item.get("error"):
+                        handle = profile_handle(item.get("inputUrl", ""))
+                        if handle not in accounts:
+                            raise ValueError(f"unrequested profile: {handle}")
+                        if handle not in completed:
+                            bad.add(handle)
+                            errors.append(f"{handle}: actor error {item['error']}")
+                        continue
+                    item = official_item(item)
+                handle, media_id, posted_at = identity(item, accounts, observed_at)
+                counts[handle].add(media_id)
+                if official and posted_at < parse_instant(saved.get("newer_than") or actor_cutoff):
+                    outside_actor_cutoff += 1
+                if posted_at < boundaries[handle]:
+                    ignored_old += 1
+                    continue
+                if media_id in known or media_id in seen:
+                    validated += 1
+                    continue
                 record = normalize(item, accounts, observed_at)
+                validated += 1
             except (ValueError, TypeError, KeyError, AttributeError, OverflowError, OSError) as exc:
+                invalid += 1
                 handle = item.get("scraped_username") if isinstance(item, dict) else None
+                if official and handle is None and isinstance(original, dict):
+                    try:
+                        handle = profile_handle(original.get("inputUrl", ""))
+                    except (ValueError, TypeError, AttributeError):
+                        pass
                 if isinstance(handle, str) and handle.lower() in accounts:
                     bad.add(handle.lower())
                 else:
@@ -281,6 +435,9 @@ def collect(api: ApifyClient, accounts: dict, state: dict, now: datetime,
         flush()
     saved_cutoff = parse_instant(saved.get("newer_than"))
     successful = run["status"] == "SUCCEEDED"
+    if outside_actor_cutoff:
+        successful = False
+        errors.append(f"Actor exported {outside_actor_cutoff} posts older than its requested cutoff")
     if saved_cutoff is not None and saved_cutoff > oldest:
         successful = False
         errors.append("Resumed run did not cover the newly requested older cutoff; rerun for coverage")
@@ -290,7 +447,8 @@ def collect(api: ApifyClient, accounts: dict, state: dict, now: datetime,
         errors.append(limited)
     updates = []
     for handle, entry in state.items():
-        complete = successful and handle not in bad and 0 < len(counts[handle]) < limit
+        coverage = handle in completed if official else bool(counts[handle])
+        complete = successful and handle not in bad and coverage and len(counts[handle]) < limit
         if not complete:
             errors.append(f"{handle}: incomplete ({len(counts[handle])} posts, limit {limit}, run {run['status']})")
         updates.append({"handle": handle, "activated_at": entry["activated_at"],
@@ -298,9 +456,22 @@ def collect(api: ApifyClient, accounts: dict, state: dict, now: datetime,
                         "last_scan_at": iso(now), "last_status": "ok" if complete else "incomplete"})
     if updates:
         upsert_batched("instagram_post_checkpoints", updates, on_conflict="handle")
+    halt_reason = None
+    if run["status"] == "ABORTED":
+        halt_reason = f"Apify run {run['id']} was aborted; remaining paid batches stopped"
+    elif invalid and not validated:
+        halt_reason = f"Apify output contract failed for all {invalid} relevant result(s); remaining paid batches stopped"
+    elif outside_actor_cutoff:
+        halt_reason = "Actor violated the paid date filter; remaining paid batches stopped"
     write_json(api.run_file, {**saved, "consumed": True, "status": run["status"],
-                          "saved_posts": len(seen), "errors": errors})
+                          "saved_posts": len(seen), "errors": errors,
+                          "exported": exported, "ignored_old": ignored_old,
+                          "invalid": invalid, "halt_reason": halt_reason,
+                          "usage_usd": run.get("usageTotalUsd"), "build_id": run.get("buildId"),
+                          "dataset_id": dataset})
     log.info("Apify: archived %d posts; %d incomplete results", len(seen), len(errors))
+    if halt_reason:
+        raise CollectionHalted(halt_reason)
     if errors:
         raise PartialCollection("; ".join(errors[:10]) + f" ({len(errors)} issues; see {api.run_file})")
 
@@ -311,11 +482,14 @@ def _group_jobs(cutoffs: dict[str, datetime]) -> list[dict]:
     for handle, cutoff in sorted(cutoffs.items()):
         bucket = cutoff.replace(minute=0, second=0, microsecond=0)
         groups.setdefault(bucket, {})[handle] = cutoff
+    chunks = [dict(list(entries.items())[offset:offset + BATCH_SIZE])
+              for _, entries in sorted(groups.items(), reverse=True)
+              for offset in range(0, len(entries), BATCH_SIZE)]
     return [{"mode": "discovery", "handles": sorted(entries),
              "cutoff": iso(min(entries.values()) - timedelta(seconds=1)),
              "boundaries": {h: iso(value) for h, value in entries.items()},
              "done": False}
-            for _, entries in sorted(groups.items(), reverse=True)]
+            for entries in chunks]
 
 
 def _allocate(jobs: list[dict], cents: int) -> None:
@@ -359,6 +533,8 @@ def plan_jobs(accounts: dict, state: dict, now: datetime,
 
 def execute_plan(token: str, accounts: dict, state: dict, now: datetime,
                  plan: dict, timeout: int) -> None:
+    if plan.get("halt_reason"):
+        raise CollectionHalted(plan["halt_reason"])
     deadline = time.monotonic() + timeout
     errors = []
     for job in plan["jobs"]:
@@ -397,6 +573,10 @@ def execute_plan(token: str, accounts: dict, state: dict, now: datetime,
         job["done"] = bool(saved.get("consumed"))
         job["errors"] = saved.get("errors") or []
         errors.extend(job["errors"])
+        if saved.get("halt_reason"):
+            plan["halt_reason"] = saved["halt_reason"]
+            write_json(PLAN_FILE, plan)
+            raise CollectionHalted(plan["halt_reason"])
         write_json(PLAN_FILE, plan)
     plan["complete"] = all(job["done"] for job in plan["jobs"])
     write_json(PLAN_FILE, plan)
@@ -404,7 +584,13 @@ def execute_plan(token: str, accounts: dict, state: dict, now: datetime,
         raise PartialCollection("; ".join(errors[:10]) + "; see data/apify_plan.json")
 
 
-def main() -> None:
+def main(*, resume_halted: bool = False) -> None:
+    plan = read_json(PLAN_FILE) if PLAN_FILE.exists() else {}
+    if plan.get("halt_reason"):
+        if not resume_halted:
+            raise CollectionHalted(plan["halt_reason"] + "; after fixing the cause, run apify_posts.py --resume-halted")
+        plan.pop("halt_reason")
+        write_json(PLAN_FILE, plan)
     token = os.environ.get("APIFY_TOKEN", "")
     if not token.strip():
         raise ValueError("APIFY_TOKEN is required")
@@ -422,7 +608,6 @@ def main() -> None:
     now = datetime.now(timezone.utc)
     state = checkpoints(sorted(accounts), now)
     hydrate_local_posts()
-    plan = read_json(PLAN_FILE) if PLAN_FILE.exists() else {}
     if not plan or plan.get("complete"):
         legacy = read_json(RUN_FILE) if RUN_FILE.exists() else {}
         if legacy and not legacy.get("consumed"):
@@ -441,5 +626,8 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--resume-halted", action="store_true", help="Explicitly resume remaining batches after reviewing an abort or output contract failure")
     logging.basicConfig(level=logging.INFO)
-    main()
+    main(resume_halted=parser.parse_args().resume_halted)
