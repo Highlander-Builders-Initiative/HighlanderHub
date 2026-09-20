@@ -22,3 +22,12 @@ __pycache__/
 # Unattended run logs (pipeline/run_daily.sh + launchd)
 *.log
 *.log.1
+
+# Apify run resume state and per-run report
+data/apify_run.json
+data/last_run.json
+
+data/apify_plan.json
+data/apify_runs/
+# Obsolete local refresh state; never read by discovery-only collection.
+data/apify_refresh_attempts.json

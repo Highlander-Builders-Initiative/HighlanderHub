@@ -1,10 +1,10 @@
-"""Single entry point: scrape all sources -> extract -> normalize.
+"""Single entry point: Apify collection -> OCR -> assessment -> publication.
 
 Each source is independent. A failure in one shouldn't kill the others, so
 we log and keep going.
 
 Stages:
-  1. Collect Instagram feed posts, respecting the persisted collection cooldown.
+  1. Collect Instagram feed posts through the Apify API.
   2. Extract cached post images with Google Vision OCR.
   3. Assess and publish the post archive even when collection failed.
   4. Reconcile corroborated events and send eligible free-food alerts.
@@ -31,7 +31,7 @@ from typing import Any
 import assessed_events
 import extract_posts
 import reconcile_events
-import scrape_posts
+import apify_posts
 from config import DATA_DIR, load_account_meta
 
 log = logging.getLogger("pipeline.run")
@@ -142,11 +142,11 @@ def _write_history(results: list[StageResult], total_seconds: float) -> None:
         ],
         "resume": {
             "command": "pipeline/.venv/bin/python pipeline/run.py",
-            "instructions": "Resolve the reported error or wait for the Instagram cooldown, then rerun. "
-                            "With PIPELINE_POST_BACKFILL_SINCE set, every selected account restarts at page one. "
+            "instructions": "Resolve the reported API/configuration error, then rerun. "
+                            "Unfinished Apify batches resume without repeating completed batches. "
                             "Post extractions and assessments reuse their saved caches.",
-            "checkpoints": str(DATA_DIR / "post_checkpoints.json"),
-            "cooldown": str(DATA_DIR / "instagram_cooldown.json"),
+            "checkpoints": "Supabase instagram_post_checkpoints",
+            "apify_plan": str(DATA_DIR / "apify_plan.json"),
         },
     }
     try:
@@ -165,21 +165,10 @@ def _report(results: list[StageResult], total_seconds: float) -> None:
 
 
 def _run_stages(results: list[StageResult]) -> None:
-    # Extraction and publication still process the archive after collection fails.
-    partial = []
-
-    def collect() -> None:
-        try:
-            scrape_posts.main()
-        except scrape_posts.PartialCollection as exc:
-            partial.append(exc)
-            raise
-
-    collected = _safe("instagram.posts.scrape", collect, results)
-
-    # A few unreadable accounts leave everything else collected and readable;
-    # only a stopped collection limits extraction to work already paid for.
-    posts = InstagramPosts(cached_only=not (collected or partial))
+    # Apify failures do not invalidate already mirrored posts or their CDN URLs.
+    # Continue OCR on the completed prefix even if dataset pagination stopped.
+    _safe("instagram.posts.collect", apify_posts.main, results)
+    posts = InstagramPosts()
     _safe("instagram.posts.extract", posts.extract_posts, results)
     _safe("instagram.publish", posts.publish, results)
     _safe("events.reconcile", reconcile_events.main, results)

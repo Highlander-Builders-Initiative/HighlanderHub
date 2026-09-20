@@ -1,11 +1,8 @@
 #!/bin/bash
 # Unattended daily wrapper around run.py, installed by ./install-launchd.sh.
 #
-# Runs locally rather than in GitHub Actions on purpose: Instagram sessions
-# survive here because (a) the run happens from a residential IP, and (b)
-# scrape_posts.py persists the rotated `sessionid` back to IG_SESSION_FILE after
-# every run. On a CI runner the session file is ephemeral, so each run replays
-# the same increasingly stale cookie until Instagram rejects it.
+# Optional local wrapper. GitHub Actions is the supported eight-hour scheduler.
+# Do not schedule this wrapper alongside Actions against the same database.
 set -uo pipefail
 
 PIPELINE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -23,7 +20,7 @@ echo "=== $(date '+%Y-%m-%d %H:%M:%S %Z') run.py exited $status ===" >> "$LOG"
 
 if [ "$status" -ne 0 ]; then
   # run.py isolates per-source failures, so a nonzero exit means at least one
-  # source is broken — most often an expired Instagram session.
+  # source is broken — most often an API or configuration failure.
   osascript -e 'display notification "run.py failed — check pipeline/pipeline.log" with title "HighlanderHub scrape"' >/dev/null 2>&1 || true
 fi
 

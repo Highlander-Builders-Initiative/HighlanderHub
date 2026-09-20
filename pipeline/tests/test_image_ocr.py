@@ -19,17 +19,16 @@ class ImageOcrTests(unittest.TestCase):
                                        Path(directory.name) / "cooldown.json"))
         self.enterContext(patch.object(instagram_cooldown, "_UNSAVED", None))
 
-    def test_image_rate_limit_persists_pause_and_blocks_next_download(self):
-        import requests
-        response = Mock(status_code=429)
-        response.raise_for_status.side_effect = requests.HTTPError("429")
+    def test_expired_url_does_not_pause_other_images(self):
+        response = Mock(status_code=403)
         with patch("requests.get", return_value=response) as request:
-            with self.assertRaises(requests.HTTPError):
-                image_ocr._download_image("https://cdn.example/first.jpg")
-            with self.assertRaises(instagram_cooldown.CollectionPaused):
-                image_ocr._download_image("https://cdn.example/next.jpg")
-        request.assert_called_once()
-        self.assertEqual(instagram_cooldown.Kind.THROTTLED, instagram_cooldown.current().kind)
+            with self.assertRaises(image_ocr.ImageExpired):
+                image_ocr._download_image("https://cdn.example/expired.jpg")
+            response.status_code = 200
+            response.content = b"flyer"
+            self.assertEqual(b"flyer", image_ocr._download_image("https://cdn.example/next.jpg"))
+        self.assertEqual(2, request.call_count)
+        self.assertIsNone(instagram_cooldown.current())
 
     def test_image_download_returns_bytes_and_reports_expired_urls(self):
         response = Mock(status_code=200, content=b"flyer")
