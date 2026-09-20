@@ -73,7 +73,7 @@ jobs:
           APIFY_POSTS_PER_PROFILE: ${{ vars.APIFY_POSTS_PER_PROFILE || '100' }}
           APIFY_MAX_CHARGE_USD: ${{ vars.APIFY_MAX_CHARGE_USD || '10' }}
           # This ceiling is shared across all discovery batches.
-          APIFY_TIMEOUT_SECONDS: '1800'
+          APIFY_TIMEOUT_SECONDS: ${{ vars.APIFY_TIMEOUT_SECONDS || '3600' }}
           APIFY_DISCOVERY_OVERLAP_SECONDS: ${{ vars.APIFY_DISCOVERY_OVERLAP_SECONDS || '300' }}
           APIFY_INCOMPLETE_RETRY_HOURS: ${{ vars.APIFY_INCOMPLETE_RETRY_HOURS || '8' }}
           PIPELINE_ACCOUNT_SOURCE: accounts_json

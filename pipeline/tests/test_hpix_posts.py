@@ -160,6 +160,46 @@ class HpixCollectionTests(unittest.TestCase):
         self.assertEqual('club', self.write.call_args.args[0]['handle'])
         self.assertEqual('partner', self.write.call_args.args[0]['owner_username'])
 
+    def test_tail_batch_defers_then_reuses_paid_feed_for_details(self):
+        self.path.unlink()
+        clock = [0]
+        api = apify.ApifyClient('test', self.path)
+        def request(method, *args, **kwargs):
+            if method == 'POST':
+                clock[0] += 40
+            return {'data': run(startedAt=NOW.isoformat())}
+        api.request = Mock(side_effect=request)
+        api.items = Mock(return_value=[row(owner='partner', owner_id='77')])
+        api.run_log = self.api.run_log
+        self.detail()
+        api.details = self.api.details
+        job = {'mode': 'discovery', 'handles': list(ACCOUNTS),
+               'file': str(self.path), 'limit': 100, 'max_charge': 1,
+               'cutoff': '2026-09-18T23:54:59Z', 'done': False}
+        plan = {'jobs': [job], 'complete': False}
+        plan_path = self.path.with_name('plan.json')
+        with patch.object(apify, 'PLAN_FILE', plan_path), \
+             patch.object(apify, 'ApifyClient', return_value=api), \
+             patch.object(apify.time, 'monotonic', side_effect=lambda: clock[0]):
+            with self.assertRaisesRegex(apify.PartialCollection, 'detail enrichment'):
+                apify.execute_plan('test', ACCOUNTS, STATE, NOW, plan, 80)
+            self.assertFalse(json.loads(self.path.read_text())['consumed'])
+            self.assertFalse(json.loads(plan_path.read_text())['jobs'][0]['done'])
+            self.assertFalse(plan['complete'])
+            api.details.assert_not_called()
+            self.upsert.assert_not_called()
+            self.mirror.assert_not_called()
+            self.write.assert_not_called()
+
+            apify.execute_plan('test', ACCOUNTS, STATE, NOW, plan, 300)
+
+        self.assertEqual(['POST', 'GET'], [c.args[0] for c in api.request.call_args_list])
+        self.assertTrue(plan['complete'])
+        self.assertTrue(json.loads(self.path.read_text())['consumed'])
+        api.details.assert_called_once()
+        self.assertEqual('ok', self.status('club')['last_status'])
+        self.assertEqual('partner', self.write.call_args.args[0]['owner_username'])
+
     def test_known_collaboration_is_not_enriched_or_overwritten(self):
         self.known.return_value = {'123'}
         self.api.items.return_value = [row(owner='partner', owner_id='77')]
@@ -252,6 +292,29 @@ class HpixCollectionTests(unittest.TestCase):
         with self.assertRaises(apify.CollectionHalted): self.collect()
         self.api.details.assert_not_called()
 
+    def test_low_time_does_not_defer_blocked_feed_or_hide_halt(self):
+        for changes in ({'status': 'ABORTED'}, {'status': 'FAILED'},
+                        {'options': {'maxTotalChargeUsd': .002}}):
+            with self.subTest(changes=changes):
+                self.api.items.return_value = [row(owner='partner', owner_id='77')]
+                self.api.run.return_value = run(**changes)
+                with patch.object(apify.time, 'monotonic', side_effect=[0, 280]):
+                    with self.assertRaises(apify.PartialCollection) as raised:
+                        self.collect()
+                self.assertNotIsInstance(raised.exception, apify.CollectionDeferred)
+                if changes.get('status') == 'ABORTED':
+                    self.assertIsInstance(raised.exception, apify.CollectionHalted)
+                self.assertTrue(json.loads(self.path.read_text())['consumed'])
+                self.assertEqual('incomplete', self.status('club')['last_status'])
+        self.api.details.assert_not_called()
+
+    def test_low_time_without_required_details_still_finishes(self):
+        with patch.object(apify.time, 'monotonic', side_effect=[0, 280]):
+            self.collect()
+        self.assertTrue(json.loads(self.path.read_text())['consumed'])
+        self.assertEqual('ok', self.status('club')['last_status'])
+        self.api.details.assert_not_called()
+
     def test_restricted_charge_halts_later_spending(self):
         self.api.run.return_value['chargedEventCounts']['restricted_post_scraped'] = 1
         with self.assertRaises(apify.CollectionHalted): self.collect()
@@ -272,6 +335,45 @@ class HpixCollectionTests(unittest.TestCase):
         self.assertEqual('incomplete', self.status('club')['last_status'])
         self.assertEqual('ok', self.status('quiet')['last_status'])
         self.assertIsNone(json.loads(self.path.read_text())['halt_reason'])
+
+    def test_small_detail_run_uses_only_individual_post_headroom(self):
+        self.api.items.return_value = [row(owner='partner', owner_id='77')]
+        self.detail()
+        detail_run = self.api.details.return_value[0]
+        detail_run['options']['maxTotalChargeUsd'] = .004
+        detail_run['chargedEventCounts'] = {'individual_post_scraped': 1, 'apify-actor-start': 1}
+        self.collect()
+        self.assertEqual('ok', self.status('club')['last_status'])
+        self.write.assert_called_once()
+
+    def test_missing_feed_options_uses_reserved_feed_ceiling(self):
+        self.api.run.return_value = run(options={}, chargedEventCounts={
+            'post_scraped': 14, 'apify-actor-start': 1})
+        with self.assertRaisesRegex(apify.PartialCollection, 'charge ceiling'):
+            apify.collect(self.api, ACCOUNTS, STATE, NOW, limit=100, max_charge=.02, timeout=300)
+        self.assertEqual('incomplete', self.status('club')['last_status'])
+
+    def test_missing_coauthors_cannot_establish_unrelated_repost(self):
+        self.api.items.return_value = [row(owner='partner', owner_id='77')]
+        for value in ('missing', None, {}):
+            with self.subTest(value=value):
+                self.detail(coauthor_producers=value)
+                if value == 'missing':
+                    del self.api.details.return_value[1][0]['data']['coauthor_producers']
+                with self.assertRaises(apify.PartialCollection):
+                    self.collect()
+                self.assertEqual('incomplete', self.status('club')['last_status'])
+                self.assertEqual('ok', self.status('quiet')['last_status'])
+
+    def test_malformed_detail_rows_do_not_strand_paid_batch(self):
+        self.api.items.return_value = [row(owner='partner', owner_id='77')]
+        self.detail()
+        self.api.details.return_value[1][:] = [None, [], {'data': {'code': []}}]
+        with self.assertRaises(apify.PartialCollection):
+            self.collect()
+        self.assertTrue(json.loads(self.path.read_text())['consumed'])
+        self.assertEqual('incomplete', self.status('club')['last_status'])
+        self.assertEqual('ok', self.status('quiet')['last_status'])
 
     def test_mirror_failure_keeps_paid_run_unconsumed_and_no_checkpoint_write(self):
         self.mirror.side_effect = RuntimeError('database unavailable')
@@ -340,8 +442,43 @@ class HpixInputTests(unittest.TestCase):
                     api.details(['A'], max_charge=.2, timeout=60)
                 request.assert_called_once()
 
+    def test_failed_detail_replays_within_batch_but_fresh_cycle_can_retry(self):
+        with tempfile.TemporaryDirectory() as tmp, \
+             patch.object(apify, 'RUNS_DIR', Path(tmp)), \
+             patch.object(apify, 'POST_BACKFILL_SINCE', ''):
+            first = apify.plan_jobs(ACCOUNTS, STATE, NOW, limit=100, max_charge=1)[0]
+            second = apify.plan_jobs(ACCOUNTS, STATE, NOW, limit=100, max_charge=1)[0]
+            api = apify.ApifyClient('test', Path(first['file']))
+            retry_api = apify.ApifyClient('test', Path(second['file']))
+            failed = run(id='failed-detail', status='FAILED', startedAt=NOW.isoformat())
+            success = run(id='new-detail', startedAt=NOW.isoformat())
+            with patch.object(apify.ApifyClient, 'request', side_effect=[
+                    {'data': failed}, {'data': failed}, {'data': success}]) as request, \
+                 patch.object(apify.ApifyClient, 'items', return_value=[]):
+                api.details(['A'], max_charge=.2, timeout=60)
+                replay, _ = api.details(['A'], max_charge=.2, timeout=60)
+                retry, _ = retry_api.details(['A'], max_charge=.2, timeout=60)
+            self.assertEqual(['POST', 'GET', 'POST'], [c.args[0] for c in request.call_args_list])
+            self.assertEqual('failed-detail', replay['id'])
+            self.assertEqual('new-detail', retry['id'])
+
 
 class HpixPlanRecoveryTests(unittest.TestCase):
+    def test_deferred_batch_stops_before_later_paid_work(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            jobs = [{'mode': 'discovery', 'handles': [h], 'cutoff': '2026-09-19T00:00:00Z',
+                     'file': str(root / (h + '.json')), 'limit': 100, 'max_charge': .5,
+                     'done': False} for h in ACCOUNTS]
+            plan = {'jobs': jobs, 'complete': False}
+            with patch.object(apify, 'PLAN_FILE', root / 'plan.json'), \
+                 patch.object(apify, 'collect', side_effect=apify.CollectionDeferred('details pending')) as collect:
+                with self.assertRaises(apify.CollectionDeferred):
+                    apify.execute_plan('test', ACCOUNTS, STATE, NOW, plan, 300)
+            collect.assert_called_once()
+            self.assertEqual(plan, apify.read_json(root / 'plan.json'))
+            self.assertTrue(all(not job['done'] for job in jobs))
+
     def test_halt_preserves_consumed_batch_and_resume_does_not_buy_it_again(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -368,3 +505,49 @@ class HpixPlanRecoveryTests(unittest.TestCase):
                     apify.execute_plan('test', ACCOUNTS, STATE, NOW, plan, 300)
                 self.assertEqual(2, mocked.call_count)
                 self.assertTrue(plan['complete'])
+
+
+class HpixBudgetPlanningTests(unittest.TestCase):
+    def test_remainder_batches_have_a_usable_floor_without_overspend(self):
+        jobs = [{'handles': list(range(size))} for size in [1, 4, 20, 22] + [25] * 24]
+        apify._allocate(jobs, 1000)
+        self.assertGreaterEqual(min(job['max_charge'] for job in jobs), .25)
+        self.assertEqual(1000, sum(round(job['max_charge'] * 100) for job in jobs))
+
+    def test_underfunded_plan_fails_before_assigning_tiny_caps(self):
+        jobs = [{'handles': ['a']}, {'handles': ['b']}]
+        with self.assertRaisesRegex(ValueError, 'budget'):
+            apify._allocate(jobs, 49)
+        self.assertTrue(all('max_charge' not in job for job in jobs))
+        apify._allocate(jobs, 50)
+        self.assertEqual([.25, .25], [job['max_charge'] for job in jobs])
+
+    def test_stalest_cutoffs_go_first_including_within_an_hour(self):
+        cutoffs = {'fresh': datetime(2026, 9, 20, tzinfo=timezone.utc),
+                   'a_newer': datetime(2026, 9, 1, 0, 50, tzinfo=timezone.utc),
+                   'z_oldest': datetime(2026, 9, 1, 0, 5, tzinfo=timezone.utc)}
+        with patch.object(apify, 'BATCH_SIZE', 1):
+            jobs = apify._group_jobs(cutoffs)
+        self.assertEqual(['z_oldest', 'a_newer', 'fresh'], [job['handles'][0] for job in jobs])
+
+    def test_aligned_roster_needs_seven_feed_starts(self):
+        jobs = apify._group_jobs(dict.fromkeys([f'club{i}' for i in range(647)], NOW))
+        self.assertEqual(7, len(jobs))
+        self.assertEqual(647, sum(len(job['handles']) for job in jobs))
+        self.assertLessEqual(max(len(job['handles']) for job in jobs), 100)
+
+    def test_feed_retains_profile_failure_headroom(self):
+        capped = run(options={'maxTotalChargeUsd': .016}, chargedEventCounts={
+            'post_scraped': 14, 'apify-actor-start': 1})
+        self.assertIn('charge ceiling', apify.charge_limit_reason(capped, .016, 14))
+
+    def test_lagging_detail_counters_use_individual_price(self):
+        capped = run(options={'maxTotalChargeUsd': .004}, chargedEventCounts={'apify-actor-start': 1})
+        self.assertIn('charge ceiling', apify.charge_limit_reason(capped, .004, 2, details=True))
+
+    def test_case_variants_cannot_hide_profile_failure_or_cap(self):
+        finish = 'INFO  Crawler: [Club] Finished scraping posts'
+        for reason in ('Failed to scrape profile club. The account may be private or restricted',
+                       'INFO  Crawler: [CLUB] Scraped 100/100 posts'):
+            with self.subTest(reason=reason):
+                self.assertEqual(set(), completed_profiles(finish + '\n' + reason))

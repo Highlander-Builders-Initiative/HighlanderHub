@@ -50,7 +50,10 @@ def hpix_item(row: dict) -> dict:
 def completed_profiles(text: str) -> set[str]:
     finished = set(re.findall(r"INFO\s+Crawler: \[([A-Za-z0-9_.]+)\] Finished scraping posts", text))
     failed = set(re.findall(r"Failed to scrape profile ([A-Za-z0-9_.]+)\. The account may be private or restricted", text))
-    capped = {handle for handle, count, limit in re.findall(
+    # N counts emitted posts, not every node visited before shouldSkip. This
+    # catches visible caps but can miss a truncated walk after heavy skipping;
+    # a low N alone cannot establish exhaustive historical/backfill coverage.
+    capped = {handle.lower() for handle, count, limit in re.findall(
         r"\[([A-Za-z0-9_.]+)\] Scraped (\d+)/(\d+) posts", text)
         if int(count) >= int(limit)}
-    return {handle.lower() for handle in finished - failed - capped}
+    return {handle.lower() for handle in finished} - {handle.lower() for handle in failed} - capped

@@ -246,7 +246,7 @@ provider returned, hpix returned all 161.
 | Gate | Measured result |
 | --- | --- |
 | Profile retrieval, 42-profile roster | 42/42 |
-| Profile retrieval, full 647-club roster (`l5u9pxGwdctAQuVUi`) | 644/647 finished in 369s; 3 failures, all real accounts |
+| Profile retrieval, full 647-club roster (`l5u9pxGwdctAQuVUi`) | 644/647 finished in 369s in one actor run; 3 failures, all real accounts. This does not measure the production batch plan. |
 | Reference recall | 161/164 found; 151/164 also satisfy roster ownership |
 | ID, timestamp, caption, type fidelity | 151/151 exact |
 | Carousel slide order | 50/50 ordered `media_key` lists identical |
@@ -391,7 +391,7 @@ known real accounts failed in the full-roster probe, so a provider error alone
 is insufficient evidence to disable a club. Failure rows remain visible for
 roster review, including potentially billable not-found errors.
 
-**Cost correction:** the existing 25-profile batches need roughly 26 starts per
+**Historical cost correction (25-profile planner):** those batches needed roughly 26 starts per
 full pass when cutoff groups align, adding about $0.117/month rather than
 $0.0045. At the sampled post rate, feed posts + the proposed collaboration mix
 + these starts are roughly **$1.57/month**, before extra cutoff groups, detail
@@ -403,3 +403,28 @@ cycles before treating a monthly budget or failure rate as reliable.
 Activation requires these code and workflow changes to reach the scheduled
 branch. Existing halted plans still require review and `--resume-halted`;
 this migration does not clear a previous halt or start a production run.
+
+
+### Planner follow-up: small batches and stale-first scheduling
+
+The local enabled roster reproduces 647 checkpoints, 455 marked incomplete,
+and 28 old-planner batches: 24 of size 25 plus 20, 22, 1 and 4. New plans group
+up to 100 profiles within each cutoff hour and run oldest first, yielding nine
+batches on that snapshot. Each batch reserves at least $0.25 before the remaining
+cycle ceiling is weighted by profile count; the smallest snapshot batch gets
+$0.30. The combined ceiling stays $10. Both local and Actions collection time
+defaults are now 3600 seconds, with an Actions variable override.
+
+Only posts-only detail runs drop profile-event headroom: feed lookup failures
+can still charge profile_scraped and keep that safeguard. Detail output uses
+the individual-post price when billing counters lag. Missing feed run options
+fall back to its 80% reservation, not the whole feed-plus-detail batch ceiling.
+
+The surrounding audit also fixed missing coauthor metadata being mistaken for
+an unrelated repost, malformed detail rows stranding paid dataset replay, and
+case differences allowing a completion log to override a failure or cap.
+Regression tests exercise these paths without starting paid actors. Larger-batch
+runtime remains unmeasured; existing saved plans retain their original reservations.
+The earlier 25-profile start-cost projection above is historical. Seven aligned
+100-profile batches imply about $0.0315/month in feed starts at three cycles/day,
+before extra cutoff groups, details, overlap and retries.

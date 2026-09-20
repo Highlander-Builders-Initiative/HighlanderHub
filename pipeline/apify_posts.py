@@ -40,11 +40,18 @@ PLAN_FILE = DATA_DIR / "apify_plan.json"
 RUNS_DIR = DATA_DIR / "apify_runs"
 DISCOVERY_OVERLAP_SECONDS = 300
 INCOMPLETE_RETRY_HOURS = 8
-BATCH_SIZE = 25
+BATCH_SIZE = 100
+# At the pinned build's rates, $0.20 feed / $0.05 details leaves room for
+# ~200 feed rows and ~32 lookups plus headroom, even for a one-profile tail.
+MIN_BATCH_CENTS = 25
 
 
 class PartialCollection(RuntimeError):
     """Saved records may be extracted despite incomplete account coverage."""
+
+
+class CollectionDeferred(PartialCollection):
+    """Keep paid work pending until the next invocation has time to finish it."""
 
 
 class CollectionHalted(PartialCollection):
@@ -143,6 +150,9 @@ class ApifyClient:
         saved = read_json(path) if path.exists() else {}
         # A replay may have fewer unknown IDs after a partial archive write.
         # Resume the original paid request, never replace it with a smaller one.
+        # This intent stays unconsumed even for FAILED runs: replacing it within
+        # a batch could spend its reserved detail ceiling twice. A fresh plan's
+        # cycle-specific filename permits a new attempt for incomplete profiles.
         codes = saved.get("usernames", sorted(codes))
         client = ApifyClient(self.session.headers["Authorization"].removeprefix("Bearer "), path)
         run = client._run(hpix_input(posts=[f"https://www.instagram.com/p/{code}/" for code in codes]),
@@ -334,7 +344,7 @@ def mirror(records: list[dict]) -> None:
                                       for record in records], on_conflict="media_id")
 
 
-def charge_limit_reason(run: dict, max_charge: float, exported: int) -> str | None:
+def charge_limit_reason(run: dict, max_charge: float, exported: int, *, details: bool = False) -> str | None:
     """A charge-limited success is not evidence of complete profile coverage."""
     events = ((run.get("pricingInfo") or {}).get("pricingPerEvent") or {}).get("actorChargeEvents") or {}
     if run.get("actId") == HPIX_ACTOR_ID:
@@ -342,15 +352,18 @@ def charge_limit_reason(run: dict, max_charge: float, exported: int) -> str | No
             counts = run["chargedEventCounts"]
             if counts.get("restricted_post_scraped", 0):
                 return "Unexpected restricted-post charge; collection halted"
-            prices = {key: float(events[key]["eventPriceUsd"]) for key in
-                      ("post_scraped", "profile_scraped", "individual_post_scraped", "apify-actor-start")}
+            # Feed lookup failures can still bill profile_scraped even with
+            # scrape_profile_data disabled. A posts-only detail run cannot.
+            row_event = "individual_post_scraped" if details else "post_scraped"
+            enabled = (row_event,) if details else (row_event, "profile_scraped")
+            prices = {key: float(events[key]["eventPriceUsd"])
+                      for key in (*enabled, "apify-actor-start")}
             total = sum(float(count) * float(events[key]["eventPriceUsd"]) for key, count in counts.items())
             # Billing counters can lag dataset output. Use at least the observed
-            # row count at the cheapest enabled row price before trusting coverage.
-            total = max(total, exported * min(prices["post_scraped"], prices["individual_post_scraped"])
-                        + prices["apify-actor-start"])
+            # row count at this run's row price before trusting coverage.
+            total = max(total, exported * prices[row_event] + prices["apify-actor-start"])
             ceiling = (run.get("options") or {}).get("maxTotalChargeUsd") or max_charge
-            if total + max(prices.values()) > float(ceiling) + 1e-9:
+            if total + max(prices[key] for key in enabled) > float(ceiling) + 1e-9:
                 return "Actor reached its charge ceiling; retaining collection checkpoints"
             return None
         except (KeyError, TypeError, ValueError):
@@ -426,15 +439,22 @@ def prepare_hpix(api, run, rows, accounts, boundaries, known, now, *, max_charge
         requested = parse_instant(saved.get("newer_than"))
         old_rows = any(isinstance(item.get("taken_at"), (int, float)) and requested and
                        item["taken_at"] < requested.timestamp() for item in mapped)
-        blocked = (timeout < 60 or old_rows or run.get("status") != "SUCCEEDED" or
-                   charge_limit_reason(run, max_charge, len(rows)))
+        blocked = (old_rows or run.get("status") != "SUCCEEDED" or
+                   charge_limit_reason(run, max_charge * .8, len(rows)))
         if not blocked:
+            if timeout < 60:
+                # Do not consume this feed or mark profiles incomplete merely
+                # because an earlier batch used the invocation's time budget.
+                # Replay its paid dataset first on the next invocation.
+                raise CollectionDeferred(
+                    "Collection time budget exhausted before detail enrichment; "
+                    "paid feed and unfinished batches will resume")
             # Both caps were reserved before either paid request; never rely on
             # immediately reported usage to decide what remains to spend.
             detail_run, detail_rows = api.details(sorted(needed), max_charge=max_charge * .2, timeout=timeout)
             detail_info = {"detail_run_id": detail_run["id"],
                            "detail_usage_usd": detail_run.get("usageTotalUsd")}
-            detail_error = charge_limit_reason(detail_run, max_charge * .2, len(detail_rows))
+            detail_error = charge_limit_reason(detail_run, max_charge * .2, len(detail_rows), details=True)
             if detail_error and "restricted-post" in detail_error:
                 detail_info["halt_reason"] = detail_error
             if detail_run["status"] != "SUCCEEDED":
@@ -443,9 +463,12 @@ def prepare_hpix(api, run, rows, accounts, boundaries, known, now, *, max_charge
                 detail_info["halt_reason"] = detail_error
             if not detail_error:
                 for row in detail_rows:
+                    if not isinstance(row, dict):
+                        continue
                     node = row.get("data")
                     code = node.get("code") if isinstance(node, dict) else None
-                    if code in needed and row.get("kind") in {"post", "reel"} and not row.get("error"):
+                    if (isinstance(code, str) and code in needed
+                            and row.get("kind") in ("post", "reel") and not row.get("error")):
                         replacements[code] = node
         else:
             detail_error = "Feed run incomplete or charge-limited; no detail run started"
@@ -461,7 +484,9 @@ def prepare_hpix(api, run, rows, accounts, boundaries, known, now, *, max_charge
                     # A feed can include a repost with no accepted collaboration.
                     # Validate it fully under its actual owner, then skip it;
                     # a requested-name/wrong-ID mismatch still fails closed.
-                    authors = [routed.get("user") or {}, *(routed.get("coauthor_producers") or [])]
+                    if not isinstance(routed.get("coauthor_producers"), list):
+                        raise ValueError("missing or invalid collaboration detail coauthors")
+                    authors = [routed.get("user") or {}, *routed["coauthor_producers"]]
                     names = {_handle(author.get("username")) for author in authors}
                     unrelated = routed["scraped_username"] not in names
                     if unrelated:
@@ -632,7 +657,7 @@ def collect(api: ApifyClient, accounts: dict, state: dict, now: datetime,
     if saved_cutoff is not None and saved_cutoff > oldest:
         successful = False
         errors.append("Resumed run did not cover the newly requested older cutoff; rerun for coverage")
-    limited = charge_limit_reason(run, max_charge, exported)
+    limited = charge_limit_reason(run, max_charge * .8 if hpix else max_charge, exported)
     if limited:
         successful = False
         errors.append(limited)
@@ -673,11 +698,11 @@ def collect(api: ApifyClient, accounts: dict, state: dict, now: datetime,
 def _group_jobs(cutoffs: dict[str, datetime]) -> list[dict]:
     """Group only nearby cutoffs: a stale account cannot widen other hours."""
     groups: dict[datetime, dict[str, datetime]] = {}
-    for handle, cutoff in sorted(cutoffs.items()):
+    for handle, cutoff in sorted(cutoffs.items(), key=lambda entry: (entry[1], entry[0])):
         bucket = cutoff.replace(minute=0, second=0, microsecond=0)
         groups.setdefault(bucket, {})[handle] = cutoff
     chunks = [dict(list(entries.items())[offset:offset + BATCH_SIZE])
-              for _, entries in sorted(groups.items(), reverse=True)
+              for _, entries in sorted(groups.items())
               for offset in range(0, len(entries), BATCH_SIZE)]
     return [{"mode": "discovery", "handles": sorted(entries),
              "cutoff": iso(min(entries.values()) - timedelta(seconds=1)),
@@ -687,15 +712,18 @@ def _group_jobs(cutoffs: dict[str, datetime]) -> list[dict]:
 
 
 def _allocate(jobs: list[dict], cents: int) -> None:
-    # Reserve at least one cent per start, then weight the rest by roster size.
+    # Fund a usable feed/detail reservation for every batch, including tails,
+    # then weight the remainder by roster size.
     # Round in integer cents so the sum of actor ceilings cannot exceed budget.
     if not jobs:
         return
-    if cents < len(jobs):
-        raise ValueError("Apify budget is too small for the number of checkpoint groups")
-    available = cents - len(jobs)
+    minimum = MIN_BATCH_CENTS * len(jobs)
+    if cents < minimum:
+        raise ValueError(f"Apify budget is too small for {len(jobs)} checkpoint groups; "
+                         f"need at least ${minimum / 100:.2f} (${MIN_BATCH_CENTS / 100:.2f}/batch)")
+    available = cents - minimum
     weight = sum(len(job["handles"]) for job in jobs)
-    shares = [1 + available * len(job["handles"]) // weight for job in jobs]
+    shares = [MIN_BATCH_CENTS + available * len(job["handles"]) // weight for job in jobs]
     for index in range(cents - sum(shares)):
         shares[index % len(shares)] += 1
     for job, share in zip(jobs, shares):
@@ -719,6 +747,8 @@ def plan_jobs(accounts: dict, state: dict, now: datetime,
         cutoffs = dict.fromkeys(eligible, backfill)
     jobs = _group_jobs(cutoffs)
     _allocate(jobs, int(Decimal(str(max_charge)) * 100))
+    # Detail intents are replay-only within a batch, including terminal failures.
+    # Fresh cycle names allow a new paid attempt when an incomplete profile is due.
     cycle = uuid.uuid4().hex
     for index, job in enumerate(jobs):
         job.update({"file": str(RUNS_DIR / f"{cycle}-{index}.json"), "limit": limit})
@@ -759,6 +789,11 @@ def execute_plan(token: str, accounts: dict, state: dict, now: datetime,
                         limit=job["limit"], max_charge=job["max_charge"], timeout=remaining,
                         cutoff=job["cutoff"],
                         account_boundaries=job.get("boundaries"))
+            except CollectionDeferred:
+                # No archival/checkpoint writes or consumption occurred. Stop
+                # here so this batch gets the next invocation's fresh budget.
+                write_json(PLAN_FILE, plan)
+                raise
             except CollectionHalted as exc:
                 saved = read_json(path)
                 job["done"] = bool(saved.get("consumed"))
@@ -797,7 +832,7 @@ def main(*, resume_halted: bool = False) -> None:
         raise ValueError("APIFY_TOKEN is required")
     limit = int(os.environ.get("APIFY_POSTS_PER_PROFILE") or "100")
     charge = float(os.environ.get("APIFY_MAX_CHARGE_USD") or "10")
-    timeout = int(os.environ.get("APIFY_TIMEOUT_SECONDS") or "1800")
+    timeout = int(os.environ.get("APIFY_TIMEOUT_SECONDS") or "3600")
     overlap = int(os.environ.get("APIFY_DISCOVERY_OVERLAP_SECONDS") or "300")
     retry_hours = int(os.environ.get("APIFY_INCOMPLETE_RETRY_HOURS") or "8")
     if (not 1 <= limit <= 500 or not 0.01 <= charge <= 1000 or not 60 <= timeout <= 3600
