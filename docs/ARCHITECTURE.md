@@ -11,7 +11,7 @@ flowchart LR
   end
 
   subgraph pipeline [pipeline/]
-    SCR[scrape + extract]
+    SCR[Apify API + first-slide OCR]
     NORM[normalize]
   end
 
@@ -32,7 +32,7 @@ flowchart LR
   EV --> UI
 ```
 
-1. **Pipeline** (`pipeline/run.py`, scheduled in `.github/workflows/scrape.yml`) scrapes Instagram, normalizes rows, and upserts into Postgres. Raw JSON lives under `pipeline/data/` (gitignored).
+1. **Pipeline** (`pipeline/run.py`, scheduled in `.github/workflows/scrape.yml`) collects Instagram posts through the Apify API every eight hours, assesses event evidence, and publishes into Postgres. Raw JSON lives under `pipeline/data/` (gitignored).
 2. **Schemas** (`schemas/*.upsert.schema.json`) define the row shape both Python mappers and TypeScript must honor. Run `npm run generate:rows` after schema edits.
 3. **App** reads `events` via `src/lib/events/` (server) and client fetch helpers in `src/lib/events/api.ts`.
 
@@ -45,7 +45,7 @@ flowchart LR
 | `src/lib/events/` | Event domain: DB reader, API client, feed session/restore, validation |
 | `src/lib/` | Cross-cutting helpers (`dates`, `supabase`, …) |
 | `src/types/` | Shared TypeScript types |
-| `pipeline/` | Python scrapers, extractors, normalizers |
+| `pipeline/` | Apify API ingestion, OCR, assessment, publication |
 | `supabase/migrations/` | Database source of truth |
 | `schemas/` | Cross-language upsert contracts |
 | `tests/` | Node contract tests; `tests/e2e/` for Playwright |

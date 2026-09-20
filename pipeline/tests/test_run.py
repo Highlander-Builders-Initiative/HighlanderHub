@@ -14,7 +14,7 @@ if str(PIPELINE_ROOT) not in sys.path:
     sys.path.insert(0, str(PIPELINE_ROOT))
 
 STAGE_ORDER = [
-    "instagram.posts.scrape",
+    "instagram.posts.collect",
     "instagram.posts.extract",
     "instagram.publish",
     "events.reconcile",
@@ -25,7 +25,7 @@ class RunMainTests(unittest.TestCase):
     def setUp(self) -> None:
         self.stage_names = [
             "extract_posts",
-            "scrape_posts",
+            "apify_posts",
             "reconcile_events",
             "assessed_events",
         ]
@@ -33,7 +33,7 @@ class RunMainTests(unittest.TestCase):
             name: types.SimpleNamespace(main=Mock(name=f"{name}.main"))
             for name in self.stage_names
         }
-        self.fake_modules["scrape_posts"].PartialCollection = type("PartialCollection", (RuntimeError,), {})
+        self.fake_modules["apify_posts"].PartialCollection = type("PartialCollection", (RuntimeError,), {})
         self.fake_modules["extract_posts"].extract_all = Mock(
             name="extract_posts.extract_all", return_value=([], {})
         )
@@ -42,7 +42,7 @@ class RunMainTests(unittest.TestCase):
         )
         # Stage name -> the mock the runner actually invokes for it.
         self.stage_mocks = {
-            "instagram.posts.scrape": self.fake_modules["scrape_posts"].main,
+            "instagram.posts.collect": self.fake_modules["apify_posts"].main,
             "instagram.posts.extract": self.fake_modules["extract_posts"].extract_all,
             "instagram.publish": self.fake_modules["assessed_events"].publish_posts,
             "events.reconcile": self.fake_modules["reconcile_events"].main,
@@ -101,7 +101,7 @@ class RunMainTests(unittest.TestCase):
 
 
     def test_summary_records_every_stage_and_names_the_broken_one(self) -> None:
-        self.fake_modules["scrape_posts"].main.side_effect = ValueError("page 2 exploded")
+        self.fake_modules["apify_posts"].main.side_effect = ValueError("page 2 exploded")
 
         with self.assertRaises(SystemExit):
             with self.assertLogs("pipeline.run", level="INFO") as logged:
@@ -109,18 +109,18 @@ class RunMainTests(unittest.TestCase):
 
         summary = "\n".join(logged.output)
         self.assertIn("---- run summary ----", summary)
-        self.assertIn("instagram.posts.scrape", summary)
+        self.assertIn("instagram.posts.collect", summary)
         self.assertIn("FAILED", summary)
         self.assertIn("ValueError: page 2 exploded", summary)
-        self.assertIn(f"1 of {len(STAGE_ORDER)} stages broken: instagram.posts.scrape", summary)
+        self.assertIn(f"1 of {len(STAGE_ORDER)} stages broken: instagram.posts.collect", summary)
 
         record = self._history()
         self.assertFalse(record["ok"])
         self.assertEqual(STAGE_ORDER, [s["name"] for s in record["stages"]])
-        broken = next(s for s in record["stages"] if s["name"] == "instagram.posts.scrape")
+        broken = next(s for s in record["stages"] if s["name"] == "instagram.posts.collect")
         self.assertEqual("ValueError: page 2 exploded", broken["error"])
         self.assertTrue(
-            all(s["ok"] for s in record["stages"] if s["name"] != "instagram.posts.scrape")
+            all(s["ok"] for s in record["stages"] if s["name"] != "instagram.posts.collect")
         )
 
     def test_clean_run_records_ok_and_carries_no_error(self) -> None:
@@ -144,7 +144,7 @@ class RunMainTests(unittest.TestCase):
         )
 
     def test_partial_collection_still_extracts_new_posts_in_full(self) -> None:
-        scrape = self.fake_modules["scrape_posts"]
+        scrape = self.fake_modules["apify_posts"]
         scrape.main.side_effect = scrape.PartialCollection("1 failure(s) and continued past them")
         with self.assertRaises(SystemExit):
             self.run.main()
@@ -153,11 +153,11 @@ class RunMainTests(unittest.TestCase):
 
     def test_failed_collection_still_publishes_extracted_archive(self) -> None:
         archived = [({"media_id": "700"}, {"status": "ok"})]
-        self.fake_modules["scrape_posts"].main.side_effect = RuntimeError("collection paused")
+        self.fake_modules["apify_posts"].main.side_effect = RuntimeError("collection paused")
         self.fake_modules["extract_posts"].extract_all.return_value = (archived, {})
         with self.assertRaises(SystemExit):
             self.run.main()
-        self.fake_modules["extract_posts"].extract_all.assert_called_once_with({"acm.ucr"}, cached_only=True)
+        self.fake_modules["extract_posts"].extract_all.assert_called_once_with({"acm.ucr"}, cached_only=False)
         published = self.fake_modules["assessed_events"].publish_posts.call_args
         self.assertEqual(archived, published.args[0])
         self.assertEqual({"acm.ucr": {}}, published.kwargs["meta"])
@@ -184,7 +184,7 @@ class RunMainTests(unittest.TestCase):
         self.assertIn("run.py", report["resume"]["command"])
 
     def test_interruption_is_recorded_as_incomplete_instead_of_success(self):
-        self.fake_modules["scrape_posts"].main.side_effect = KeyboardInterrupt()
+        self.fake_modules["apify_posts"].main.side_effect = KeyboardInterrupt()
         with self.assertRaises(KeyboardInterrupt):
             self.run.main()
         report = json.loads(self.history.with_name("last_run.json").read_text())
@@ -205,7 +205,7 @@ class RunMainTests(unittest.TestCase):
         self.assertEqual(2, loader.call_count)
 
     def test_instagram_scrape_exit_does_not_skip_publication(self) -> None:
-        self.fake_modules["scrape_posts"].main.side_effect = SystemExit(
+        self.fake_modules["apify_posts"].main.side_effect = SystemExit(
             "Instagram credentials required"
         )
 
@@ -219,7 +219,7 @@ class RunMainTests(unittest.TestCase):
         self.assertFalse(record["ok"])
         self.assertEqual(STAGE_ORDER, [s["name"] for s in record["stages"]])
         scrape_stage = next(
-            s for s in record["stages"] if s["name"] == "instagram.posts.scrape"
+            s for s in record["stages"] if s["name"] == "instagram.posts.collect"
         )
         self.assertEqual(
             "SystemExit: Instagram credentials required", scrape_stage["error"]
