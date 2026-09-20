@@ -34,7 +34,7 @@ FOLLOWING_CHECKPOINT_FILE = DATA_DIR / "following_checkpoint.json"
 POST_DISCOVERY_MODE = os.environ.get("PIPELINE_POST_DISCOVERY", "profiles").lower()
 ACCOUNTS_FILE = ROOT / "accounts.json"
 FOLLOWED_ACCOUNTS_FILE = DATA_DIR / "followed_accounts.json"
-ACCOUNT_SOURCE = os.environ.get("PIPELINE_ACCOUNT_SOURCE", "followed").lower()
+ACCOUNT_SOURCE = os.environ.get("PIPELINE_ACCOUNT_SOURCE", "accounts_json").lower()
 # Opt-in historical maintenance sweep. Removing this setting restores normal discovery
 # and roster selection without rewriting any account's activation timestamp.
 POST_BACKFILL_SINCE = os.environ.get("PIPELINE_POST_BACKFILL_SINCE", "").strip()

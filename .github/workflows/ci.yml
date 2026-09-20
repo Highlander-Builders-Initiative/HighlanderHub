@@ -43,7 +43,7 @@ jobs:
           cache-dependency-path: pipeline/requirements.txt
 
       - name: Install importer integration dependencies
-        run: pip install -r pipeline/requirements.txt
+        run: pip install -r pipeline/requirements.txt -r pipeline/requirements-legacy.txt
 
       - name: Contract tests
         run: npm test
@@ -62,7 +62,7 @@ jobs:
           cache-dependency-path: pipeline/requirements.txt
 
       - name: Install pipeline dependencies
-        run: pip install -r pipeline/requirements.txt
+        run: pip install -r pipeline/requirements.txt -r pipeline/requirements-legacy.txt
 
       - name: Pipeline unit tests
         working-directory: pipeline
