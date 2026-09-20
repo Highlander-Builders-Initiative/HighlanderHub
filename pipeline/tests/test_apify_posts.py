@@ -83,7 +83,8 @@ class ApiTests(unittest.TestCase):
         self.path = Path(self.tmp.name) / "run.json"
         self.enterContext(patch.object(apify, "RUN_FILE", self.path))
         self.api = apify.ApifyClient("test-token")
-        self.input = {"usernames": ["club"], "postsPerProfile": 100, "newerThan": "2026-09-12"}
+        self.input = {"username": ["club"], "resultsLimit": 100,
+                      "onlyPostsNewerThan": "2026-09-12T00:00:00Z"}
 
     def test_start_poll_and_resume_without_second_paid_post(self):
         run = {"id": "run1", "status": "RUNNING", "startedAt": NOW.isoformat()}
@@ -91,7 +92,8 @@ class ApiTests(unittest.TestCase):
         self.api.request = Mock(side_effect=[{"data": run}, {"data": done}, {"data": done}])
         with patch.object(apify.time, "sleep"):
             self.assertEqual(done, self.api.run(self.input, max_charge=2, timeout=60))
-            self.assertEqual(done, self.api.run({**self.input, "newerThan": "2026-09-13"}, max_charge=2, timeout=60))
+            self.assertEqual(done, self.api.run({**self.input, "onlyPostsNewerThan": "2026-09-13T00:00:00Z"},
+                                                max_charge=2, timeout=60))
         self.assertEqual(["POST", "GET", "GET"], [call.args[0] for call in self.api.request.call_args_list])
         self.assertEqual(2, self.api.request.call_args_list[0].kwargs["params"]["maxTotalChargeUsd"])
         self.assertEqual("run1", json.loads(self.path.read_text())["id"])
@@ -258,10 +260,13 @@ class CollectionTests(unittest.TestCase):
     def test_actor_input_matches_documented_schema(self):
         self.collect()
         payload = self.api.run.call_args.args[0]
-        self.assertEqual(["club"], payload["usernames"])
-        self.assertEqual(100, payload["postsPerProfile"])
-        self.assertEqual({"useApifyProxy": True}, payload["proxy"])
-        self.assertEqual("2026-09-18T23:54:59+00:00", payload["newerThan"])
+        self.assertEqual(["club"], payload["username"])
+        self.assertEqual(100, payload["resultsLimit"])
+        self.assertEqual("detailedData", payload["dataDetailLevel"])
+        # Only this pairing drops pins older than the window; the cutoff alone
+        # still exports and bills for pinned posts of any age.
+        self.assertTrue(payload["skipPinnedPosts"])
+        self.assertEqual("2026-09-18T23:54:59Z", payload["onlyPostsNewerThan"])
 
     def test_charge_capped_success_never_advances_checkpoints(self):
         self.api.run.return_value["options"] = {"maxTotalChargeUsd": .0053}
@@ -415,7 +420,8 @@ class PlanResumeTests(unittest.TestCase):
             api = Mock(run_file=path)
             def run(payload, **kwargs):
                 apify.write_json(path, {"consumed": False, "posts_per_profile": 100,
-                                       "started_at": NOW.isoformat(), "newer_than": payload["newerThan"]})
+                                       "started_at": NOW.isoformat(),
+                                       "newer_than": payload["onlyPostsNewerThan"]})
                 return {"status": "SUCCEEDED", "defaultDatasetId": "test",
                         "pricingInfo": {"pricingPerEvent": {"actorChargeEvents": {
                             "apify-default-dataset-item": {"eventPriceUsd": .0003},
@@ -436,6 +442,149 @@ class PlanResumeTests(unittest.TestCase):
         mirrored.assert_called_once()
         self.assertEqual("Original", remote["123"]["caption"])
         self.assertTrue(plan["complete"])
+
+
+# Captured from real runs of apify/instagram-post-scraper build 0.0.599 and from
+# the already-paid sones datasets, so the parsers are tested against the bytes
+# each actor actually emits rather than against its README.
+FIXTURE = json.loads((Path(__file__).parent / "fixtures" / "apify_actor_output.json").read_text())
+OFFICIAL_ACCOUNTS = {
+    "ucr_athletics": {"handle": "ucr_athletics", "instagram_user_id": 294586099},
+    "thereachinitiative.ucr": {"handle": "thereachinitiative.ucr", "instagram_user_id": 80325881866},
+    "careersinscrubs_": {"handle": "careersinscrubs_", "instagram_user_id": 76614406560},
+    "officialhoucr": {"handle": "officialhoucr", "instagram_user_id": 6252059643},
+}
+SEEN = datetime(2026, 9, 21, tzinfo=timezone.utc)
+OFFICIAL_STATE = {handle: {"activated_at": "2026-09-01T00:00:00+00:00",
+                           "scanned_through": "2026-09-17T00:00:00+00:00"}
+                  for handle in OFFICIAL_ACCOUNTS}
+# Verbatim lines from runs 9jZq8UqNt2mK0QMdd, m3rA4ErWevfBdZuce and nCu5l2WShzhXTzjLI.
+LOG = """2026-09-20T03:59:44.383Z INFO  No more posts within the wanted time range, finishing https://www.instagram.com/ucr_athletics
+2026-09-20T03:59:48.631Z INFO  NO RESULTS: zero public posts for https://www.instagram.com/officialhoucr within the given requirements
+2026-09-20T04:01:56.410Z INFO  [END-OF-RESULTS]: thereachinitiative.ucr confirmed end of results at pos 6
+2026-09-20T04:00:06.669Z INFO  CheerioCrawler: Finished! Total 18 requests: 18 succeeded, 0 failed.
+"""
+
+
+class OfficialActorTests(unittest.TestCase):
+    """Measured behaviour of the pinned build, not its documented behaviour."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.path = Path(self.tmp.name) / "run.json"
+        self.enterContext(patch.object(apify, "RUN_FILE", self.path))
+        self.enterContext(patch.object(apify, "POST_BACKFILL_SINCE", ""))
+        self.known = self.enterContext(patch.object(apify, "known_post_ids", return_value=set()))
+        self.mirror = self.enterContext(patch.object(apify, "mirror"))
+        self.write = self.enterContext(patch.object(apify, "write_post"))
+        self.upsert = self.enterContext(patch("db.upsert_batched"))
+        self.api = Mock(run_file=self.path)
+        self.api.run.return_value = {
+            "id": "run1", "status": "SUCCEEDED", "actId": apify.ACTOR_ID,
+            "defaultDatasetId": "dataset", "options": {"maxTotalChargeUsd": 1.0},
+            "chargedEventCounts": {"post": 2, "post-details": 2},
+            "pricingInfo": {"pricingPerEvent": {"actorChargeEvents": {
+                "post": {"eventPriceUsd": .0017}, "post-details": {"eventPriceUsd": .001}}}}}
+        self.api.completed_profiles.return_value = set(OFFICIAL_ACCOUNTS)
+        self.api.items.return_value = [FIXTURE["image"]]
+        self.state = copy.deepcopy(OFFICIAL_STATE)
+        self.path.write_text(json.dumps({"id": "run1", "posts_per_profile": 100,
+                                         "actor_id": apify.ACTOR_ID, "consumed": False,
+                                         "newer_than": "2026-09-16T23:54:59Z",
+                                         "started_at": NOW.isoformat()}))
+
+    def collect(self, **kwargs):
+        apify.collect(self.api, OFFICIAL_ACCOUNTS, self.state, NOW, limit=100,
+                      max_charge=10, timeout=60, cutoff="2026-09-16T23:54:59+00:00", **kwargs)
+
+    def checkpoint(self, handle):
+        rows = {row["handle"]: row for row in self.upsert.call_args.args[1]}
+        return rows[handle]
+
+    def test_verified_output_maps_to_the_archive_contract(self):
+        record = apify.normalize(apify.official_item(FIXTURE["image"]), OFFICIAL_ACCOUNTS, SEEN)
+        # The exact ID matters: the previous actor rounded pk past 2**53.
+        self.assertEqual("3989905292304988880", record["media_id"])
+        self.assertEqual("ucr_athletics", record["handle"])
+        self.assertEqual("GraphImage", record["typename"])
+        self.assertEqual(1350449562, record["owner_userid"])
+        self.assertTrue(record["media"][0]["image_url"].startswith("https://"))
+
+    def test_carousel_children_supply_every_slide(self):
+        record = apify.normalize(apify.official_item(FIXTURE["collab_sidecar"]), OFFICIAL_ACCOUNTS, SEEN)
+        self.assertEqual("GraphSidecar", record["typename"])
+        self.assertEqual([0, 1], [media["index"] for media in record["media"]])
+        self.assertEqual(2, len({media["image_url"] for media in record["media"]}))
+
+    def test_collaboration_is_credited_to_the_requested_profile(self):
+        record = apify.normalize(apify.official_item(FIXTURE["image"]), OFFICIAL_ACCOUNTS, SEEN)
+        # Athletics posts arrive owned by the team account that published them.
+        self.assertEqual("ucrvolleyball", record["owner_username"])
+        self.assertEqual("ucr_athletics", record["handle"])
+
+    def test_every_verified_completion_signal_advances_its_profile(self):
+        self.assertEqual({"ucr_athletics", "officialhoucr", "thereachinitiative.ucr"},
+                         apify.completed_profiles_from_log(LOG))
+
+    def test_unrecognised_log_contract_advances_nothing(self):
+        self.assertEqual(set(), apify.completed_profiles_from_log(
+            "2026-09-20T03:59:44.383Z INFO  finished https://www.instagram.com/ucr_athletics"))
+
+    def test_empty_window_is_coverage_not_failure(self):
+        self.api.items.return_value = [FIXTURE["image"], FIXTURE["no_items"]]
+        self.collect()
+        self.assertEqual("ok", self.checkpoint("officialhoucr")["last_status"])
+        self.assertEqual(NOW.isoformat(), self.checkpoint("officialhoucr")["scanned_through"])
+
+    def test_unconfirmed_empty_result_keeps_its_checkpoint(self):
+        self.api.items.return_value = [FIXTURE["no_items"]]
+        self.api.completed_profiles.return_value = set()
+        with self.assertRaises(apify.PartialCollection):
+            self.collect()
+        self.assertEqual("incomplete", self.checkpoint("officialhoucr")["last_status"])
+        self.assertEqual(OFFICIAL_STATE["officialhoucr"]["scanned_through"],
+                         self.checkpoint("officialhoucr")["scanned_through"])
+
+    def test_post_older_than_the_paid_cutoff_halts_the_plan(self):
+        # The previous actor billed for 5,160 such posts before anyone noticed.
+        self.api.items.return_value = [FIXTURE["image"], FIXTURE["out_of_window_pin"]]
+        with self.assertRaisesRegex(apify.CollectionHalted, "date filter"):
+            self.collect()
+        self.assertEqual("incomplete", self.checkpoint("ucr_athletics")["last_status"])
+        self.assertEqual("Actor violated the paid date filter; remaining paid batches stopped",
+                         json.loads(self.path.read_text())["halt_reason"])
+
+    def test_official_charge_ceiling_blocks_checkpoint_advance(self):
+        self.api.run.return_value["options"] = {"maxTotalChargeUsd": .0055}
+        with self.assertRaisesRegex(apify.PartialCollection, "charge ceiling"):
+            self.collect()
+        self.assertEqual("incomplete", self.checkpoint("ucr_athletics")["last_status"])
+
+    def test_unpriced_events_cannot_claim_complete_coverage(self):
+        self.api.run.return_value["pricingInfo"]["pricingPerEvent"]["actorChargeEvents"].pop("post-details")
+        with self.assertRaisesRegex(apify.PartialCollection, "charge-limit coverage"):
+            self.collect()
+
+
+class LegacyDatasetTests(unittest.TestCase):
+    """Datasets already paid for must still ingest after the actor swap."""
+
+    def test_flattened_media_and_rounded_pk_still_ingest(self):
+        accounts = {"careersinscrubs_": {"handle": "careersinscrubs_",
+                                         "instagram_user_id": 76614406560}}
+        record = apify.normalize(FIXTURE["legacy_image"], accounts, SEEN)
+        # pk arrived as 3702683390001380000; the composite id holds the truth.
+        self.assertEqual("3702683390001380073", record["media_id"])
+        self.assertEqual(FIXTURE["legacy_image"]["image_url"], record["media"][0]["image_url"])
+
+    def test_every_legacy_carousel_slide_resolves(self):
+        accounts = {"careersinscrubs_": {"handle": "careersinscrubs_",
+                                         "instagram_user_id": 76614406560}}
+        record = apify.normalize(FIXTURE["legacy_sidecar"], accounts, SEEN)
+        self.assertEqual("GraphSidecar", record["typename"])
+        self.assertTrue(all(media["image_url"].startswith("https://") for media in record["media"]))
+
 
 
 if __name__ == "__main__":

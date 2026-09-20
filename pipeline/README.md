@@ -38,12 +38,40 @@ Optional repository **Actions variables**:
 | `APIFY_DISCOVERY_OVERLAP_SECONDS` | `300` | Discovery overlap behind each successful checkpoint (0–3600 seconds) |
 | `APIFY_INCOMPLETE_RETRY_HOURS` | `24` | Wait before retrying a profile whose discovery was incomplete (at least 8 hours) |
 
-The actor is [sones/instagram-posts-scraper-lowcost](https://apify.com/sones/instagram-posts-scraper-lowcost),
-ID `Y5mzw9TLFReI0d6gQ`, build `latest`. The adapter follows the published 1.5.10
-input/output schema: `usernames`, `postsPerProfile`, `newerThan`, and native
-Instagram `pk`, `taken_at`, `caption.text`, `image_versions2`, `carousel_media`.
-A run starts asynchronously, is polled with a 30-minute actor timeout, and its
-dataset is read in pages. The token is sent only in an Authorization header.
+The actor is [apify/instagram-post-scraper](https://apify.com/apify/instagram-post-scraper),
+ID `nH2AHrwxeTRJoN5hX`, pinned to build `0.0.599`. Input is `username`,
+`resultsLimit`, `onlyPostsNewerThan` (UTC `Z`, not `+00:00`), `skipPinnedPosts`
+and `dataDetailLevel`. A run starts asynchronously, is polled with a 30-minute
+actor timeout, and its dataset is read in pages. The token is sent only in an
+Authorization header.
+
+Both settings that look optional are load-bearing, and both were measured
+against this build rather than taken from its documentation:
+
+- **`skipPinnedPosts: true`.** `onlyPostsNewerThan` on its own still exports —
+  and bills for — pinned posts of any age; a 2022 pin came back against a
+  three-day window. With both set, pins older than the window are dropped and
+  pins inside it are kept, so a club that pins its current flyer is not missed.
+- **`dataDetailLevel: "detailedData"`.** `basicData` omits `inputUrl`, which is
+  the only field that routes a post back to the requested profile, and omits
+  `childPosts`, which carries every carousel slide after the cover. It is
+  cheaper per item and unusable.
+
+Coverage is read from the run log, not inferred from the dataset: a profile
+advances its checkpoint only when the log acknowledges it by name, in one of
+three forms — the cutoff was reached, the feed ran out (`[END-OF-RESULTS]`), or
+nothing public sits in the window (`NO RESULTS`). That last form arrives
+alongside a `no_items` error record, so an inactive club reports as covered
+instead of being retried forever. An unrecognised log contract fails closed and
+advances nothing.
+
+The previous actor, `sones/instagram-posts-scraper-lowcost`
+(`Y5mzw9TLFReI0d6gQ`), treated its `newerThan` as a pagination hint and exported
+whole pages regardless of date: of 5,199 billed items on 2026-09-20, 5,160 were
+flagged `is_newer_than_cutoff: false`, reaching back to 2016. Its datasets also
+used flattened `image_url` fields and rounded `pk` past 2**53. Both shapes are
+still read so already-paid datasets stay ingestible; the composite `id` takes
+precedence over `pk` because only it preserves the exact media ID.
 
 ## Accounts and incremental collection
 
@@ -129,6 +157,19 @@ The 30-minute collection time allowance is also shared across the plan; remainin
 batches resume next invocation. A successful actor status does not establish
 complete coverage if its charge ceiling was reached. Such results are saved but
 do not advance collection checkpoints.
+
+Every dataset item is billed at `post` $0.0017 plus `post-details` $0.0010,
+and a profile with nothing in its window emits one billable `no_items` record.
+A full-roster daily pass is therefore roughly one item per profile — about
+$2.30 across ~830 accounts — rising only with the number of real posts found.
+Charges settle asynchronously after a run reports SUCCEEDED, so the cost read
+back moments after a run finishes can understate the final total.
+
+Collection halts rather than continuing to spend when a run is aborted, when
+every relevant record fails the output contract, or when the actor exports a
+post older than the cutoff that was paid for. The halt is recorded in
+`data/apify_plan.json` and no further batches start until it is cleared with
+`apify_posts.py --resume-halted`.
 
 A run-start intent is saved **before** the creation POST. If the response is
 ambiguous, automatic attempts stop instead of risking a second paid creation.
