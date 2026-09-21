@@ -46,17 +46,22 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           GOOGLE_VISION_API_KEY: ${{ secrets.GOOGLE_VISION_API_KEY }}
+          GOOGLE_VISION_API_KEY_PRIMARY: ${{ secrets.GOOGLE_VISION_API_KEY_PRIMARY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GOOGLE_CLOUD_PROJECT: ${{ secrets.GOOGLE_CLOUD_PROJECT }}
           GOOGLE_APPLICATION_CREDENTIALS_B64: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_B64 }}
         shell: bash
         run: |
-          for name in APIFY_TOKEN SUPABASE_URL SUPABASE_SERVICE_KEY GOOGLE_VISION_API_KEY; do
+          for name in APIFY_TOKEN SUPABASE_URL SUPABASE_SERVICE_KEY GOOGLE_VISION_API_KEY GOOGLE_VISION_API_KEY_PRIMARY; do
             if [ -z "${!name}" ]; then
               echo "Required Actions secret is missing: $name" >&2
               exit 1
             fi
           done
+          if [ "$GOOGLE_VISION_API_KEY_PRIMARY" = "$GOOGLE_VISION_API_KEY" ]; then
+            echo "Vision primary and overflow keys must be different" >&2
+            exit 1
+          fi
           if [ -z "$GEMINI_API_KEY" ]; then
             if [ -z "$GOOGLE_CLOUD_PROJECT" ] || [ -z "$GOOGLE_APPLICATION_CREDENTIALS_B64" ]; then
               echo "Set GEMINI_API_KEY, or both GOOGLE_CLOUD_PROJECT and GOOGLE_APPLICATION_CREDENTIALS_B64" >&2
@@ -80,6 +85,7 @@ jobs:
           # Historical imports are explicit local maintenance, never scheduled.
           PIPELINE_POST_BACKFILL_SINCE: ''
           GOOGLE_VISION_API_KEY: ${{ secrets.GOOGLE_VISION_API_KEY }}
+          GOOGLE_VISION_API_KEY_PRIMARY: ${{ secrets.GOOGLE_VISION_API_KEY_PRIMARY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GOOGLE_CLOUD_PROJECT: ${{ secrets.GOOGLE_CLOUD_PROJECT }}
           GOOGLE_CLOUD_LOCATION: global

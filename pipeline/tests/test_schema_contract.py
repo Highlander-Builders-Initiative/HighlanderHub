@@ -31,6 +31,7 @@ class SchemaContractTests(unittest.TestCase):
             GOOGLE_CLOUD_PROJECT="test-project",
             GOOGLE_CLOUD_LOCATION="global",
             GOOGLE_VISION_API_KEY="test",
+            GOOGLE_VISION_API_KEY_PRIMARY="test-primary",
             POSTS_DIR=PIPELINE_ROOT / "data" / "posts",
             POST_EXTRACTED_DIR=PIPELINE_ROOT / "data" / "post_extractions",
             POST_CHECKPOINTS_FILE=PIPELINE_ROOT / "data" / "post_checkpoints.json",
