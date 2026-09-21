@@ -30,6 +30,21 @@ For Vertex AI instead of `GEMINI_API_KEY`, set `GOOGLE_CLOUD_PROJECT` and
 are decoded only when needed. No Instagram account, cookies, browser, password,
 `IG_USERNAME` or `IG_SESSION_FILE_B64` is required.
 
+Create the secret from the downloaded JSON key with `base64 -i service-account.json`
+on macOS, or `base64 -w 0 service-account.json` on Linux. Paste the complete
+output into the Actions secret; whitespace and missing trailing `=` padding are
+accepted by the workflow, but the decoded value must still be a service-account
+JSON object.
+
+The service account identified by the key's `client_email` must have
+`aiplatform.endpoints.predict` on the project named by `GOOGLE_CLOUD_PROJECT`.
+The Vertex AI User role (`roles/aiplatform.user`) includes this permission;
+a custom role can grant only the permissions needed. See Google's
+[access-control guide](https://docs.cloud.google.com/vertex-ai/generative-ai/docs/access-control).
+A valid JSON key alone does not grant model access. A `403 IAM_PERMISSION_DENIED`
+for this permission requires fixing the service account's access on that target
+project; changing base64 formatting or rerunning the job will not resolve it.
+
 ### Monthly Vision key switching
 
 Apply `supabase/migrations/20260921000000_vision_ocr_usage.sql` before running the

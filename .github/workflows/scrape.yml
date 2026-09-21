@@ -67,7 +67,30 @@ jobs:
               echo "Set GEMINI_API_KEY, or both GOOGLE_CLOUD_PROJECT and GOOGLE_APPLICATION_CREDENTIALS_B64" >&2
               exit 1
             fi
-            printf '%s' "$GOOGLE_APPLICATION_CREDENTIALS_B64" | base64 --decode > "$RUNNER_TEMP/gcp.json"
+            if ! python - "$RUNNER_TEMP/gcp.json" <<'PY'
+          import base64
+          import json
+          import os
+          import sys
+
+          output_path = sys.argv[1]
+          encoded = "".join(os.environ["GOOGLE_APPLICATION_CREDENTIALS_B64"].split())
+          try:
+              decoded = base64.b64decode(encoded + "=" * (-len(encoded) % 4), validate=True)
+              credentials = json.loads(decoded)
+          except (ValueError, json.JSONDecodeError):
+              raise SystemExit(1)
+
+          if not isinstance(credentials, dict) or credentials.get("type") != "service_account":
+              raise SystemExit(1)
+
+          with open(output_path, "wb") as output:
+              output.write(decoded)
+          PY
+            then
+              echo "GOOGLE_APPLICATION_CREDENTIALS_B64 must be base64 service-account JSON" >&2
+              exit 1
+            fi
             chmod 600 "$RUNNER_TEMP/gcp.json"
             echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/gcp.json" >> "$GITHUB_ENV"
           fi
