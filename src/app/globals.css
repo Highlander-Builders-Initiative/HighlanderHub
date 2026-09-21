@@ -156,58 +156,37 @@ body {
   transform: translateY(0);
 }
 
-/* ----- Hero ribbon (right-column decorative graphic) -----
-   Isolated to its own paint + compositor layer so its animation
-   can't drag the FlyerMarquee that scrolls beneath. */
-.ribbon-root {
-  contain: strict;
+/* ----- Campus skyline (hero landmark graphic) -----
+   The Bell Tower, the Box Springs ridge, and the tree line that stands on the
+   hero's bottom hairline. Isolated to its own paint layer so it can never
+   force work on the FlyerMarquee scrolling directly beneath it. Nothing in
+   here animates: the wall below is the only thing in motion. */
+.skyline-root {
+  height: clamp(112px, 13vw, 224px);
   isolation: isolate;
-  transform: translateZ(0);
 }
 
-.ribbon-fade {
-  background: linear-gradient(
-    to right,
-    #ffffff 0%,
-    rgba(255, 255, 255, 0.55) 55%,
-    rgba(255, 255, 255, 0) 100%
+/* The low Riverside sun the tower stands against. A CSS radial, not an SVG
+   gradient, so it keeps its shape independently of either viewBox. */
+.skyline-sun {
+  position: absolute;
+  right: -10%;
+  bottom: -58%;
+  width: min(880px, 86%);
+  aspect-ratio: 1;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(201, 132, 41, 0.2) 0%,
+    rgba(201, 132, 41, 0.11) 36%,
+    rgba(201, 132, 41, 0.03) 58%,
+    rgba(201, 132, 41, 0) 70%
   );
 }
 
-/* Each band gets its own <g> transform so the animation is a single
-   matrix update per frame — no layout, no paint, GPU-composited. */
-.ribbon-band {
-  transform-box: fill-box;
-  transform-origin: 60% 50%;
-  will-change: transform;
-}
-
-@keyframes ribbon-drift-1 {
-  0%   { transform: translate3d(0, 0, 0) rotate(0deg); }
-  50%  { transform: translate3d(-18px, 12px, 0) rotate(-1.6deg); }
-  100% { transform: translate3d(0, 0, 0) rotate(0deg); }
-}
-@keyframes ribbon-drift-2 {
-  0%   { transform: translate3d(0, 0, 0) rotate(0deg); }
-  50%  { transform: translate3d(22px, -14px, 0) rotate(1.8deg); }
-  100% { transform: translate3d(0, 0, 0) rotate(0deg); }
-}
-@keyframes ribbon-drift-3 {
-  0%   { transform: translate3d(0, 0, 0) rotate(0deg); }
-  50%  { transform: translate3d(-24px, -10px, 0) rotate(2.2deg); }
-  100% { transform: translate3d(0, 0, 0) rotate(0deg); }
-}
-
-.ribbon-band-1 {
-  animation: ribbon-drift-1 26s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
-}
-.ribbon-band-2 {
-  animation: ribbon-drift-2 32s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
-  animation-delay: -8s;
-}
-.ribbon-band-3 {
-  animation: ribbon-drift-3 38s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
-  animation-delay: -15s;
+/* Promote the tower to its own compositor layer: it is the busiest raster in
+   the hero (a pattern fill over ~500 units of shaft). */
+.skyline-tower {
+  transform: translateZ(0);
 }
 
 /* ----- Whole-flyer poster -----
