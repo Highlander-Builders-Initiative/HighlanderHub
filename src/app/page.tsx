@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Masthead } from "@/components/layout/Masthead";
 import { Footer } from "@/components/layout/Footer";
 import { FlyerMarquee } from "@/components/home/FlyerMarquee";
-import { HeroRibbon } from "@/components/home/HeroRibbon";
+import { CampusSkyline } from "@/components/home/CampusSkyline";
 import { HeroHighlightCopy } from "@/components/home/hero-highlights";
 import { HbiLink } from "@/components/analytics/HbiLink";
 import { HBI_ABOUT_URL } from "@/lib/hbi";
@@ -11,6 +11,7 @@ import { getEvents, getEventsSummary } from "@/lib/events";
 import {
   formatPacificDayKey,
   formatUpcomingWeekLabel,
+  pacificClockHands,
   pacificTodayKey,
 } from "@/lib/dates";
 
@@ -36,68 +37,71 @@ export default async function HomePage() {
     <main className="min-h-screen bg-canvas">
       <Masthead />
 
-      {/* Hero: an editorial masthead over the living bulletin wall. */}
+      {/* Hero: an editorial masthead over the living bulletin wall, with the
+          Bell Tower standing on the hairline that separates the two. */}
       <section className="relative overflow-hidden border-b border-ink/10">
-        <HeroRibbon />
-        <div className="relative mx-auto max-w-7xl px-4 pt-11 pb-10 sm:px-6 md:pt-16 md:pb-12">
-          {/* Dateline: a campus-paper colophon. */}
-          <div
-            className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 animate-fade-up"
-            style={{ animationDelay: "0ms" }}
-          >
-            <p className="font-mono text-[12px] tracking-[0.04em] text-muted">
-              {dateLabel}
-              {weekLabel ? ` · ${weekLabel}` : ""}
+        <div className="relative">
+          <CampusSkyline clock={pacificClockHands()} />
+          <div className="relative mx-auto max-w-7xl px-4 pt-11 pb-[216px] sm:px-6 md:pt-16 md:pb-[clamp(168px,16vw,252px)]">
+            {/* Dateline: a campus-paper colophon. */}
+            <div
+              className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 animate-fade-up"
+              style={{ animationDelay: "0ms" }}
+            >
+              <p className="font-mono text-[12px] tracking-[0.04em] text-muted">
+                {dateLabel}
+                {weekLabel ? ` · ${weekLabel}` : ""}
+              </p>
+
+              <HbiLink
+                href={HBI_ABOUT_URL}
+                location="hero"
+                channel="website"
+                className="interactive-focus group inline-flex items-center gap-2 md:mr-8 lg:mr-16"
+              >
+                <Image
+                  src="/logo_icon.png"
+                  alt=""
+                  width={20}
+                  height={20}
+                  aria-hidden
+                  className="h-5 w-5 shrink-0 transition-transform"
+                />
+                <span className="text-[13px] text-muted transition-colors group-hover:text-ink">
+                  Built by{" "}
+                  <span className="font-medium text-ink">
+                    Highlander Builders Initiative
+                  </span>
+                </span>
+              </HbiLink>
+            </div>
+
+            <h1
+              className="mt-8 max-w-[15ch] font-display text-[44px] font-semibold leading-[1.03] tracking-[-0.035em] text-ink animate-fade-up sm:text-[56px] md:mt-10 md:text-[64px] lg:text-[72px]"
+              style={{ animationDelay: "80ms" }}
+            >
+              Every UCR event,
+              <span className="block text-ink">one page.</span>
+            </h1>
+
+            <p
+              className="mt-7 max-w-md text-base leading-relaxed text-ink/75 animate-fade-up md:mt-9 md:text-lg"
+              style={{ animationDelay: "180ms" }}
+            >
+              <HeroHighlightCopy />
             </p>
 
-            <HbiLink
-              href={HBI_ABOUT_URL}
-              location="hero"
-              channel="website"
-              className="interactive-focus group inline-flex items-center gap-2 md:mr-8 lg:mr-16"
+            <div
+              className="mt-6 animate-fade-up md:mt-8"
+              style={{ animationDelay: "260ms" }}
             >
-              <Image
-                src="/logo_icon.png"
-                alt=""
-                width={20}
-                height={20}
-                aria-hidden
-                className="h-5 w-5 shrink-0 transition-transform"
-              />
-              <span className="text-[13px] text-muted transition-colors group-hover:text-ink">
-                Built by{" "}
-                <span className="font-medium text-ink">
-                  Highlander Builders Initiative
-                </span>
-              </span>
-            </HbiLink>
+              <Link
+                href="/events"
+                className="interactive-focus inline-flex min-h-12 items-center rounded-lg bg-ink px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-85"
+              >
+                Browse events
+              </Link>
           </div>
-
-          <h1
-            className="mt-8 max-w-[15ch] font-display text-[44px] font-semibold leading-[1.03] tracking-[-0.035em] text-ink animate-fade-up sm:text-[56px] md:mt-10 md:text-[64px] lg:text-[72px]"
-            style={{ animationDelay: "80ms" }}
-          >
-            Every UCR event,
-            <span className="block text-ink">one page.</span>
-          </h1>
-
-          <p
-            className="mt-7 max-w-md text-base leading-relaxed text-ink/75 animate-fade-up md:mt-9 md:text-lg"
-            style={{ animationDelay: "180ms" }}
-          >
-            <HeroHighlightCopy />
-          </p>
-
-          <div
-            className="mt-6 animate-fade-up md:mt-8"
-            style={{ animationDelay: "260ms" }}
-          >
-            <Link
-              href="/events"
-              className="interactive-focus inline-flex min-h-12 items-center rounded-lg bg-ink px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-85"
-            >
-              Browse events
-            </Link>
           </div>
         </div>
 
