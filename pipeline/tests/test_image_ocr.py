@@ -13,6 +13,12 @@ import instagram_cooldown
 
 class ImageOcrTests(unittest.TestCase):
     def setUp(self):
+        self.enterContext(patch.object(image_ocr, "GOOGLE_VISION_API_KEY_PRIMARY", "new-test-key"))
+        self.enterContext(patch.object(image_ocr, "GOOGLE_VISION_API_KEY", "old-test-key"))
+        self.db = self.enterContext(patch("db.client")).return_value
+        self.db.rpc.return_value.execute.return_value.data = {
+            "slot": "primary", "month": "2026-09-01", "used": 1,
+        }
         directory = tempfile.TemporaryDirectory()
         self.addCleanup(directory.cleanup)
         self.enterContext(patch.object(instagram_cooldown, "INSTAGRAM_COOLDOWN_FILE",
@@ -48,7 +54,8 @@ class ImageOcrTests(unittest.TestCase):
              patch("requests.post", return_value=response) as request:
             self.assertEqual("Workshop", image_ocr._vision_ocr(b"flyer"))
             request.assert_called_once_with(
-                "https://vision.googleapis.com/v1/images:annotate?key=test-key",
+                "https://vision.googleapis.com/v1/images:annotate",
+                headers={"X-Goog-Api-Key": "new-test-key"},
                 json={"requests": [{"image": {"content": base64.b64encode(b"flyer").decode("ascii")},
                                     "features": [{"type": "DOCUMENT_TEXT_DETECTION"}]}]},
                 timeout=20,
@@ -65,4 +72,55 @@ class ImageOcrTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "GOOGLE_VISION_API_KEY"):
                 image_ocr._vision_ocr(b"flyer")
             download.assert_not_called()
+            request.assert_not_called()
+
+    def test_primary_then_overflow_selection_uses_durable_reservations(self):
+        self.db.rpc.return_value.execute.side_effect = [
+            Mock(data={"slot": "primary", "used": 1000}),
+            Mock(data={"slot": "overflow", "used": 1}),
+            Mock(data={"slot": "overflow", "used": 1001}),
+        ]
+        response = Mock()
+        response.json.return_value = {"responses": [{}]}
+        with patch("requests.post", return_value=response) as request:
+            for _ in range(3):
+                image_ocr._vision_ocr(b"flyer")
+        self.assertEqual(["new-test-key", "old-test-key", "old-test-key"], [
+            call.kwargs["headers"]["X-Goog-Api-Key"] for call in request.call_args_list
+        ])
+        self.assertEqual(3, self.db.rpc.call_count)
+        self.db.rpc.assert_called_with("reserve_vision_ocr_request", {})
+
+    def test_accounting_failure_or_invalid_response_never_sends_ocr(self):
+        with patch("requests.post") as request:
+            self.db.rpc.return_value.execute.side_effect = RuntimeError("database unavailable")
+            with self.assertRaisesRegex(RuntimeError, "database unavailable"):
+                image_ocr._vision_ocr(b"flyer")
+            self.db.rpc.return_value.execute.side_effect = None
+            for invalid in (None, [], {}, {"slot": "unknown"}):
+                self.db.rpc.return_value.execute.return_value.data = invalid
+                with self.assertRaisesRegex(RuntimeError, "Invalid Vision usage reservation"):
+                    image_ocr._vision_ocr(b"flyer")
+            request.assert_not_called()
+
+    def test_timeout_keeps_reservation_and_does_not_retry_another_key(self):
+        import requests
+
+        def timeout(*args, **kwargs):
+            self.db.rpc.return_value.execute.assert_called_once()
+            raise requests.Timeout("uncertain delivery")
+
+        with patch("requests.post", side_effect=timeout) as request:
+            with self.assertRaises(requests.Timeout):
+                image_ocr._vision_ocr(b"flyer")
+            request.assert_called_once()
+        self.db.rpc.assert_called_once_with("reserve_vision_ocr_request", {})
+
+    def test_missing_primary_or_duplicate_keys_do_not_consume_usage(self):
+        with patch("requests.post") as request:
+            for primary in (None, "old-test-key"):
+                with patch.object(image_ocr, "GOOGLE_VISION_API_KEY_PRIMARY", primary):
+                    with self.assertRaises(RuntimeError):
+                        image_ocr._vision_ocr(b"flyer")
+            self.db.rpc.assert_not_called()
             request.assert_not_called()

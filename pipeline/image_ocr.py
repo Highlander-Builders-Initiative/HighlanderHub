@@ -2,7 +2,11 @@
 from __future__ import annotations
 
 import base64
-from config import GOOGLE_VISION_API_KEY
+import logging
+
+from config import GOOGLE_VISION_API_KEY, GOOGLE_VISION_API_KEY_PRIMARY
+
+log = logging.getLogger("pipeline.image_ocr")
 VISION_URL = "https://vision.googleapis.com/v1/images:annotate"
 DURABLE_FLYER_BUCKET = "event-flyers"
 
@@ -26,10 +30,16 @@ def _download_image(url: str | None) -> bytes:
 
 
 def _vision_ocr(image_bytes: bytes) -> str:
-    if not GOOGLE_VISION_API_KEY:
-        raise RuntimeError("GOOGLE_VISION_API_KEY is required for Vision OCR")
+    if not GOOGLE_VISION_API_KEY_PRIMARY or not GOOGLE_VISION_API_KEY:
+        raise RuntimeError(
+            "GOOGLE_VISION_API_KEY_PRIMARY (new key) and GOOGLE_VISION_API_KEY "
+            "(existing overflow key) are required for Vision OCR"
+        )
+    if GOOGLE_VISION_API_KEY_PRIMARY == GOOGLE_VISION_API_KEY:
+        raise RuntimeError("Vision primary and overflow keys must be different")
 
     import requests
+    from db import client
 
     encoded = base64.b64encode(image_bytes).decode("ascii")
     payload = {
@@ -40,8 +50,19 @@ def _vision_ocr(image_bytes: bytes) -> str:
             }
         ]
     }
+    # Reserve durably before sending: crashes/timeouts may have reached Google.
+    # Never refund an uncertain attempt or fall back if accounting is unavailable.
+    reservation = client().rpc("reserve_vision_ocr_request", {}).execute().data
+    if not isinstance(reservation, dict) or reservation.get("slot") not in {"primary", "overflow"}:
+        raise RuntimeError("Invalid Vision usage reservation; no OCR request sent")
+    slot = reservation["slot"]
+    api_key = GOOGLE_VISION_API_KEY_PRIMARY if slot == "primary" else GOOGLE_VISION_API_KEY
+    log.info("Vision OCR: %s key, month %s, attempt %s", slot,
+             reservation.get("month"), reservation.get("used"))
     resp = requests.post(
-        f"{VISION_URL}?key={GOOGLE_VISION_API_KEY}",
+        VISION_URL,
+        # Keep credentials out of request URLs and HTTP exception logs.
+        headers={"X-Goog-Api-Key": api_key},
         json=payload,
         timeout=20,
     )

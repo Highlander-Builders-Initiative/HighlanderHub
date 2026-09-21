@@ -21,13 +21,47 @@ Set these repository **Actions secrets**:
 | `APIFY_TOKEN` | Apify API token with access to run the actor and read its dataset |
 | `SUPABASE_URL` | Existing project URL |
 | `SUPABASE_SERVICE_KEY` | Existing service-role key |
-| `GOOGLE_VISION_API_KEY` | First-slide OCR |
+| `GOOGLE_VISION_API_KEY_PRIMARY` | New Vision key: first 1,000 OCR attempts each month |
+| `GOOGLE_VISION_API_KEY` | Existing Vision key: all remaining OCR attempts, including paid usage |
 | `GEMINI_API_KEY` | Gemini assessment; alternatively use Vertex AI below |
 
 For Vertex AI instead of `GEMINI_API_KEY`, set `GOOGLE_CLOUD_PROJECT` and
 `GOOGLE_APPLICATION_CREDENTIALS_B64` (base64 service-account JSON). Credentials
 are decoded only when needed. No Instagram account, cookies, browser, password,
 `IG_USERNAME` or `IG_SESSION_FILE_B64` is required.
+
+### Monthly Vision key switching
+
+Apply `supabase/migrations/20260921000000_vision_ocr_usage.sql` before running the
+updated pipeline. Add the newly created key as `GOOGLE_VISION_API_KEY_PRIMARY`
+in Actions secrets and in `pipeline/.env` for local runs. Keep the existing key
+as `GOOGLE_VISION_API_KEY`. Both keys are required and must differ.
+
+The first 1,000 image OCR attempts of each calendar month use the primary key.
+Attempt 1,001 onward uses the existing key, **continuing paid usage** even after
+that key reaches 1,000. Months are determined by the database clock in
+`America/Los_Angeles`; the next month starts with the primary key again.
+
+Supabase's private `vision_ocr_usage` table shares counters between local runs
+and GitHub Actions. Atomic reservations happen before each request, so concurrent
+runs cannot both claim the last primary allowance. Failed or uncertain requests
+keep their reservation conservatively. Cached OCR and image-download failures
+consume no reservations. If accounting is unavailable, new OCR fails and stays
+retryable; it never silently bypasses the counter. No keys are stored in this
+table or included in request URLs.
+
+This counts **this pipeline's attempts**, not Google's billable usage. The new
+primary account is assumed unused at setup; previous use and other applications
+are not automatically discovered. Before starting, include any such primary usage
+in the current month's `primary_requests` (capped at 1,000). Stable primary and
+overflow slots keep their counts when secrets are replaced; keep the same slot
+assignments across machines using this database. Historical usage of the old key
+is not backfilled because its overflow usage is intentionally uncapped.
+
+Google's [free allowances are per billing account](https://docs.cloud.google.com/free/docs/free-cloud-features),
+not per API key. Two keys attached to the same billing account do not provide
+two free allowances. [Vision pricing](https://cloud.google.com/vision/pricing)
+applies after the eligible allowance is consumed.
 
 Optional repository **Actions variables**:
 
