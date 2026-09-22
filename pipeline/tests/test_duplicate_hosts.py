@@ -22,7 +22,49 @@ def celebration(**extra):
                 location='UCR Alumni & Visitors Center') | extra
 
 
+def tea_talk():
+    teaser = gala('ig_aspucr_p3968032822924683079', title='3rd Annual Tea Talk: Black Identity',
+                  description='Save the Date 🌿 Registration Opening Soon.',
+                  starts_at='2026-09-22T07:00:00Z', ends_at='2026-09-23T07:00:00Z',
+                  location='UC Riverside', host='UCR African Student Programs', host_handle='aspucr')
+    timed = teaser | dict(id='ig_aspucr_p3973836307264072647', title='Tea Talk!: Black Identity',
+                          description='Registration is NOW OPEN', all_day=False,
+                          starts_at='2026-09-22T17:00:00Z', ends_at='2026-09-22T22:00:00Z',
+                          location='Glasgow in Residential Dining', has_free_food=True,
+                          rsvp_url='https://www.canvaqr.com/RGQsqaBoyH')
+    return teaser, timed
+
+
 class DuplicateHostsTests(unittest.TestCase):
+    def test_tea_talk_teaser_merges_when_later_post_supplies_the_venue(self):
+        teaser, timed = tea_talk()
+        for rows in ([teaser, timed], [timed, teaser]):
+            self.assertTrue(same_event(*rows))
+            self.assertEqual(([], {teaser['id']}), plan(rows))
+        self.assertEqual(([], set()), plan([timed]))
+
+    def test_pending_venue_does_not_excuse_conflicting_or_weak_evidence(self):
+        teaser, timed = tea_talk()
+        for left, right in [
+            (teaser, timed | {'title': '4th Annual Tea Talk: Black Identity'}),
+            (teaser | {'title': 'Tea Talk 3: Black Identity'}, timed),
+            (teaser | {'location': 'HUB 302'}, timed),
+            (teaser | {'description': 'An event'}, timed),
+            (teaser, timed | {'host_handle': 'different_club'}),
+            (teaser | {'all_day': None}, timed),
+            (teaser, timed | {'location': 'UC Riverside'}),
+            (teaser | {'title': '3rd Annual Fall General Meeting'}, timed | {'title': 'Fall General Meeting'}),
+        ]:
+            with self.subTest(left=left, right=right):
+                self.assertFalse(same_event(left, right))
+
+    def test_pending_venue_keeps_ambiguous_sessions_and_admin_protections(self):
+        teaser, timed = tea_talk()
+        later = timed | {'id': 'ig_aspucr_p3', 'starts_at': '2026-09-22T23:00:00Z'}
+        self.assertEqual(([], set()), plan([teaser, timed, later]))
+        self.assertEqual(([], {timed['id']}), plan([timed], [teaser]))
+        self.assertEqual(([], {timed['id']}), plan([teaser | {'is_locked': True}, timed]))
+
     def test_actual_kucr_announcements_keep_six_pm_without_invented_end(self):
         rows = [gala(description='x' * 500), celebration()]
         before = copy.deepcopy(rows)
