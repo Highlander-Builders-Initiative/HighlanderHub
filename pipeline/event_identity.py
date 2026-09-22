@@ -8,6 +8,16 @@ from typing import Any
 _WHITESPACE = re.compile(r"\s+")
 
 
+def imported_row_kind(row: dict[str, Any]) -> str:
+    """Classify importer ownership using both the source and its ID namespace."""
+    row_id = str(row.get('id') or '')
+    if row.get('source') == 'instagram' and row_id.startswith('ig_'):
+        return 'instagram'
+    if row.get('source') == 'campus_website' and row_id.startswith(('highlander_link_', 'ucr_events_')):
+        return 'retired_campus'
+    return 'other'
+
+
 def _parse_instant(value: Any) -> datetime | None:
     if not isinstance(value, str) or not value.strip():
         return None

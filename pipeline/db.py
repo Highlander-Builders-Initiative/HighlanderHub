@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 from supabase import Client, create_client
 
 from config import ROOT
+from event_identity import imported_row_kind
 
 load_dotenv(ROOT / ".env")
 
@@ -74,15 +75,20 @@ def get_deleted_event_ids() -> set[str]:
     raise RuntimeError("Deleted event pagination exceeded its safety limit")
 
 
-def get_imported_events() -> list[dict[str, Any]]:
-    """Read all imported rows with stable pagination, including admin locks."""
+def get_event_rows() -> list[dict[str, Any]]:
+    """Read event rows with stable pagination, including admin locks."""
     rows = []
     for offset in range(0, 1_000_000, 1000):
         batch = client().table("events").select("*").order("id").range(offset, offset+999).execute().data or []
-        rows.extend(row for row in batch if str(row.get("id", "")).startswith("ig_"))
+        rows.extend(batch)
         if len(batch) < 1000:
             return rows
-    raise RuntimeError("Imported event pagination exceeded its safety limit")
+    raise RuntimeError("Event pagination exceeded its safety limit")
+
+
+def get_imported_events() -> list[dict[str, Any]]:
+    """Read the supported Instagram imports for publication."""
+    return [row for row in get_event_rows() if imported_row_kind(row) == 'instagram']
 
 
 def get_event_rows_by_ids(

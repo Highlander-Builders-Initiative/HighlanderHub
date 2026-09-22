@@ -16,7 +16,8 @@ const migrationNames = ['20260513073310_init_schema.sql', '20260527000000_add_ev
   '20260531000000_event_has_free_food.sql', '20260909000000_event_content_kind_application.sql',
   '20260911000000_source_assessments.sql', '20260912000000_source_assessment_fanout_overrides.sql',
   '20260913000000_instagram_posts.sql', '20260916000000_instagram_only_publication.sql',
-  '20260919000000_drop_event_is_free.sql', '20260922000000_event_duplicate_hosts.sql'];
+  '20260919000000_drop_event_is_free.sql', '20260922000000_event_duplicate_hosts.sql',
+  '20260922010000_reconcile_legacy_duplicates.sql'];
 for (const name of migrationNames) {
   await db.exec(await readFile(new URL(name, migrations), 'utf8'));
 }
@@ -270,6 +271,30 @@ test('deduplication transfers source support to the canonical event', async () =
   assert.deepEqual(await ids(), []);
 });
 
+test('retired campus duplicates can only reconcile into an Instagram survivor', async () => {
+  await reset();
+  await publish([update('post:1', [row('ig_survivor')])]);
+  await db.query(`insert into events(id,title,description,starts_at,ends_at,location,host,category,
+    content_kind,tags,source,has_free_food,rsvp_required,scraped_at)
+    values ('highlander_link_1','Workshop','An actual workshop',$1,$2,'HUB','Club','academic',
+    'student_event','{}','campus_website',false,false,$3)`,
+    ['2026-09-15T22:00:00Z', '2026-09-16T00:00:00Z', '2026-09-11T19:00:00Z']);
+  await db.query('select remap_assessed_event_sources($1::jsonb)', [JSON.stringify([
+    { id: 'highlander_link_1', replacement_id: 'ig_survivor' },
+  ])]);
+  assert.deepEqual(await ids(), ['ig_survivor']);
+
+  await db.query(`insert into events(id,title,description,starts_at,location,host,category,
+    content_kind,tags,source,has_free_food,rsvp_required,scraped_at)
+    values ('highlander_link_2','Other','Other event',$1,'HUB','Club','academic',
+    'student_event','{}','campus_website',false,false,$2)`,
+    ['2026-09-15T22:00:00Z', '2026-09-11T19:00:00Z']);
+  await assert.rejects(db.query('select remap_assessed_event_sources($1::jsonb)', [JSON.stringify([
+    { id: 'highlander_link_2', replacement_id: null },
+  ])]), /must reconcile into Instagram/);
+  assert.deepEqual(await ids(), ['highlander_link_2', 'ig_survivor']);
+});
+
 test('concurrent edits abort duplicate ownership remapping', async () => {
   await reset();
   await publish([update('a', [row('ig_a')]), update('b', [row('ig_b')])]);
@@ -312,9 +337,76 @@ test('publication retains assessed time precision and reconciled hosts across re
   assert.deepEqual(saved.hosts, hosts);
 });
 
-test('KUCR teaser and timed announcement reconcile and remain supported after republication', async () => {
-  const venv = fileURLToPath(new URL('../../pipeline/.venv/bin/python', import.meta.url));
+function reconciliationPlan(rows, tombstones = []) {
+  const root = fileURLToPath(new URL('../../', import.meta.url));
+  const venv = `${root}pipeline/.venv/bin/python`;
   const python = process.env.PIPELINE_PYTHON || (existsSync(venv) ? venv : 'python3');
+  return JSON.parse(execFileSync(python, ['-c',
+    "import json,sys; sys.path.insert(0, 'pipeline'); from reconcile_events import plan; rows,tombs=json.load(sys.stdin); u,r,m=plan(rows,tombs); print(json.dumps([u,sorted(r),m]))"],
+  { cwd: root, input: JSON.stringify([rows, tombstones]), encoding: 'utf8',
+    env: { ...process.env, PYTHON_DOTENV_DISABLED: '1' } }));
+}
+
+async function applyReconciliation(rows, tombstones = []) {
+  const [updates, removed, replacements] = reconciliationPlan(rows, tombstones);
+  for (const event of updates) {
+    // Apply the planner's canonical row before the same removal payload main uses.
+    await db.query(`update events set ends_at=r.ends_at, rsvp_url=r.rsvp_url,
+      rsvp_required=r.rsvp_required, has_free_food=r.has_free_food, hosts=r.hosts,
+      location=r.location, image_url=r.image_url
+      from jsonb_populate_record(null::events, $1::jsonb) r where events.id=r.id`,
+    [JSON.stringify(event)]);
+  }
+  const removals = removed.map(id => ({ id, replacement_id: replacements[id] ?? null,
+    updated_at: rows.find(row => row.id === id).updated_at }));
+  await db.query('select remap_assessed_event_sources($1::jsonb)', [JSON.stringify(removals)]);
+  return [updates, removed, replacements];
+}
+
+test('planner outputs apply atomically across legacy, tombstoned, locked and Instagram groups', async () => {
+  for (const locked of [false, true]) {
+    await reset();
+    const campusRows = [
+      row('highlander_link_only', { title: 'Legacy Only', source: 'campus_website' }),
+      row('ucr_events_only', { title: 'Legacy Only', source: 'campus_website' }),
+      row('highlander_link_deleted', { title: 'Deleted Study Jam', source: 'campus_website' }),
+      row('highlander_link_merge', { title: 'Merged Study Jam', source: 'campus_website', is_locked: locked }),
+      row('ucr_events_merge', { title: 'Merged Study Jam', source: 'campus_website' }),
+      row('highlander_link_manual', { title: 'Merged Study Jam', source: 'manual' }),
+    ];
+    for (const event of campusRows) {
+      await db.query(`insert into events(id,title,description,starts_at,ends_at,location,host,
+        category,content_kind,tags,source,has_free_food,rsvp_required,scraped_at,is_locked)
+        select id,title,description,starts_at,ends_at,location,host,category,content_kind,tags,
+          source,has_free_food,rsvp_required,scraped_at,coalesce(is_locked,false)
+        from jsonb_populate_record(null::events,$1::jsonb)`, [JSON.stringify(event)]);
+    }
+    await publish([
+      update('deleted', [row('ig_deleted_p101', { title: 'Deleted Study Jam' })]),
+      update('merge', [row('ig_merge_p201', { title: 'Merged Study Jam' })]),
+      update('independent1', [row('ig_independent_p301', { title: 'Unrelated Study Jam' })]),
+      update('independent2', [row('ig_independent_p302', { title: 'Unrelated Study Jam' })]),
+    ]);
+    const rows = (await db.query('select * from events order by id')).rows;
+    const tombstones = [row('ig_deleted_p100', { title: 'Deleted Study Jam' })];
+    const [, removed, replacements] = await applyReconciliation(rows, tombstones);
+    assert.deepEqual(removed, locked
+      ? ['ig_deleted_p101', 'ig_independent_p301', 'ig_merge_p201']
+      : ['highlander_link_merge', 'ig_deleted_p101', 'ig_independent_p301', 'ucr_events_merge']);
+    assert.deepEqual(replacements, locked
+      ? { ig_independent_p301: 'ig_independent_p302', ig_merge_p201: 'highlander_link_merge' }
+      : { highlander_link_merge: 'ig_merge_p201', ig_independent_p301: 'ig_independent_p302', ucr_events_merge: 'ig_merge_p201' });
+    assert.deepEqual(await ids(), rows.map(r => r.id).filter(id => !removed.includes(id)).sort());
+    const sources = (await db.query('select source_key,event_ids from source_assessments')).rows;
+    assert.deepEqual(sources.find(r => r.source_key === 'instagram:deleted').event_ids, []);
+    assert.deepEqual(sources.find(r => r.source_key === 'instagram:independent1').event_ids, ['ig_independent_p302']);
+    assert.deepEqual(sources.find(r => r.source_key === 'instagram:merge').event_ids,
+      [locked ? 'highlander_link_merge' : 'ig_merge_p201']);
+    assert.deepEqual(reconciliationPlan((await db.query('select * from events')).rows, tombstones), [[], [], {}]);
+  }
+});
+
+test('KUCR teaser and timed announcement reconcile and remain supported after republication', async () => {
   await reset();
   const teaser = row('ig_ucralumni_p3966553446651553037', {
     title: 'KUCR 60th Anniversary gala', all_day: true,
@@ -330,13 +422,8 @@ test('KUCR teaser and timed announcement reconcile and remain supported after re
   for (let run = 0; run < 2; run++) {
     await publish(inputs);
     const rows = (await db.query('select * from events')).rows;
-    const plan = JSON.parse(execFileSync(python, ['-c',
-      "import json,sys; sys.path.insert(0, 'pipeline'); from reconcile_events import plan; u,r=plan(json.load(sys.stdin)); print(json.dumps([u,sorted(r)]))"],
-      { input: JSON.stringify(rows), encoding: 'utf8', env: { ...process.env, PYTHON_DOTENV_DISABLED: '1' } }));
-    assert.deepEqual(plan, [[], [teaser.id]]);
-    await db.query('select remap_assessed_event_sources($1::jsonb)', [JSON.stringify([
-      { id: teaser.id, replacement_id: timed.id },
-    ])]);
+    const planned = await applyReconciliation(rows);
+    assert.deepEqual(planned, [[], [teaser.id], { [teaser.id]: timed.id }]);
     assert.deepEqual(await ids(), [timed.id]);
     const sources = (await db.query('select event_ids from source_assessments')).rows;
     assert.ok(sources.every(source => source.event_ids.length === 1 && source.event_ids[0] === timed.id));
@@ -349,7 +436,8 @@ test('time precision backfill uses the originating assessment and preserves lock
   const legacy = new PGlite();
   try {
     await legacy.exec('create role anon; create role authenticated; create role service_role bypassrls;');
-    for (const name of migrationNames.slice(0, -1)) {
+    const backfillMigration = '20260922000000_event_duplicate_hosts.sql';
+    for (const name of migrationNames.slice(0, migrationNames.indexOf(backfillMigration))) {
       await legacy.exec(await readFile(new URL(name, migrations), 'utf8'));
     }
     const entries = ['101', '102', '103'].map(media => {
@@ -360,7 +448,7 @@ test('time precision backfill uses the originating assessment and preserves lock
     });
     await legacy.query('select reconcile_source_assessments($1::jsonb)', [JSON.stringify(entries)]);
     await legacy.exec("update events set is_locked=true where id='ig_club_p102'; update events set starts_at=starts_at + interval '1 hour' where id='ig_club_p103'");
-    await legacy.exec(await readFile(new URL(migrationNames.at(-1), migrations), 'utf8'));
+    await legacy.exec(await readFile(new URL(backfillMigration, migrations), 'utf8'));
     const rows = (await legacy.query('select id,all_day,hosts from events order by id')).rows;
     assert.deepEqual(rows.map(r => r.all_day), [true, null, null]);
     assert.ok(rows.every(r => r.hosts.length === 0));
