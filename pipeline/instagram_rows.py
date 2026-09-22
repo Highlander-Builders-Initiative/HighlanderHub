@@ -102,7 +102,7 @@ def build_instagram_row(
 
     return {
         "id": event_id, "title": title[:200], "description": description,
-        "starts_at": starts_at, "ends_at": ends_at,
+        "starts_at": starts_at, "ends_at": ends_at, "all_day": occurrence.get("all_day"),
         "location": str(occurrence.get("location") or "").strip(),
         "host": host, "host_handle": host_handle, "category": category,
         "content_kind": content_kind, "tags": tags, "source": "instagram",

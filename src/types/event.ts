@@ -28,6 +28,7 @@ export interface CampusEvent {
   location: string;
   host: string; // club, dept, or org running it
   hostHandle?: string; // @instagram or similar
+  hosts?: { host: string; hostHandle?: string }[];
   category: EventCategory;
   contentKind: EventContentKind;
   tags: string[];

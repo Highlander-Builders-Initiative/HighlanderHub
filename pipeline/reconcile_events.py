@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from event_identity import _parse_instant, _row_score, event_key
+from event_dates import PACIFIC_TZ
 
 log = logging.getLogger("pipeline.reconcile_events")
 _GENERIC_WORDS = frozenset("first second third general body meeting club weekly monthly annual fall winter spring summer welcome back workshop session orientation open house social event ucr uc riverside university california of at the and for to a an".split())
@@ -46,8 +47,37 @@ def _credits(row: dict, other: dict) -> bool:
 
 
 def _title_words(row: dict) -> set[str]:
-    return {w for w in re.findall(r"[a-z0-9]+", str(row.get("title") or "").casefold())
-            if w not in _TITLE_NOISE and not re.fullmatch(r"\d+(?:st|nd|rd|th)?", w)}
+    return {'celebration' if w == 'gala' else w
+            for w in re.findall(r"[a-z0-9]+", str(row.get("title") or "").casefold())
+            if w not in _TITLE_NOISE}
+
+
+def _same_place(left: dict, right: dict) -> bool:
+    noise = {'the', 'and', 'at', 'of', 'ucr', 'uc', 'riverside', 'university', 'california'}
+    locations = [set(re.findall(r"[a-z]+|[0-9]+", str(r.get('location') or '').casefold())) - noise
+                 for r in (left, right)]
+    return min(map(len, locations)) >= 2 and (locations[0] <= locations[1] or locations[1] <= locations[0])
+
+
+def _date_only(row: dict) -> bool:
+    # Never infer missing time from midnight alone (real midnight events exist).
+    start, end = _parse_instant(row.get('starts_at')), _parse_instant(row.get('ends_at'))
+    return bool(row.get('all_day') is True and start and end and end > start
+                and start.astimezone(PACIFIC_TZ).time().isoformat() == '00:00:00'
+                and (end.astimezone(PACIFIC_TZ).date() - start.astimezone(PACIFIC_TZ).date()).days <= 1)
+
+
+def _merged_hosts(winner: dict, rows: list[dict]) -> list[dict]:
+    from instagram_rows import _ANONYMIZED_HOST_HANDLES
+    hosts = {}
+    for row in [winner, *rows]:
+        for host in [{'host': row.get('host') or '', 'host_handle': row.get('host_handle')},
+                     *(row.get('hosts') or [])]:
+            handle = str(host.get('host_handle') or '').strip().lstrip('@').casefold()
+            if not handle or handle in _ANONYMIZED_HOST_HANDLES:
+                continue
+            hosts.setdefault(handle, {'host': host.get('host') or handle, 'host_handle': handle})
+    return list(hosts.values())
 
 
 def _rsvp_identity(value: str | None) -> str | None:
@@ -61,11 +91,27 @@ def _rsvp_identity(value: str | None) -> str | None:
 
 
 def same_event(left: dict, right: dict) -> bool:
-    """Require the same instant plus a shared source post, a distinctive title,
-    or a shared signup link."""
+    """Match corroborated announcements, allowing an explicit date-only teaser."""
     start = _parse_instant(left.get("starts_at"))
-    if start is None or start != _parse_instant(right.get("starts_at")):
+    other_start = _parse_instant(right.get('starts_at'))
+    if start is None or other_start is None:
         return False
+    if left.get('content_kind') != right.get('content_kind'):
+        return False
+    if start != other_start:
+        if (start.astimezone(PACIFIC_TZ).date() != other_start.astimezone(PACIFIC_TZ).date()
+                or _date_only(left) == _date_only(right)):
+            return False
+        a, b = _title_words(left), _title_words(right)
+        distinctive = (a & b) - _GENERIC_WORDS - {'celebration', 'anniversary'}
+        same_host = any(left.get(k) and str(left[k]).casefold() == str(right.get(k) or '').casefold()
+                        for k in ('host', 'host_handle'))
+        # A date-only campaign cannot absorb a merely related timed activity.
+        # Require a specific common title, venue, and ownership/signup evidence.
+        rsvp = _rsvp_identity(left.get('rsvp_url'))
+        return bool(len(a & b) >= 3 and distinctive and a == b and _same_place(left, right)
+                    and (same_host or _credits(left, right) or _credits(right, left)
+                         or (rsvp and rsvp == _rsvp_identity(right.get('rsvp_url')))))
     if event_key(left) is not None and event_key(left) == event_key(right):
         return True
     # A post publishes exactly one event, so one post at one instant is one event
@@ -78,7 +124,7 @@ def same_event(left: dict, right: dict) -> bool:
     if rsvp and rsvp == _rsvp_identity(right.get("rsvp_url")) and len(common) >= 2:
         return True
     # Generic meeting titles never establish common ownership across accounts.
-    if len(common) < 3 or len(common - _GENERIC_WORDS) < 2:
+    if len(common - _GENERIC_WORDS) < 2:
         return False
     # A partner's promotion tags the organizer's account; its title and place
     # are paraphrases, but the event cannot end at a different time.
@@ -86,8 +132,7 @@ def same_event(left: dict, right: dict) -> bool:
     if (_credits(left, right) or _credits(right, left)) and len(ends) <= 1:
         return True
     # Split room codes so "LOFT 84" and "LOFT84" name the same place.
-    locations = [set(re.findall(r"[a-z]+|[0-9]+", str(r.get('location') or '').casefold())) for r in (left, right)]
-    same_place = bool(min(map(len, locations)) >= 2 and (locations[0] <= locations[1] or locations[1] <= locations[0]))
+    same_place = _same_place(left, right)
     same_host = any(left.get(k) and str(left[k]).casefold() == str(right.get(k) or '').casefold()
                     for k in ('host', 'host_handle'))
     return (same_place or same_host) and (a <= b or b <= a) and (a ^ b) <= _TITLE_QUALIFIERS
@@ -98,8 +143,25 @@ def plan(rows: list[dict], tombstones: list[dict] = (), *, now: datetime | None 
     groups: list[list[dict]] = []
     blocked = {r["id"] for r in tombstones}
     by_id = {r["id"]: r for r in rows}
-    for row in sorted([*rows, *(r for r in tombstones if r['id'] not in by_id)], key=lambda r:r['id']):
-        matches = [g for g in groups if any(same_event(row, other) for other in g)]
+    candidates = [*rows, *(r for r in tombstones if r['id'] not in by_id)]
+    # A teaser for two different timed sessions does not identify either one.
+    ambiguous = {row['id'] for row in candidates if _date_only(row) and len({
+        _parse_instant(other.get('starts_at')) for other in candidates
+        if not _date_only(other) and same_event(row, other)
+    }) > 1}
+    def matches_pair(left, right):
+        if ({left['id'], right['id']} & ambiguous
+                and _parse_instant(left.get('starts_at')) != _parse_instant(right.get('starts_at'))):
+            return False
+        return same_event(left, right)
+    for row in sorted(candidates, key=lambda r:r['id']):
+        matches = [g for g in groups if any(matches_pair(row, other) for other in g)]
+        # Two related date-only teasers must not bridge incompatible sessions.
+        timed_starts = {_parse_instant(r.get('starts_at'))
+                        for r in [row, *(r for group in matches for r in group)]
+                        if not _date_only(r)}
+        if len(timed_starts) > 1:
+            matches = []
         if matches:
             first = matches[0]
             first.append(row)
@@ -118,21 +180,24 @@ def plan(rows: list[dict], tombstones: list[dict] = (), *, now: datetime | None 
             continue
         if now and all((_parse_instant(r.get('ends_at') or r.get('starts_at')) or now) < now for r in live):
             continue
-        winner = max(live, key=lambda r: (bool(r.get('is_locked')), r.get('source') != 'instagram', _row_score(r)))
+        winner = max(live, key=lambda r: (bool(r.get('is_locked')), not _date_only(r), r.get('source') != 'instagram', _row_score(r)))
         removed.update(r['id'] for r in live if r['id'] != winner['id'] and not r.get('is_locked'))
         if winner.get('is_locked'):
             continue
         merged = dict(winner)
         merged['has_free_food'] = any(r.get('has_free_food') for r in live)
+        hosts = _merged_hosts(winner, live)
+        if len(hosts) > 1 or winner.get('hosts'):
+            merged['hosts'] = hosts
         for key in ('ends_at', 'rsvp_url', 'image_url'):
             if not merged.get(key):
-                options = {r[key] for r in live if r.get(key)}
+                options = {r[key] for r in live if r.get(key)
+                           and not (key == 'ends_at' and _date_only(r) and not _date_only(winner))}
                 if len(options) == 1:
                     merged[key] = options.pop()
         # Date-only weekend announcements often omit the end on the campus
         # listing. The corrected flyers supply the complete final day.
         start = _parse_instant(winner.get('starts_at'))
-        from event_dates import PACIFIC_TZ
         if start and start.astimezone(PACIFIC_TZ).time().isoformat() == '00:00:00':
             ends = [_parse_instant(r.get('ends_at')) for r in live]
             ends = [e for e in ends if e and e > start and e.astimezone(PACIFIC_TZ).time().isoformat() in {'00:00:00', '23:59:59'}]

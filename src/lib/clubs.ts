@@ -8,7 +8,8 @@ export type Club = {
   category: string;
 };
 
-type ClubHost = { host: string; hostHandle?: string; category: string };
+type ClubHost = { host: string; hostHandle?: string; category: string;
+  hosts?: { host: string; hostHandle?: string }[] };
 
 export function getClubs(hosts: readonly ClubHost[] = []): Club[] {
   const clubs = new Map<string, Club>();
@@ -19,7 +20,9 @@ export function getClubs(hosts: readonly ClubHost[] = []): Club[] {
     clubs.set(handle, { handle, label, category });
   }
   // Use the full public event source, not just the currently loaded feed page.
-  for (const { host, hostHandle, category } of hosts) {
+  for (const { host, hostHandle, category } of hosts.flatMap((event) =>
+    event.hosts?.length ? event.hosts.map((host) => ({ ...host, category: event.category })) : [event]
+  )) {
     const handle = (hostHandle ?? "").trim().replace(/^@/, "").toLowerCase();
     if (!handle) continue;
     const existing = clubs.get(handle);

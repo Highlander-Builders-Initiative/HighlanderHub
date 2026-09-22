@@ -16,7 +16,7 @@ function schemaPropertyKeys(schema) {
 
 function parseInterfaceFields(tsSource, interfaceName) {
   const block = tsSource.match(
-    new RegExp(`export interface ${interfaceName} \\{([\\s\\S]*?)\\}`)
+    new RegExp(`export interface ${interfaceName} \\{([\\s\\S]*?)\\n\\}`)
   );
   assert.ok(block, `missing interface ${interfaceName}`);
   const fields = new Set();

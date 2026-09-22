@@ -22,3 +22,18 @@ export function sanitizePublicEventHost(
   }
   return { host: "", hostHandle: undefined };
 }
+
+/** Preserve each club's identity while hiding private hosts in merged events. */
+export function publicEventHosts(row: {
+  host: string;
+  host_handle?: string | null;
+  hosts?: { host: string; host_handle: string }[];
+}): { host: string; hostHandle?: string }[] {
+  const hosts = new Map<string, { host: string; hostHandle?: string }>();
+  for (const entry of [row, ...(row.hosts ?? [])]) {
+    const host = sanitizePublicEventHost(entry.host, entry.host_handle);
+    const key = normalizeHandle(host.hostHandle) || host.host.trim().toLowerCase();
+    if (key && !hosts.has(key)) hosts.set(key, host);
+  }
+  return [...hosts.values()];
+}

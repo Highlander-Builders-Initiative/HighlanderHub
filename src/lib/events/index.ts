@@ -3,7 +3,7 @@ import { unstable_cache } from "next/cache";
 import type { CampusEvent } from "@/types/event";
 import type { EventFilterCountSource } from "@/types/events-feed";
 import type { EventRow } from "@/lib/supabase-rows";
-import { sanitizePublicEventHost } from "@/lib/events/anonymized-hosts";
+import { publicEventHosts } from "@/lib/events/anonymized-hosts";
 import { eventRowToCampusEvent } from "@/lib/events/map-event-row";
 import { supabase } from "@/lib/supabase";
 import {
@@ -69,6 +69,7 @@ type EventFilterCountRow = Pick<
   | "location"
   | "host"
   | "host_handle"
+  | "hosts"
   | "category"
   | "tags"
   | "has_free_food"
@@ -96,15 +97,16 @@ export type EventsSummary = {
 function toEventFilterCountSource(
   r: EventFilterCountRow
 ): EventFilterCountSource {
-  const { host, hostHandle } = sanitizePublicEventHost(r.host, r.host_handle);
+  const hosts = publicEventHosts(r);
   return {
     id: r.id,
     title: r.title,
     description: r.description,
     startsAt: r.starts_at,
     location: r.location,
-    host,
-    hostHandle,
+    host: hosts.map((entry) => entry.host || entry.hostHandle).join(" & "),
+    hostHandle: hosts[0]?.hostHandle,
+    hosts,
     category: r.category,
     tags: r.tags,
     hasFreeFood: r.has_free_food,
@@ -358,7 +360,7 @@ async function getEventFilterCountSourceUncached(): Promise<
       const { data } = await withDbRetry("event filter counts", () =>
         supabase
           .from("events")
-          .select("id,title,description,starts_at,location,host,host_handle,category,tags,has_free_food")
+          .select("id,title,description,starts_at,location,host,host_handle,hosts,category,tags,has_free_food")
           .in("content_kind", PUBLIC_CONTENT_KINDS)
           .or(activeEventFilter(nowIso))
           .order("starts_at", { ascending: true })

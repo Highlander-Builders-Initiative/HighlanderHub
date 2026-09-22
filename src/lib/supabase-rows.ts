@@ -33,6 +33,8 @@ export interface EventRow {
   title: string;
   description: string;
   starts_at: string;
+  all_day?: boolean | null;
+  hosts?: { host: string; host_handle: string }[];
   ends_at?: string | null;
   location: string;
   host: string;

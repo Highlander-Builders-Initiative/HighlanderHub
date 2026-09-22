@@ -263,12 +263,16 @@ export function EventDetailView({
                       <div>
                         <dt className="text-[12px] text-muted">Hosted by</dt>
                         <dd className="mt-1 font-medium text-ink">
-                          {event.host}
-                          {event.hostHandle && (
-                            <span className="mt-0.5 block text-[13px] font-normal text-muted">
-                              {event.hostHandle}
+                          {(event.hosts?.length ? event.hosts : [event]).map((host) => (
+                            <span key={host.hostHandle || host.host} className="block">
+                              {host.host}
+                              {host.hostHandle && (
+                                <span className="mt-0.5 block text-[13px] font-normal text-muted">
+                                  {host.hostHandle}
+                                </span>
+                              )}
                             </span>
-                          )}
+                          ))}
                         </dd>
                       </div>
                       <div className="hairline" />
