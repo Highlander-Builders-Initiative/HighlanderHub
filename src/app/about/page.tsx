@@ -7,10 +7,10 @@ import { Footer } from "@/components/layout/Footer";
 import { Reveal } from "@/components/ui/Reveal";
 import { HbiLink } from "@/components/analytics/HbiLink";
 import { AboutFaq } from "@/components/about/AboutFaq";
-import { HBI_ABOUT_URL } from "@/lib/hbi";
+import { HBI_ABOUT_URL, HBI_INSTAGRAM_URL } from "@/lib/hbi";
 
 export const metadata: Metadata = {
-  title: "About · Highlander Hub",
+  title: "About",
   description:
     "What Highlander Hub is, where event listings come from, and who built it.",
 };
@@ -41,7 +41,7 @@ const FAQS = [
   {
     id: "data-freshness",
     q: "How fresh is the data?",
-    a: "Listings refresh every six hours from club Instagram posts.",
+    a: "Listings refresh every eight hours from club Instagram posts.",
   },
   {
     id: "report-wrong-event",
@@ -55,7 +55,6 @@ const FAQS = [
   },
 ] as const;
 
-const HBI_INSTAGRAM = "https://www.instagram.com/hbi.ucr";
 const HBI_DISCORD = "https://discord.com/invite/QYCQwTTvfS";
 
 export default function AboutPage() {
@@ -176,7 +175,7 @@ export default function AboutPage() {
               </p>
               <div className="mt-5 flex flex-wrap items-center gap-2">
                 <HbiLink
-                  href={HBI_INSTAGRAM}
+                  href={HBI_INSTAGRAM_URL}
                   location="about_page"
                   channel="instagram"
                   ariaLabel="HBI on Instagram"
@@ -235,7 +234,7 @@ export default function AboutPage() {
                   </p>
                 </div>
                 <HbiLink
-                  href={HBI_INSTAGRAM}
+                  href={HBI_INSTAGRAM_URL}
                   location="about_page"
                   channel="instagram"
                   className="interactive-focus inline-flex min-h-12 shrink-0 items-center gap-2 rounded-lg border border-ink bg-canvas px-5 py-3 text-sm font-medium text-ink transition-colors hover:bg-ink hover:text-canvas"

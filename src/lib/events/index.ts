@@ -16,6 +16,7 @@ import {
 import {
   coerceCategoryParam,
   coerceDayWindowParam,
+  dayWindowRange,
   filterEventSource,
   normalizeEventQuery,
   type CategoryValue,
@@ -216,10 +217,17 @@ async function getEventsSummaryUncached(): Promise<EventsSummary> {
     }),
     async () => {
       const nowIso = new Date().toISOString();
-      const today = startOfPacificToday();
-      const todayIso = today.toISOString();
-      const inSevenDays = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-      const inSevenDaysIso = inSevenDays.toISOString();
+      const todayIso = startOfPacificToday().toISOString();
+      // "This week" counts exactly what the feed's Week filter shows (today
+      // through Saturday), so the number matches the list it links to.
+      const week = dayWindowRange("week")!;
+      const weekStartIso = parsePacificDateTimeInput(`${week.start}T00:00`);
+      const weekEndIso = parsePacificDateTimeInput(
+        `${addPacificDays(week.end, 1)}T00:00`
+      );
+      if (!weekStartIso || !weekEndIso) {
+        throw new Error("Unable to load event counts. Invalid week range.");
+      }
 
       const [totalResult, upcomingThisWeekResult, freeFoodResult] =
         await Promise.all([
@@ -235,8 +243,8 @@ async function getEventsSummaryUncached(): Promise<EventsSummary> {
               .from("events")
               .select("id", { count: "exact", head: true })
               .in("content_kind", PUBLIC_CONTENT_KINDS)
-              .gte("starts_at", todayIso)
-              .lte("starts_at", inSevenDaysIso)
+              .gte("starts_at", weekStartIso)
+              .lt("starts_at", weekEndIso)
               .or(activeEventFilter(nowIso))
           ),
           withDbRetry("free-food event count", () =>

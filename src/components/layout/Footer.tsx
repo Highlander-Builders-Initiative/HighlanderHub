@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { FaDiscord, FaInstagram, FaLinkedin } from "react-icons/fa";
 import { HbiLink } from "@/components/analytics/HbiLink";
-import { HBI_ABOUT_URL } from "@/lib/hbi";
+import { HBI_ABOUT_URL, HBI_INSTAGRAM_URL } from "@/lib/hbi";
 
 const socialLinks = [
   {
     label: "Instagram",
     channel: "instagram",
-    href: "https://www.instagram.com/hbi.ucr",
+    href: HBI_INSTAGRAM_URL,
     Icon: FaInstagram,
   },
   {
@@ -39,8 +39,7 @@ export function Footer() {
             highlander<span className="text-muted">/</span>hub
           </p>
           <p className="mt-3 max-w-md text-sm text-muted">
-            A simple place to see what&rsquo;s happening at UC Riverside,
-            without scrolling ten pages.
+            Campus and club events at UC Riverside, all on one page.
           </p>
         </div>
 
@@ -87,14 +86,14 @@ export function Footer() {
           </div>
           <p className="mt-4 text-sm text-muted">
             Built by{" "}
-            <a
+            <HbiLink
               href={HBI_ABOUT_URL}
-              target="_blank"
-              rel="noopener noreferrer"
+              location="footer_credit"
+              channel="website"
               className="interactive-focus font-medium text-ink underline-offset-4 hover:underline"
             >
               Highlander Builders Initiative
-            </a>
+            </HbiLink>
             .
           </p>
         </div>

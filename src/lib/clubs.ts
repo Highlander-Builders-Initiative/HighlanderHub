@@ -37,6 +37,9 @@ export function getClubs(hosts: readonly ClubHost[] = []): Club[] {
 
 const ALL_CLUBS = getClubs();
 
+/** Instagram accounts the pipeline scans for events. */
+export const TRACKED_ACCOUNT_COUNT = accountsData.accounts.length;
+
 export function searchClubs(query: string, limit = 8, clubs = ALL_CLUBS): Club[] {
   const q = query.trim().replace(/^@/, "").toLowerCase();
   if (!q) return clubs.slice(0, limit);

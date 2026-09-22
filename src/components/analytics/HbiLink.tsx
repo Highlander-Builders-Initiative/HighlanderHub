@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { track } from "@/lib/analytics";
+import { track, type HbiCtaLocation } from "@/lib/analytics";
 
 export function HbiLink({
   href,
@@ -12,7 +12,7 @@ export function HbiLink({
   children,
 }: {
   href: string;
-  location: "hero" | "footer_social" | "about_page";
+  location: HbiCtaLocation;
   channel: string;
   className?: string;
   ariaLabel?: string;

@@ -16,7 +16,7 @@ when the next general meeting is.
 - **Club Instagram posts** — flyers posted by registered student
   organizations.
 
-Updates run automatically every six hours, so anything posted in the last
+Updates run automatically every eight hours, so anything posted in the last
 day usually shows up by the next refresh.
 
 ## Get your club listed

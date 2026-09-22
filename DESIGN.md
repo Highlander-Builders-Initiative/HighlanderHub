@@ -134,7 +134,7 @@ Seven bright hues (the `tag` colors in `tailwind.config.ts`, mapped per category
 
 "Career" reuses **Ink** as its category color (no third neutral is invented).
 
-The home hero's highlight words ("Free food, club nights, …") use each category's `-ink` text color. The older editorial hues (`highlander`, `leaf`, `coral`, `sky`, `gold`, `plum`, `sage` and their `deep-` pairs) remain only for admin error states, the flyer placeholder tint and the calendar heat; they are no longer category colors.
+The home hero's highlight words ("Free food, club nights, …") use each category's `-ink` text color, and each links to the feed filtered to its category (`/events?cat=…`), marked by a hairline `ink/20` underline that takes the word's color on hover. The older editorial hues (`highlander`, `leaf`, `coral`, `sky`, `gold`, `plum`, `sage` and their `deep-` pairs) remain only for admin error states, the flyer placeholder tint and the calendar heat; they are no longer category colors.
 
 ### Neutral
 
@@ -225,7 +225,7 @@ Feed listing row, laid out like a Luma event row: text on the left, the flyer pi
 Type runs larger than the system's `meta` token, matched to Luma's rows; phone sizes first, `sm+` in parentheses.
 
 - **Time** (14px (15px), `tabular-nums text-faint`): start time as "7:00 PM". Deadlines read "Due 11:59 PM", with "Due" in `font-medium text-deep-coral`.
-- **Title** (`font-display` 18px (20px) `font-semibold`, `line-clamp-2`, `mt-2` below the time), underlined on hover.
+- **Title** (`font-display` 18px (20px) `font-semibold`, `line-clamp-2`, `mt-2` below the time). No hover underline; the card's lift and darkened edge carry the hover.
 - **Hosts row** (14px (16px) `text-faint`): up to three 22px `ClubAvatar`s overlapping by 6px, each cut out from the next by a 2px canvas ring, then "By A, B & C" truncated to one line. A club without a picture shows its monogram.
 - **Location row** (same size and color): 18px pin (or video icon for online events), in the text's color, centered in the same 22px column as the first avatar, then the location truncated to one line.
 - **Tags row** (`mt-4`, about 21px from the pin to the pill edge as on Luma; wraps): pills at 13px (14px) medium, `rounded-full`, from `eventTags` (the detail header renders the same list at 12px), in this order:
@@ -303,7 +303,8 @@ Do not copy this pattern to non-filter surfaces. The "removable chip row" reads 
 - **Style:** Sticky 56px-tall bar (`h-14`), glass variant by default (`bg-white/40 backdrop-blur-xl`), solid variant available with `border-b border-ink/10 bg-canvas/95 backdrop-blur` for routes that need a stronger separation.
 - **Typography:** Brand wordmark in Bricolage Display 18–22px semibold, tight tracking. Nav links in Bricolage Grotesque 14px medium with `hover:text-ink/70` color shift, 200ms transition. The split brand mark (`highlander/hub`) is a fixed treatment; do not stylize the slash.
 - **Active states:** Underline-from-active for tabbed sections (defined globally via `.tab[aria-selected="true"]::after`).
-- **Mobile treatment:** Nav links shrink to 13px medium. No hamburger; the two links inline.
+- **Links:** Events and About. No Home link; the wordmark is the way home.
+- **Mobile treatment:** Nav links shrink to 13px medium, each a 44px-tall target. No hamburger; the two links inline.
 
 ### Tabs
 
@@ -361,13 +362,6 @@ certainly wants a flyer instead.
 This is a deliberate, bounded exception to **The Meaning-Carrying Rule**. Hue
 still signals category everywhere a user can act; the skyline is scenery, is
 `aria-hidden`, and never colors a control, a label, or a state.
-
-### Marquee (utility)
-
-A clean horizontal message ticker used as an active separator or alert bar below the masthead.
-- **Container:** Standard canvas background with a hairline bottom border (`border-b border-ink/10 py-2`).
-- **Notification Dot:** A pulsing green leaf-colored dot (`bg-leaf`) using `animate-ping` to signal fresh content.
-- **List items:** A horizontal flex track of key announcements separated by subtle neutral middle dots (`·`).
 
 ## 6. Do's and Don'ts
 
