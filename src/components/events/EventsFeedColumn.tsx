@@ -8,6 +8,7 @@ import {
   type RefObject,
 } from "react";
 import type { CampusEvent } from "@/types/event";
+import type { Club } from "@/lib/clubs";
 import { formatPacificDayKey } from "@/lib/dates";
 import type { EmptyFeedCopy } from "@/lib/events/empty-feed-copy";
 import { EventCard } from "./EventCard";
@@ -19,6 +20,7 @@ type Props = {
   summary: { upcomingThisWeek: number };
   upcomingTotal: number;
   query: string;
+  clubs: Club[];
   onQueryChange: (next: string) => void;
   onOpenMobileFilters: () => void;
   activeFilterCount: number;
@@ -49,6 +51,7 @@ export function EventsFeedColumn({
   summary,
   upcomingTotal,
   query,
+  clubs,
   onQueryChange,
   onOpenMobileFilters,
   activeFilterCount,
@@ -196,7 +199,7 @@ export function EventsFeedColumn({
             </>
           )}
 
-          <EventSearchBox query={query} onQueryChange={onQueryChange} />
+          <EventSearchBox query={query} clubs={clubs} onQueryChange={onQueryChange} />
         </div>
       </div>
 

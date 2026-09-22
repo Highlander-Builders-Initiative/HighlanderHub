@@ -20,6 +20,7 @@ import {
   startOfPacificMonthKey,
 } from "@/lib/dates";
 import { track } from "@/lib/analytics";
+import { getClubs } from "@/lib/clubs";
 import { saveEventFeedSnapshot } from "@/lib/events/feed-session";
 import {
   type CategoryValue,
@@ -75,6 +76,7 @@ export function EventsBrowser({
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [loadError, setLoadError] = useState("");
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
+  const clubs = useMemo(() => getClubs(filterCountSource), [filterCountSource]);
 
   const todayKey = useMemo(() => pacificTodayKey(), []);
   const [calendarCursor, setCalendarCursor] = useState<string>(() =>
@@ -306,6 +308,7 @@ export function EventsBrowser({
           summary={summary}
           upcomingTotal={filterCountSource.length}
           query={query}
+          clubs={clubs}
           onQueryChange={setQuery}
           onOpenMobileFilters={openMobileFilters}
           activeFilterCount={activeFilterCount}
