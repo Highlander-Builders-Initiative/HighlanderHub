@@ -7,6 +7,7 @@ import { type CampusEvent } from "@/types/event";
 import { FlyerPoster } from "@/components/events/FlyerPoster";
 import { eventFlyerAlt, eventListLinkLabel } from "@/lib/events/a11y";
 import { isDeadlineKind } from "@/lib/events/content-kind";
+import { isOnlineLocation } from "@/lib/events/location";
 import { track } from "@/lib/analytics";
 import { saveEventFeedReturn } from "@/lib/events/feed-session";
 import { stashEventForDetail } from "@/lib/events/detail-handoff";
@@ -156,8 +157,17 @@ function EventCardComponent({
               strokeLinejoin="round"
               className="h-3.5 w-3.5 shrink-0 text-ink/40"
             >
-              <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
-              <circle cx="12" cy="10" r="3" />
+              {isOnlineLocation(event.location) ? (
+                <>
+                  <rect x="2.5" y="6" width="13.5" height="12" rx="2.5" />
+                  <path d="m16 10.5 4.4-2.9a.6.6 0 0 1 .9.5v7.8a.6.6 0 0 1-.9.5L16 13.5" />
+                </>
+              ) : (
+                <>
+                  <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                  <circle cx="12" cy="10" r="3" />
+                </>
+              )}
             </svg>
             <span className="min-w-0 truncate">{event.location}</span>
           </div>
