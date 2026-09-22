@@ -11,7 +11,6 @@ import { getEvents, getEventsSummary } from "@/lib/events";
 import {
   formatPacificDayKey,
   formatUpcomingWeekLabel,
-  pacificClockHands,
   pacificTodayKey,
 } from "@/lib/dates";
 
@@ -38,11 +37,11 @@ export default async function HomePage() {
       <Masthead />
 
       {/* Hero: an editorial masthead over the living bulletin wall, with the
-          Bell Tower standing on the hairline that separates the two. */}
+          campus skyline standing on the hairline that separates the two. */}
       <section className="relative overflow-hidden border-b border-ink/10">
-        <div className="relative">
-          <CampusSkyline clock={pacificClockHands()} />
-          <div className="relative mx-auto max-w-7xl px-4 pt-11 pb-[216px] sm:px-6 md:pt-16 md:pb-[clamp(168px,16vw,252px)]">
+        <div className="skyline-hero relative">
+          <CampusSkyline />
+          <div className="skyline-copy relative mx-auto max-w-7xl px-4 pt-11 sm:px-6 md:pt-16">
             {/* Dateline: a campus-paper colophon. */}
             <div
               className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 animate-fade-up"
