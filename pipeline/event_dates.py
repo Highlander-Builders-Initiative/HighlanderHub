@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import re
-from datetime import datetime, time, timedelta, timezone
+from datetime import date, datetime, time, timedelta, timezone
 from typing import Any, Iterator
 from zoneinfo import ZoneInfo
 
@@ -45,7 +45,7 @@ _OCR_DATE_RE = re.compile(
 )
 
 _OCR_DAY_MONTH_RE = re.compile(
-    r"\b(\d{1,2})(?:st|nd|rd|th)?\s+(" + "|".join(_MONTHS) + r")\b",
+    r"\b(\d{1,2})(?:st|nd|rd|th)?\s+(?:of\s+)?(" + "|".join(_MONTHS) + r")\b",
     re.IGNORECASE,
 )
 
@@ -254,6 +254,36 @@ def evidence_dates(text: str) -> set[tuple[int, int]]:
         if _is_calendar_day(month, day)
         and (form is not _NUMERIC_BARE or _bare_date_is_corroborated(text, span))
     }
+
+
+def weekday_range_dates(text: str, *, year: int) -> dict[tuple[int, int], set[int]]:
+    """Days in short, consistent weekday/date ranges and their explicit years.
+
+    The candidate year only checks weekday labels when no year was printed.
+    Keep printed years attached to every day so callers cannot accept a range
+    from another year just because its month and day match.
+    """
+    endpoint = (r"(" + _OCR_WEEKDAY_RE.pattern + r"),?\s+" + _OCR_DATE_RE.pattern
+                + r"(?:\s*,?\s*((?:19|20)\d{2})\b)?")
+    days: dict[tuple[int, int], set[int]] = {}
+    for match in re.finditer(endpoint + r"\s*(?:[-–—]|to|through|thru)\s*" + endpoint, text, re.I):
+        first_weekday, first_month, first_number, first_year, last_weekday, last_month, last_number, last_year = match.groups()
+        try:
+            first = date(int(first_year or last_year or year), _MONTHS[first_month.lower()], int(first_number))
+            last = date(int(last_year or first_year or year), _MONTHS[last_month.lower()], int(last_number))
+        except ValueError:
+            continue
+        weekdays = ("mon", "tue", "wed", "thu", "fri", "sat", "sun")
+        if (not 0 <= (last - first).days <= 6
+                or weekdays[first.weekday()] != first_weekday[:3].lower()
+                or weekdays[last.weekday()] != last_weekday[:3].lower()):
+            continue
+        for offset in range((last - first).days + 1):
+            day = first + timedelta(days=offset)
+            years = days.setdefault((day.month, day.day), set())
+            if first_year or last_year:
+                years.add(day.year)
+    return days
 
 
 def _parse_ampm_time(

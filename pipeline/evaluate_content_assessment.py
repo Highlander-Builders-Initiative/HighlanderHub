@@ -89,7 +89,7 @@ def main():
     for case in cases:
         started = time.monotonic()
         try:
-            payload = fresh_assessment(case["source"], usage) if fresh else cached_assessment(case["source"])
+            payload = fresh_assessment(case["source"], usage) if fresh else cached_assessment(case["source"]).payload
             kind = payload.get("result", {}).get("kind")
             # A reminder can name today's service session or its whole service
             # schedule. Either interpretation must produce individual sessions.

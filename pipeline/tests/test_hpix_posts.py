@@ -50,7 +50,7 @@ class HpixCollectionTests(unittest.TestCase):
         self.api.run.return_value = run()
         self.api.run_log.return_value = '\n'.join(f'INFO  Crawler: [{h}] Finished scraping posts' for h in ACCOUNTS)
         self.api.items.return_value = [row()]
-        self.known = self.enterContext(patch.object(apify, 'known_post_ids', return_value=set()))
+        self.known = self.enterContext(patch("post_archive._mirrored_media_ids", return_value=set()))
         self.enterContext(patch.object(apify, 'POST_BACKFILL_SINCE', ''))
         self.mirror = self.enterContext(patch.object(apify, 'mirror'))
         self.write = self.enterContext(patch.object(apify, 'write_post'))
@@ -58,7 +58,7 @@ class HpixCollectionTests(unittest.TestCase):
 
     def collect(self):
         apify.collect(self.api, ACCOUNTS, copy.deepcopy(STATE), NOW,
-                      limit=100, max_charge=1, timeout=300)
+                      limit=100, max_charge=1, timeout=300, archive=apify.ArchiveIndex())
 
     def status(self, handle):
         return next(r for r in self.upsert.call_args.args[1] if r['handle'] == handle)
@@ -131,7 +131,7 @@ class HpixCollectionTests(unittest.TestCase):
         self.api.run_log.return_value = '\n'.join(
             f'INFO  Crawler: [{h}] Finished scraping posts' for h in accounts)
         with self.assertRaises(apify.PartialCollection) as raised:
-            apify.collect(self.api, accounts, state, NOW, limit=100, max_charge=1, timeout=300)
+            apify.collect(self.api, accounts, state, NOW, limit=100, max_charge=1, timeout=300, archive=apify.ArchiveIndex())
         self.assertNotIsInstance(raised.exception, apify.CollectionHalted)
         self.assertEqual('incomplete', self.status('deltagamma_ucr')['last_status'])
         self.assertEqual('ok', self.status('quiet')['last_status'])
@@ -182,7 +182,7 @@ class HpixCollectionTests(unittest.TestCase):
              patch.object(apify, 'ApifyClient', return_value=api), \
              patch.object(apify.time, 'monotonic', side_effect=lambda: clock[0]):
             with self.assertRaisesRegex(apify.PartialCollection, 'detail enrichment'):
-                apify.execute_plan('test', ACCOUNTS, STATE, NOW, plan, 80)
+                apify.execute_plan('test', ACCOUNTS, STATE, NOW, plan, 80, archive=apify.ArchiveIndex())
             self.assertFalse(json.loads(self.path.read_text())['consumed'])
             self.assertFalse(json.loads(plan_path.read_text())['jobs'][0]['done'])
             self.assertFalse(plan['complete'])
@@ -191,7 +191,7 @@ class HpixCollectionTests(unittest.TestCase):
             self.mirror.assert_not_called()
             self.write.assert_not_called()
 
-            apify.execute_plan('test', ACCOUNTS, STATE, NOW, plan, 300)
+            apify.execute_plan('test', ACCOUNTS, STATE, NOW, plan, 300, archive=apify.ArchiveIndex())
 
         self.assertEqual(['POST', 'GET'], [c.args[0] for c in api.request.call_args_list])
         self.assertTrue(plan['complete'])
@@ -240,7 +240,7 @@ class HpixCollectionTests(unittest.TestCase):
             self.assertGreater(cutoff.timestamp(), repost['data']['taken_at_timestamp'])
             return []
         self.api.items.side_effect = filtered_items
-        apify.collect(self.api, ACCOUNTS, state, later, limit=100, max_charge=1, timeout=300)
+        apify.collect(self.api, ACCOUNTS, state, later, limit=100, max_charge=1, timeout=300, archive=apify.ArchiveIndex())
         self.assertEqual(later.isoformat(), self.status('club')['scanned_through'])
         self.api.details.assert_called_once()
         self.mirror.assert_not_called()
@@ -350,7 +350,7 @@ class HpixCollectionTests(unittest.TestCase):
         self.api.run.return_value = run(options={}, chargedEventCounts={
             'post_scraped': 14, 'apify-actor-start': 1})
         with self.assertRaisesRegex(apify.PartialCollection, 'charge ceiling'):
-            apify.collect(self.api, ACCOUNTS, STATE, NOW, limit=100, max_charge=.02, timeout=300)
+            apify.collect(self.api, ACCOUNTS, STATE, NOW, limit=100, max_charge=.02, timeout=300, archive=apify.ArchiveIndex())
         self.assertEqual('incomplete', self.status('club')['last_status'])
 
     def test_missing_coauthors_cannot_establish_unrelated_repost(self):
@@ -474,7 +474,7 @@ class HpixPlanRecoveryTests(unittest.TestCase):
             with patch.object(apify, 'PLAN_FILE', root / 'plan.json'), \
                  patch.object(apify, 'collect', side_effect=apify.CollectionDeferred('details pending')) as collect:
                 with self.assertRaises(apify.CollectionDeferred):
-                    apify.execute_plan('test', ACCOUNTS, STATE, NOW, plan, 300)
+                    apify.execute_plan('test', ACCOUNTS, STATE, NOW, plan, 300, archive=apify.ArchiveIndex())
             collect.assert_called_once()
             self.assertEqual(plan, apify.read_json(root / 'plan.json'))
             self.assertTrue(all(not job['done'] for job in jobs))
@@ -496,13 +496,13 @@ class HpixPlanRecoveryTests(unittest.TestCase):
             with patch.object(apify, 'PLAN_FILE', root / 'plan.json'), \
                  patch.object(apify, 'collect', side_effect=collect) as mocked:
                 with self.assertRaises(apify.CollectionHalted):
-                    apify.execute_plan('test', ACCOUNTS, STATE, NOW, plan, 300)
+                    apify.execute_plan('test', ACCOUNTS, STATE, NOW, plan, 300, archive=apify.ArchiveIndex())
                 self.assertTrue(jobs[0]['done'])
                 self.assertFalse(jobs[1]['done'])
                 self.assertEqual(1, mocked.call_count)
                 plan.pop('halt_reason')
                 with self.assertRaises(apify.PartialCollection):
-                    apify.execute_plan('test', ACCOUNTS, STATE, NOW, plan, 300)
+                    apify.execute_plan('test', ACCOUNTS, STATE, NOW, plan, 300, archive=apify.ArchiveIndex())
                 self.assertEqual(2, mocked.call_count)
                 self.assertTrue(plan['complete'])
 
