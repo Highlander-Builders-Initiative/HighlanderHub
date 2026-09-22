@@ -7,8 +7,10 @@ import { useDialogFocusTrap } from "@/components/ui/useDialogFocusTrap";
 import {
   clearEventFeedReturnState,
   getSavedReturnPath,
+  getSavedScrollPosition,
   syncEventFeedReturnHistory,
 } from "@/lib/events/feed-session";
+import { restoreToEventCard } from "@/lib/events/feed-restore";
 
 const EVENT_DETAIL_PATH = /^\/events\/[^/]+\/?$/;
 
@@ -53,13 +55,22 @@ function EventModalDialog({ children, standalone }: { children: ReactNode; stand
     syncEventFeedReturnHistory();
     const openedAt = window.location.pathname;
     return () => {
-      // The list under the overlay never unmounted, so once the URL is back on
-      // it the return-scroll marker the card saved is spent; left behind, it
-      // would yank a later fresh visit to that card. A cleanup on the same path
-      // (StrictMode remount) keeps it.
-      // Hard loads must keep the marker until the returning feed restores
-      // its loaded pages and scroll position.
-      if (!standalone && window.location.pathname !== openedAt) clearEventFeedReturnState();
+      // A mounted feed can still reflow while covered (e.g. off-screen cards
+      // finish layout). Restore its card anchor after the scroll lock releases,
+      // before spending the marker. Hard loads use the feed's mount restore.
+      if (standalone || window.location.pathname === openedAt) return;
+      const saved = getSavedScrollPosition();
+      requestAnimationFrame(() => {
+        if (!saved || saved.path !== `${window.location.pathname}${window.location.search}`) return;
+        const root = document.documentElement;
+        const previousBehavior = root.style.scrollBehavior;
+        root.style.scrollBehavior = "auto";
+        if (!saved.eventId || !restoreToEventCard(saved.eventId, saved.eventTop)) {
+          (document.scrollingElement ?? root).scrollTop = saved.scrollY;
+        }
+        root.style.scrollBehavior = previousBehavior;
+        clearEventFeedReturnState();
+      });
     };
   }, [standalone]);
 
