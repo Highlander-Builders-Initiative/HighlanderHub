@@ -1,3 +1,6 @@
+import { isDeadlineKind } from "@/lib/events/content-kind";
+import type { CampusEvent } from "@/types/event";
+
 // UCR is Pacific. ISO timestamps in the DB are UTC, but the UI must group,
 // filter, and display campus-facing dates in Pacific time — otherwise
 // late-evening events drift into the next day's bucket depending on runtime TZ.
@@ -338,6 +341,23 @@ export function formatTimeRange(startIso: string, endIso?: string): string {
   const start = formatTime(startIso);
   if (!endIso) return start;
   return `${start} – ${formatTime(endIso)}`;
+}
+
+/**
+ * An event's time line. "start" is the feed card's start time ("7:00 PM");
+ * "span" is the whole span ("7:00pm – 9:00pm") for detail, share and
+ * featured. Both read "All day" for an event without clock times. A deadline's
+ * time is its cutoff (start), even at midnight; its end is only the day
+ * boundary, so it never reads as all day or as a span.
+ */
+export function eventTimeLabel(
+  event: Pick<CampusEvent, "contentKind" | "startsAt" | "endsAt">,
+  style: "start" | "span"
+): string {
+  const endsAt = isDeadlineKind(event.contentKind) ? undefined : event.endsAt;
+  if (style === "span") return formatTimeRange(event.startsAt, endsAt);
+  const { time, period } = formatTimeParts(event.startsAt);
+  return formatAllDay(event.startsAt, endsAt) ?? `${time} ${period}`;
 }
 
 export function formatUpcomingWeekLabel(count: number | null): string | null {

@@ -228,7 +228,7 @@ Type runs larger than the system's `meta` token, matched to Luma's rows; phone s
 - **Title** (`font-display` 18px (20px) `font-semibold`, `line-clamp-2`, `mt-2` below the time), underlined on hover.
 - **Hosts row** (14px (16px) `text-faint`): up to three 22px `ClubAvatar`s overlapping by 6px, each cut out from the next by a 2px canvas ring, then "By A, B & C" truncated to one line. A club without a picture shows its monogram.
 - **Location row** (same size and color): 18px pin (or video icon for online events), in the text's color, centered in the same 22px column as the first avatar, then the location truncated to one line.
-- **Tags row** (`mt-4`, about 21px from the pin to the pill edge as on Luma; wraps): pills at 13px (14px) medium, `rounded-full`, in this order:
+- **Tags row** (`mt-4`, about 21px from the pin to the pill edge as on Luma; wraps): pills at 13px (14px) medium, `rounded-full`, from `eventTags` (the detail header renders the same list at 12px), in this order:
   - `Deadline` (`DEADLINE_PILL`, the coral wash), deadlines only.
   - The category ("Academic", "Social", …), in the same `CATEGORY_PILL` wash the Topics rail uses for that category when selected, so the two read as one signal. Skipped for the Free food category, which the next pill covers.
   - `Free food` (the `free_food` wash), when `hasFreeFood` or the category is Free food.

@@ -445,7 +445,7 @@ test("motion and focus behavior have accessible fallbacks", () => {
 });
 
 test("badge colors avoid low-contrast accent text", () => {
-  const source = read("src/components/ui/CategoryBadge.tsx");
+  const source = read("src/lib/category-colors.ts");
 
   assert.doesNotMatch(source, /text-leaf/);
   assert.doesNotMatch(source, /text-coral/);
