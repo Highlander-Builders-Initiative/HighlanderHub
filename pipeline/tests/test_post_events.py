@@ -716,7 +716,7 @@ class PostIdentityTests(unittest.TestCase):
                     rows.append(row)
                 self.assertNotEqual(rows[0]["id"], rows[1]["id"])
                 self.assertEqual(rows, dedupe_event_rows(rows))
-                self.assertEqual(([], set()), plan(rows))
+                self.assertEqual(([], set(), {}), plan(rows))
 
     def test_post_identity_survives_title_and_deadline_corrections(self):
         first, _ = self.post_row()
@@ -744,9 +744,9 @@ class PostIdentityTests(unittest.TestCase):
         self.assertNotEqual(first["id"], repeated["id"])
         self.assertTrue(same_event(first, repeated))
         self.assertTrue(same_event({**first, "id": "ig_acm.ucr_20260915T2200Z"}, repeated))
-        updates, removed = plan([first, repeated])
+        updates, removed, replacements = plan([first, repeated])
         self.assertEqual(1, len(removed))
-        self.assertEqual(([], set()), plan([r for r in [first, repeated] if r["id"] not in removed]))
+        self.assertEqual(([], set(), {}), plan([r for r in [first, repeated] if r["id"] not in removed]))
 
 
     def test_unrelated_clubs_sharing_a_title_and_time_stay_separate(self):
