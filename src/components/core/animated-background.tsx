@@ -108,6 +108,10 @@ export function AnimatedBackground({
           {activeId === dataId && (
             <motion.div
               layoutId={`background-${uniqueId}`}
+              // One highlight slides; it never morphs between two. The default
+              // crossfade dims the incoming layer mid-slide, and on translucent
+              // washes that reads as a lighter shade that snaps in at the end.
+              layoutCrossfade={false}
               className={cn(
                 "absolute inset-0",
                 typeof className === "function" ? className(activeId) : className
