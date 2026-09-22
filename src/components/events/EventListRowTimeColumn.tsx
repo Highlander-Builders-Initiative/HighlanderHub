@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { formatTimeParts } from "@/lib/dates";
-import { CATEGORY_RAIL } from "@/lib/category-colors";
+import { CATEGORY_RAIL, DEADLINE_PILL } from "@/lib/category-colors";
 import { isDeadlineKind } from "@/lib/events/content-kind";
 import type { CampusEvent } from "@/types/event";
 
@@ -14,7 +14,7 @@ type EventListRowTimeColumnProps = {
 };
 
 /**
- * Shared time column for public EventCard and admin live-event rows. Deadlines
+ * Time column for admin live-event rows. Deadlines
  * carry a "Due" eyebrow so the time reads as a cutoff rather than a start.
  */
 export function EventListRowTimeColumn({
@@ -41,7 +41,7 @@ export function EventListRowTimeColumn({
       {prefix}
       {isDeadline && (
         <span
-          className={`font-mono font-semibold uppercase text-deep-coral ${
+          className={`font-mono font-semibold uppercase ${DEADLINE_PILL.text} ${
             compact
               ? "mb-0.5 text-[8px] tracking-[0.1em]"
               : "mb-1 text-[9px] tracking-[0.14em]"

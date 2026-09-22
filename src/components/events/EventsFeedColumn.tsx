@@ -9,7 +9,7 @@ import {
 } from "react";
 import type { CampusEvent } from "@/types/event";
 import type { Club } from "@/lib/clubs";
-import { formatPacificDayKey } from "@/lib/dates";
+import { formatPacificDayKey, pacificDayHeading } from "@/lib/dates";
 import type { EmptyFeedCopy } from "@/lib/events/empty-feed-copy";
 import { EventCard } from "./EventCard";
 import { ActiveFilterChips } from "./ActiveFilterChips";
@@ -78,6 +78,7 @@ export function EventsFeedColumn({
   daySectionRefs,
 }: Props) {
   const showEmptyState = dayKeys.length === 0;
+  const observedHeading = pacificDayHeading(observedDayKey, todayKey);
   const [showBackToTop, setShowBackToTop] = useState(false);
 
   useEffect(() => {
@@ -96,44 +97,14 @@ export function EventsFeedColumn({
     () =>
       dayKeys.map((day) => {
         const dayEvents = grouped.get(day)!;
-        const isToday = day === todayKey;
-        return { day, dayEvents, isToday };
+        const heading = pacificDayHeading(day, todayKey);
+        return { day, dayEvents, heading };
       }),
     [dayKeys, grouped, todayKey]
   );
 
   return (
     <div className="min-w-0 pt-6 sm:pt-8 lg:py-8">
-      {/* Back-to-top: sticky top-right of this column, fades in past the
-          fold. Sticky inside the column means it never crosses into the
-          right rail. */}
-      <div
-        aria-hidden={!showBackToTop}
-        className="pointer-events-none sticky top-4 z-30 -mb-10 flex justify-end"
-      >
-        <button
-          type="button"
-          onClick={scrollToTop}
-          aria-label="Back to top"
-          tabIndex={showBackToTop ? 0 : -1}
-          className={`interactive-focus inline-flex h-10 w-10 items-center justify-center rounded-full border border-ink/15 bg-canvas/90 text-ink shadow-card backdrop-blur transition-opacity duration-200 hover:border-ink/40 ${
-            showBackToTop ? "pointer-events-auto opacity-100" : "opacity-0"
-          }`}
-        >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="h-4 w-4"
-          >
-            <path d="M12 19V5M5 12l7-7 7 7" />
-          </svg>
-        </button>
-      </div>
-
       <header className="mb-7">
         <h1 className="font-display text-[28px] font-semibold leading-[1.05] tracking-[-0.025em] text-ink sm:text-[34px]">
           {formatPacificDayKey(todayKey)}
@@ -145,15 +116,16 @@ export function EventsFeedColumn({
         </p>
       </header>
 
-      <div
-        className="sticky z-20 -mx-4 mb-5 border-b border-white/50 bg-white/55 px-4 py-2 shadow-[0_12px_28px_rgba(15,17,21,0.06)] backdrop-blur-xl sm:-mx-6 sm:px-6 lg:-mx-0 lg:px-0 lg:shadow-none"
-        style={{ top: 0 }}
-      >
-        <div className="flex items-center gap-2 lg:gap-3">
+      {/* Filter bar: a liquid-glass capsule. From lg it floats free over the
+          feed. On phones it sits in a frosted strip that runs on into the
+          sticky day heading below (top: 56 = the strip's pt-2 + h-12), so
+          the feed never shows between the two. */}
+      <div className="sticky top-0 z-20 -mx-4 mb-5 bg-surface/80 px-4 py-2 backdrop-blur-xl sm:-mx-6 sm:px-6 lg:top-3 lg:mx-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none">
+        <div className="liquid-glass relative flex h-12 items-center gap-2 rounded-full p-1.5 lg:gap-3 lg:pl-5">
           <button
             type="button"
             onClick={onOpenMobileFilters}
-            className="interactive-focus relative inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-md border border-ink/15 bg-canvas px-3 text-[13px] font-medium text-ink transition-colors hover:border-ink lg:hidden"
+            className="interactive-focus relative inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-ink/[0.06] px-3.5 text-[13px] font-medium text-ink transition-colors hover:bg-ink/10 lg:hidden"
             aria-haspopup="dialog"
           >
             <svg
@@ -183,23 +155,46 @@ export function EventsFeedColumn({
             <>
               <span
                 aria-live="polite"
-                className="hidden shrink-0 items-baseline gap-2 whitespace-nowrap font-display text-[14px] font-semibold tracking-[-0.005em] text-ink lg:inline-flex"
+                className="hidden shrink-0 items-baseline gap-1 whitespace-nowrap font-display text-[14px] font-semibold tracking-[-0.005em] text-ink lg:inline-flex"
               >
-                {formatPacificDayKey(observedDayKey)}
-                {observedDayKey === todayKey && (
-                  <span className="font-body text-[11px] font-medium text-ink/55">
-                    Today
-                  </span>
-                )}
+                {observedHeading.label}{" "}
+                <span className="font-medium text-faint">{observedHeading.weekday}</span>
               </span>
               <span
                 aria-hidden
-                className="hidden h-4 w-px bg-ink/15 lg:inline-block"
+                className="hidden h-5 w-px bg-ink/10 lg:inline-block"
               />
             </>
           )}
 
           <EventSearchBox query={query} clubs={clubs} onQueryChange={onQueryChange} />
+
+          {/* Back to top: grows in at the capsule's end once past the fold. */}
+          <button
+            type="button"
+            onClick={scrollToTop}
+            aria-label="Back to top"
+            aria-hidden={!showBackToTop}
+            tabIndex={showBackToTop ? 0 : -1}
+            className={`interactive-focus inline-flex h-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-ink/[0.06] text-ink transition-[width,opacity,transform] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-ink/10 motion-reduce:transition-none ${
+              showBackToTop
+                ? "w-9 opacity-100"
+                : "pointer-events-none w-0 scale-75 opacity-0"
+            }`}
+          >
+            <svg
+              aria-hidden
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-4 w-4 shrink-0"
+            >
+              <path d="M12 19V5M5 12l7-7 7 7" />
+            </svg>
+          </button>
         </div>
       </div>
 
@@ -244,7 +239,7 @@ export function EventsFeedColumn({
         </div>
       )}
 
-      {daySections.map(({ day, dayEvents, isToday }) => (
+      {daySections.map(({ day, dayEvents, heading }) => (
         <div
           key={day}
           ref={(el) => {
@@ -259,15 +254,11 @@ export function EventsFeedColumn({
               else dayHeaderRefs.current.delete(day);
             }}
             data-day-key={day}
-            className="sticky z-10 -mx-4 mb-3 flex scroll-mt-24 items-baseline gap-2.5 bg-gradient-to-b from-surface via-surface/55 to-transparent px-4 py-2 font-display text-xl font-semibold tracking-[-0.02em] text-ink backdrop-blur sm:-mx-6 sm:px-6 lg:static lg:mx-0 lg:mb-4 lg:bg-none lg:px-0 lg:py-0 lg:text-lg lg:backdrop-blur-none"
-            style={{ top: 53 }}
+            className="sticky z-10 -mx-4 mb-3 flex scroll-mt-24 items-baseline gap-1.5 bg-surface/80 px-4 py-2 font-display text-xl font-semibold tracking-[-0.02em] text-ink backdrop-blur-xl after:absolute after:inset-x-4 after:bottom-0 after:h-px after:bg-ink/10 sm:-mx-6 sm:px-6 sm:after:inset-x-6 lg:static lg:mx-0 lg:mb-4 lg:bg-transparent lg:px-0 lg:py-0 lg:text-lg lg:backdrop-blur-none lg:after:hidden"
+            style={{ top: 56 }}
           >
-            {formatPacificDayKey(day)}
-            {isToday && (
-              <span className="font-body text-[12px] font-medium text-ink/55">
-                Today
-              </span>
-            )}
+            {heading.label}{" "}
+            <span className="font-medium text-faint">{heading.weekday}</span>
           </h3>
           <div className="flex flex-col gap-5 sm:gap-2.5">
             {dayEvents.map((ev) => (

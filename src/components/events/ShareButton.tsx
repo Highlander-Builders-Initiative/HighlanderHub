@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import type { CampusEvent } from "@/types/event";
-import { formatDay, formatTimeRange } from "@/lib/dates";
+import { formatDay } from "@/lib/dates";
+import { eventTimeLabel } from "@/lib/events/content-kind";
 import { shareHref } from "@/lib/events/actions";
 import { track } from "@/lib/analytics";
 
@@ -14,7 +15,7 @@ function buildPayload(event: CampusEvent) {
       ? window.location.href
       : `https://highlanderhub.app/events/${event.id}`;
   const text = [
-    `${formatDay(event.startsAt)} · ${formatTimeRange(event.startsAt, event.endsAt)}`,
+    `${formatDay(event.startsAt)} · ${eventTimeLabel(event)}`,
     event.location,
   ]
     .filter(Boolean)

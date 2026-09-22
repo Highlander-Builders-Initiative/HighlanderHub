@@ -1,17 +1,21 @@
 import type { EventCategory } from "@/types/event";
+import { CATEGORY_PILL } from "@/lib/category-colors";
+
+const pill = (category: EventCategory) =>
+  `${CATEGORY_PILL[category].highlight} ${CATEGORY_PILL[category].text}`;
 
 const CATEGORY_STYLES: Record<
   EventCategory,
   { label: string; cls: string }
 > = {
-  club: { label: "Club", cls: "bg-highlander/10 text-highlander" },
-  academic: { label: "Academic", cls: "bg-leaf/12 text-deep-leaf" },
-  social: { label: "Social", cls: "bg-coral/12 text-deep-coral" },
-  career: { label: "Career", cls: "bg-ink/10 text-ink" },
-  sports: { label: "Sports", cls: "bg-sky/12 text-deep-sky" },
-  arts: { label: "Arts", cls: "bg-plum/12 text-deep-plum" },
-  community: { label: "Community", cls: "bg-sage/15 text-deep-sage" },
-  free_food: { label: "Free Food", cls: "bg-gold/15 text-deep-gold" },
+  club: { label: "Club", cls: pill("club") },
+  academic: { label: "Academic", cls: pill("academic") },
+  social: { label: "Social", cls: pill("social") },
+  career: { label: "Career", cls: pill("career") },
+  sports: { label: "Sports", cls: pill("sports") },
+  arts: { label: "Arts", cls: pill("arts") },
+  community: { label: "Community", cls: pill("community") },
+  free_food: { label: "Free Food", cls: pill("free_food") },
 };
 
 export function CategoryBadge({

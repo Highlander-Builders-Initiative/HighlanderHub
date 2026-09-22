@@ -108,62 +108,69 @@ export function EventSearchBox({ query, clubs: allClubs, onQueryChange }: Props)
   const activeOptionId =
     activeClub ? `${listboxId}-opt-${activeClub.handle}` : undefined;
 
+  // No `relative` on the container: the dropdown anchors to the filter bar's
+  // capsule (the nearest positioned ancestor) so it spans the whole bar.
   return (
-    <div ref={containerRef} className="relative min-w-0 flex-1">
+    <div ref={containerRef} className="min-w-0 flex-1">
       <label htmlFor={inputId} className="sr-only">
         Search events and clubs
       </label>
-      <svg
-        aria-hidden="true"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="pointer-events-none absolute left-0 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
-      >
-        <circle cx="11" cy="11" r="7" />
-        <path d="m20 20-3.5-3.5" />
-      </svg>
-      <input
-        ref={inputRef}
-        id={inputId}
-        type="search"
-        value={query}
-        onChange={(e) => {
-          justSelectedRef.current = null;
-          onQueryChange(e.target.value);
-          setOpen(e.target.value.trim().length > 0);
-        }}
-        onKeyDown={onKeyDown}
-        placeholder="Search events, or pick a club"
-        autoComplete="off"
-        aria-describedby="event-filter-summary"
-        role="combobox"
-        aria-expanded={showDropdown}
-        aria-controls={listboxId}
-        aria-autocomplete="list"
-        aria-activedescendant={activeOptionId}
-        className="interactive-focus w-full border-b border-ink/15 bg-transparent py-1.5 pl-7 text-sm placeholder:text-muted focus:border-ink"
-      />
+      <div className="relative">
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="pointer-events-none absolute left-0 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
+        >
+          <circle cx="11" cy="11" r="7" />
+          <path d="m20 20-3.5-3.5" />
+        </svg>
+        <input
+          ref={inputRef}
+          id={inputId}
+          type="search"
+          value={query}
+          onChange={(e) => {
+            justSelectedRef.current = null;
+            onQueryChange(e.target.value);
+            setOpen(e.target.value.trim().length > 0);
+          }}
+          onKeyDown={onKeyDown}
+          placeholder="Search events, or pick a club"
+          autoComplete="off"
+          aria-describedby="event-filter-summary"
+          role="combobox"
+          aria-expanded={showDropdown}
+          aria-controls={listboxId}
+          aria-autocomplete="list"
+          aria-activedescendant={activeOptionId}
+          // The capsule draws the focus ring (.liquid-glass in globals.css).
+          className="h-9 w-full text-ellipsis bg-transparent pl-7 pr-2 text-sm text-ink outline-none placeholder:text-muted"
+        />
+      </div>
 
       {showDropdown && (
         <div
-          className="absolute left-0 right-0 top-full z-30 mt-2 overflow-hidden rounded-lg border border-ink/10 bg-canvas shadow-[0_18px_44px_rgba(15,17,21,0.12)]"
+          // Solid, not glass: the capsule's backdrop-filter walls off the
+          // feed, so a blur here would only ghost the cards through.
+          className="absolute inset-x-0 top-full z-30 mt-2 overflow-hidden rounded-3xl bg-canvas p-1.5 shadow-[0_0_0_1px_rgba(15,17,21,0.07),0_18px_44px_rgba(15,17,21,0.12)]"
           // Block the input's blur from firing before the row's onClick can
           // run — pointer-down on the dropdown container would otherwise
           // collapse the list mid-click.
           onMouseDown={(e) => e.preventDefault()}
         >
-          <div className="border-b border-ink/5 px-3 py-1.5 text-[12px] font-medium text-muted">
+          <div className="px-3 pb-1 pt-1.5 text-[12px] font-medium text-muted">
             Clubs
           </div>
           <ul
             id={listboxId}
             role="listbox"
             aria-label="Clubs"
-            className="max-h-[320px] overflow-y-auto py-1"
+            className="max-h-[320px] overflow-y-auto"
           >
             {clubs.map((club, idx) => {
               const isActive = idx === activeIndex;
@@ -175,8 +182,8 @@ export function EventSearchBox({ query, clubs: allClubs, onQueryChange }: Props)
                   aria-selected={isActive}
                   onMouseEnter={() => setActiveIndex(idx)}
                   onClick={() => selectClub(club)}
-                  className={`flex cursor-pointer items-center gap-3 px-3 py-2 ${
-                    isActive ? "bg-surface" : "bg-canvas"
+                  className={`flex cursor-pointer items-center gap-3 rounded-[18px] px-3 py-2 ${
+                    isActive ? "bg-ink/[0.05]" : ""
                   }`}
                 >
                   <ClubAvatar handle={club.handle} name={club.label} size={32} />

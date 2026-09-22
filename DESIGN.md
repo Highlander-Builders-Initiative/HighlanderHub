@@ -7,6 +7,7 @@ colors:
   line: "#e7e7e9"
   ink: "#0f1115"
   muted: "#6b7280"
+  faint: "#8a909a"
   deep-navy: "#1e3a8a"
   warm-gold: "#f5b400"
   citrus-coral: "#ef5d4f"
@@ -111,28 +112,29 @@ The system explicitly rejects three aesthetic families called out as anti-refere
 - Hairline-bordered surfaces; depth via 1px lifts, not shadow blooms (current state; see Elevation for direction).
 - Bricolage Grotesque carries display and body; IBM Plex Mono carries numerics. Two faces, never a third.
 - OKLCH thinking, hex frontmatter; tinted neutrals only, no pure #000.
-- Restrained color strategy: category accents at ≤10% of any surface, expressed as tinted backgrounds (`/10`–`/15`) plus a darker matched text color for AA contrast.
+- Restrained color strategy: category accents at ≤10% of any surface, expressed as bright tinted washes (18%) plus a darker matched text color for AA contrast.
 - Mobile-first: every layout is designed for a phone first, scaled out.
 - Motion is decelerating-only (ease-out-expo), no bounce, no elastic, reduced-motion honored at the root.
 
-## 2. Colors: The Quad Palette
+## 2. Colors: The Tag Palette
 
-The palette is a wide, tinted-neutral page with five accent hues used **only** as event-category signals. Neutrals carry layout; hues carry meaning.
+The palette is a wide, tinted-neutral page with seven bright accent hues used **only** as event-category signals. Neutrals carry layout; hues carry meaning.
 
-### Primary
+### Category tag palette
 
-- **Deep Navy** (#1e3a8a): The UCR-leaning accent. Used as the "Club" category color and the optional hover color on the masthead's HBI byline link. Reserved for one role, deliberately rare. Never used as a large background fill.
+Seven bright hues (the `tag` colors in `tailwind.config.ts`, mapped per category in `@/lib/category-colors`) exist as **category signals**, not decoration. Tags are bright on purpose: the earlier muted editorial hues (Iris, Forest, Sage…) read as colorless. Each hue is used as an 18% wash with a matched ring, and pairs with a darker `-ink` for its text (≥4.9:1 on that wash).
 
-### Secondary (the category quintet)
-
-These four colors exist as **category signals**, not decoration. Each one has exactly one role: pair the swatch (used at 10–15% opacity for backgrounds) with the matched darker text color for AA contrast.
-
-- **Warm Gold** (#f5b400) paired with **Deep Gold** (#8a6300): "Free Food."
-- **Citrus Coral** (#ef5d4f) paired with **Deep Coral** (#b33a30): "Social" and "Arts."
-- **Forest Leaf** (#2f9e6f) paired with **Deep Leaf** (#1f6f4e): "Academic" and "Community."
-- **Clear Sky** (#3b82f6) paired with **Deep Sky** (#1d5fbf): "Sports."
+- **Blue** (#1f6bff, ink #1450d8): "Club."
+- **Violet** (#8b4dff, ink #6230e0): "Academic."
+- **Coral** (#ff5433, ink #b82c14): "Social", and the Deadline tag.
+- **Cyan** (#00b3dc, ink #006a88): "Sports."
+- **Magenta** (#e83cc8, ink #a8168f): "Arts."
+- **Green** (#1fc254, ink #0e7432): "Community."
+- **Amber** (#ffb300, ink #9a5800): "Free Food."
 
 "Career" reuses **Ink** as its category color (no third neutral is invented).
+
+The home hero's highlight words ("Free food, club nights, …") use each category's `-ink` text color. The older editorial hues (`highlander`, `leaf`, `coral`, `sky`, `gold`, `plum`, `sage` and their `deep-` pairs) remain only for admin error states, the flyer placeholder tint and the calendar heat; they are no longer category colors.
 
 ### Neutral
 
@@ -141,10 +143,11 @@ These four colors exist as **category signals**, not decoration. Each one has ex
 - **Line** (#e7e7e9): Border / divider / hairline. Used as `border-ink/10` or `border-ink/15` in the codebase.
 - **Ink** (#0f1115): Primary text. A near-black with a slight cool tint, never pure #000.
 - **Muted** (#6b7280): Secondary text, eyebrow labels, meta information.
+- **Faint** (#8a909a): The Event Card's time, hosts and location, and the weekday in the feed's day headings ("Today **Tuesday**", "Sep 24 **Thursday**"). A softer, Luma-like read at 3.2:1 on canvas, a deliberate exception to WCAG AA for that meta; everything else secondary stays Muted.
 
 ### Named Rules
 
-**The One Voice Rule.** Category color appears as a tinted background (`/10` or `/15` opacity), never as a saturated fill behind body content. Total accent coverage on any screen stays at or below 10% of the surface. Saturated category color appears in exactly three places, all at the same 6px Category Dot size: `EventCard` (leading the title), `EventsMiniCalendar` (day-cell dots), and `ActiveFilterChips` (category chip dot). One palette, three surfaces, one visual language.
+**The One Voice Rule.** Category color appears as a tinted wash (`CATEGORY_PILL`, 18% opacity), never as a saturated fill behind content. Total accent coverage on any screen stays at or below 10% of the surface. Saturated category color appears only at the 6px Category Dot size: `EventsMiniCalendar` (day-cell dots) and `ActiveFilterChips` (category chip dot). One palette, one visual language.
 
 **The Tinted-Neutral Rule.** No new pure-hex grayscale values. Every neutral tints toward the cool ink hue. If you need a step between `surface` and `line`, derive it from the existing ramp, do not invent a flat gray.
 
@@ -217,42 +220,50 @@ Outside those two flavors, if a shadow is visible enough to describe its blur ra
 
 ### Event Card (signature)
 
-Editorial listing row. Every card shares the same skeleton: a typographic **time anchor** at the left edge, an optional flyer in a fixed 4:5 slot, then the text block. A 6px colored **category dot** leads the title (see Category Dot below).
+Feed listing row, laid out like a Luma event row: text on the left, the flyer pinned at the top-right.
 
-- **Time column** (`w-16 sm:w-[68px]`, hairline `border-r` to its right): big mono digit (`font-mono text-[22px] tabular-nums`) over a small `text-[12px]` AM/PM period. The eye anchors here first.
-- **Flyer slot** (80×100 on phones, 88×110 from `sm`; optional): the flyer is pinned whole at its own shape (`FlyerPoster`), centered in the slot, 4px radius, `ring-ink/10` hairline, a quiet paper shadow. A 4:5 placeholder holds the slot while the image loads. Renders only when `event.imageUrl` is present and the image loads successfully. See The Whole-Flyer Rule.
-- **Text block** (`flex-1`, `px-4 sm:px-5`): leading 6px category dot, then the title in `font-display text-[17px] font-semibold` with `line-clamp-2`, then a meta row (`location · host · category`, optional `Free` pill in `bg-leaf/10 text-deep-leaf`). The wider right padding that makes room for the hover chevron applies only where a pointer can hover; touch screens give that width back to the title.
+Type runs larger than the system's `meta` token, matched to Luma's rows; phone sizes first, `sm+` in parentheses.
 
-Compact variant (used in calendar popouts): `text-base` time digit, `w-[52px]` time column, no flyer thumb, no category text or Free pill in the meta row. The dot stays.
+- **Time** (14px (15px), `tabular-nums text-faint`): start time as "7:00 PM". Deadlines read "Due 11:59 PM", with "Due" in `font-medium text-deep-coral`.
+- **Title** (`font-display` 18px (20px) `font-semibold`, `line-clamp-2`, `mt-2` below the time), underlined on hover.
+- **Hosts row** (14px (16px) `text-faint`): up to three 22px `ClubAvatar`s overlapping by 6px, each cut out from the next by a 2px canvas ring, then "By A, B & C" truncated to one line. A club without a picture shows its monogram.
+- **Location row** (same size and color): 18px pin (or video icon for online events), in the text's color, centered in the same 22px column as the first avatar, then the location truncated to one line.
+- **Tags row** (`mt-4`, about 21px from the pin to the pill edge as on Luma; wraps): pills at 13px (14px) medium, `rounded-full`, in this order:
+  - `Deadline` (`DEADLINE_PILL`, the coral wash), deadlines only.
+  - The category ("Academic", "Social", …), in the same `CATEGORY_PILL` wash the Topics rail uses for that category when selected, so the two read as one signal. Skipped for the Free food category, which the next pill covers.
+  - `Free food` (the `free_food` wash), when `hasFreeFood` or the category is Free food.
+  - `RSVP` (unfilled: `ring-ink/15 text-ink/70`), when `rsvpRequired`. It notes something to do before going, not a kind of event, so it carries no fill.
+- **Flyer slot** (80×100 on phones, 120×150 from `sm`; optional): the flyer is pinned whole at its own shape (`FlyerPoster`), anchored to the slot's top-right corner, 8px radius, `ring-ink/10` hairline. A 4:5 placeholder holds the slot while the image loads. See The Whole-Flyer Rule.
 
-The earlier 4px colored side-stripe rail has been retired in favor of the leading dot. See Category Dot below for the rationale.
+Padding is `p-4` / `sm:p-5` with a `gap-4` / `sm:gap-5` gutter between text and flyer. The card has no description; the detail view carries it.
+
+The time column with its 2px category rail, and before it the leading category dot, have both been retired: a reader had to decode a color to get the category, and both cost width. The category now reads as a labeled pill.
 
 **The Whole-Flyer Rule.** A flyer is never cropped to fit a box. Club posts arrive in every Instagram shape (4:5 and 3:4 portrait, 1:1, 9:16 reel covers, landscape), so each surface gives the flyer a fixed slot for rhythm and shows the flyer whole, at its own shape, inside it. The frame (radius, hairline, shadow) is drawn on the flyer itself, never on an empty crop box. `FlyerPoster` and `.flyer-poster` implement it: the slot sets `--flyer-max-w` / `--flyer-max-h`, and until the image reports its shape the poster holds a 4:5 placeholder, so space is reserved and nothing shifts. Where the flyer sits above text (the phone detail hero), a shape that arrives after first paint centers in the reserved space instead of resizing it. One exception: a wall tile fills edge to edge when the flyer is within ~8% of the tile's shape, because a trim that small cannot be seen; every other shape is pinned whole on the tile. (The earlier story-era thumbnail, a tall crop stretched to the row's height, cut the sides off every post.)
 
 ### Category Dot (signature)
 
-A 6px colored dot (`h-1.5 w-1.5 rounded-full`) is the system's per-card category signal. Used in exactly three places, always at the same size and palette:
+A 6px colored dot (`h-1.5 w-1.5 rounded-full`) is the system's category signal. Used in exactly two places, always at the same size and palette:
 
-1. **EventCard**: leads the title in the text block (`mt-1.5` to align with the title's optical center). `aria-hidden`; the meta row's category text carries the accessible signal.
-2. **EventsMiniCalendar day cells**: up to three dots at `bottom-1`, encoding which categories have events that day. A density-by-type signal.
-3. **ActiveFilterChips**: leads the category chip in the filter row above the feed.
+1. **EventsMiniCalendar day cells**: up to three dots at `bottom-1`, encoding which categories have events that day. A density-by-type signal.
+2. **ActiveFilterChips**: leads the category chip in the filter row above the feed.
 
-All three use `CATEGORY_RAIL` from `@/lib/category-colors`:
+Both use `CATEGORY_RAIL` from `@/lib/category-colors`:
 
 ```ts
-{ club: "bg-highlander", academic: "bg-leaf", social: "bg-coral",
-  career: "bg-ink", sports: "bg-sky", arts: "bg-coral",
-  community: "bg-leaf", free_food: "bg-gold" }
+{ club: "bg-tag-blue", academic: "bg-tag-violet", social: "bg-tag-coral",
+  career: "bg-ink", sports: "bg-tag-cyan", arts: "bg-tag-magenta",
+  community: "bg-tag-green", free_food: "bg-tag-amber" }
 ```
 
-The three surfaces speak the same color language: pick "Free Food" in the chip-bar and gold dots leap out of the calendar and the feed at the same time. That coupling is the whole point of the dot; do not invent a separate palette for a fourth surface.
+The two surfaces speak the same color language: pick "Free Food" in the chip-bar and gold dots leap out of the calendar at the same time. That coupling is the whole point of the dot; do not invent a separate palette for a third surface.
 
-The retired 4px side-stripe rail this replaces is documented for historical reference: the dot encodes the same category signal at a fraction of the visual weight, and no other component in the system wanted a colored side-stripe sibling. Having a single carve-out invited propagation, so the carve-out itself is gone (see the side-stripe rule under Don't).
+Event cards once carried a colored side-stripe rail, and later a dot leading the title; both are retired (see Event Card). Having a single side-stripe carve-out invited propagation, so the carve-out itself is gone (see the side-stripe rule under Don't).
 
 ### Badges (Category Pills)
 
 - **Style:** Pill (rounded-full), 10px × 4px padding (`px-2.5 py-0.5`), 12px medium weight, 0.01em tracking.
-- **Color logic:** Background uses the category color at 10–15% opacity; text uses the matched darker variant for AA contrast. The four matched pairs are documented under Colors.
+- **Color logic:** The same `CATEGORY_PILL` wash as the Event Card's tags: the category hue at 18% with its matched `-ink` text for AA contrast. The pairs are documented under Colors.
 - **Overlay variant:** When rendered over an image (flyer overlay), the pill uses `bg-white/15` glass with `backdrop-blur-sm` and white text. This is the second sanctioned glass usage.
 
 ### Inputs / Fields
@@ -263,12 +274,15 @@ The retired 4px side-stripe rail this replaces is documented for historical refe
 
 ### Sticky Filter Bar (signature)
 
-The horizontal filter bar that pins to the top of `/events` while the events grid scrolls beneath it. The site's third sanctioned glass surface (see The Three-Glass Rule).
+The search bar that pins to the top of the `/events` feed while the cards scroll beneath it: a 48px liquid-glass capsule (`rounded-full`, `h-12`), the site's third sanctioned glass surface (see The Three-Glass Rule).
 
-- **Surface:** `bg-white/55 backdrop-blur-xl` glass. The bar is intentionally translucent so the content scrolling beneath is felt, not hidden.
-- **Edge:** `border-b border-white/50` on the bottom; a soft white-tinted edge rather than the standard ink hairline, because the bar overlays content.
-- **Halo:** `shadow-[0_16px_40px_rgba(15,17,21,0.08)]` ambient halo. Large blur, low opacity, ink-tinted. The shadow is what separates the bar from the cards behind it; without it the bar would feel detached. Sanctioned under the second flavor of The Quiet-Shadow Rule.
-- **Internals:** Filter button (mobile-only, opens the filter sheet) + search input. Search input uses the minimal bottom-border-only treatment, not the standard full-bordered input style; this is intentional for in-bar inline search.
+- **Surface:** `.liquid-glass` in `globals.css`: white at 72% fading to 50% top to bottom, `blur(18px) saturate(180%)`. Clear enough that the feed is felt beneath it, saturated so a flyer's colour carries into the bar.
+- **Edge:** a 1px specular rim (the `::before`), bright white along the top and fading down the sides, over a 1px ink hairline at 7%. The rim is what reads as glass over a flyer; the hairline is what keeps the capsule visible over white cards. This rim is the one sanctioned exception to "no inner shadow" in The Hairline-Plus-Lift Rule.
+- **Halo:** `0 12px 32px` at 0.08, sanctioned under the second flavor of The Quiet-Shadow Rule.
+- **Placement:** from `lg`, the capsule floats free at `top-3`, the width of the feed column, so it lines up with the cards' edges. On phones it sits in a full-bleed `bg-surface/80 backdrop-blur-xl` strip that runs on into the sticky day heading below (`top: 56`), so the feed never shows between the two. The heading carries the same frosted fill and closes the stack with an inset `ink/10` hairline aligned to the card edges.
+- **Internals:** controls nest inside the capsule concentrically: 6px inset (`p-1.5`), 36px pills (`h-9 rounded-full bg-ink/[0.06]`). Left to right: the Filter pill (phones only, opens the filter sheet) or, from `lg`, the observed day ("Today **Tuesday**") at a 20px inset with a hairline divider; the search field; the back-to-top circle, which grows in once you're past the fold. The field has no border of its own. The capsule is the field.
+- **Focus:** the capsule takes the input's focus ring (1.5px ink at 45%, 3.3:1 on white, with a soft 5px ink halo) and firms up to 92% white while you type. The search clear button is a gray iOS-style circle.
+- **Club suggestions:** drop 8px below the capsule, full capsule width, `rounded-3xl`, with rows highlighted as concentric `rounded-[18px]` pills. Solid canvas, not glass: the capsule's backdrop-filter walls the dropdown off from the feed, so a blur there would only ghost the cards through.
 - **Do not copy** this treatment to non-sticky bars. The glass + halo is what justifies the design language; on a static bar it reads as decoration.
 
 ### Active Filter Chips (signature)
@@ -366,7 +380,7 @@ A clean horizontal message ticker used as an active separator or alert bar below
 - **Do** prefer hairline-bordered surfaces (`border-ink/10` to `border-ink/15`) over background-tinted ones for default cards and rows.
 - **Do** ease motion out only (`cubic-bezier(0.16, 1, 0.3, 1)`). Durations: 180–300ms for state, 700–800ms for entrance. Always.
 - **Do** honor `prefers-reduced-motion` on anything you add. The root `globals.css` already cancels animation duration globally; do not opt back in.
-- **Do** treat the FlyerTile (home mosaic + marquee tiles) and the EventCard (feed listing row, time-anchor + optional flyer thumb + category dot) as **the two canonical ways** to render an event. New event surfaces should use one of these two.
+- **Do** treat the FlyerTile (home mosaic + marquee tiles) and the EventCard (feed listing row: time, title, host avatars, location, tags, flyer at the right) as **the two canonical ways** to render an event. New event surfaces should use one of these two.
 - **Do** use the `.interactive-focus` global class on every interactive element. Focus is non-negotiable; this is the WCAG AA commitment from PRODUCT.md made concrete.
 - **Do** size for a phone first. Layouts target mobile breakpoints first, then expand. Touch targets ≥44×44px.
 
@@ -375,7 +389,7 @@ A clean horizontal message ticker used as an active separator or alert bar below
 - **Don't** ship the **generic SaaS landing** look. No hero-metric templates, no identical icon-heading-text card grids, no gradient text, no stock photos of diverse-people-smiling-at-laptops. If a section could land on a Y Combinator company's homepage unchanged, rework it.
 - **Don't** ship **university .edu CMS energy**. No institutional navy headers, no brochure-density link soup, no accessibility-as-checkbox afterthought. UCR.edu is not Hub.
 - **Don't** ship the **Eventbrite / Meetup transactional** look. No ad-cluttered list rows, no RSVP-button stripes, no dated marketplace chrome.
-- **Don't** use `border-left` or `border-right` greater than 1px as a colored accent on any component. No colored side-stripes anywhere. (The earlier carve-out for the Category Rail on Event Cards has been retired; the rail was replaced by the Category Dot pattern. See Category Dot under Components.)
+- **Don't** use `border-left` or `border-right` greater than 1px as a colored accent on any component. No colored side-stripes anywhere. (The earlier Category Rail on Event Cards has been retired; see Event Card under Components.)
 - **Don't** use `background-clip: text` with a gradient. Gradient text is decorative-only and never carries meaning here. Emphasis is weight, size, and color, not gradient.
 - **Don't** introduce new pure-#000 or pure-#fff values in any new code. Use `ink` (#0f1115) and `canvas` (#ffffff is a legacy carry; do not extend it into new contexts) and tint every new neutral toward the cool ink hue.
 - **Don't** apply glassmorphism (backdrop-blur, frosted surfaces) outside the three sanctioned uses: the Masthead glass variant, the image-overlay Category Pill, and the `/events` sticky filter bar. Glass is not a default surface. (**The Three-Glass Rule.**)

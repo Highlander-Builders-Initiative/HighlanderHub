@@ -60,7 +60,18 @@ test("Pacific day-key helpers do calendar math outside the browser timezone", ()
           weekday: dates.pacificWeekdayIndex("2026-05-19"),
           dayOfMonth: dates.pacificDayOfMonth("2026-05-19"),
           monthLabel: dates.formatPacificMonth("2026-05-01"),
-          dayLabel: dates.formatPacificDayKey("2026-05-19")
+          dayLabel: dates.formatPacificDayKey("2026-05-19"),
+          headings: ["2026-05-19", "2026-05-20", "2026-05-21", "2027-01-05"].map(
+            (key) => dates.pacificDayHeading(key, dates.pacificTodayKey())
+          ),
+          allDay: [
+            ["2026-09-22T07:00:00Z", "2026-09-23T07:00:00Z"],
+            ["2026-09-28T07:00:00Z", "2026-10-04T07:00:00Z"],
+            ["2026-10-31T07:00:00Z", "2026-11-02T08:00:00Z"],
+            ["2026-09-22T07:00:00Z", undefined],
+            ["2026-09-22T07:00:00Z", "2026-09-22T09:00:00Z"],
+          ].map(([start, end]) => dates.formatAllDay(start, end)),
+          range: dates.formatTimeRange("2026-09-22T07:00:00Z", "2026-09-23T07:00:00Z")
         }));
       `,
     ],
@@ -82,5 +93,15 @@ test("Pacific day-key helpers do calendar math outside the browser timezone", ()
     dayOfMonth: 19,
     monthLabel: "May 2026",
     dayLabel: "Tuesday, May 19",
+    headings: [
+      { label: "Today", weekday: "Tuesday" },
+      { label: "Tomorrow", weekday: "Wednesday" },
+      { label: "May 21", weekday: "Thursday" },
+      { label: "Jan 5, 2027", weekday: "Tuesday" },
+    ],
+    // Midnight-to-midnight Pacific is all day, across a DST change too;
+    // a midnight start without a midnight end keeps its clock time.
+    allDay: ["All day", "All day through Oct 3", "All day through Nov 1", null, null],
+    range: "All day",
   });
 });

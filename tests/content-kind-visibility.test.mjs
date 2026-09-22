@@ -60,6 +60,7 @@ test("deadlines render deadline-oriented affordances", () => {
 
   assert.match(timeColumn, /isDeadlineKind/);
   assert.match(timeColumn, />\s*Due\s*</);
+  assert.match(card, />Due </);
   assert.match(card, /Deadline/);
   assert.match(detail, /Add reminder/);
   assert.match(a11y, /Deadline:/);
