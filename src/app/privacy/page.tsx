@@ -3,7 +3,7 @@ import { LegalDocumentLayout } from "@/components/layout/LegalDocumentLayout";
 import { HBI_ABOUT_URL } from "@/lib/hbi";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy · Highlander Hub",
+  title: "Privacy Policy",
   description: "Official Privacy Policy for Highlander Hub. Details on event data aggregation and cookie policies.",
 };
 

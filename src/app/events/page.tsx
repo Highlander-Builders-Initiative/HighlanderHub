@@ -21,9 +21,9 @@ import {
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Events · Highlander Hub",
+  title: "Events",
   description:
-    "Browse and filter campus and club events at UC Riverside and around the city.",
+    "Browse and filter campus and club events at UC Riverside.",
 };
 
 type SearchParam = string | string[] | undefined;

@@ -5,6 +5,7 @@ import {
   SITE_DESCRIPTION,
   SITE_NAME,
   SITE_PREVIEW_IMAGE,
+  SITE_SOCIAL_CARD,
   SITE_TITLE,
   SITE_URL,
 } from "@/lib/seo";
@@ -42,20 +43,13 @@ export const metadata: Metadata = {
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
     url: "/",
-    images: [
-      {
-        url: SITE_PREVIEW_IMAGE,
-        width: 1250,
-        height: 1250,
-        alt: "Highlander Hub logo",
-      },
-    ],
+    images: [SITE_SOCIAL_CARD],
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
-    images: [SITE_PREVIEW_IMAGE],
+    images: [SITE_SOCIAL_CARD.url],
   },
 };
 

@@ -111,7 +111,7 @@ function EventCardComponent({ event, loadedCount }: EventCardProps) {
           {eventTimeLabel(event, "start")}
         </p>
 
-        <h3 className="mt-2 font-display text-[18px] font-semibold leading-[1.25] tracking-[-0.015em] text-ink line-clamp-2 break-words group-hover:underline group-hover:decoration-ink/30 group-hover:underline-offset-[5px] group-hover:decoration-[1.5px] sm:text-[20px]">
+        <h3 className="mt-2 font-display text-[18px] font-semibold leading-[1.25] tracking-[-0.015em] text-ink line-clamp-2 break-words sm:text-[20px]">
           {event.title}
         </h3>
 

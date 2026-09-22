@@ -3,7 +3,7 @@ import { LegalDocumentLayout } from "@/components/layout/LegalDocumentLayout";
 import { HBI_ABOUT_URL } from "@/lib/hbi";
 
 export const metadata: Metadata = {
-  title: "Terms of Service · Highlander Hub",
+  title: "Terms of Service",
   description: "Official Terms of Service for Highlander Hub. Details on user agreement, non-affiliation, and content disclaimers.",
 };
 

@@ -6,9 +6,10 @@ import { useEffect, useRef, useState } from "react";
 import { SITE_NAV_LINKS, isNavLinkActive } from "@/lib/site-nav";
 
 // Current page: ink with an underline (DESIGN.md's underline-from-active).
-// The rest sit a step quieter so the marker reads at a glance.
+// The rest sit a step quieter so the marker reads at a glance. Links sit inline
+// at every width (no menu button), each a 44px-tall touch target.
 const NAV_LINK_CLASS =
-  "interactive-focus px-1 py-2 underline-offset-[6px] decoration-2 transition-colors";
+  "interactive-focus inline-flex min-h-11 items-center px-1 underline-offset-[6px] decoration-2 transition-colors";
 const NAV_LINK_ACTIVE_CLASS = "text-ink underline";
 const NAV_LINK_IDLE_CLASS = "text-ink/60 hover:text-ink";
 
@@ -35,7 +36,6 @@ export function Masthead({
 }: MastheadProps) {
   const pathname = usePathname();
   const [hidden, setHidden] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
   const lastY = useRef(0);
   const canHide = position === "sticky" && hideOnScroll;
   const surfaceClass =
@@ -60,7 +60,6 @@ export function Masthead({
       if (Math.abs(dy) < DELTA) return;
       if (dy > 0 && y > HIDE_THRESHOLD) {
         setHidden(true);
-        setIsOpen(false); // Close dropdown when scrolling away
       } else {
         setHidden(false);
       }
@@ -70,16 +69,6 @@ export function Masthead({
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, [canHide]);
-
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth >= 768) {
-        setIsOpen(false);
-      }
-    };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -106,10 +95,9 @@ export function Masthead({
           </span>
         </Link>
 
-        {/* Desktop Navigation */}
         <nav
           aria-label="Site"
-          className={`hidden md:flex items-center gap-4 text-[13px] font-medium md:gap-5 md:text-sm ${
+          className={`flex items-center gap-4 text-[13px] font-medium md:gap-5 md:text-sm ${
             hideNavOnDesktop ? "lg:hidden" : ""
           }`}
         >
@@ -127,51 +115,7 @@ export function Masthead({
             );
           })}
         </nav>
-
-        {/* Mobile Dropdown Trigger */}
-        <button
-          type="button"
-          onClick={() => setIsOpen(!isOpen)}
-          aria-expanded={isOpen}
-          aria-label="Toggle navigation menu"
-          className="md:hidden interactive-focus flex h-10 w-10 items-center justify-center rounded-lg text-ink hover:bg-ink/5 transition-colors"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            className="h-6 w-6"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-          </svg>
-        </button>
       </div>
-
-      {/* Collapsible Mobile Menu panel */}
-      {isOpen && (
-        <div className="md:hidden border-t border-ink/10 animate-field-reveal">
-          <nav aria-label="Mobile Site" className="mx-auto max-w-7xl px-4 py-3 flex flex-col gap-1 sm:px-6">
-            {SITE_NAV_LINKS.map((link) => {
-              const active = isNavLinkActive(link.href, pathname);
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setIsOpen(false)}
-                  aria-current={active ? "page" : undefined}
-                  className={`interactive-focus block rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                    active ? "bg-surface text-ink" : "text-ink/60 hover:bg-surface hover:text-ink"
-                  }`}
-                >
-                  {link.label}
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
-      )}
     </header>
   );
 }

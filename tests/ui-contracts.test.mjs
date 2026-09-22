@@ -53,6 +53,21 @@ test("events page header uses full upcoming event totals", () => {
   // (the stat-block prose was retired during the editorial pass).
   assert.match(feedColumn, /summary\.upcomingThisWeek/);
   assert.doesNotMatch(page, /events\.length/);
+  // "This week" counts what the Week filter lists, not a rolling 7 days.
+  assert.match(data, /dayWindowRange\("week"\)/);
+  assert.doesNotMatch(data, /inSevenDays/);
+});
+
+test("home page leads from the wall and hero words into the feed", () => {
+  const homePage = read("src/app/page.tsx");
+  const highlights = read("src/components/home/hero-highlights.tsx");
+
+  assert.match(homePage, /\/events\?when=week/);
+  assert.match(homePage, /See all \$\{weekCount\} this week/);
+  assert.match(highlights, /href=\{`\/events\?cat=\$\{item\.category\}`\}/);
+  // The editors' note counts tracked accounts from the pipeline's list.
+  assert.match(homePage, /TRACKED_ACCOUNT_COUNT/);
+  assert.doesNotMatch(homePage, /instead of \d+/);
 });
 
 test("calendar loads its own month-range events outside feed pagination", () => {
@@ -275,6 +290,7 @@ test("event cards link to a detail page and stay accessible", () => {
   assert.match(source, /aria-label=/);
   assert.match(source, /alt=\{eventFlyerAlt\(event\)\}/);
   assert.match(source, /interactive-focus card-hover/);
+  assert.doesNotMatch(source, /group-hover:underline/);
   assert.doesNotMatch(source, /alt=""/);
 });
 
@@ -365,7 +381,11 @@ test("masthead keeps navigation reachable on mobile", () => {
   assert.match(source, /@\/lib\/site-nav/);
   assert.match(siteNav, /SITE_NAV_LINKS/);
   assert.match(siteNav, /isNavLinkActive/);
-  assert.match(siteNav, /href: "\/"/);
+  // No menu button: the links sit inline at every width, and the wordmark
+  // is the way home.
+  assert.doesNotMatch(source, /Toggle navigation menu/);
+  assert.match(source, /<Link href="\/"/);
+  assert.doesNotMatch(siteNav, /href: "\/",/);
   assert.match(siteNav, /href: "\/events"/);
   assert.doesNotMatch(siteNav, /saved/i);
   assert.match(siteNav, /href: "\/about"/);
@@ -466,6 +486,21 @@ test("site exposes crawler and social preview metadata", () => {
   assert.match(layout, /manifest:/);
   assert.match(layout, /SITE_PREVIEW_IMAGE/);
   assert.match(seo, /\/logo_icon\.png/);
+  assert.match(seo, /\/og-card\.jpg/);
+  assert.match(layout, /images: \[SITE_SOCIAL_CARD\]/);
+  assert.match(layout, /card: "summary_large_image"/);
+  assert.equal(existsSync(sourceFile("public/og-card.jpg")), true);
+  // The root title template appends the site name; routes must not repeat it.
+  assert.match(layout, /template: `%s · \$\{SITE_NAME\}`/);
+  for (const route of [
+    "src/app/about/page.tsx",
+    "src/app/events/page.tsx",
+    "src/app/events/[id]/page.tsx",
+    "src/app/privacy/page.tsx",
+    "src/app/terms/page.tsx",
+  ]) {
+    assert.doesNotMatch(read(route), /title: "[^"]*· Highlander Hub"/, route);
+  }
 
   assert.match(eventDetail, /openGraph:/);
   assert.match(eventDetail, /twitter:/);

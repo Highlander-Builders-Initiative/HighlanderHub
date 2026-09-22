@@ -6,7 +6,8 @@ import { FlyerMarquee } from "@/components/home/FlyerMarquee";
 import { CampusSkyline } from "@/components/home/CampusSkyline";
 import { HeroHighlightCopy } from "@/components/home/hero-highlights";
 import { HbiLink } from "@/components/analytics/HbiLink";
-import { HBI_ABOUT_URL } from "@/lib/hbi";
+import { HBI_ABOUT_URL, HBI_INSTAGRAM_URL } from "@/lib/hbi";
+import { TRACKED_ACCOUNT_COUNT } from "@/lib/clubs";
 import { getEvents, getEventsSummary } from "@/lib/events";
 import {
   formatPacificDayKey,
@@ -31,6 +32,13 @@ export default async function HomePage() {
   const weekLabel = formatUpcomingWeekLabel(
     summary?.upcomingThisWeek ?? null
   );
+  // The wall is a preview; this is the way on to the full week. The count is
+  // the Week filter's own, so the number matches the list it opens.
+  const weekCount = summary?.upcomingThisWeek ?? 0;
+  const seeAll =
+    weekCount > 1
+      ? { href: "/events?when=week", label: `See all ${weekCount} this week` }
+      : { href: "/events", label: "See all events" };
 
   return (
     <main className="min-h-screen bg-canvas">
@@ -108,12 +116,18 @@ export default async function HomePage() {
 
         {/* The wall: a full-bleed, self-scrolling strip of real flyers. */}
         <div
-          className="pt-7 pb-12 animate-fade-up md:pt-9 md:pb-16"
+          className="pt-4 pb-12 animate-fade-up md:pt-6 md:pb-16"
           style={{ animationDelay: "300ms" }}
         >
-          <p className="mx-auto mb-4 max-w-7xl px-4 text-[13px] text-muted sm:px-6">
-            Now on the wall
-          </p>
+          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
+            <p className="text-[13px] text-muted">Now on the wall</p>
+            <Link
+              href={seeAll.href}
+              className="interactive-focus inline-flex min-h-11 items-center text-[13px] font-medium text-ink underline decoration-ink/25 underline-offset-4 transition-colors hover:decoration-ink"
+            >
+              {seeAll.label}
+            </Link>
+          </div>
           <FlyerMarquee events={events} />
         </div>
       </section>
@@ -129,11 +143,26 @@ export default async function HomePage() {
           >
             Note from the editors
           </p>
-          <p className="text-[18px] leading-[1.5] text-ink sm:text-[20px] md:col-span-8 md:col-start-5 md:text-[22px]">
-            We pull listings from club Instagram posts.
-            One page instead of 840
-            accounts to follow.
-          </p>
+          <div className="md:col-span-8 md:col-start-5">
+            <p className="text-[18px] leading-[1.5] text-ink sm:text-[20px] md:text-[22px]">
+              We pull listings from club Instagram posts. One page instead of{" "}
+              {TRACKED_ACCOUNT_COUNT.toLocaleString("en-US")} accounts to
+              follow.
+            </p>
+            <p className="mt-5 text-[15px] leading-relaxed text-muted sm:text-base">
+              Run a club? Keep posting on Instagram like you already do. If
+              we&rsquo;re missing you, DM{" "}
+              <HbiLink
+                href={HBI_INSTAGRAM_URL}
+                location="editors_note"
+                channel="instagram"
+                className="interactive-focus font-medium text-ink underline decoration-ink/25 underline-offset-4 transition-colors hover:decoration-ink"
+              >
+                @hbi.ucr
+              </HbiLink>
+              .
+            </p>
+          </div>
         </div>
       </section>
 

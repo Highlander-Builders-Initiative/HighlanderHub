@@ -1,7 +1,7 @@
 {
   "name": "Highlander Hub",
   "short_name": "Highlander Hub",
-  "description": "Campus and club events at UC Riverside and around the city, in one clean feed.",
+  "description": "Campus and club events at UC Riverside, pulled from club Instagram posts onto one page.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

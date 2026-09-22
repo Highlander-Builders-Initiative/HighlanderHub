@@ -1,4 +1,5 @@
 import { Fragment } from "react";
+import Link from "next/link";
 import { CATEGORY_PILL } from "@/lib/category-colors";
 import type { EventCategory } from "@/types/event";
 
@@ -12,15 +13,21 @@ const HERO_HIGHLIGHTS: { label: string; category: EventCategory }[] = [
   { label: "career fairs", category: "career" },
 ];
 
+/** Each word opens the feed filtered to its category. The hairline underline
+ *  marks them as links without leaning on color alone; it takes the word's
+ *  color on hover. */
 export function HeroHighlightCopy() {
   return (
     <>
       {HERO_HIGHLIGHTS.map((item, index) => (
         <Fragment key={item.label}>
           {index > 0 ? ", " : null}
-          <span className={`font-medium ${CATEGORY_PILL[item.category].text}`}>
+          <Link
+            href={`/events?cat=${item.category}`}
+            className={`interactive-focus font-medium underline decoration-ink/20 decoration-1 underline-offset-[5px] transition-colors hover:decoration-current ${CATEGORY_PILL[item.category].text}`}
+          >
             {item.label}
-          </span>
+          </Link>
         </Fragment>
       ))}
       . Everything happening on campus, pulled into one place you can actually

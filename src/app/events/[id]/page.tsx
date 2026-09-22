@@ -4,7 +4,7 @@ import {
   EventDetailView,
 } from "@/components/events/EventDetailView";
 import { getEventById } from "@/lib/events";
-import { SITE_NAME, SITE_PREVIEW_IMAGE, absoluteUrl } from "@/lib/seo";
+import { SITE_NAME, SITE_SOCIAL_CARD, absoluteUrl } from "@/lib/seo";
 import { normalizeHttpUrl } from "@/lib/events/validation";
 import { isPublicContentKind } from "@/lib/events/content-kind";
 import type { CampusEvent } from "@/types/event";
@@ -70,11 +70,12 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { id } = await params;
   const event = await getEventById(id);
-  if (!event) return { title: "Event not found · Highlander Hub" };
+  if (!event) return { title: "Event not found" };
   const title = event.title;
   const description = event.description.slice(0, 160);
   const url = `/events/${event.id}`;
-  const image = event.imageUrl ?? SITE_PREVIEW_IMAGE;
+  // No flyer: the site card stands in, at the same large size.
+  const image = event.imageUrl ?? SITE_SOCIAL_CARD.url;
 
   return {
     title,
@@ -96,7 +97,7 @@ export async function generateMetadata({
       ],
     },
     twitter: {
-      card: event.imageUrl ? "summary_large_image" : "summary",
+      card: "summary_large_image",
       title,
       description,
       images: [absoluteUrl(image)],
