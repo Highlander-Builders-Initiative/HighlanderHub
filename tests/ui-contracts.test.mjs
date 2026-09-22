@@ -376,8 +376,8 @@ test("masthead keeps navigation reachable on mobile", () => {
   assert.match(source, /variant = "glass"/);
   assert.match(eventsPage, /<Masthead position="static" variant="solid" \/>/);
   assert.doesNotMatch(eventsPage, /hideOnScroll/);
-  assert.match(feedColumn, /bg-white\/55/);
-  assert.match(feedColumn, /style=\{\{ top: 0 \}\}/);
+  assert.match(feedColumn, /liquid-glass/);
+  assert.match(feedColumn, /sticky top-0/);
   assert.match(feedColumn, /backdrop-blur-xl/);
   assert.match(homePage, /<Masthead \/>/);
 });

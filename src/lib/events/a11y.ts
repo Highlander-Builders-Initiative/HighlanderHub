@@ -1,7 +1,7 @@
 import type { CampusEvent } from "@/types/event";
 import { EVENT_CATEGORY_LABELS } from "@/types/event";
 import { isDeadlineKind } from "@/lib/events/content-kind";
-import { formatTime, relativeDay } from "@/lib/dates";
+import { formatAllDay, formatTime, relativeDay } from "@/lib/dates";
 
 /** Link name for mosaic / marquee tiles (title + day, no time). */
 export function eventTileLinkLabel(event: CampusEvent): string {
@@ -14,18 +14,16 @@ export function eventFlyerAlt(event: CampusEvent): string {
 }
 
 /**
- * Link name for list / calendar rows. Leads with category because the visible
- * card carries category only as a color tint on the time column, which is
- * invisible to AT.
+ * Link name for list / calendar rows. Leads with what the card's first tag
+ * shows: Deadline, else the category.
  */
 export function eventListLinkLabel(event: CampusEvent): string {
+  const day = relativeDay(event.startsAt);
   if (isDeadlineKind(event.contentKind)) {
-    return `Deadline: ${event.title}, due ${relativeDay(event.startsAt)} at ${formatTime(
-      event.startsAt
-    )}`;
+    return `Deadline: ${event.title}, due ${day} at ${formatTime(event.startsAt)}`;
   }
+  const allDay = formatAllDay(event.startsAt, event.endsAt);
   const category = EVENT_CATEGORY_LABELS[event.category].split(" / ")[0];
-  return `${category}: ${event.title}, ${relativeDay(event.startsAt)} at ${formatTime(
-    event.startsAt
-  )}`;
+  const when = allDay ? `, ${allDay}` : ` at ${formatTime(event.startsAt)}`;
+  return `${category}: ${event.title}, ${day}${when}`;
 }

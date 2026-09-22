@@ -2,6 +2,8 @@ import {
   EVENT_CONTENT_KINDS,
   type EventContentKind,
 } from "@/lib/supabase-rows";
+import { formatTime, formatTimeRange } from "@/lib/dates";
+import type { CampusEvent } from "@/types/event";
 
 export { EVENT_CONTENT_KINDS };
 export type { EventContentKind };
@@ -53,6 +55,18 @@ export function coerceContentKind(
 
 export function isDeadlineKind(value: unknown): boolean {
   return value === "student_deadline";
+}
+
+/**
+ * A deadline's time is its cutoff (start), even at midnight; its end is only
+ * the day boundary. Anything else shows its span, including "All day".
+ */
+export function eventTimeLabel(
+  event: Pick<CampusEvent, "contentKind" | "startsAt" | "endsAt">
+): string {
+  return isDeadlineKind(event.contentKind)
+    ? formatTime(event.startsAt)
+    : formatTimeRange(event.startsAt, event.endsAt);
 }
 
 /** Kinds that represent an intake you apply to rather than a date you attend. */

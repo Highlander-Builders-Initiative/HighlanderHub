@@ -31,21 +31,22 @@ function EventRowSkeleton({ width }: { width: string }) {
   return (
     <div
       aria-hidden
-      className="flex min-h-[6rem] w-full min-w-0 overflow-hidden rounded-2xl border border-ink/10 bg-canvas shadow-card"
+      className="flex w-full min-w-0 gap-4 rounded-2xl border border-ink/10 bg-canvas p-4 shadow-card sm:gap-5 sm:p-5"
     >
-      {/* Time column */}
-      <div className="relative flex w-16 shrink-0 flex-col items-center justify-center gap-1.5 px-2 sm:w-[68px]">
-        <span aria-hidden className="pointer-events-none absolute bottom-0 right-0 top-0 w-[2px] bg-ink/10" />
-        <Bar className="h-4 w-9" />
-        <Bar className="h-2 w-5" />
+      {/* Time, title, hosts, location, tags */}
+      <div className="flex min-w-0 flex-1 flex-col">
+        <Bar className="h-3.5 w-16" />
+        <Bar className={`mt-3.5 h-5 ${width}`} />
+        <div className="mt-3.5 flex items-center gap-2">
+          <Bar className="h-[22px] w-[22px] shrink-0" />
+          <Bar className="h-3.5 w-1/3" />
+        </div>
+        <Bar className="ml-[30px] mt-3 h-3.5 w-1/2" />
+        <Bar className="mt-4 h-6 w-20" />
       </div>
 
-      {/* Text block */}
-      <div className="flex min-w-0 flex-1 flex-col justify-center gap-2 py-3 pl-4 pr-10 sm:py-3.5 sm:pl-5">
-        <Bar className={`h-4 ${width}`} />
-        <Bar className="h-3 w-1/3" />
-        <Bar className="h-3 w-1/2" />
-      </div>
+      {/* Flyer slot */}
+      <span className="block h-[100px] w-20 shrink-0 rounded-lg bg-ink/[0.05] sm:h-[150px] sm:w-[120px]" />
     </div>
   );
 }
@@ -99,12 +100,9 @@ export function EventsBrowserSkeleton() {
           </header>
 
           {/* Filter bar: same sticky shell as the live feed, controls inert. */}
-          <div
-            className="sticky z-20 -mx-4 mb-5 border-b border-white/50 bg-white/55 px-4 py-2 shadow-[0_12px_28px_rgba(15,17,21,0.06)] backdrop-blur-xl sm:-mx-6 sm:px-6 lg:-mx-0 lg:px-0 lg:shadow-none"
-            style={{ top: 0 }}
-          >
-            <div className="pointer-events-none flex items-center gap-2 lg:gap-3">
-              <span className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-md border border-ink/15 bg-canvas px-3 text-[13px] font-medium text-ink/50 lg:hidden">
+          <div className="sticky top-0 z-20 -mx-4 mb-5 bg-surface/80 px-4 py-2 backdrop-blur-xl sm:-mx-6 sm:px-6 lg:top-3 lg:mx-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none">
+            <div className="liquid-glass pointer-events-none relative flex h-12 items-center gap-2 rounded-full p-1.5 lg:gap-3 lg:pl-5">
+              <span className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-ink/[0.06] px-3.5 text-[13px] font-medium text-ink/50 lg:hidden">
                 <svg
                   aria-hidden
                   viewBox="0 0 24 24"
@@ -134,7 +132,7 @@ export function EventsBrowserSkeleton() {
                   <circle cx="11" cy="11" r="7" />
                   <path d="m20 20-3.5-3.5" />
                 </svg>
-                <div className="w-full border-b border-ink/15 py-1.5 pl-7 text-sm text-muted">
+                <div className="flex h-9 w-full items-center pl-7 text-sm text-muted">
                   Search events, or pick a club
                 </div>
               </div>

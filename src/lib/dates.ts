@@ -27,6 +27,12 @@ const monthDayFmt = new Intl.DateTimeFormat("en-US", {
   month: "short",
   day: "numeric",
 });
+const monthDayYearFmt = new Intl.DateTimeFormat("en-US", {
+  timeZone: CAMPUS_TZ,
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+});
 const monthAbbrFmt = new Intl.DateTimeFormat("en-US", {
   timeZone: CAMPUS_TZ,
   month: "short",
@@ -132,6 +138,22 @@ export function formatPacificDayKeyShort(dayKey: string): string {
 
 export function formatPacificMonthDay(dayKey: string): string {
   return monthDayFmt.format(dayKeyToNoonUtc(dayKey));
+}
+
+/**
+ * Feed day heading, Luma-style: "Today" / "Tomorrow" / "Sep 24" (with the
+ * year when it isn't this year's), followed by the weekday.
+ */
+export function pacificDayHeading(
+  dayKey: string,
+  todayKey: string
+): { label: string; weekday: string } {
+  const date = dayKeyToNoonUtc(dayKey);
+  const weekday = weekdayFmt.format(date);
+  if (dayKey === todayKey) return { label: "Today", weekday };
+  if (dayKey === addPacificDays(todayKey, 1)) return { label: "Tomorrow", weekday };
+  const sameYear = parseDayKey(dayKey).year === parseDayKey(todayKey).year;
+  return { label: (sameYear ? monthDayFmt : monthDayYearFmt).format(date), weekday };
 }
 
 export function formatPacificMonth(dayKey: string): string {
@@ -291,7 +313,28 @@ export function formatTimeParts(iso: string): { time: string; period: string } {
   return { time, period };
 }
 
+function isPacificMidnight(iso: string): boolean {
+  const { hour, minute, second } = pacificParts(new Date(iso));
+  return hour === 0 && minute === 0 && second === 0;
+}
+
+/**
+ * "All day", or "All day through Oct 3" when the span covers several days;
+ * null for an event with clock times. The pipeline stores an all-day
+ * occurrence as Pacific midnight to the midnight after its last day.
+ */
+export function formatAllDay(startIso: string, endIso?: string): string | null {
+  if (!endIso || Date.parse(endIso) <= Date.parse(startIso)) return null;
+  if (!isPacificMidnight(startIso) || !isPacificMidnight(endIso)) return null;
+  const lastDay = addPacificDays(pacificDayKey(endIso), -1);
+  return lastDay === pacificDayKey(startIso)
+    ? "All day"
+    : `All day through ${formatPacificMonthDay(lastDay)}`;
+}
+
 export function formatTimeRange(startIso: string, endIso?: string): string {
+  const allDay = formatAllDay(startIso, endIso);
+  if (allDay) return allDay;
   const start = formatTime(startIso);
   if (!endIso) return start;
   return `${start} – ${formatTime(endIso)}`;

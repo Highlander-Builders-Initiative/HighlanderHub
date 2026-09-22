@@ -1,8 +1,8 @@
 import { CategoryBadge } from "@/components/ui/CategoryBadge";
+import { CATEGORY_PILL, DEADLINE_PILL } from "@/lib/category-colors";
 import {
   formatDateStamp,
   formatDay,
-  formatTimeRange,
   relativeDay,
 } from "@/lib/dates";
 import { EventCalendarMenu } from "@/components/events/EventCalendarMenu";
@@ -12,7 +12,7 @@ import { EventFlyerImage } from "@/components/events/EventFlyerImage";
 import { FlyerPoster } from "@/components/events/FlyerPoster";
 import { TrackedAnchor } from "@/components/events/TrackedAnchor";
 import { normalizeHttpUrl } from "@/lib/events/validation";
-import { isDeadlineKind } from "@/lib/events/content-kind";
+import { eventTimeLabel, isDeadlineKind } from "@/lib/events/content-kind";
 import { isOnlineLocation } from "@/lib/events/location";
 import type { CampusEvent } from "@/types/event";
 
@@ -221,13 +221,13 @@ export function EventDetailView({
           >
             <div className="flex flex-wrap items-center gap-2">
               {isDeadline && (
-                <span className="inline-flex items-center rounded-full bg-coral/12 px-2.5 py-0.5 text-[12px] font-medium text-deep-coral">
+                <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[12px] font-medium ${DEADLINE_PILL.highlight} ${DEADLINE_PILL.text}`}>
                   Deadline
                 </span>
               )}
               <CategoryBadge category={event.category} />
               {event.hasFreeFood && (
-                <span className="inline-flex items-center rounded-full bg-gold/15 px-2.5 py-0.5 text-[12px] font-medium text-deep-gold">
+                <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[12px] font-medium ${CATEGORY_PILL.free_food.highlight} ${CATEGORY_PILL.free_food.text}`}>
                   Free food
                 </span>
               )}
@@ -324,7 +324,7 @@ export function EventDetailView({
                     </div>
                     <div className="mt-0.5 text-[14px] text-muted">
                       <span className="font-mono tabular-nums text-ink/85">
-                        {formatTimeRange(event.startsAt, event.endsAt)}
+                        {eventTimeLabel(event)}
                       </span>
                       {showRelative && (
                         <>
