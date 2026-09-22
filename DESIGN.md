@@ -315,30 +315,31 @@ The hero's landmark illustration: the Bell Tower standing on the horizon line
 that doubles as the hairline above the flyer wall. It replaces the abstract
 navy-and-gold hero ribbon, which was decorative without being about anywhere.
 
-- **Subject:** the 1966 carillon, drawn from the real thing: fluted corner
-  piers, a centre rib, the pierced concrete screen (an SVG `<pattern>`, not a
-  texture image), the louvred bell chamber, the projecting clock panel, the cap
-  and cornice slabs. Behind it, the Box Springs range with the Big C cut into
-  the hillside; at its feet, a Riverside grove and two palms.
-- **Clock:** the hands carry actual campus time, computed server-side per
-  request via `pacificClockHands` (see `lib/dates`). It does not tick and ships
-  no client JS. An events site whose landmark clock is wrong is a worse joke
-  than one without a clock.
-- **Composition:** two layers. The landscape band is anchored bottom and slices
-  horizontally, so the horizon lands on the hairline at any viewport width. The
-  tower is its own SVG sized in CSS, so its scale stays honest against the
-  headline instead of riding the band's slice scale. On phones the hero's
-  bottom padding clears the tower entirely; from `md` up the tower rises beside
-  the copy, which is why the copy column stays narrow.
-- **Technique:** flat fills and hairlines only. No SVG filters (they re-raster
-  on the CPU every frame and were already caught stealing budget from the
-  marquee) and no animation, so the flyer wall stays the only thing moving.
-  The tower gets its own compositor layer.
+- **Subject:** a single low-poly illustration
+  (`components/home/campus-skyline.webp`, 4000x1484, a 2x Real-ESRGAN
+  upscale of the 2000px original): the 1966 carillon against
+  a low sun, the Box Springs range with the Big C cut into the hillside, and
+  palms over a Riverside grove at its feet. The clock face is painted in, so
+  it shows a fixed time.
+- **Composition:** anchored bottom, so the tree line and the tower's base land
+  on the hairline. The band's height (`--skyline-h` on `.skyline-hero`)
+  tracks the art's ratio at laptop widths. On phones it keeps a 240px floor
+  and crops the sides, and `object-position` holds the tower in frame. Past
+  ~1940px it stops growing and crops the tree line. On phones the copy sits
+  above the art; from `md` up it overlaps the open sky at left, which is why
+  the copy column stays narrow.
+- **Seam:** the hero fades from white into the art's sky (`#fff9f2`, sampled
+  from its top edge), reaching it exactly where the image begins, so the
+  picture has no visible top edge. Re-sample if the art changes.
+- **Technique:** `next/image` with `preload` (it is the LCP) at `quality={90}`
+  (75 bands the sky and softens facet edges), decorative
+  (`alt=""`, `aria-hidden`), and no animation, so the flyer wall stays the
+  only thing moving.
 
 **The One-Landmark Rule.** This is the system's single sanctioned decorative
 illustration, and it is allowed *because* it is about a specific place. It sits
-below the hero copy, uses the existing palette at wash strength (ink hairlines,
-navy at 0.08–0.12, gold at or under 0.2), and carries no information. Do not
+behind and below the hero copy, keeps to muted, sun-washed tones so the copy
+and the flyers stay the loudest things on the page, and carries no information. Do not
 propagate it: no spot illustrations on other pages, no second landmark, no
 tower mark in the masthead or footer. If a surface wants a picture, it almost
 certainly wants a flyer instead.

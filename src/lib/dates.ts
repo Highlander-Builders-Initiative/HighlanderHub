@@ -210,30 +210,6 @@ export function formatPacificDateTimeInput(iso: string | null | undefined): stri
   }
 }
 
-/**
- * Hand angles, in degrees clockwise from 12, for the Bell Tower clock drawn on
- * the home hero. The real carillon has a clock face, so the illustration keeps
- * campus time rather than a decorative fixed pose. Computed on the server per
- * request (the page is force-dynamic), so it never ticks and ships no JS.
- */
-export function pacificClockHands(now = new Date()): {
-  hour: number;
-  minute: number;
-} {
-  try {
-    const { hour, minute } = pacificParts(now);
-    if (!Number.isFinite(hour) || !Number.isFinite(minute)) {
-      return { hour: 0, minute: 0 };
-    }
-    return {
-      hour: ((hour % 12) + minute / 60) * 30,
-      minute: minute * 6,
-    };
-  } catch {
-    return { hour: 0, minute: 0 };
-  }
-}
-
 export function parsePacificDateTimeInput(value: unknown): string | null {
   if (typeof value !== "string") return null;
 

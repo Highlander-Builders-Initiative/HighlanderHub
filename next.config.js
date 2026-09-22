@@ -91,6 +91,9 @@ const nextConfig = {
   },
   images: {
     remotePatterns: imageRemotePatterns,
+    // 75 is the default for flyers. 90 is for the hero skyline, whose flat
+    // facets and smooth sky band visibly at 75.
+    qualities: [75, 90],
   },
 };
 

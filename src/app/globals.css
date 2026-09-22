@@ -156,37 +156,49 @@ body {
   transform: translateY(0);
 }
 
-/* ----- Campus skyline (hero landmark graphic) -----
-   The Bell Tower, the Box Springs ridge, and the tree line that stands on the
-   hero's bottom hairline. Isolated to its own paint layer so it can never
-   force work on the FlyerMarquee scrolling directly beneath it. Nothing in
-   here animates: the wall below is the only thing in motion. */
-.skyline-root {
-  height: clamp(112px, 13vw, 224px);
-  isolation: isolate;
-}
+/* ----- Campus skyline (hero illustration) -----
+   The Bell Tower scene that stands on the hero's bottom hairline.
 
-/* The low Riverside sun the tower stands against. A CSS radial, not an SVG
-   gradient, so it keeps its shape independently of either viewBox. */
-.skyline-sun {
-  position: absolute;
-  right: -10%;
-  bottom: -58%;
-  width: min(880px, 86%);
-  aspect-ratio: 1;
-  background: radial-gradient(
-    circle at 50% 50%,
-    rgba(201, 132, 41, 0.2) 0%,
-    rgba(201, 132, 41, 0.11) 36%,
-    rgba(201, 132, 41, 0.03) 58%,
-    rgba(201, 132, 41, 0) 70%
+   --skyline-h is the illustration band's height. It tracks the art's 2000:742
+   ratio (37.1vw), so the whole scene shows at laptop widths. The floor keeps
+   the tower legible on phones, where the sides crop instead. The ceiling
+   stops ultra-wide screens from pushing the wall below the fold, where the
+   tree line crops instead.
+
+   The hero fades from the page's white into the art's sky colour (#fff9f2,
+   sampled from its top edge), arriving exactly where the image begins, so
+   the picture has no visible top edge. */
+.skyline-hero {
+  --skyline-h: clamp(240px, 37.1vw, 720px);
+  background: linear-gradient(
+    to bottom,
+    #ffffff 0,
+    #fff9f2 calc(100% - var(--skyline-h))
   );
 }
 
-/* Promote the tower to its own compositor layer: it is the busiest raster in
-   the hero (a pattern fill over ~500 units of shaft). */
-.skyline-tower {
-  transform: translateZ(0);
+/* Phones: the copy sits above the art. Only the button, at the left, overlaps
+   its sky, which clears both the tower and the ridge there. */
+.skyline-copy {
+  padding-bottom: calc(var(--skyline-h) - 64px);
+}
+
+/* md+: the copy overlaps the art's open sky at left, clearing the ridge. The
+   min-height keeps the tower's top below the dateline on wide screens. */
+@media (min-width: 768px) {
+  .skyline-hero {
+    min-height: calc(var(--skyline-h) + 100px);
+  }
+  .skyline-copy {
+    padding-bottom: calc(var(--skyline-h) * 0.36);
+  }
+}
+
+/* Its own paint layer, so it can never force work on the FlyerMarquee
+   scrolling directly beneath it. */
+.skyline-root {
+  height: var(--skyline-h);
+  isolation: isolate;
 }
 
 /* ----- Whole-flyer poster -----
