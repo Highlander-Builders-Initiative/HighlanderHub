@@ -13,6 +13,7 @@ import { FlyerPoster } from "@/components/events/FlyerPoster";
 import { TrackedAnchor } from "@/components/events/TrackedAnchor";
 import { normalizeHttpUrl } from "@/lib/events/validation";
 import { isDeadlineKind } from "@/lib/events/content-kind";
+import { isOnlineLocation } from "@/lib/events/location";
 import type { CampusEvent } from "@/types/event";
 
 /**
@@ -91,6 +92,23 @@ export function LocationPinIcon() {
     >
       <path d="M12 21s-7-7.5-7-12a7 7 0 1 1 14 0c0 4.5-7 12-7 12Z" />
       <circle cx="12" cy="9" r="2.5" />
+    </svg>
+  );
+}
+
+export function VideoCallIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-[18px] w-[18px] text-muted"
+    >
+      <rect x="2.5" y="6" width="13.5" height="12" rx="2.5" />
+      <path d="m16 10.5 4.4-2.9a.6.6 0 0 1 .9.5v7.8a.6.6 0 0 1-.9.5L16 13.5" />
     </svg>
   );
 }
@@ -323,7 +341,11 @@ export function EventDetailView({
                 {event.location?.trim() ? (
                   <div className="flex items-center gap-3 md:gap-4">
                     <div aria-hidden className={EVENT_DETAIL_TILE_CLASS}>
-                      <LocationPinIcon />
+                      {isOnlineLocation(event.location) ? (
+                        <VideoCallIcon />
+                      ) : (
+                        <LocationPinIcon />
+                      )}
                     </div>
                     <div className="min-w-0">
                       <div className="text-[15px] text-ink">{event.location}</div>
