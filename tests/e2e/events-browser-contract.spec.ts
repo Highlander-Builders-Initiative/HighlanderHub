@@ -1,5 +1,46 @@
 import { expect, test } from "@playwright/test";
-import { categoryFilterButton } from "./events-browser-helpers";
+import { categoryFilterButton, waitForEventsBrowserHydration } from "./events-browser-helpers";
+
+test("a newer filter selection cancels an in-flight replacement of the current URL", async ({ page }) => {
+  await page.goto("/events");
+  await waitForEventsBrowserHydration(page);
+
+  let releaseSocialResponse!: () => void;
+  const socialResponse = new Promise<void>((resolve) => {
+    releaseSocialResponse = resolve;
+  });
+  let socialRequests = 0;
+  let allRequests = 0;
+  await page.route(/\/events\?/, async (route) => {
+    const url = new URL(route.request().url());
+    if (route.request().headers().rsc !== "1") {
+      await route.continue();
+      return;
+    }
+    if (url.searchParams.get("cat") === "social") {
+      socialRequests += 1;
+      await socialResponse;
+    } else if (!url.searchParams.has("cat")) {
+      allRequests += 1;
+    }
+    await route.continue();
+  });
+
+  try {
+    await categoryFilterButton(page, "Social").click();
+    await expect.poll(() => socialRequests).toBeGreaterThan(0);
+    await categoryFilterButton(page, "All").click();
+    await expect(categoryFilterButton(page, "All")).toHaveAttribute("aria-pressed", "true");
+    // Even though the address bar still says /events, replace the pending
+    // social navigation so its response cannot leave the feed filtered.
+    await expect.poll(() => allRequests).toBeGreaterThan(0);
+  } finally {
+    releaseSocialResponse();
+  }
+  await expect(page).toHaveURL(/\/events$/);
+  await expect(page.locator("[data-event-id]")).toHaveCount(2);
+  await expect(page.locator("#event-filter-summary")).toHaveText("2 events loaded");
+});
 
 test("event filters expose accessible state and recovery actions", async ({
   page,
@@ -59,9 +100,9 @@ test("calendar shows loading state while month events refresh", async ({
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto("/events");
 
-  const calendarRail = page.locator(
-    'aside[aria-label="Calendar and time filter"]'
-  );
+  const calendarRail = page.getByRole("complementary", {
+    name: "Calendar and time filter",
+  });
   const calendarHeading = calendarRail.getByRole("heading", { level: 2 });
   await expect(calendarRail).toBeVisible();
   // The calendar follows the feed's first visible day, so it settles on the
@@ -101,9 +142,9 @@ test("calendar trailing next-month days load that month before jumping", async (
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto("/events");
 
-  const calendarRail = page.locator(
-    'aside[aria-label="Calendar and time filter"]'
-  );
+  const calendarRail = page.getByRole("complementary", {
+    name: "Calendar and time filter",
+  });
   const calendarHeading = calendarRail.getByRole("heading", { level: 2 });
   await expect(calendarRail).toBeVisible();
   await expect(calendarHeading).toHaveText(/may 2026/i);
@@ -166,9 +207,9 @@ test("empty adjacent-month calendar days release the pending jump", async ({
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto("/events");
 
-  const calendarRail = page.locator(
-    'aside[aria-label="Calendar and time filter"]'
-  );
+  const calendarRail = page.getByRole("complementary", {
+    name: "Calendar and time filter",
+  });
   const calendarHeading = calendarRail.getByRole("heading", { level: 2 });
   await expect(calendarRail).toBeVisible();
   await expect(calendarHeading).toHaveText(/may 2026/i);
@@ -237,9 +278,9 @@ test("calendar jumps back to a day that is already loaded", async ({ page }) => 
 
   // A month fetch finishing mid-jump re-runs the scroll effect on its own and
   // would hide the bug, so start from a settled calendar.
-  const calendarRail = page.locator(
-    'aside[aria-label="Calendar and time filter"]'
-  );
+  const calendarRail = page.getByRole("complementary", {
+    name: "Calendar and time filter",
+  });
   await expect(calendarRail.getByRole("heading", { level: 2 })).toHaveText(
     /may 2026/i
   );

@@ -72,7 +72,9 @@ test("event overlay closes back to the prior scroll position", async ({ page }) 
     page.getByLabel(/Search events/i)
   ).toBeVisible();
   await waitForNoLoadError(page);
-  await waitForEventsBrowserHydration(page);
+  // The feed remains hydrated under the overlay. Toggling filters here
+  // refetches the list and can move it before we check the restored position.
+  await expect(page.getByRole("dialog")).toHaveCount(0);
   await waitForEventTop(page, firstSavedTop);
 
   await Promise.all([
