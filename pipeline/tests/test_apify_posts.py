@@ -131,7 +131,7 @@ class CollectionTests(unittest.TestCase):
         self.path = Path(self.tmp.name) / "run.json"
         self.enterContext(patch.object(apify, "RUN_FILE", self.path))
         self.enterContext(patch.object(apify, "POST_BACKFILL_SINCE", ""))
-        self.known = self.enterContext(patch.object(apify, "known_post_ids", return_value=set()))
+        self.known = self.enterContext(patch("post_archive._mirrored_media_ids", return_value=set()))
         self.mirror = self.enterContext(patch.object(apify, "mirror"))
         self.write = self.enterContext(patch.object(apify, "write_post"))
         self.upsert = self.enterContext(patch("db.upsert_batched"))
@@ -147,6 +147,7 @@ class CollectionTests(unittest.TestCase):
                                          "started_at": NOW.isoformat(), "consumed": False}))
 
     def collect(self, **kwargs):
+        kwargs.setdefault("archive", apify.ArchiveIndex())
         apify.collect(self.api, ACCOUNTS, self.state, NOW, limit=100, max_charge=10,
                       timeout=60, **kwargs)
 
@@ -159,6 +160,40 @@ class CollectionTests(unittest.TestCase):
         self.assertEqual(["mirror", "local", "checkpoint"], calls)
         self.assertEqual(NOW.isoformat(), self.upsert.call_args.args[1][0]["scanned_through"])
         self.assertTrue(json.loads(self.path.read_text())["consumed"])
+
+    def test_shared_ids_advance_only_after_durable_archival(self):
+        archive = apify.ArchiveIndex()
+        self.mirror.side_effect = RuntimeError("database offline")
+        with self.assertRaisesRegex(RuntimeError, "database offline"):
+            self.collect(archive=archive)
+        self.assertEqual(set(), archive.missing(set()))
+        self.mirror.side_effect = None
+        self.collect(archive=archive)
+        self.assertEqual({"123"}, archive.missing(set()))
+        self.mirror.reset_mock()
+        self.collect(archive=archive)
+        self.mirror.assert_not_called()
+        self.known.assert_called_once()
+
+    def test_successful_mirror_is_remembered_even_if_local_write_fails(self):
+        archive = apify.ArchiveIndex()
+        self.write.side_effect = OSError("disk full")
+        with self.assertRaisesRegex(OSError, "disk full"):
+            self.collect(archive=archive)
+        self.assertEqual({"123"}, archive.missing(set()))
+        self.upsert.assert_not_called()
+
+    def test_failed_hydration_read_cannot_become_an_empty_collection_set(self):
+        archive = apify.ArchiveIndex()
+        self.known.side_effect = RuntimeError("database offline")
+        with patch("post_archive.iter_local_posts", return_value=[]):
+            self.assertEqual(0, apify.hydrate_local_posts(archive=archive))
+        with self.assertRaisesRegex(RuntimeError, "database offline"):
+            self.collect(archive=archive)
+        self.api.run.assert_not_called()
+        self.known.side_effect = None
+        self.collect(archive=archive)
+        self.assertEqual({"123"}, archive.missing(set()))
 
     def test_actor_date_hint_is_strictly_filtered_locally(self):
         self.api.items.return_value = [item(taken_at=1704067200)]
@@ -352,7 +387,7 @@ class PlanResumeTests(unittest.TestCase):
         self.plan = {"jobs": self.jobs, "complete": False}
 
     def execute(self):
-        apify.execute_plan("test", ACCOUNTS, STATE, NOW, self.plan, 1800)
+        apify.execute_plan("test", ACCOUNTS, STATE, NOW, self.plan, 1800, archive=apify.ArchiveIndex())
 
     def test_consumed_batch_is_not_rebilled_after_plan_write_interruption(self):
         apify.write_json(Path(self.jobs[0]["file"]), {"consumed": True, "errors": []})
@@ -434,14 +469,62 @@ class PlanResumeTests(unittest.TestCase):
         with patch.object(apify, "ApifyClient", side_effect=make_api), \
              patch.object(apify, "mirror", side_effect=mirror) as mirrored, \
              patch.object(apify, "write_post"), patch("db.upsert_batched"), \
-             patch.object(apify, "known_post_ids", side_effect=lambda: set(remote)):
-            apify.execute_plan("test", ACCOUNTS, STATE, NOW, plan, 1800)
+             patch("post_archive._mirrored_media_ids", side_effect=lambda: set(remote)):
+            apify.execute_plan("test", ACCOUNTS, STATE, NOW, plan, 1800, archive=apify.ArchiveIndex())
             jobs[0]["done"] = False
             Path(jobs[0]["file"]).unlink()
-            apify.execute_plan("test", ACCOUNTS, STATE, NOW, plan, 1800)
+            apify.execute_plan("test", ACCOUNTS, STATE, NOW, plan, 1800, archive=apify.ArchiveIndex())
         mirrored.assert_called_once()
         self.assertEqual("Original", remote["123"]["caption"])
         self.assertTrue(plan["complete"])
+
+    def test_nine_batches_and_both_hydrations_share_one_strict_id_scan(self):
+        import extract_posts
+        import post_archive
+
+        jobs = [{**self.jobs[0], "file": str(self.root / f"{i}.json")} for i in range(9)]
+        apify.write_json(apify.PLAN_FILE, {"jobs": jobs, "complete": False})
+        remote = {"999": apify.normalize(item(pk="999"), ACCOUNTS, NOW)}
+        archive = apify.ArchiveIndex()
+
+        def make_api(token, path):
+            api = Mock(run_file=path)
+            def run(payload, **kwargs):
+                apify.write_json(path, {"consumed": False, "posts_per_profile": 100,
+                                       "started_at": NOW.isoformat(),
+                                       "newer_than": payload["onlyPostsNewerThan"]})
+                return {"status": "SUCCEEDED", "defaultDatasetId": "test",
+                        "pricingInfo": {"pricingPerEvent": {"actorChargeEvents": {
+                            "apify-default-dataset-item": {"eventPriceUsd": .0003},
+                            "apify-actor-start": {"eventPriceUsd": .005}}}}}
+            api.run.side_effect = run
+            api.items.return_value = [item(pk=str(123 + int(path.stem))), item()]
+            return api
+
+        def mirror(records):
+            remote.update({record["media_id"]: record for record in records})
+
+        def rows(ids):
+            return [{"media_id": key, "record": remote[key]} for key in ids]
+
+        with patch.object(apify, "ApifyClient", side_effect=make_api) as clients, \
+             patch.object(apify, "mirror", side_effect=mirror), \
+             patch.object(apify, "load_accounts", return_value=list(ACCOUNTS.values())), \
+             patch.object(apify, "checkpoints", return_value=STATE), \
+             patch.dict(apify.os.environ, {"APIFY_TOKEN": "test"}), \
+             patch.object(post_archive, "POSTS_DIR", self.root / "posts"), \
+             patch.object(post_archive, "_mirrored_media_ids", side_effect=lambda: set(remote)) as ids, \
+             patch.object(post_archive, "_mirrored_rows", side_effect=rows) as restore, \
+             patch.object(extract_posts, "ensure_post_dirs"), patch("db.upsert_batched"):
+            apify.main(archive=archive)
+            self.assertEqual(9, clients.call_count)
+            self.assertEqual(10, len(remote))
+            # Extraction must still repair a missing file using newly saved IDs.
+            post_archive.post_path("club", "124").unlink()
+            extract_posts.extract_all(set(), archive=archive)
+            self.assertEqual(set(remote), {row["media_id"] for row in post_archive.iter_local_posts()})
+            self.assertEqual([["999"], ["124"]], [call.args[0] for call in restore.call_args_list])
+            ids.assert_called_once()
 
 
 # Captured from real runs of apify/instagram-post-scraper build 0.0.599 and from
@@ -475,7 +558,7 @@ class OfficialActorTests(unittest.TestCase):
         self.path = Path(self.tmp.name) / "run.json"
         self.enterContext(patch.object(apify, "RUN_FILE", self.path))
         self.enterContext(patch.object(apify, "POST_BACKFILL_SINCE", ""))
-        self.known = self.enterContext(patch.object(apify, "known_post_ids", return_value=set()))
+        self.known = self.enterContext(patch("post_archive._mirrored_media_ids", return_value=set()))
         self.mirror = self.enterContext(patch.object(apify, "mirror"))
         self.write = self.enterContext(patch.object(apify, "write_post"))
         self.upsert = self.enterContext(patch("db.upsert_batched"))
@@ -495,6 +578,7 @@ class OfficialActorTests(unittest.TestCase):
                                          "started_at": NOW.isoformat()}))
 
     def collect(self, **kwargs):
+        kwargs.setdefault("archive", apify.ArchiveIndex())
         apify.collect(self.api, OFFICIAL_ACCOUNTS, self.state, NOW, limit=100,
                       max_charge=10, timeout=60, cutoff="2026-09-16T23:54:59+00:00", **kwargs)
 

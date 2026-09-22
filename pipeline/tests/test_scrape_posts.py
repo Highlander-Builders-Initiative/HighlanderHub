@@ -904,7 +904,7 @@ class ArchiveRestoreTests(unittest.TestCase):
 
     def hydrate(self, client):
         with patch.dict(sys.modules, {"db": SimpleNamespace(client=client)}):
-            return post_archive.hydrate_local_posts()
+            return post_archive.hydrate_local_posts(archive=post_archive.ArchiveIndex())
 
     def test_a_lost_archive_is_restored_from_the_mirror(self):
         mirror = FakeMirror([self.mirror_row("700"),
@@ -1140,7 +1140,8 @@ class CollectionRunTests(PostArchiveTests):
         # Discovery, the refresh pass, and the extraction that follows all read
         # the archive, so the restore has to happen before any of them looks.
         self.run_main([{"handle": "acm.ucr", "instagram_user_id": 42}], {})
-        self.hydrated.assert_called_once_with()
+        self.hydrated.assert_called_once()
+        self.assertIsInstance(self.hydrated.call_args.kwargs["archive"], post_archive.ArchiveIndex)
 
     def test_a_later_run_collects_what_was_published_after_activation(self):
         scrape_posts.write_local_checkpoints({"acm.ucr": {

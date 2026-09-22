@@ -3,7 +3,7 @@ import copy
 import json
 import sys
 import unittest
-from datetime import date, datetime
+from datetime import date, datetime, time
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
@@ -29,6 +29,48 @@ def decision(src, kind="activity", role="occurrence"):
 
 
 class ContentAssessmentTests(unittest.TestCase):
+    def test_abbreviated_meridiem_requires_a_complete_token(self):
+        for text, clock in (("tomorrow at 11a", time(11)), ("at 7p", time(19)),
+                            ("at 7:30p", time(19, 30)), ("at 11 a.m.", time(11))):
+            with self.subTest(text=text):
+                self.assertTrue(assess._clock_supported(clock, text))
+        for text in ("11amazing prizes", "11apples", "11 attendees"):
+            self.assertFalse(assess._clock_supported(time(11), text))
+        self.assertFalse(assess._clock_supported(time(7, 30), "at 7:30p"))
+
+    def test_day_of_month_caption_preserves_explicit_year(self):
+        text = "Our first practice is going to be the 28th of September!"
+        self.assertTrue(assess._day_supported(date(2026, 9, 28), text, source(text)))
+        self.assertFalse(assess._day_supported(date(2026, 9, 28), text.rstrip("!") + " 2025", source(text)))
+        self.assertFalse(assess._day_supported(date(2026, 9, 29), text, source(text)))
+
+    def test_explicit_weekday_date_range_supports_its_interior_days(self):
+        text = "Welcome Week: Mon, Sept 28 – Wed, Sept 30 | 11:00 AM – 1:00 PM"
+        self.assertTrue(assess._day_supported(date(2026, 9, 29), text, source(text)))
+        for invalid in (text.replace("Mon", "Tue"), text.replace("Sept 30", "Sept 30, 2025"),
+                        "Campaign Sept 28 – Sept 30", "Mon, Sept 21 – Wed, Sept 30"):
+            with self.subTest(text=invalid):
+                self.assertFalse(assess._day_supported(date(2026, 9, 29), invalid, source(invalid)))
+        self.assertFalse(assess._day_supported(date(2026, 10, 1), text, source(text)))
+
+    def test_weekday_range_keeps_explicit_year_on_every_day(self):
+        from event_dates import weekday_range_dates
+
+        for text in ("Sun, Sept 28 – Tue, Sept 30, 2025",
+                     "Sun, Sept 28, 2025 – Tue, Sept 30"):
+            with self.subTest(text=text):
+                self.assertEqual({(9, n): {2025} for n in (28, 29, 30)},
+                                 weekday_range_dates(text, year=2026))
+                for number in (28, 29, 30):
+                    self.assertTrue(assess._day_supported(date(2025, 9, number), text, source(text)))
+                    self.assertFalse(assess._day_supported(date(2026, 9, number), text, source(text)))
+
+    def test_weekday_range_uses_existing_posted_at_window(self):
+        text = "Mon, Sept 28 – Wed, Sept 30"
+        # Both years have matching weekdays; only 2026 is near the posting date.
+        self.assertTrue(assess._day_supported(date(2026, 9, 29), text, source(text)))
+        self.assertFalse(assess._day_supported(date(2037, 9, 29), text, source(text)))
+
     def test_service_occurrences_require_operating_hours(self):
         src = source("Shop open September 15, 2026")
         result = decision(src, "service_schedule")

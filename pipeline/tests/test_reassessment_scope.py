@@ -60,7 +60,7 @@ class ReassessmentScopeTests(unittest.TestCase):
                     before = copy.deepcopy(prior)
                     with patch.object(semantic, "assess") as model:
                         stats = {}
-                        self.assertIsNone(publication.make_update(src, {}, {}, prior, {}, NOW, stats, refresh=refresh))
+                        self.assertIsNone(publication.make_update(src, {}, {}, prior, {}, NOW, stats, refresh=refresh).update)
                         model.assert_not_called()
                     self.assertEqual({"past_sources_skipped": 1}, stats)
                     self.assertEqual(before, prior)
@@ -79,7 +79,7 @@ class ReassessmentScopeTests(unittest.TestCase):
         src["source_key"] = "instagram:post:900"
         with patch.object(semantic, "assess", return_value=decision(src)) as model:
             update = publication.make_update(src, {"media_id": "900", "handle": "club", "posted_at": src["posted_at"]},
-                                             {"status": "ok", "ocr_text": src["texts"]["ocr_text"]}, None, {}, NOW)
+                                             {"status": "ok", "ocr_text": src["texts"]["ocr_text"]}, None, {}, NOW).update
         model.assert_called_once_with(src)
         self.assertEqual(1, len(update["rows"]))
 

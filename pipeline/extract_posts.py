@@ -25,7 +25,7 @@ from image_ocr import (
     _vision_ocr,
 )
 from flyer_qr import QR_SCAN_VERSION, qr_rsvp_urls
-from post_archive import hydrate_local_posts, iter_local_posts
+from post_archive import ArchiveIndex, hydrate_local_posts, iter_local_posts
 
 log = logging.getLogger("pipeline.extract_posts")
 
@@ -36,8 +36,8 @@ EXTRACTION_VERSION = 2
 
 # Retain unsupported_media for reading legacy caches, but reopen those skips:
 # carousel length no longer prevents reading the first slide.
-# A failed post stays retryable and extraction moves on; this many failures in a
-# row means the cause is shared (Vision, network, an Instagram pause), so stop.
+# A failed post stays retryable and extraction moves on. Stop after this many
+# service failures in a row; expired image URLs do not establish an outage.
 MAX_CONSECUTIVE_FAILURES = 3
 TERMINAL_STATUSES = {"ok", "no_text", "unsupported_media", "no_media"}
 
@@ -226,6 +226,33 @@ def _cached_decision_still_applies(record: dict[str, Any], payload: Any) -> bool
     return payload.get("status") != "unsupported_media"
 
 
+def _ensure_durable_flyer(record: dict[str, Any], slide: dict[str, Any],
+                          entry: dict[str, Any], stats: Stats, *,
+                          cached_only: bool, image: bytes | None = None) -> dict[str, Any]:
+    """Complete flyer storage independently of OCR, reusing bytes when available."""
+    if cached_only or entry.get("image_url"):
+        return entry
+    recovery = image is None
+    key = str(slide.get("media_key") or record["media_id"])
+    if recovery:
+        if not slide.get("image_url"):
+            return entry
+        try:
+            image = _download_image(slide["image_url"])
+        except Exception as exc:  # noqa: BLE001 - keep usable OCR if the download fails.
+            log.warning("post flyer download failed for %s: %s", key, exc)
+            stats.bump("flyer_recovery_failed")
+            return entry
+    durable = _upload_flyer(record, key, image)
+    if not durable:
+        if recovery:
+            stats.bump("flyer_recovery_failed")
+        return entry
+    if recovery:
+        stats.bump("flyers_recovered")
+    return {**entry, "image_url": durable}
+
+
 def process_post(record: dict[str, Any], stats: Stats | None = None, *,
                  cached_only: bool = False) -> dict[str, Any]:
     """Return this post's extraction, reading only what is not already cached."""
@@ -249,19 +276,25 @@ def process_post(record: dict[str, Any], stats: Stats | None = None, *,
         else:
             if isinstance(loaded, dict):
                 cached = loaded
+    remote = None
+    if not _cached_decision_still_applies(record, cached):
+        # A durable cache can recover OCR after the local data directory is lost.
+        remote = _load_remote_cache(media_id)
+        if _cached_decision_still_applies(record, remote):
+            cached = _write_cache(media_id, remote)
     if _cached_decision_still_applies(record, cached):
         stats.bump("cache_hits")
         log.debug("extract %s: cache %s", label, cached.get("status"))
+        slides = {slide.get("media_key"): slide for slide in _readable_slides(record)}
+        images = [
+            _ensure_durable_flyer(record, slides[entry.get("media_key")], entry, stats,
+                                  cached_only=cached_only)
+            if isinstance(entry, dict) and entry.get("media_key") in slides else entry
+            for entry in cached.get("images") or []
+        ]
+        if images != (cached.get("images") or []):
+            cached = _persist(media_id, {**cached, "images": images})
         return cached
-
-    # The local cache is missing or stale. The durable one may still hold work
-    # this machine would otherwise pay for again — a lost `data/` directory, or
-    # a slide another run already read.
-    remote = _load_remote_cache(media_id)
-    if _cached_decision_still_applies(record, remote):
-        stats.bump("cache_hits")
-        log.info("extract %s: remote cache %s", label, remote.get("status"))
-        return _write_cache(media_id, remote)
 
     # A changed fingerprint invalidates the decision, never the image work:
     # slides whose media key is unchanged keep their OCR and QR results.
@@ -282,7 +315,7 @@ def process_post(record: dict[str, Any], stats: Stats | None = None, *,
         key = str(slide.get("media_key") or "")
         if not slide.get("image_url"):
             # A missing first-slide URL stays retryable; never fall back to a
-            # later slide. The next collection run refreshes the URL.
+            # later slide. Repairing a saved URL requires explicit maintenance.
             stats.bump("failed")
             log.warning("extract %s: slide %s has no image URL", label, key or slide.get("index"))
             return _persist_error(record, digest, "download",
@@ -290,17 +323,19 @@ def process_post(record: dict[str, Any], stats: Stats | None = None, *,
                                   images + list(reusable.values()))
         prior = reusable.get(key)
         if prior is not None and prior.get("qr_scan_version") == QR_SCAN_VERSION:
-            images.append({**prior, "index": slide.get("index", len(images))})
+            entry = _ensure_durable_flyer(record, slide, prior, stats, cached_only=cached_only)
+            images.append({**entry, "index": slide.get("index", len(images))})
             stats.bump("image_cache_hits")
             continue
         try:
             image = _download_image(slide.get("image_url"))
         except ImageExpired as exc:
-            # A signed URL that has aged out is refetchable: the next
-            # collection run re-signs it. Never a permanent negative.
+            # A saved URL needs explicit maintenance once it expires. Keep the
+            # failure retryable without treating it as a shared service outage.
             stats.bump("failed")
             log.warning("extract %s: slide %s URL expired: %s", label, key, exc)
-            return _persist_error(record, digest, "download", exc, images + list(reusable.values()))
+            return _persist_error(record, digest, "download", exc, images + list(reusable.values()),
+                                  counts_toward_streak=False)
         except Exception as exc:  # noqa: BLE001 - per-post isolation.
             stats.bump("failed")
             log.warning("extract %s: slide %s download failed: %s", label, key, exc)
@@ -327,11 +362,8 @@ def process_post(record: dict[str, Any], stats: Stats | None = None, *,
             "qr_scan_version": QR_SCAN_VERSION,
         }
         # Keep the first slide as the flyer even when only the caption has text.
-        if ocr_text.strip() or entry["index"] == 0:
-            durable = _upload_flyer(record, key or media_id, image)
-            if durable:
-                entry["image_url"] = durable
-        images.append(entry)
+        images.append(_ensure_durable_flyer(record, slide, entry, stats,
+                                            cached_only=cached_only, image=image))
 
     if not images:
         stats.bump("skipped")
@@ -363,6 +395,7 @@ def _persist_error(
     stage: str,
     exc: Exception,
     images: list[dict[str, Any]],
+    *, counts_toward_streak: bool = True,
 ) -> dict[str, Any]:
     """Keep a retryable failure inspectable without discarding paid work.
 
@@ -380,7 +413,8 @@ def _persist_error(
         "handle": record.get("handle"), "fingerprint": digest,
         "extraction_version": EXTRACTION_VERSION, "caption": record.get("caption"),
         "images": list(keep.values()),
-        "result": {"stage": stage, "error": f"{type(exc).__name__}: {exc}"},
+        "result": {"stage": stage, "counts_toward_streak": counts_toward_streak,
+                   "error": f"{type(exc).__name__}: {exc}"},
         "extracted_at": _utc_now(),
     })
 
@@ -406,7 +440,8 @@ def _known_handles() -> set[str] | None:
 
 
 def extract_all(handles: Iterable[str] | None = None, *,
-                cached_only: bool = False) -> tuple[list[tuple[dict, dict]], Stats]:
+                cached_only: bool = False,
+                archive: ArchiveIndex) -> tuple[list[tuple[dict, dict]], Stats]:
     """Read every archived post once. Returns (record, extraction) pairs.
 
     `handles` None leaves the roster to decide; a caller-supplied set filters
@@ -418,7 +453,7 @@ def extract_all(handles: Iterable[str] | None = None, *,
     ensure_post_dirs()
     # Extraction publishes whatever is on disk even when collection failed, so
     # it restores the archive itself rather than trusting the collector to have.
-    hydrate_local_posts()
+    hydrate_local_posts(archive=archive)
     stats = Stats()
     roster = set(handles) if handles is not None else _known_handles()
     processed: list[tuple[dict[str, Any], dict[str, Any]]] = []
@@ -437,7 +472,10 @@ def extract_all(handles: Iterable[str] | None = None, *,
                   "detail": cached.get("result") or cached.get("error")}
         stats.bump("errors")
         stats.setdefault("first_error", failed)
-        streak += 1
+        # Expiry belongs to this saved image, not the OCR/download service.
+        # It neither advances nor clears a streak of actual service failures.
+        if (cached.get("result") or {}).get("counts_toward_streak") is not False:
+            streak += 1
         if streak >= MAX_CONSECUTIVE_FAILURES:
             stats["stopped_at"] = failed
             log.error("Extraction stopped after %d failures in a row: %s", streak, failed)
@@ -459,7 +497,7 @@ def main(*, notify: bool = True, handles: Iterable[str] | None = None,
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
     )
-    processed, stats = extract_all(handles)
+    processed, stats = extract_all(handles, archive=ArchiveIndex())
     import assessed_events as publication
     from config import load_account_meta
 

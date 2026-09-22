@@ -22,7 +22,7 @@ import requests
 from hpix_contract import hpix_item, completed_profiles as hpix_completed_profiles
 
 from config import DATA_DIR, POST_BACKFILL_SINCE, load_accounts
-from post_archive import (_mirrored_media_ids as known_post_ids,
+from post_archive import (ArchiveIndex,
                           hydrate_local_posts, iso, media_key,
                           parse_instant, read_json, write_json, write_post)
 
@@ -507,7 +507,8 @@ def prepare_hpix(api, run, rows, accounts, boundaries, known, now, *, max_charge
 def collect(api: ApifyClient, accounts: dict, state: dict, now: datetime,
             *, limit: int, max_charge: float, timeout: int,
             cutoff: str | None = None,
-            account_boundaries: dict | None = None) -> None:
+            account_boundaries: dict | None = None,
+            archive: ArchiveIndex) -> None:
     from db import upsert_batched
     deadline = time.monotonic() + timeout
     boundaries = {handle: boundary(entry) for handle, entry in state.items()}
@@ -521,7 +522,7 @@ def collect(api: ApifyClient, accounts: dict, state: dict, now: datetime,
     oldest = min(boundaries.values())
     # Read strictly from durable storage before spending on a run. Losing the
     # local cache must not turn previously saved posts into editable new input.
-    known = known_post_ids()
+    archive.load()
     requested_cutoff = cutoff or iso(oldest - timedelta(seconds=1))
     # The schema accepts UTC Z, not an explicit +00:00 suffix. Measured against
     # build 0.0.599: the cutoff alone still exports (and charges for) pinned
@@ -565,13 +566,14 @@ def collect(api: ApifyClient, accounts: dict, state: dict, now: datetime,
         completed = hpix_completed_profiles(api.run_log(run["id"]))
         rows = list(source)
         # Profile error rows have no data, and override any apparent completion.
-        source, detail_info = prepare_hpix(api, run, rows, accounts, boundaries, known,
+        source, detail_info = prepare_hpix(api, run, rows, accounts, boundaries, archive,
                                           observed_at, max_charge=max_charge,
                                           timeout=max(1, int(deadline - time.monotonic())))
 
     def flush() -> None:
         if pending:
             mirror(pending)
+            archive.remember(record["media_id"] for record in pending)
             for record in pending:
                 write_post(record)
             pending.clear()
@@ -614,7 +616,7 @@ def collect(api: ApifyClient, accounts: dict, state: dict, now: datetime,
                     # still proves coverage when every result is an unrelated repost.
                     validated += 1
                     continue
-                if media_id in known or media_id in seen:
+                if media_id in archive or media_id in seen:
                     validated += 1
                     continue
                 record = normalize(item, accounts, observed_at)
@@ -639,7 +641,7 @@ def collect(api: ApifyClient, accounts: dict, state: dict, now: datetime,
                 continue
             # A saved post is a snapshot. Never refresh captions/media or
             # trigger changed-input OCR when a boundary page repeats its ID.
-            if media_id in known or media_id in seen:
+            if media_id in archive or media_id in seen:
                 continue
             # Remote first: local extraction may only see durably accepted records.
             pending.append(record)
@@ -756,7 +758,7 @@ def plan_jobs(accounts: dict, state: dict, now: datetime,
 
 
 def execute_plan(token: str, accounts: dict, state: dict, now: datetime,
-                 plan: dict, timeout: int) -> None:
+                 plan: dict, timeout: int, *, archive: ArchiveIndex) -> None:
     if plan.get("halt_reason"):
         raise CollectionHalted(plan["halt_reason"])
     deadline = time.monotonic() + timeout
@@ -788,7 +790,7 @@ def execute_plan(token: str, accounts: dict, state: dict, now: datetime,
                         {h: state[h] for h in job["handles"]}, now,
                         limit=job["limit"], max_charge=job["max_charge"], timeout=remaining,
                         cutoff=job["cutoff"],
-                        account_boundaries=job.get("boundaries"))
+                        account_boundaries=job.get("boundaries"), archive=archive)
             except CollectionDeferred:
                 # No archival/checkpoint writes or consumption occurred. Stop
                 # here so this batch gets the next invocation's fresh budget.
@@ -820,7 +822,8 @@ def execute_plan(token: str, accounts: dict, state: dict, now: datetime,
         raise PartialCollection("; ".join(errors[:10]) + "; see data/apify_plan.json")
 
 
-def main(*, resume_halted: bool = False) -> None:
+def main(*, resume_halted: bool = False, archive: ArchiveIndex | None = None) -> None:
+    archive = archive or ArchiveIndex()
     plan = read_json(PLAN_FILE) if PLAN_FILE.exists() else {}
     if plan.get("halt_reason"):
         if not resume_halted:
@@ -843,7 +846,7 @@ def main(*, resume_halted: bool = False) -> None:
         raise ValueError("Apify requires 1..4000 configured profiles")
     now = datetime.now(timezone.utc)
     state = checkpoints(sorted(accounts), now)
-    hydrate_local_posts()
+    hydrate_local_posts(archive=archive)
     if not plan or plan.get("complete"):
         legacy = read_json(RUN_FILE) if RUN_FILE.exists() else {}
         if legacy and not legacy.get("consumed"):
@@ -858,7 +861,7 @@ def main(*, resume_halted: bool = False) -> None:
         write_json(PLAN_FILE, plan)
     log.info("Apify plan: %d batches, %.2f USD total reserved ceiling", len(plan["jobs"]),
              sum(job["max_charge"] for job in plan["jobs"]))
-    execute_plan(token, accounts, state, now, plan, timeout)
+    execute_plan(token, accounts, state, now, plan, timeout, archive=archive)
 
 
 if __name__ == "__main__":

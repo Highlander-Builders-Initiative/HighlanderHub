@@ -13,6 +13,7 @@ import logging
 import re
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import NamedTuple
 
 import content_assessment as semantic
 from config import DATA_DIR, load_account_meta
@@ -24,6 +25,18 @@ CACHE_DIR = DATA_DIR / "assessments"
 # A failed call is retried next run and assessment moves on; this many in a row
 # means the model is down or the quota is spent, so stop spending calls.
 MAX_CONSECUTIVE_FAILURES = 3
+
+
+class AssessmentResult(NamedTuple):
+    """Assessment payload plus invocation provenance that is never persisted."""
+
+    payload: dict
+    produced_live: bool
+
+
+class UpdateResult(NamedTuple):
+    update: dict | None
+    produced_live: bool
 
 
 def _cache_path(source_key: str) -> Path:
@@ -78,13 +91,14 @@ def _assessment_candidates(source: dict, prior: dict | None) -> list[dict]:
 
 
 def cached_assessment(source: dict, prior: dict | None = None, stats: dict | None = None,
-                      *, refresh: bool = False, persist: bool = True) -> dict:
+                      *, refresh: bool = False, persist: bool = True) -> AssessmentResult:
     """Reuse source-matched decisions until an explicit refresh or text change.
 
     Version and model are provenance only while automatic policy invalidation
     is paused. Do not revalidate old decisions under new rules here: a small
     validator change must not silently trigger a paid archive-wide rerun.
     Newly generated/reviewed decisions still pass semantic validation.
+    The returned flag describes this invocation, separate from the saved payload.
     """
     key = source["source_key"]
     digest = semantic.fingerprint(source)
@@ -94,13 +108,13 @@ def cached_assessment(source: dict, prior: dict | None = None, stats: dict | Non
         if cached.get("status") == "complete" and isinstance(cached.get("result"), dict):
             if stats is not None:
                 stats["assessment_cache_hits"] = stats.get("assessment_cache_hits", 0) + 1
-            return cached
+            return AssessmentResult(cached, produced_live=False)
         # A refused answer is a decision about this exact text, not an outage.
         # Keep it until the text changes or a refresh is explicitly requested.
         if cached.get("status") == "error" and cached.get("retryable") is False:
             if stats is not None:
                 stats["rejections_skipped"] = stats.get("rejections_skipped", 0) + 1
-            return cached
+            return AssessmentResult(cached, produced_live=False)
     payload = {"version": semantic.VERSION, "model": semantic.MODEL, "source_hash": digest,
                "source": source, "assessed_at": datetime.now(timezone.utc).isoformat()}
     if stats is not None:
@@ -118,7 +132,7 @@ def cached_assessment(source: dict, prior: dict | None = None, stats: dict | Non
         # preserves the previous support set and retries next run.
         payload.update(status="error", error=f"{type(exc).__name__}: {exc}", retryable=True)
         log.warning("Assessment failed for %s: %s", key, payload["error"])
-    return _save_assessment(payload) if persist else payload
+    return AssessmentResult(_save_assessment(payload) if persist else payload, produced_live=True)
 
 
 def _event_relevance(row: dict, now: str) -> bool | None:
@@ -252,25 +266,42 @@ def post_rows(record: dict, cached: dict, payload: dict, meta: dict, now: str) -
 
 def make_update(source: dict, raw: dict, cached: dict | None, prior: dict | None, meta: dict,
                 now: str, stats: dict | None = None, *, refresh: bool = False,
-                persist: bool = True) -> dict | None:
+                persist: bool = True) -> UpdateResult:
     if _source_is_past(source, prior, now):
         if stats is not None:
             stats["past_sources_skipped"] = stats.get("past_sources_skipped", 0) + 1
         log.debug("Skipping finished source %s", source["source_key"])
-        return None
-    payload = cached_assessment(source, (prior or {}).get("assessment"), stats,
-                                refresh=refresh, persist=persist)
+        return UpdateResult(None, produced_live=False)
+    payload, produced_live = cached_assessment(
+        source, (prior or {}).get("assessment"), stats, refresh=refresh, persist=persist)
     try:
         rows, known = post_rows(raw, cached, payload, meta, now)
     except Exception as exc:
         payload = {**payload, "status": "error", "error": f"Mapping failed: {type(exc).__name__}: {exc}"}
         rows, known = [], set()
+    # Local cache hits still need their first durable publication. Only an
+    # identical registry decision proves that this update was already saved.
+    # Keep complete updates with historical IDs: reconciliation may still need
+    # to retire an old listing (including one whose lock was just removed).
+    result = payload.get("result") or {}
+    negative = (payload["status"] == "complete"
+                and not result.get("occurrences") and not result.get("schedule")
+                and (prior or {}).get("event_ids") == []
+                and (prior or {}).get("known_event_ids") == [])
+    refused = payload["status"] == "error" and payload.get("retryable") is False
+    if (not rows and not known and payload == (prior or {}).get("assessment")
+            and (negative or refused)):
+        if stats is not None:
+            stats["unchanged_decisions_skipped"] = stats.get("unchanged_decisions_skipped", 0) + 1
+        return UpdateResult(None, produced_live=produced_live)
     # Proposed IDs are not historical aliases. Calling a replacement "known"
     # would bypass the RPC's protection for locked/deleted legacy identities.
     # The RPC records accepted row IDs itself and merges stored source aliases.
-    return {"source_key": source["source_key"], "origin": source["origin"], "assessment": payload,
-            "rows": dedupe_event_rows(rows),
-            "known_event_ids": sorted(known - {row["id"] for row in rows})}
+    return UpdateResult({
+        "source_key": source["source_key"], "origin": source["origin"], "assessment": payload,
+        "rows": dedupe_event_rows(rows),
+        "known_event_ids": sorted(known - {row["id"] for row in rows}),
+    }, produced_live=produced_live)
 
 
 def publish(updates: list[dict]) -> dict:
@@ -366,8 +397,9 @@ def post_updates(processed: list[tuple[dict, dict]], meta: dict, now: str,
                             "assessment": {"status": "error", "error": "Post extraction failed"},
                             "rows": [], "known_event_ids": []})
         elif any(source["texts"].values()):
+            produced_live = False
             try:
-                update = make_update(source, record, cached, prior, meta, now, stats=stats)
+                update, produced_live = make_update(source, record, cached, prior, meta, now, stats=stats)
             except (Exception, SystemExit) as exc:
                 if not stop_on_error:
                     raise
@@ -375,12 +407,17 @@ def post_updates(processed: list[tuple[dict, dict]], meta: dict, now: str,
                           "assessment": {"status": "error", "retryable": True,
                                          "error": f"{type(exc).__name__}: {exc}"},
                           "rows": [], "known_event_ids": []}
+            if update is None and produced_live:
+                streak = 0
             if update is not None:
                 updates.append(update)
                 failure = update.get("assessment") or {}
                 if not (stop_on_error and failure.get("status") == "error"
                         and failure.get("retryable") is not False):
-                    streak = 0
+                    # Cached decisions say nothing about service recovery.
+                    # A fresh response (even a grounding refusal) does.
+                    if produced_live:
+                        streak = 0
                     continue
                 streak += 1
                 if streak >= MAX_CONSECUTIVE_FAILURES:
@@ -429,7 +466,7 @@ def main() -> None:
     import post_archive
     # Reassessment names a source by key, so the post it names has to be on disk
     # — restore anything this machine is missing before deciding it is unknown.
-    post_archive.hydrate_local_posts()
+    post_archive.hydrate_local_posts(archive=post_archive.ArchiveIndex())
     for record in post_archive.iter_local_posts():
         path = igposts._cache_path(str(record.get("media_id")))
         if path.exists():
@@ -460,7 +497,7 @@ def main() -> None:
             skipped += 1
             continue
         log.info("Assessing %s", key)
-        update = make_update(source, raw, cached, registry.get(key), meta, now.isoformat(),
+        update, _ = make_update(source, raw, cached, registry.get(key), meta, now.isoformat(),
                              refresh=args.refresh or args.retry_failed,
                              persist=args.apply or not args.retry_failed)
         if update is None:

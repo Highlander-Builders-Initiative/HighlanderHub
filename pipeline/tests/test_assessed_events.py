@@ -24,21 +24,33 @@ class AssessmentCacheTests(unittest.TestCase):
     def test_policy_and_model_changes_reuse_cache_but_source_edits_reassess(self):
         src = source()
         with patch.object(semantic, "assess", side_effect=lambda item: decision(item)) as model:
-            first = publication.cached_assessment(src)
-            self.assertEqual(first, publication.cached_assessment(src))
+            first = publication.cached_assessment(src).payload
+            self.assertEqual(first, publication.cached_assessment(src).payload)
             self.assertEqual(1, model.call_count)
             with patch.object(semantic, "VERSION", semantic.VERSION+1):
-                self.assertEqual(first, publication.cached_assessment(src))
+                self.assertEqual(first, publication.cached_assessment(src).payload)
             self.assertEqual(1, model.call_count)
             with patch.object(semantic, "MODEL", "changed-model"):
-                self.assertEqual(first, publication.cached_assessment(src))
+                self.assertEqual(first, publication.cached_assessment(src).payload)
             self.assertEqual(1, model.call_count)
             changed = copy.deepcopy(src)
             changed["texts"]["ocr_text"] += " Bring a notebook."
-            publication.cached_assessment(changed)
+            publication.cached_assessment(changed).payload
             self.assertEqual(2, model.call_count)
-            publication.cached_assessment(changed, refresh=True)
+            publication.cached_assessment(changed, refresh=True).payload
             self.assertEqual(3, model.call_count)
+
+    def test_live_provenance_is_per_invocation_and_not_saved_in_payload(self):
+        src = source()
+        with patch.object(semantic, "assess", return_value=decision(src)):
+            fresh = publication.cached_assessment(src)
+            reused = publication.cached_assessment(src)
+        self.assertTrue(fresh.produced_live)
+        self.assertFalse(reused.produced_live)
+        self.assertEqual(fresh.payload, reused.payload)
+        saved = json.loads(publication._cache_path(src["source_key"]).read_text())
+        self.assertEqual(fresh.payload, saved)
+        self.assertNotIn("produced_live", saved)
 
     def test_reviewed_notices_replace_cached_activity_and_produce_no_rows(self):
         cases = json.loads((Path(__file__).parent / "fixtures/content_assessment_cases.json").read_text())
@@ -55,7 +67,7 @@ class AssessmentCacheTests(unittest.TestCase):
                       "occurrences": [], "schedule": None, "use_source_occurrences": False}
             reviewed = publication.record_review(src, result, reviewer="regression review")
             with self.subTest(source_key=src["source_key"]), patch.object(semantic, "assess") as model:
-                payload = publication.cached_assessment(src, prior)
+                payload = publication.cached_assessment(src, prior).payload
                 self.assertEqual(reviewed, payload)
                 self.assertEqual(([], set()), publication.post_rows({}, {}, payload, {}, "2026-09-19T19:00:00Z"))
                 model.assert_not_called()
@@ -66,7 +78,7 @@ class AssessmentCacheTests(unittest.TestCase):
                  "source_hash":semantic.fingerprint(src), "source":src, "result":decision(src)}
         with patch.object(semantic, "assess") as model, \
              patch.object(semantic, "validate", side_effect=ValueError("New stricter rule")):
-            self.assertEqual(prior, publication.cached_assessment(src, prior))
+            self.assertEqual(prior, publication.cached_assessment(src, prior).payload)
             model.assert_not_called()
 
     def test_newer_remote_correction_wins_over_older_local_cache(self):
@@ -78,50 +90,50 @@ class AssessmentCacheTests(unittest.TestCase):
         corrected = {**old, "version": 4, "assessed_at": "2026-09-12T01:00:00+00:00",
                      "result": {**old["result"], "kind": "application", "date_role": "none", "occurrences": []}}
         with patch.object(semantic, "assess") as model:
-            self.assertEqual(corrected, publication.cached_assessment(src, corrected))
+            self.assertEqual(corrected, publication.cached_assessment(src, corrected).payload)
             model.assert_not_called()
 
 
     def test_failure_is_not_a_negative_decision_and_retries(self):
         src = source()
         with patch.object(semantic, "assess", side_effect=[RuntimeError("unavailable"), decision(src)]) as model:
-            failure = publication.cached_assessment(src)
+            failure = publication.cached_assessment(src).payload
             self.assertEqual("error", failure["status"])
             self.assertNotIn("result", failure)
-            self.assertEqual("complete", publication.cached_assessment(src)["status"])
+            self.assertEqual("complete", publication.cached_assessment(src).payload["status"])
             self.assertEqual(2, model.call_count)
 
     def test_a_refused_assessment_is_not_paid_for_again_until_something_changes(self):
         src = source()
         refusal = semantic.GroundingRejected("Evidence quote 'x' is absent from field 'ocr_text'")
         with patch.object(semantic, "assess", side_effect=refusal) as model:
-            first = publication.cached_assessment(src)
+            first = publication.cached_assessment(src).payload
             self.assertEqual("error", first["status"])
             self.assertIs(False, first["retryable"])
             stats = {}
-            self.assertEqual(first, publication.cached_assessment(src, stats=stats))
+            self.assertEqual(first, publication.cached_assessment(src, stats=stats).payload)
             self.assertEqual(1, model.call_count)
             self.assertEqual({"rejections_skipped": 1}, stats)
             # Policy/model edits no longer reopen all refusals automatically.
             with patch.object(semantic, "VERSION", semantic.VERSION + 1):
-                publication.cached_assessment(src)
+                publication.cached_assessment(src).payload
             self.assertEqual(1, model.call_count)
             with patch.object(semantic, "MODEL", "changed-model"):
-                publication.cached_assessment(src)
+                publication.cached_assessment(src).payload
             self.assertEqual(1, model.call_count)
             changed = copy.deepcopy(src)
             changed["texts"]["ocr_text"] += " Bring a notebook."
-            publication.cached_assessment(changed)
+            publication.cached_assessment(changed).payload
             self.assertEqual(2, model.call_count)
-            publication.cached_assessment(changed, refresh=True)
+            publication.cached_assessment(changed, refresh=True).payload
             self.assertEqual(3, model.call_count)
 
     def test_an_outage_stays_retryable_and_is_never_cached_as_a_refusal(self):
         src = source()
         with patch.object(semantic, "assess", side_effect=RuntimeError("unavailable")) as model:
-            failure = publication.cached_assessment(src)
+            failure = publication.cached_assessment(src).payload
             self.assertIs(True, failure["retryable"])
-            publication.cached_assessment(src)
+            publication.cached_assessment(src).payload
             self.assertEqual(2, model.call_count)
 
     def test_validation_diagnostics_survive_cache_round_trip(self):
@@ -129,21 +141,87 @@ class AssessmentCacheTests(unittest.TestCase):
         attempts = [{"response": {"kind": "activity"}, "error": "Missing source evidence"}]
         refusal = semantic.GroundingRejected("rejected", attempts=attempts)
         with patch.object(semantic, "assess", side_effect=refusal) as model:
-            saved = publication.cached_assessment(src)
+            saved = publication.cached_assessment(src).payload
             self.assertEqual(attempts, saved["validation_attempts"])
-            self.assertEqual(saved, publication.cached_assessment(src))
+            self.assertEqual(saved, publication.cached_assessment(src).payload)
             self.assertEqual(1, model.call_count)
 
     def test_reviewed_sources_survive_policy_changes_until_explicit_refresh(self):
         src = source()
         reviewed = publication.record_review(src, decision(src), reviewer="fixture review")
         with patch.object(semantic, "assess", return_value=decision(src)) as model:
-            self.assertEqual(reviewed, publication.cached_assessment(src))
+            self.assertEqual(reviewed, publication.cached_assessment(src).payload)
             model.assert_not_called()
             with patch.object(semantic, "VERSION", semantic.VERSION+1):
-                self.assertEqual(reviewed, publication.cached_assessment(src))
+                self.assertEqual(reviewed, publication.cached_assessment(src).payload)
             model.assert_not_called()
-            publication.cached_assessment(src, refresh=True)
+            publication.cached_assessment(src, refresh=True).payload
+            model.assert_called_once()
+
+    def negative_payload(self):
+        src = source("Club news")
+        return {"status": "complete", "source": src, "source_hash": semantic.fingerprint(src),
+                "assessed_at": "2026-09-11T00:00:00Z",
+                "result": {**decision(src, "announcement", "none"), "occurrences": []}}
+
+    def update(self, payload, prior, **kwargs):
+        return publication.make_update(payload["source"], {}, {}, prior, {},
+                                       "2026-09-12T00:00:00Z", **kwargs).update
+
+    def test_persisted_identical_negative_never_reaches_publication_rpc(self):
+        payload = self.negative_payload()
+        prior = {"assessment": payload, "event_ids": [], "known_event_ids": []}
+        stats = {}
+        with patch.object(semantic, "assess") as model, patch("db.client") as database:
+            update = self.update(payload, prior, stats=stats)
+            self.assertIsNone(update)
+            publication.publish([] if update is None else [update])
+        model.assert_not_called()
+        database.assert_not_called()
+        self.assertEqual(1, stats["unchanged_decisions_skipped"])
+
+    def test_local_negative_still_needs_first_publication_and_ownership_cleanup(self):
+        payload = publication._save_assessment(self.negative_payload())
+        for prior in (None, {"assessment": {"status": "error"}, "event_ids": []},
+                      {"assessment": payload, "event_ids": ["old"], "known_event_ids": ["old"]},
+                      {"assessment": payload, "event_ids": [], "known_event_ids": ["locked"]}):
+            with self.subTest(prior=prior), patch.object(semantic, "assess") as model:
+                update = self.update(payload, prior)
+                self.assertEqual(payload, update["assessment"])
+                self.assertEqual([], update["rows"])
+                model.assert_not_called()
+
+    def test_newer_negative_correction_and_explicit_refresh_are_published(self):
+        old = self.negative_payload()
+        newer = {**old, "assessed_at": "2026-09-12T00:00:00Z"}
+        publication._save_assessment(newer)
+        prior = {"assessment": old, "event_ids": [], "known_event_ids": []}
+        self.assertEqual(newer, self.update(newer, prior)["assessment"])
+        prior["assessment"] = newer
+        with patch.object(semantic, "assess", return_value=old["result"]) as model:
+            self.assertIsNotNone(self.update(newer, prior, refresh=True))
+            model.assert_called_once()
+
+    def test_changed_source_is_assessed_and_negative_result_published(self):
+        old = self.negative_payload()
+        changed = copy.deepcopy(old)
+        changed["source"]["texts"]["ocr_text"] += " New announcement."
+        prior = {"assessment": old, "event_ids": [], "known_event_ids": []}
+        with patch.object(semantic, "assess", return_value=changed["result"]) as model:
+            self.assertIsNotNone(self.update(changed, prior))
+            model.assert_called_once()
+
+    def test_persisted_refusal_preserves_support_without_rewriting_but_outages_retry(self):
+        payload = {**self.negative_payload(), "status": "error", "retryable": False}
+        payload.pop("result")
+        prior = {"assessment": payload, "event_ids": ["supported"], "known_event_ids": ["supported"]}
+        with patch.object(semantic, "assess") as model:
+            self.assertIsNone(self.update(payload, prior))
+            model.assert_not_called()
+        payload["retryable"] = True
+        with patch.object(semantic, "assess", side_effect=RuntimeError("unavailable")) as model:
+            update = self.update(payload, prior)
+            self.assertTrue(update["assessment"]["retryable"])
             model.assert_called_once()
 
 

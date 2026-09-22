@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import base64
 import logging
+import time
+from urllib.parse import urlsplit, urlunsplit
 
 from config import GOOGLE_VISION_API_KEY, GOOGLE_VISION_API_KEY_PRIMARY
 
@@ -22,7 +24,23 @@ def _download_image(url: str | None) -> bytes:
     import requests
     # Apify supplies signed CDN URLs; an expired image does not invalidate
     # an Instagram login or warrant a day-long pause of unrelated downloads.
-    resp = requests.get(url, timeout=10)
+    parts = urlsplit(url)
+    # Some regional Instagram hosts resolve only to IPv6. The general CDN
+    # serves the same signed path over a route reachable by Actions runners.
+    fallback = (urlunsplit(parts._replace(netloc="scontent.cdninstagram.com"))
+                if parts.scheme == "https" and (parts.hostname or "").endswith(".fna.fbcdn.net")
+                else None)
+    for attempt in range(3):
+        try:
+            resp = requests.get(url, timeout=10)
+            break
+        except (requests.ConnectionError, requests.Timeout):
+            if attempt == 2:
+                raise
+            if fallback:
+                url, fallback = fallback, None
+                log.info("Retrying image through Instagram's general CDN")
+            time.sleep(attempt + 1)
     if resp.status_code in {401, 403, 404, 410}:
         raise ImageExpired(f"image URL returned HTTP {resp.status_code}")
     resp.raise_for_status()

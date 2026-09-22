@@ -62,12 +62,16 @@ def upsert_batched(
 
 def get_deleted_event_ids() -> set[str]:
     """Return admin-deleted event IDs that pipeline imports must not recreate."""
-    res = client().table("deleted_events").select("event_id").execute()
-    return {
-        str(row["event_id"])
-        for row in getattr(res, "data", []) or []
-        if row.get("event_id")
-    }
+    found: set[str] = set()
+    for offset in range(0, 1_000_000, 1000):
+        batch = (
+            client().table("deleted_events").select("event_id")
+            .order("event_id").range(offset, offset + 999).execute().data or []
+        )
+        found.update(str(row["event_id"]) for row in batch if row.get("event_id"))
+        if len(batch) < 1000:
+            return found
+    raise RuntimeError("Deleted event pagination exceeded its safety limit")
 
 
 def get_imported_events() -> list[dict[str, Any]]:

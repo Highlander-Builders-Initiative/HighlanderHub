@@ -15,6 +15,7 @@ import json
 import logging
 import re
 from datetime import datetime, timezone
+from functools import cached_property
 from pathlib import Path
 from typing import Any, Iterable
 from urllib.parse import urlsplit
@@ -208,7 +209,30 @@ def _restore_post(row: dict[str, Any]) -> bool:
     return True
 
 
-def hydrate_local_posts() -> int:
+class ArchiveIndex:
+    """Load durable IDs once, then remember successful mirrors for this run."""
+
+    @cached_property
+    def _media_ids(self) -> set[str]:
+        # cached_property leaves failures retryable instead of caching emptiness.
+        return _mirrored_media_ids()
+
+    def load(self) -> None:
+        """Require a successful durable scan before starting paid collection."""
+        self._media_ids
+
+    def __contains__(self, media_id: str) -> bool:
+        return media_id in self._media_ids
+
+    def missing(self, present: set[str]) -> set[str]:
+        return self._media_ids - present
+
+    def remember(self, media_ids: Iterable[str]) -> None:
+        """Record IDs only after their durable mirror succeeded."""
+        self._media_ids.update(media_ids)
+
+
+def hydrate_local_posts(*, archive: ArchiveIndex) -> int:
     """Restore mirrored posts that are missing from the local archive.
 
     Every consumer of a post reads this archive and nothing else: extraction,
@@ -232,7 +256,7 @@ def hydrate_local_posts() -> int:
     """
     present = {str(record["media_id"]) for record in iter_local_posts()}
     try:
-        missing = sorted(_mirrored_media_ids() - present)
+        missing = sorted(archive.missing(present))
     except (Exception, SystemExit) as exc:  # noqa: BLE001 - the archive still works.
         log.warning("post archive: durable mirror unreadable (%s); this run has only "
                     "the local archive", exc)

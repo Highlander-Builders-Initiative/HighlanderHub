@@ -7,7 +7,7 @@ import tempfile
 import types
 import unittest
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import ANY, Mock, patch
 
 PIPELINE_ROOT = Path(__file__).resolve().parents[1]
 if str(PIPELINE_ROOT) not in sys.path:
@@ -143,12 +143,25 @@ class RunMainTests(unittest.TestCase):
             2, len(self.history.read_text(encoding="utf-8").strip().splitlines())
         )
 
+    def test_archive_snapshot_is_shared_with_extraction_and_fresh_next_run(self):
+        collect = self.fake_modules["apify_posts"].main
+        extract = self.fake_modules["extract_posts"].extract_all
+        self.run.main()
+        first = collect.call_args.kwargs["archive"]
+        self.assertIs(first, extract.call_args.kwargs["archive"])
+        collect.side_effect = RuntimeError("collection failed")
+        with self.assertRaises(SystemExit):
+            self.run.main()
+        second = collect.call_args.kwargs["archive"]
+        self.assertIsNot(first, second)
+        self.assertIs(second, extract.call_args.kwargs["archive"])
+
     def test_partial_collection_still_extracts_new_posts_in_full(self) -> None:
         scrape = self.fake_modules["apify_posts"]
         scrape.main.side_effect = scrape.PartialCollection("1 failure(s) and continued past them")
         with self.assertRaises(SystemExit):
             self.run.main()
-        self.fake_modules["extract_posts"].extract_all.assert_called_once_with({"acm.ucr"}, cached_only=False)
+        self.fake_modules["extract_posts"].extract_all.assert_called_once_with({"acm.ucr"}, cached_only=False, archive=ANY)
         self.assertIn("continued past them", self._history()["stages"][0]["error"])
 
     def test_failed_collection_still_publishes_extracted_archive(self) -> None:
@@ -157,7 +170,7 @@ class RunMainTests(unittest.TestCase):
         self.fake_modules["extract_posts"].extract_all.return_value = (archived, {})
         with self.assertRaises(SystemExit):
             self.run.main()
-        self.fake_modules["extract_posts"].extract_all.assert_called_once_with({"acm.ucr"}, cached_only=False)
+        self.fake_modules["extract_posts"].extract_all.assert_called_once_with({"acm.ucr"}, cached_only=False, archive=ANY)
         published = self.fake_modules["assessed_events"].publish_posts.call_args
         self.assertEqual(archived, published.args[0])
         self.assertEqual({"acm.ucr": {}}, published.kwargs["meta"])

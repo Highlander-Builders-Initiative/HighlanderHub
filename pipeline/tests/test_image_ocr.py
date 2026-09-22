@@ -36,6 +36,39 @@ class ImageOcrTests(unittest.TestCase):
         self.assertEqual(2, request.call_count)
         self.assertIsNone(instagram_cooldown.current())
 
+    def test_unreachable_regional_cdn_retries_same_signed_image_on_general_cdn(self):
+        import requests
+
+        url = "https://instagram.ftpa1-1.fna.fbcdn.net/v/flyer.jpg?oh=signature&_nc_ht=instagram.ftpa1-1.fna.fbcdn.net"
+        response = Mock(status_code=200, content=b"flyer")
+        for error in (requests.ConnectionError("[Errno 101] Network is unreachable"),
+                      requests.ConnectTimeout("IPv6 unreachable")):
+            with self.subTest(error=error), patch("requests.get", side_effect=[error, response]) as request, \
+                 patch.object(image_ocr.time, "sleep"):
+                self.assertEqual(b"flyer", image_ocr._download_image(url))
+                self.assertEqual(url, request.call_args_list[0].args[0])
+                self.assertEqual(url.replace("instagram.ftpa1-1.fna.fbcdn.net", "scontent.cdninstagram.com", 1),
+                                 request.call_args_list[1].args[0])
+
+    def test_download_retries_are_bounded_and_do_not_reroute_other_hosts(self):
+        import requests
+
+        for url in ("https://cdn.example/flyer.jpg", "https://instagram.fna.fbcdn.net.example/flyer.jpg"):
+            with self.subTest(url=url), patch("requests.get", side_effect=requests.ConnectionError("offline")) as request, \
+                 patch.object(image_ocr.time, "sleep") as sleep:
+                with self.assertRaises(requests.ConnectionError):
+                    image_ocr._download_image(url)
+                self.assertEqual(3, request.call_count)
+                self.assertTrue(all(call.args[0] == url for call in request.call_args_list))
+                self.assertEqual([1, 2], [call.args[0] for call in sleep.call_args_list])
+
+    def test_expired_regional_url_is_not_retried_or_rerouted(self):
+        for status in (401, 403, 404, 410):
+            with self.subTest(status=status), patch("requests.get", return_value=Mock(status_code=status)) as request:
+                with self.assertRaises(image_ocr.ImageExpired):
+                    image_ocr._download_image("https://instagram.ftpa1-1.fna.fbcdn.net/expired.jpg")
+                request.assert_called_once()
+
     def test_image_download_returns_bytes_and_reports_expired_urls(self):
         response = Mock(status_code=200, content=b"flyer")
         with patch("requests.get", return_value=response) as download:

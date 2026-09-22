@@ -34,7 +34,7 @@ from config import (POST_CHECKPOINTS_FILE, POST_OVERLAP_DAYS, POST_DISCOVERY_MOD
                     POST_BACKFILL_SINCE, POST_EXTRACTED_DIR,
                     ensure_post_dirs, load_accounts)
 from post_archive import (
-    hydrate_local_posts,
+    ArchiveIndex, hydrate_local_posts,
     iso as _iso,
     iter_local_posts,
     media_key,
@@ -662,7 +662,7 @@ def main(handles: list[str] | None = None, *, direct_feed: bool = False,
     # The archive is what decides which posts are new, which still need
     # refreshing, and which are already paid for — so a machine that lost
     # `data/` gets it back from the durable mirror before any of that is judged.
-    hydrate_local_posts()
+    hydrate_local_posts(archive=ArchiveIndex())
 
     L = instaloader.Instaloader(
         download_pictures=False,

@@ -326,19 +326,21 @@ def _instant(value: Any) -> datetime:
 
 
 def _day_supported(day: date, text: str, source: dict) -> bool:
-    from event_dates import evidence_dates, _scan_printed_dates, _labeled_date, _OCR_DATE_RE, _MONTHS
+    from event_dates import evidence_dates, weekday_range_dates, _scan_printed_dates, _labeled_date, _OCR_DATE_RE, _MONTHS
 
     # Recognize ISO dates as well as human-readable flyer dates.
     iso_days = re.findall(r"\b\d{4}-\d{2}-\d{2}\b", text)
     if day.isoformat() in iso_days:
         return True
     days = evidence_dates(text)
+    weekday_days = weekday_range_dates(text, year=day.year)
+    days.update(weekday_days)
     # A range prints its month once. Interior days require an explicit Day N
     # label; a campaign span alone does not establish individual activities.
     ranges = list(re.finditer(
         _OCR_DATE_RE.pattern + r"\s*(?:[-–—]|to|through|thru)\s*(?:the\s+)?"
         r"(\d{1,2})(?:st|nd|rd|th)?\b(?:\s*,?\s*((?:19|20)\d{2})\b)?", text, re.I))
-    range_years = set()
+    range_years = set(weekday_days.get((day.month, day.day), ()))
     ordinals = {int(n) for n in re.findall(r"\bday\s+(\d{1,2})\s*:", text, re.I)}
     for match in ranges:
         month = _MONTHS[match[1].lower().rstrip('.')]
@@ -398,14 +400,15 @@ def _day_supported(day: date, text: str, source: dict) -> bool:
 def _clock_supported(clock: time, text: str) -> bool:
     from event_dates import _parse_ampm_time, _OCR_TIME_RANGE_RE, _OCR_COMPACT_TIME_RANGE_RE, time_range
     clocks = set()
-    for match in re.finditer(r"\b(\d{1,2})(?::(\d{2}))?\s*([ap]\.?m\.?)", text, re.I):
-        clocks.add(_parse_ampm_time(*match.groups()))
+    for match in re.finditer(r"\b(\d{1,2})(?::(\d{2}))?\s*([ap](?:\.?m)?)(?!\w)", text, re.I):
+        hour, minute, meridiem = match.groups()
+        clocks.add(_parse_ampm_time(hour, minute, meridiem.replace(".", "")[:1] + "m"))
     for pattern in (_OCR_TIME_RANGE_RE, _OCR_COMPACT_TIME_RANGE_RE):
         for match in pattern.finditer(text):
             pair = time_range(match.group())
             if pair:
                 clocks.update(pair)
-    for match in re.finditer(r"\b(\d{1,2}):(\d{2})(?!\s*[ap]\.?m)\b", text, re.I):
+    for match in re.finditer(r"\b(\d{1,2}):(\d{2})(?!\s*[ap](?:\.?m)?\b)\b", text, re.I):
         clocks.add(tuple(map(int, match.groups())))
     for word, value in (("noon", (12, 0)), ("midnight", (0, 0))):
         if re.search(rf"\b{word}\b", text, re.I):

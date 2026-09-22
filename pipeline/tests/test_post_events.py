@@ -84,6 +84,77 @@ class PostExtractionTests(unittest.TestCase):
             self.assertEqual(1, vision.call_count)
         self.assertEqual(first, second)
 
+    def test_fresh_flyer_uses_ocr_bytes_without_another_download(self):
+        item = record()
+        with patch.object(posts, "_download_image", return_value=b"same image") as download, self.ocr(""):
+            extracted = posts.process_post(item)
+        download.assert_called_once_with(item["media"][0]["image_url"])
+        self.upload_flyer.assert_called_once_with(item, item["media"][0]["media_key"], b"same image")
+        self.assertEqual("https://storage.example/flyer.jpg", extracted["images"][0]["image_url"])
+
+    def test_failed_flyer_upload_recovers_without_repeating_ocr_or_qr(self):
+        for cache in ("local", "remote", "edited_caption"):
+            with self.subTest(cache=cache):
+                posts._cache_path("700").unlink(missing_ok=True)
+                item = record()
+                self.upload_flyer.reset_mock(side_effect=True)
+                self.upload_flyer.side_effect = [None, "https://storage.example/recovered.jpg"]
+                with self.ocr("") as vision, \
+                     patch.object(posts, "qr_rsvp_urls", return_value=[]) as qr:
+                    first = posts.process_post(item)
+                    self.assertEqual("ok", first["status"])
+                    self.assertFalse(first["images"][0].get("image_url"))
+                    if cache == "remote":
+                        posts._cache_path("700").unlink()
+                    if cache == "edited_caption":
+                        item["caption"] += " Bring a friend!"
+                    item["media"][0]["image_url"] = "https://cdn.example/refreshed.jpg"
+                    with patch.object(posts, "_load_remote_cache", return_value=first), \
+                         patch.object(posts, "_download_image", return_value=b"retry") as download:
+                        recovered = posts.process_post(item)
+                        again = posts.process_post(item)
+                    download.assert_called_once_with("https://cdn.example/refreshed.jpg")
+                    vision.assert_called_once()
+                    qr.assert_called_once()
+                self.assertEqual(2, self.upload_flyer.call_count)
+                self.assertEqual("https://storage.example/recovered.jpg", recovered["images"][0]["image_url"])
+                self.assertEqual(recovered, again)
+                self.assertEqual(recovered, posts._read_json(posts._cache_path("700")))
+                self.write_remote_cache.assert_called_with(recovered)
+                source = publication.post_source(item, recovered)
+                payload = {"status": "complete", "source": source,
+                           "result": post_decision(source, field="caption")}
+                rows, _ = publication.post_rows(item, recovered, payload, {}, "2026-09-11T12:00:00Z")
+                self.assertEqual("https://storage.example/recovered.jpg", rows[0]["image_url"])
+
+    def test_flyer_recovery_failures_preserve_ocr_and_remain_retryable(self):
+        item = record()
+        self.upload_flyer.side_effect = [None, None, "https://storage.example/recovered.jpg"]
+        with self.ocr("Study Jam") as vision:
+            original = posts.process_post(item)
+            for failure in (RuntimeError("timeout"), posts.ImageExpired("expired")):
+                with patch.object(posts, "_download_image", side_effect=failure):
+                    self.assertEqual(original, posts.process_post(item))
+            self.assertEqual(original, posts.process_post(item))
+            recovered = posts.process_post(item)
+        vision.assert_called_once()
+        self.assertEqual(3, self.upload_flyer.call_count)
+        self.assertEqual("https://storage.example/recovered.jpg", recovered["images"][0]["image_url"])
+
+    def test_cached_only_does_not_attempt_missing_flyer_recovery(self):
+        item = record()
+        self.upload_flyer.return_value = None
+        with self.ocr("Study Jam"):
+            original = posts.process_post(item)
+        self.upload_flyer.reset_mock()
+        with patch.object(posts, "_download_image") as download, self.ocr("unused") as vision:
+            self.assertEqual(original, posts.process_post(item, cached_only=True))
+            item["caption"] += " Bring a friend!"
+            self.assertEqual("ok", posts.process_post(item, cached_only=True)["status"])
+        download.assert_not_called()
+        vision.assert_not_called()
+        self.upload_flyer.assert_not_called()
+
     def test_cached_only_extraction_leaves_unread_posts_pending_without_requests(self):
         with patch.object(posts, "_download_image") as download, self.ocr("unused") as vision:
             result = posts.process_post(record(), cached_only=True)
@@ -99,7 +170,7 @@ class PostExtractionTests(unittest.TestCase):
              patch.object(posts, "process_post", side_effect=[
                  {"status": "ok"}, {"status": "error", "result": {"error": "URL expired"}},
                  {"status": "ok"}]):
-            processed, stats = posts.extract_all({"acm.ucr"})
+            processed, stats = posts.extract_all({"acm.ucr"}, archive=posts.ArchiveIndex())
         self.assertEqual(["0", "1", "2"], [row[0]["media_id"] for row in processed])
         self.assertEqual(1, stats["errors"])
         self.assertEqual("1", stats["first_error"]["media_id"])
@@ -113,9 +184,56 @@ class PostExtractionTests(unittest.TestCase):
              patch.object(posts, "iter_local_posts", return_value=iter(records)), \
              patch.object(posts, "process_post", side_effect=[{"status": "ok"}] + [failure] * limit
                           + [AssertionError("Must stop after the failures")]) as process:
-            processed, stats = posts.extract_all({"acm.ucr"})
+            processed, stats = posts.extract_all({"acm.ucr"}, archive=posts.ArchiveIndex())
         self.assertEqual(limit + 1, process.call_count)
         self.assertEqual(str(limit), stats["stopped_at"]["media_id"])
+
+    def test_expired_images_do_not_block_later_posts_on_repeated_runs(self):
+        records = [record(media_id=str(n), slides=1) for n in range(4)]
+
+        def download(url):
+            if "/3_" in url:
+                return b"image"
+            raise posts.ImageExpired("image URL returned HTTP 403")
+
+        with patch.object(posts, "ensure_post_dirs"), patch.object(posts, "hydrate_local_posts"), \
+             patch.object(posts, "iter_local_posts", side_effect=lambda *_: iter(records)), \
+             patch.object(posts, "_download_image", side_effect=download), self.ocr("Study Jam") as vision:
+            for _ in range(2):
+                processed, stats = posts.extract_all({"acm.ucr"}, archive=posts.ArchiveIndex())
+                self.assertEqual(["0", "1", "2", "3"], [raw["media_id"] for raw, _ in processed])
+                self.assertEqual(["error", "error", "error", "ok"], [cached["status"] for _, cached in processed])
+                self.assertEqual(3, stats["errors"])
+                self.assertNotIn("stopped_at", stats)
+            self.assertEqual(1, vision.call_count)
+
+    def test_expiry_subclasses_persist_the_same_streak_policy(self):
+        class ExpiredSignedUrl(posts.ImageExpired):
+            pass
+
+        records = [record(media_id=str(n)) for n in range(4)]
+        with patch.object(posts, "ensure_post_dirs"), patch.object(posts, "hydrate_local_posts"), \
+             patch.object(posts, "iter_local_posts", return_value=iter(records)), \
+             patch.object(posts, "_download_image", side_effect=ExpiredSignedUrl("HTTP 403")):
+            processed, stats = posts.extract_all({"acm.ucr"}, archive=posts.ArchiveIndex())
+        self.assertEqual(4, len(processed))
+        self.assertNotIn("stopped_at", stats)
+        for raw, cached in processed:
+            self.assertIs(False, cached["result"]["counts_toward_streak"])
+            self.assertEqual(cached, posts._read_json(posts._cache_path(raw["media_id"])))
+
+    def test_expired_images_do_not_reset_service_failure_streak(self):
+        records = [record(media_id=str(n), slides=1) for n in range(6)]
+        with patch.object(posts, "ensure_post_dirs"), patch.object(posts, "hydrate_local_posts"), \
+             patch.object(posts, "iter_local_posts", return_value=iter(records)), \
+             patch.object(posts, "_download_image", side_effect=[
+                 RuntimeError("network unavailable"), posts.ImageExpired("HTTP 403"),
+                 RuntimeError("network unavailable"), posts.ImageExpired("HTTP 403"),
+                 RuntimeError("network unavailable"), AssertionError("Must stop")]) as download:
+            processed, stats = posts.extract_all({"acm.ucr"}, archive=posts.ArchiveIndex())
+        self.assertEqual(5, download.call_count)
+        self.assertEqual(5, stats["errors"])
+        self.assertEqual("4", stats["stopped_at"]["media_id"])
 
     def test_a_refreshed_cdn_url_alone_reuses_every_cache(self):
         item = record()
@@ -294,6 +412,7 @@ class PostExtractionTests(unittest.TestCase):
         item = record(caption="Join us")
         legacy = {"status": "ok", "fingerprint": "legacy-version-1", "extraction_version": 1,
                   "images": [{"index": n, "media_key": f"700_{n}_n", "ocr_text": text,
+                              "image_url": f"https://storage.example/700_{n}_n.jpg",
                               "qr_urls": [], "qr_scan_version": posts.QR_SCAN_VERSION}
                              for n, text in enumerate(["Club announcement", "September 15 event"])]}
         for location in ("local", "remote"):
@@ -325,7 +444,7 @@ class PostExtractionTests(unittest.TestCase):
              patch.object(posts, "_load_remote_cache", return_value=original), \
              patch.object(posts, "_download_image") as download, \
              self.ocr("should not run") as vision:
-            processed, stats = posts.extract_all({item["handle"]})
+            processed, stats = posts.extract_all({item["handle"]}, archive=posts.ArchiveIndex())
         self.assertEqual(1, stats["posts"])
         self.assertEqual(item["media_id"], processed[0][0]["media_id"])
         self.assertEqual(original, processed[0][1])
@@ -460,9 +579,9 @@ class PostPublicationTests(unittest.TestCase):
     def test_make_update_dispatches_a_post_without_a_mapper_argument(self):
         payload = {"status": "complete", "source": self.source,
                    "result": post_decision(self.source, field="slide_2_ocr")}
-        with patch.object(publication, "cached_assessment", return_value=payload):
+        with patch.object(publication, "cached_assessment", return_value=publication.AssessmentResult(payload, False)):
             update = publication.make_update(self.source, self.record, self.cached, None,
-                                             self.meta, "2026-09-11T12:00:00Z")
+                                             self.meta, "2026-09-11T12:00:00Z").update
         self.assertEqual("complete", update["assessment"]["status"])
         self.assertEqual(["ig_acm.ucr_p700"], [row["id"] for row in update["rows"]])
         self.assertEqual("https://storage.example/slide1.jpg", update["rows"][0]["image_url"])
@@ -610,10 +729,10 @@ class PostIdentityTests(unittest.TestCase):
                    "result": post_decision(source, field="slide_1_ocr")}
         for media_id in (None, "", "invalid"):
             with self.subTest(media_id=media_id), \
-                 patch.object(publication, "cached_assessment", return_value=payload):
+                 patch.object(publication, "cached_assessment", return_value=publication.AssessmentResult(payload, False)):
                 raw = {**self.record, "media_id": media_id}
                 update = publication.make_update(source, raw, self.cached, None, self.meta,
-                                                 "2026-09-11T12:00:00Z")
+                                                 "2026-09-11T12:00:00Z").update
                 self.assertEqual("error", update["assessment"]["status"])
                 self.assertEqual([], update["rows"])
 
@@ -703,7 +822,7 @@ class RosterFilterTests(unittest.TestCase):
              patch.object(posts, "hydrate_local_posts"), \
              patch.object(posts, "iter_local_posts",
                           side_effect=lambda handles=None: seen.append(handles) or []):
-            posts.extract_all(roster)
+            posts.extract_all(roster, archive=posts.ArchiveIndex())
         return seen[0]
 
     def test_an_empty_handle_set_filters_to_nobody(self):
@@ -732,7 +851,7 @@ class RosterFilterTests(unittest.TestCase):
              patch.object(posts, "hydrate_local_posts"), \
              patch.object(posts, "process_post") as process:
             post_archive.write_post(record())
-            processed, stats = posts.extract_all(set())
+            processed, stats = posts.extract_all(set(), archive=posts.ArchiveIndex())
         self.assertEqual([], processed)
         self.assertEqual(0, stats["posts"])
         process.assert_not_called()
@@ -766,6 +885,58 @@ class PilotDryRunTests(unittest.TestCase):
 
 
 class PostUpdateBatchTests(unittest.TestCase):
+    def test_telemetry_changes_cannot_reset_a_service_failure_streak(self):
+        processed = [(record(media_id=str(n)), {"status": "ok", "images": []}) for n in range(6)]
+        stats = {}
+
+        def update(source, *args, **kwargs):
+            n = int(source["source_key"].rsplit(":", 1)[1])
+            # Simulate unrelated future instrumentation on cache hits.
+            stats["model_calls"] = stats.get("model_calls", 0) + 1
+            return publication.UpdateResult(self.update(n, "error" if n % 2 == 0 else "complete"), False)
+
+        with patch.object(publication, "make_update", side_effect=update) as make:
+            updates = publication.post_updates(processed, {}, "2026-09-11T12:00:00Z",
+                                               registry={}, stats=stats, stop_on_error=True)
+        self.assertEqual(5, make.call_count)
+        self.assertEqual(5, len(updates))
+
+    def test_cached_successes_and_refusals_do_not_reset_model_failure_streak(self):
+        for cached_status in ("complete", "error"):
+            with self.subTest(cached_status=cached_status), tempfile.TemporaryDirectory() as directory, \
+                 patch.object(publication, "CACHE_DIR", Path(directory)):
+                processed, registry = [], {}
+                for n in range(8):
+                    raw, cached = record(media_id=str(n)), {"status": "ok", "images": []}
+                    processed.append((raw, cached))
+                    if n % 2:
+                        source = publication.post_source(raw, cached)
+                        payload = {"source": source, "source_hash": semantic.fingerprint(source),
+                                   "status": cached_status, "retryable": False,
+                                   "result": {"occurrences": [], "schedule": None}}
+                        registry[source["source_key"]] = {"assessment": payload,
+                                                          "event_ids": [], "known_event_ids": []}
+                with patch.object(publication, "load_registry", return_value=registry), \
+                     patch.object(semantic, "assess", side_effect=RuntimeError("quota exhausted")) as model, \
+                     patch.object(publication, "publish", return_value={}) as publish:
+                    with self.assertRaisesRegex(RuntimeError, "3 source assessment.*quota exhausted"):
+                        publication.publish_posts(processed, "2026-09-11T12:00:00Z", meta={}, notify=False)
+                self.assertEqual(3, model.call_count)
+                self.assertEqual(3, len(publish.call_args.args[0]))
+
+    def test_live_responses_reset_model_failure_streak_without_caller_stats(self):
+        for response in ({"occurrences": [], "schedule": None}, semantic.GroundingRejected("refused")):
+            with self.subTest(response=response), tempfile.TemporaryDirectory() as directory, \
+                 patch.object(publication, "CACHE_DIR", Path(directory)):
+                processed = [(record(media_id=str(n)), {"status": "ok", "images": []}) for n in range(6)]
+                with patch.object(semantic, "assess", side_effect=[
+                    RuntimeError("quota"), RuntimeError("quota"), response,
+                    RuntimeError("quota"), RuntimeError("quota"), response]) as model:
+                    updates = publication.post_updates(processed, {}, "2026-09-11T12:00:00Z",
+                                                       registry={}, stop_on_error=True)
+                self.assertEqual(6, model.call_count)
+                self.assertEqual(6, len(updates))
+
     @staticmethod
     def update(n, status="complete"):
         assessment = ({"status": "error", "retryable": True, "error": "Gemini 503"}
@@ -776,7 +947,7 @@ class PostUpdateBatchTests(unittest.TestCase):
         processed = [(record(media_id=str(n)), {"status": "ok", "images": []}) for n in range(3)]
         updates = [self.update(0), self.update(1, "error"), self.update(2)]
         with patch.object(publication, "load_registry", return_value={}), \
-             patch.object(publication, "make_update", side_effect=updates) as assess, \
+             patch.object(publication, "make_update", side_effect=[publication.UpdateResult(u, True) for u in updates]) as assess, \
              patch.object(publication, "publish", return_value={}) as publish:
             with self.assertRaisesRegex(RuntimeError, "1 source assessment.*Gemini 503"):
                 publication.publish_posts(processed, "2026-09-18T00:00:00Z", meta={}, notify=False)
@@ -788,7 +959,7 @@ class PostUpdateBatchTests(unittest.TestCase):
         processed = [(record(media_id=str(n)), {"status": "ok", "images": []}) for n in range(limit + 2)]
         updates = [self.update(0)] + [self.update(n, "error") for n in range(1, limit + 1)]
         with patch.object(publication, "load_registry", return_value={}), \
-             patch.object(publication, "make_update", side_effect=updates) as assess, \
+             patch.object(publication, "make_update", side_effect=[publication.UpdateResult(u, True) for u in updates]) as assess, \
              patch.object(publication, "publish", return_value={}) as publish:
             with self.assertRaisesRegex(RuntimeError, "Gemini 503"):
                 publication.publish_posts(processed, "2026-09-18T00:00:00Z", meta={}, notify=False)
@@ -807,7 +978,7 @@ class PostUpdateBatchTests(unittest.TestCase):
         # Nothing here has published before, so a text-free post has no listing
         # to withdraw and says nothing at all.
         with patch.object(publication, "make_update",
-                          side_effect=lambda source, *a, **k: {"source_key": source["source_key"]}):
+                          side_effect=lambda source, *a, **k: publication.UpdateResult({"source_key": source["source_key"]}, True)):
             updates = publication.post_updates(processed, {}, "2026-09-11T12:00:00+00:00", registry={})
         self.assertEqual(["instagram:post:1", "instagram:post:2"],
                          [item["source_key"] for item in updates])

@@ -33,6 +33,7 @@ import extract_posts
 import reconcile_events
 import apify_posts
 from config import DATA_DIR, load_account_meta
+from post_archive import ArchiveIndex
 
 log = logging.getLogger("pipeline.run")
 
@@ -53,6 +54,7 @@ class InstagramPosts:
 
     posts: list[tuple[dict, dict]] = field(default_factory=list)
     cached_only: bool = False
+    archive: ArchiveIndex = field(default_factory=ArchiveIndex)
 
     @cached_property
     def meta(self) -> dict[str, dict[str, Any]]:
@@ -60,7 +62,8 @@ class InstagramPosts:
         return load_account_meta()
 
     def extract_posts(self) -> None:
-        self.posts, stats = extract_posts.extract_all(set(self.meta), cached_only=self.cached_only)
+        self.posts, stats = extract_posts.extract_all(set(self.meta), cached_only=self.cached_only,
+                                                    archive=self.archive)
         if stats.get("stopped_at"):
             raise RuntimeError(f"Extraction stopped at {stats['stopped_at']}; completed posts retained")
         if stats.get("errors"):
@@ -170,8 +173,8 @@ def _report(results: list[StageResult], total_seconds: float) -> None:
 def _run_stages(results: list[StageResult]) -> None:
     # Apify failures do not invalidate already mirrored posts or their CDN URLs.
     # Continue OCR on the completed prefix even if dataset pagination stopped.
-    _safe("instagram.posts.collect", apify_posts.main, results)
     posts = InstagramPosts()
+    _safe("instagram.posts.collect", lambda: apify_posts.main(archive=posts.archive), results)
     _safe("instagram.posts.extract", posts.extract_posts, results)
     _safe("instagram.publish", posts.publish, results)
     _safe("events.reconcile", reconcile_events.main, results)
