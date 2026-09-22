@@ -76,8 +76,8 @@ test("a filtered feed does not rewrite the detail URL or reset when closed", asy
   await expect(page).toHaveURL(/\/events\?cat=social&q=Showcase$/);
 });
 
-for (const reload of [false, true]) {
-  test(`loaded pages and the next cursor survive closing a card${reload ? " after refresh" : ""}`, async ({ page }) => {
+for (const mode of ["", " after refresh", " after viewport resize"]) {
+  test(`loaded pages and the next cursor survive closing a card${mode}`, async ({ page }) => {
     // Keep the API's order (start, then id): a scroll-triggered page load
     // re-sorts the loaded list, and an out-of-order list would move the card.
     const start = Date.parse(E2E_FIXTURE_EVENT.startsAt);
@@ -111,7 +111,9 @@ for (const reload of [false, true]) {
     await link.scrollIntoViewIfNeeded();
     await openOverlay(page);
     const saved = await page.evaluate(() => JSON.parse(sessionStorage.getItem("highlanderhub.returnScroll")!));
-    if (reload) await page.reload();
+    // A covered feed can reflow; retaining scrollY alone does not retain the card.
+    if (mode === " after viewport resize") await page.setViewportSize({ width: 1000, height: 720 });
+    if (mode === " after refresh") await page.reload();
     const dialog = page.getByRole("dialog");
     await expect(dialog.getByRole("heading", { name: EVENT_NAME })).toBeVisible();
     await dialog.getByRole("button", { name: "Close event" }).click();
