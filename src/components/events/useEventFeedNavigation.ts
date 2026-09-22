@@ -21,6 +21,7 @@ import { calendarJumpEndsAtLoadedBoundary } from "@/lib/events/calendar-feed-pag
 import { mergeUniqueEventsByStart } from "@/lib/events/merge";
 import {
   eventFeedQueriesEqual,
+  matchesEventFilters,
   type EventFeedQuery,
 } from "./events-filters";
 import { useInfiniteEventFeedLoader } from "./useInfiniteEventFeedLoader";
@@ -94,6 +95,15 @@ export function useEventFeedNavigation({
 
   const mergeCalendarEventsForDay = useCallback(
     (dayKey: string) => {
+      // An empty (or filtered-out) target has nowhere to scroll. Do not
+      // expand the feed with earlier dates just because they precede it.
+      const hasTarget = calendarEvents.some(
+        (event) =>
+          pacificDayKey(event.startsAt) === dayKey &&
+          matchesEventFilters(event, { ...feedFilters, todayKey })
+      );
+      if (!hasTarget) return false;
+
       const lastLoadedDay = dayKeys.at(-1) ?? "";
       const eventsToMerge =
         dayKey > lastLoadedDay
@@ -116,7 +126,7 @@ export function useEventFeedNavigation({
       );
       return true;
     },
-    [calendarEvents, dayKeys, loadedEvents, setLoadedEvents]
+    [calendarEvents, dayKeys, feedFilters, loadedEvents, setLoadedEvents, todayKey]
   );
 
   const handleCalendarSelect = useCallback(

@@ -176,6 +176,7 @@ export function EventsBrowser({
   // Mirror the active filter state to the URL via ?cat=&q=&when=. Uses
   // router.replace so each keystroke / chip click does not push a history
   // entry; deep links survive, the back button doesn't.
+  const lastRequestedFilterHref = useRef<string | null>(null);
   const writeFiltersToUrl = useCallback(
     (next: EventFeedQuery) => {
       if (window.location.pathname !== "/events") return;
@@ -187,7 +188,14 @@ export function EventsBrowser({
       const href = search ? `/events?${search}` : "/events";
       // Replacing the current URL refetches the first page and discards the
       // loaded pages when returning from a card.
-      if (href === `${window.location.pathname}${window.location.search}`) return;
+      // A newer selection can match the current URL while a different
+      // replacement is still in flight. Cancel that older navigation too.
+      if (
+        href === `${window.location.pathname}${window.location.search}` &&
+        (lastRequestedFilterHref.current === null ||
+          lastRequestedFilterHref.current === href)
+      ) return;
+      lastRequestedFilterHref.current = href;
       router.replace(href, {
         scroll: false,
       });
