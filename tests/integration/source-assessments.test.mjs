@@ -11,12 +11,13 @@ const { PGlite } = await import(process.env.PGLITE_MODULE || '@electric-sql/pgli
 const migrations = new URL('../../supabase/migrations/', import.meta.url);
 const db = new PGlite();
 await db.exec('create role anon; create role authenticated; create role service_role bypassrls;');
-for (const name of ['20260513073310_init_schema.sql', '20260527000000_add_event_lock.sql',
+const migrationNames = ['20260513073310_init_schema.sql', '20260527000000_add_event_lock.sql',
   '20260529000000_deleted_events.sql', '20260530000000_event_content_kind.sql',
   '20260531000000_event_has_free_food.sql', '20260909000000_event_content_kind_application.sql',
   '20260911000000_source_assessments.sql', '20260912000000_source_assessment_fanout_overrides.sql',
   '20260913000000_instagram_posts.sql', '20260916000000_instagram_only_publication.sql',
-  '20260919000000_drop_event_is_free.sql']) {
+  '20260919000000_drop_event_is_free.sql', '20260922000000_event_duplicate_hosts.sql'];
+for (const name of migrationNames) {
   await db.exec(await readFile(new URL(name, migrations), 'utf8'));
 }
 
@@ -297,4 +298,73 @@ test('publication rejects unsupported origins and imported row types', async () 
   await assert.rejects(publish([update('wrong_id', [row('website_123')])]), /Only publishable imported/);
   await assert.rejects(publish([update('wrong_source', [row('ig_123', { source: 'campus_website' })])]), /Only publishable imported/);
   assert.deepEqual(await ids(), []);
+});
+
+test('publication retains assessed time precision and reconciled hosts across reruns', async () => {
+  await reset();
+  const event = row('ig_precision', { all_day: true });
+  await publish([update('precision', [event])]);
+  const hosts = [{ host: 'Club A', host_handle: 'club_a' }, { host: 'Club B', host_handle: 'club_b' }];
+  await db.query('update events set hosts=$1::jsonb where id=$2', [JSON.stringify(hosts), event.id]);
+  await publish([update('precision', [{ ...event, all_day: false }])]);
+  const saved = (await db.query('select all_day, hosts from events where id=$1', [event.id])).rows[0];
+  assert.equal(saved.all_day, false);
+  assert.deepEqual(saved.hosts, hosts);
+});
+
+test('KUCR teaser and timed announcement reconcile and remain supported after republication', async () => {
+  const venv = fileURLToPath(new URL('../../pipeline/.venv/bin/python', import.meta.url));
+  const python = process.env.PIPELINE_PYTHON || (existsSync(venv) ? venv : 'python3');
+  await reset();
+  const teaser = row('ig_ucralumni_p3966553446651553037', {
+    title: 'KUCR 60th Anniversary gala', all_day: true,
+    starts_at: '2026-10-02T07:00:00Z', ends_at: '2026-10-03T07:00:00Z',
+    location: 'The Alumni and Visitors Center, UC Riverside',
+    host: 'UCR Alumni Association', host_handle: 'ucralumni',
+  });
+  const timed = { ...teaser, id: 'ig_ucralumni_p3977498071100870455',
+    title: 'KUCR 60th Anniversary Celebration', all_day: false,
+    starts_at: '2026-10-03T01:00:00Z', ends_at: null,
+    location: 'UCR Alumni & Visitors Center' };
+  const inputs = [update('post:3966553446651553037', [teaser]), update('post:3977498071100870455', [timed])];
+  for (let run = 0; run < 2; run++) {
+    await publish(inputs);
+    const rows = (await db.query('select * from events')).rows;
+    const plan = JSON.parse(execFileSync(python, ['-c',
+      "import json,sys; sys.path.insert(0, 'pipeline'); from reconcile_events import plan; u,r=plan(json.load(sys.stdin)); print(json.dumps([u,sorted(r)]))"],
+      { input: JSON.stringify(rows), encoding: 'utf8', env: { ...process.env, PYTHON_DOTENV_DISABLED: '1' } }));
+    assert.deepEqual(plan, [[], [teaser.id]]);
+    await db.query('select remap_assessed_event_sources($1::jsonb)', [JSON.stringify([
+      { id: teaser.id, replacement_id: timed.id },
+    ])]);
+    assert.deepEqual(await ids(), [timed.id]);
+    const sources = (await db.query('select event_ids from source_assessments')).rows;
+    assert.ok(sources.every(source => source.event_ids.length === 1 && source.event_ids[0] === timed.id));
+    assert.equal((await db.query('select ends_at from events')).rows[0].ends_at, null);
+  }
+});
+
+
+test('time precision backfill uses the originating assessment and preserves locks', async () => {
+  const legacy = new PGlite();
+  try {
+    await legacy.exec('create role anon; create role authenticated; create role service_role bypassrls;');
+    for (const name of migrationNames.slice(0, -1)) {
+      await legacy.exec(await readFile(new URL(name, migrations), 'utf8'));
+    }
+    const entries = ['101', '102', '103'].map(media => {
+      const event = row(`ig_club_p${media}`);
+      return { ...update(`post:${media}`, [event]), assessment: { status: 'complete', result: {
+        occurrences: [{ all_day: true, starts_at: event.starts_at }],
+      } } };
+    });
+    await legacy.query('select reconcile_source_assessments($1::jsonb)', [JSON.stringify(entries)]);
+    await legacy.exec("update events set is_locked=true where id='ig_club_p102'; update events set starts_at=starts_at + interval '1 hour' where id='ig_club_p103'");
+    await legacy.exec(await readFile(new URL(migrationNames.at(-1), migrations), 'utf8'));
+    const rows = (await legacy.query('select id,all_day,hosts from events order by id')).rows;
+    assert.deepEqual(rows.map(r => r.all_day), [true, null, null]);
+    assert.ok(rows.every(r => r.hosts.length === 0));
+  } finally {
+    await legacy.close();
+  }
 });

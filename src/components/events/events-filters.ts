@@ -145,7 +145,7 @@ export function matchesDayWindow(
 
 type SearchableEvent = Pick<
   CampusEvent,
-  "title" | "description" | "host" | "hostHandle" | "location" | "tags"
+  "title" | "description" | "host" | "hostHandle" | "hosts" | "location" | "tags"
 >;
 
 type EventFilterable = SearchableEvent &
@@ -167,6 +167,7 @@ export function buildEventSearchText(event: SearchableEvent): string {
     event.description,
     event.host,
     event.hostHandle ?? "",
+    ...(event.hosts ?? []).flatMap((host) => [host.host, host.hostHandle ?? ""]),
     event.location,
     ...event.tags,
   ]

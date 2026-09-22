@@ -30,6 +30,12 @@ function schemaType(def) {
     const item = schemaType(def.items);
     return `${item}[]`;
   }
+  if (def.type === "object") {
+    const required = new Set(def.required ?? []);
+    return `{ ${Object.entries(def.properties ?? {}).map(([key, value]) =>
+      `${key}${required.has(key) ? "" : "?"}: ${schemaType(value)}`
+    ).join("; ")} }`;
+  }
   if (def.type === "integer") return "number";
   return def.type ?? "unknown";
 }
