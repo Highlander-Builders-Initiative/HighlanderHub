@@ -633,11 +633,13 @@ def _client(gemini_api: bool):
     from config import GEMINI_API_KEY, GOOGLE_CLOUD_PROJECT, GOOGLE_CLOUD_LOCATION
 
     # Overload (503 "high demand") usually clears within seconds, so server errors
-    # get three spaced retries (~5s, 10s, 20s). 429 is left out: a spent quota does
-    # not recover by waiting, and must stop assessment instead.
+    # get three spaced retries (~5s, 10s, 20s). On Vertex PayGo a 429 is the same
+    # kind of momentary shared-capacity shortage, and Google advises retrying it.
+    # On the free tier a 429 is a spent daily quota that waiting cannot recover,
+    # so it must stop assessment instead.
     http_options = {"timeout": 60_000, "retry_options": {
         "attempts": 4, "initial_delay": 5, "max_delay": 30, "exp_base": 2, "jitter": 1,
-        "http_status_codes": [408, 500, 502, 503, 504],
+        "http_status_codes": [408, 500, 502, 503, 504] + ([] if gemini_api else [429]),
     }}
     if gemini_api:
         if FLEX:
@@ -650,7 +652,7 @@ def _client(gemini_api: bool):
 
 
 def _generate(prompt: str):
-    """One call, retried briefly on overload; quota failures are left for the next run."""
+    """One call, retried briefly on overload; free-tier quota failures are left for the next run."""
     from config import GEMINI_API_KEY
 
     request = {"model": MODEL, "contents": prompt, "config": {

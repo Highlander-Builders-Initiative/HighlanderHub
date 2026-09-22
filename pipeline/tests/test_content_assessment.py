@@ -541,21 +541,24 @@ class AssessmentRequestTests(unittest.TestCase):
 
         src = source()
         response = SimpleNamespace(parsed=decision(src), text="")
-        with patch("google.genai.Client") as client:
-            client.return_value.models.generate_content.return_value = response
-            assess.assess(src)
-        options = types.HttpRetryOptions(**client.call_args.kwargs["http_options"]["retry_options"])
-        self.assertEqual(60_000, client.call_args.kwargs["http_options"]["timeout"])
-        for code, expected in ((429, 1), (500, 4), (503, 4), (400, 1), (403, 1)):
-            operation = Mock(side_effect=errors.APIError(code, {"error": {"message": "test"}}))
-            sleeps = []
-            retry = tenacity.Retrying(**_api_client.retry_args(options), sleep=sleeps.append)
-            with self.subTest(code=code), self.assertRaises(errors.APIError):
-                retry(operation)
-            self.assertEqual(expected, operation.call_count)
-            if sleeps:
-                self.assertTrue(5 <= sleeps[0] <= 6)
-                self.assertTrue(all(delay <= 30 for delay in sleeps))
+        # A Vertex 429 is transient shared capacity; a free-tier 429 is a spent quota.
+        for key, quota_calls in (("", 4), ("test-key", 1)):
+            with patch("config.GEMINI_API_KEY", key), patch.object(assess, "FLEX", False), \
+                    patch.object(assess, "_pace"), patch("google.genai.Client") as client:
+                client.return_value.models.generate_content.return_value = response
+                assess.assess(src)
+            options = types.HttpRetryOptions(**client.call_args.kwargs["http_options"]["retry_options"])
+            self.assertEqual(60_000, client.call_args.kwargs["http_options"]["timeout"])
+            for code, expected in ((429, quota_calls), (500, 4), (503, 4), (400, 1), (403, 1)):
+                operation = Mock(side_effect=errors.APIError(code, {"error": {"message": "test"}}))
+                sleeps = []
+                retry = tenacity.Retrying(**_api_client.retry_args(options), sleep=sleeps.append)
+                with self.subTest(vertex=not key, code=code), self.assertRaises(errors.APIError):
+                    retry(operation)
+                self.assertEqual(expected, operation.call_count)
+                if sleeps:
+                    self.assertTrue(5 <= sleeps[0] <= 6)
+                    self.assertTrue(all(delay <= 30 for delay in sleeps))
 
     def test_free_tier_uses_the_api_key_and_spaces_requests(self):
         src = source()
