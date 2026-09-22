@@ -78,10 +78,14 @@ test("a filtered feed does not rewrite the detail URL or reset when closed", asy
 
 for (const reload of [false, true]) {
   test(`loaded pages and the next cursor survive closing a card${reload ? " after refresh" : ""}`, async ({ page }) => {
-    const events = Array.from({ length: 32 }, (_, i) => ({
+    // Keep the API's order (start, then id): a scroll-triggered page load
+    // re-sorts the loaded list, and an out-of-order list would move the card.
+    const start = Date.parse(E2E_FIXTURE_EVENT.startsAt);
+    const events = Array.from({ length: 32 }, (_, i) => i === 24 ? E2E_FIXTURE_EVENT : ({
       ...E2E_FIXTURE_EVENT,
-      id: i === 24 ? E2E_FIXTURE_EVENT.id : `loaded-${i}`,
-      title: i === 24 ? E2E_FIXTURE_EVENT.title : `Loaded event ${i}`,
+      id: `loaded-${i}`,
+      title: `Loaded event ${i}`,
+      startsAt: new Date(start + (i - 24) * 60_000).toISOString(),
     }));
     await page.addInitScript(({ events }) => {
       if (sessionStorage.getItem("modal-test-seeded")) return;

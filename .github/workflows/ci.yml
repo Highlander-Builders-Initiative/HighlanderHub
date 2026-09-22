@@ -108,3 +108,14 @@ jobs:
         env:
           CI: true
         run: npm run e2e
+
+      # Retries record a trace (trace: "on-first-retry"); keep it so CI-only
+      # failures can be opened with `npx playwright show-trace`.
+      - name: Upload Playwright traces
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces-${{ github.run_id }}-${{ github.run_attempt }}
+          path: test-results/
+          retention-days: 14
+          if-no-files-found: ignore
