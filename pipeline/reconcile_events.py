@@ -59,6 +59,23 @@ def _same_place(left: dict, right: dict) -> bool:
     return min(map(len, locations)) >= 2 and (locations[0] <= locations[1] or locations[1] <= locations[0])
 
 
+def _unspecified_place(row: dict) -> bool:
+    location = ' '.join(re.findall(r'[a-z0-9]+', str(row.get('location') or '').casefold()))
+    return location in {'', 'ucr', 'uc riverside', 'university of california riverside',
+                        'ucr campus', 'uc riverside campus'}
+
+
+def _same_teaser_title(left: dict, right: dict) -> bool:
+    words = [_title_words(row) for row in (left, right)]
+    editions = [set(re.findall(r'\b(\d+(?:st|nd|rd|th))\s+annual\b',
+                              str(row.get('title') or '').casefold())) for row in (left, right)]
+    # "3rd Annual Tea Talk" and "Tea Talk" can name the same event. Two
+    # explicit editions, or ordinary numbered sessions, must still agree.
+    if bool(editions[0]) != bool(editions[1]):
+        words = [tokens - edition for tokens, edition in zip(words, editions)]
+    return words[0] == words[1]
+
+
 def _date_only(row: dict) -> bool:
     # Never infer missing time from midnight alone (real midnight events exist).
     start, end = _parse_instant(row.get('starts_at')), _parse_instant(row.get('ends_at'))
@@ -106,10 +123,20 @@ def same_event(left: dict, right: dict) -> bool:
         distinctive = (a & b) - _GENERIC_WORDS - {'celebration', 'anniversary'}
         same_host = any(left.get(k) and str(left[k]).casefold() == str(right.get(k) or '').casefold()
                         for k in ('host', 'host_handle'))
+        teaser, timed = (left, right) if _date_only(left) else (right, left)
+        same_account = (bool(left.get('host_handle')) and
+                        str(left['host_handle']).strip().lstrip('@').casefold() ==
+                        str(right.get('host_handle') or '').strip().lstrip('@').casefold())
+        # An explicit save-the-date may omit the room that its own account
+        # announces later. Missing venue detail is not a conflicting venue.
+        venue_pending = (same_account and _unspecified_place(teaser) and not _unspecified_place(timed)
+                         and re.search(r'\bsave\s+the\s+date\b', str(teaser.get('description') or ''), re.I)
+                         and len(distinctive) >= 2)
         # A date-only campaign cannot absorb a merely related timed activity.
-        # Require a specific common title, venue, and ownership/signup evidence.
+        # Require a specific common title and ownership/signup evidence.
         rsvp = _rsvp_identity(left.get('rsvp_url'))
-        return bool(len(a & b) >= 3 and distinctive and a == b and _same_place(left, right)
+        return bool(len(a & b) >= 3 and distinctive and _same_teaser_title(left, right)
+                    and (_same_place(left, right) or venue_pending)
                     and (same_host or _credits(left, right) or _credits(right, left)
                          or (rsvp and rsvp == _rsvp_identity(right.get('rsvp_url')))))
     if event_key(left) is not None and event_key(left) == event_key(right):
