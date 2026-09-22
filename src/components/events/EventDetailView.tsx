@@ -1,6 +1,6 @@
-import { CategoryBadge } from "@/components/ui/CategoryBadge";
-import { CATEGORY_PILL, DEADLINE_PILL } from "@/lib/category-colors";
+import { eventTags } from "@/lib/category-colors";
 import {
+  eventTimeLabel,
   formatDateStamp,
   formatDay,
   relativeDay,
@@ -12,7 +12,8 @@ import { EventFlyerImage } from "@/components/events/EventFlyerImage";
 import { FlyerPoster } from "@/components/events/FlyerPoster";
 import { TrackedAnchor } from "@/components/events/TrackedAnchor";
 import { normalizeHttpUrl } from "@/lib/events/validation";
-import { eventTimeLabel, isDeadlineKind } from "@/lib/events/content-kind";
+import { isDeadlineKind } from "@/lib/events/content-kind";
+import { hostHandlesByline } from "@/lib/events/host-byline";
 import { isOnlineLocation } from "@/lib/events/location";
 import type { CampusEvent } from "@/types/event";
 
@@ -220,22 +221,14 @@ export function EventDetailView({
             }
           >
             <div className="flex flex-wrap items-center gap-2">
-              {isDeadline && (
-                <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[12px] font-medium ${DEADLINE_PILL.highlight} ${DEADLINE_PILL.text}`}>
-                  Deadline
+              {eventTags(event).map((tag) => (
+                <span
+                  key={tag.label}
+                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[12px] font-medium ${tag.highlight} ${tag.text}`}
+                >
+                  {tag.label}
                 </span>
-              )}
-              <CategoryBadge category={event.category} />
-              {event.hasFreeFood && (
-                <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[12px] font-medium ${CATEGORY_PILL.free_food.highlight} ${CATEGORY_PILL.free_food.text}`}>
-                  Free food
-                </span>
-              )}
-              {event.rsvpRequired && (
-                <span className="inline-flex items-center rounded-full border border-ink/15 px-2.5 py-0.5 text-[12px] font-medium text-muted">
-                  RSVP required
-                </span>
-              )}
+              ))}
             </div>
 
             <Title
@@ -247,12 +240,13 @@ export function EventDetailView({
               {event.title}
             </Title>
 
-            {/* Phones: the host reads as a byline instead of a rail entry. */}
+            {/* Phones: the host reads as a byline, by handle, instead of a
+                rail entry. */}
             {showHostedBy && (
               <p className="mt-2 text-[14px] text-muted md:hidden">
                 by{" "}
                 <span className="font-medium text-ink">
-                  {event.host || event.hostHandle}
+                  {hostHandlesByline(event.hosts?.length ? event.hosts : [event])}
                 </span>
               </p>
             )}
@@ -324,7 +318,7 @@ export function EventDetailView({
                     </div>
                     <div className="mt-0.5 text-[14px] text-muted">
                       <span className="font-mono tabular-nums text-ink/85">
-                        {eventTimeLabel(event)}
+                        {eventTimeLabel(event, "span")}
                       </span>
                       {showRelative && (
                         <>

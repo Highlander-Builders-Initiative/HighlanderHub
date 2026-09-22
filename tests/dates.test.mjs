@@ -71,7 +71,12 @@ test("Pacific day-key helpers do calendar math outside the browser timezone", ()
             ["2026-09-22T07:00:00Z", undefined],
             ["2026-09-22T07:00:00Z", "2026-09-22T09:00:00Z"],
           ].map(([start, end]) => dates.formatAllDay(start, end)),
-          range: dates.formatTimeRange("2026-09-22T07:00:00Z", "2026-09-23T07:00:00Z")
+          range: dates.formatTimeRange("2026-09-22T07:00:00Z", "2026-09-23T07:00:00Z"),
+          timeLabels: [
+            { startsAt: "2026-09-23T02:00:00Z", endsAt: "2026-09-23T04:00:00Z" },
+            { startsAt: "2026-09-22T07:00:00Z", endsAt: "2026-09-23T07:00:00Z" },
+            { contentKind: "student_deadline", startsAt: "2026-09-22T07:00:00Z", endsAt: "2026-09-23T07:00:00Z" },
+          ].map((event) => [dates.eventTimeLabel(event, "start"), dates.eventTimeLabel(event, "span")])
         }));
       `,
     ],
@@ -103,5 +108,11 @@ test("Pacific day-key helpers do calendar math outside the browser timezone", ()
     // a midnight start without a midnight end keeps its clock time.
     allDay: ["All day", "All day through Oct 3", "All day through Nov 1", null, null],
     range: "All day",
+    // A deadline at midnight keeps its cutoff time; it is never "All day".
+    timeLabels: [
+      ["7:00 PM", "7:00pm – 9:00pm"],
+      ["All day", "All day"],
+      ["12:00 AM", "12:00am"],
+    ],
   });
 });

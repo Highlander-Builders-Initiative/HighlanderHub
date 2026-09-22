@@ -19,6 +19,11 @@ export const EVENT_CATEGORY_LABELS: Record<EventCategory, string> = {
   free_food: "Free food",
 };
 
+/** "Club", "Academic", … "Free food": the label without its " / " qualifier. */
+export function categoryShortLabel(category: EventCategory): string {
+  return EVENT_CATEGORY_LABELS[category].split(" / ")[0];
+}
+
 export interface CampusEvent {
   id: string;
   title: string;

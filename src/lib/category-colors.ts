@@ -1,4 +1,5 @@
-import type { CampusEvent } from "@/types/event";
+import { type CampusEvent, categoryShortLabel } from "@/types/event";
+import { isDeadlineKind } from "@/lib/events/content-kind";
 
 export const CATEGORY_RAIL: Record<CampusEvent["category"], string> = {
   club: "bg-tag-blue",
@@ -56,7 +57,42 @@ export const CATEGORY_PILL: Record<
 };
 
 /** The Deadline tag: an urgency signal, not a category, in the coral hue. */
-export const DEADLINE_PILL = CATEGORY_PILL.social;
+export const DEADLINE_PILL = {
+  highlight: "bg-tag-coral/[0.18] ring-1 ring-inset ring-tag-coral/30",
+  text: "text-tag-coral-ink",
+};
+
+/** Unfilled: a note about attending, not a kind of event. */
+const RSVP_PILL = {
+  highlight: "ring-1 ring-inset ring-ink/15",
+  text: "text-ink/70",
+};
+
+export type EventTag = { label: string; highlight: string; text: string };
+
+/**
+ * The tag row on the feed card and the detail header, in order: Deadline, the
+ * category, Free food, RSVP. A free-food category and the free-food flag are
+ * the same fact, so they make one tag.
+ */
+export function eventTags(
+  event: Pick<CampusEvent, "contentKind" | "category" | "hasFreeFood" | "rsvpRequired">
+): EventTag[] {
+  const tags: EventTag[] = [];
+  if (isDeadlineKind(event.contentKind)) {
+    tags.push({ label: "Deadline", ...DEADLINE_PILL });
+  }
+  if (event.category !== "free_food") {
+    tags.push({ label: categoryShortLabel(event.category), ...CATEGORY_PILL[event.category] });
+  }
+  if (event.hasFreeFood || event.category === "free_food") {
+    tags.push({ label: "Free food", ...CATEGORY_PILL.free_food });
+  }
+  if (event.rsvpRequired) {
+    tags.push({ label: "RSVP", ...RSVP_PILL });
+  }
+  return tags;
+}
 
 // "All" has no category hue; it gets a neutral ink wash in the same shape.
 export const ALL_PILL = {

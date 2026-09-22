@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import type { CampusEvent } from "@/types/event";
-import { eventTimeLabel } from "@/lib/events/content-kind";
+import { eventTimeLabel } from "@/lib/dates";
 import { FiCalendar, FiMapPin, FiGift, FiArrowRight } from "react-icons/fi";
 import { stashEventForDetail } from "@/lib/events/detail-handoff";
 import { track } from "@/lib/analytics";
@@ -47,7 +47,7 @@ export function FeaturedEventsRow({ events }: { events: CampusEvent[] }) {
         <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {featured.map((event) => {
             const hasImage = !!event.imageUrl && !imageErrors[event.id];
-            const timeLabel = eventTimeLabel(event);
+            const timeLabel = eventTimeLabel(event, "span");
 
             return (
               <Link

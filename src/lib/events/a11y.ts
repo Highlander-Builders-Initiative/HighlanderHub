@@ -1,7 +1,7 @@
 import type { CampusEvent } from "@/types/event";
-import { EVENT_CATEGORY_LABELS } from "@/types/event";
+import { categoryShortLabel } from "@/types/event";
 import { isDeadlineKind } from "@/lib/events/content-kind";
-import { formatAllDay, formatTime, relativeDay } from "@/lib/dates";
+import { eventTimeLabel, relativeDay } from "@/lib/dates";
 
 /** Link name for mosaic / marquee tiles (title + day, no time). */
 export function eventTileLinkLabel(event: CampusEvent): string {
@@ -19,11 +19,9 @@ export function eventFlyerAlt(event: CampusEvent): string {
  */
 export function eventListLinkLabel(event: CampusEvent): string {
   const day = relativeDay(event.startsAt);
+  const time = eventTimeLabel(event, "start");
   if (isDeadlineKind(event.contentKind)) {
-    return `Deadline: ${event.title}, due ${day} at ${formatTime(event.startsAt)}`;
+    return `Deadline: ${event.title}, due ${day} at ${time}`;
   }
-  const allDay = formatAllDay(event.startsAt, event.endsAt);
-  const category = EVENT_CATEGORY_LABELS[event.category].split(" / ")[0];
-  const when = allDay ? `, ${allDay}` : ` at ${formatTime(event.startsAt)}`;
-  return `${category}: ${event.title}, ${day}${when}`;
+  return `${categoryShortLabel(event.category)}: ${event.title}, ${day}, ${time}`;
 }

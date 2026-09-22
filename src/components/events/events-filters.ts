@@ -1,6 +1,6 @@
 import {
   EVENT_CATEGORIES,
-  EVENT_CATEGORY_LABELS,
+  categoryShortLabel,
   type CampusEvent,
   type EventCategory,
 } from "@/types/event";
@@ -30,7 +30,7 @@ export const CATEGORIES: { value: CategoryValue; label: string }[] = [
         ? "Clubs"
         : value === "free_food"
           ? "Free Food"
-          : EVENT_CATEGORY_LABELS[value].split(" / ")[0],
+          : categoryShortLabel(value),
   })),
 ];
 
