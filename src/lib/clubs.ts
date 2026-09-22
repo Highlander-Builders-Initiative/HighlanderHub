@@ -1,4 +1,6 @@
 import accountsData from "../../pipeline/accounts.json";
+import accountActivity from "../../pipeline/data/account_activity.json";
+import { isAnonymizedHostHandle } from "@/lib/events/anonymized-hosts";
 
 export type Club = {
   handle: string;
@@ -6,20 +8,43 @@ export type Club = {
   category: string;
 };
 
-const ALL_CLUBS: Club[] = (accountsData.accounts as Club[])
-  .map((a) => ({ handle: a.handle, label: a.label, category: a.category }))
-  .sort((a, b) => a.label.localeCompare(b.label));
+type ClubHost = { host: string; hostHandle?: string; category: string };
 
-export function searchClubs(query: string, limit = 8): Club[] {
-  const q = query.trim().toLowerCase();
-  if (!q) return ALL_CLUBS.slice(0, limit);
+export function getClubs(hosts: readonly ClubHost[] = []): Club[] {
+  const clubs = new Map<string, Club>();
+  for (const handle of Object.keys(accountActivity)) {
+    clubs.set(handle, { handle, label: handle, category: "club" });
+  }
+  for (const { handle, label, category } of accountsData.accounts) {
+    clubs.set(handle, { handle, label, category });
+  }
+  // Use the full public event source, not just the currently loaded feed page.
+  for (const { host, hostHandle, category } of hosts) {
+    const handle = (hostHandle ?? "").trim().replace(/^@/, "").toLowerCase();
+    if (!handle) continue;
+    const existing = clubs.get(handle);
+    if (!existing || existing.label === handle) {
+      clubs.set(handle, { handle, label: host.trim() || handle, category });
+    }
+  }
+  return [...clubs.values()]
+    .filter((club) => !isAnonymizedHostHandle(club.handle))
+    .sort((a, b) => a.label.localeCompare(b.label));
+}
+
+const ALL_CLUBS = getClubs();
+
+export function searchClubs(query: string, limit = 8, clubs = ALL_CLUBS): Club[] {
+  const q = query.trim().replace(/^@/, "").toLowerCase();
+  if (!q) return clubs.slice(0, limit);
 
   const scored: Array<{ club: Club; score: number }> = [];
-  for (const club of ALL_CLUBS) {
+  for (const club of clubs) {
     const label = club.label.toLowerCase();
     const handle = club.handle.toLowerCase();
     let score = -1;
-    if (label.startsWith(q) || handle.startsWith(q)) score = 3;
+    if (label === q || handle === q) score = 4;
+    else if (label.startsWith(q) || handle.startsWith(q)) score = 3;
     else if (label.includes(` ${q}`) || handle.includes(`_${q}`)) score = 2;
     else if (label.includes(q) || handle.includes(q)) score = 1;
     if (score >= 0) scored.push({ club, score });

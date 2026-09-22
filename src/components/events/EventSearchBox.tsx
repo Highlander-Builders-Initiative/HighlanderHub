@@ -13,12 +13,13 @@ import { clubInitials, searchClubs, type Club } from "@/lib/clubs";
 
 type Props = {
   query: string;
+  clubs: Club[];
   onQueryChange: (next: string) => void;
 };
 
 const DROPDOWN_LIMIT = 8;
 
-export function EventSearchBox({ query, onQueryChange }: Props) {
+export function EventSearchBox({ query, clubs: allClubs, onQueryChange }: Props) {
   const inputId = useId();
   const listboxId = `${inputId}-clubs`;
   const containerRef = useRef<HTMLDivElement>(null);
@@ -30,7 +31,10 @@ export function EventSearchBox({ query, onQueryChange }: Props) {
   // from the resulting onChange/effect.
   const justSelectedRef = useRef<string | null>(null);
 
-  const clubs = useMemo(() => searchClubs(query, DROPDOWN_LIMIT), [query]);
+  const clubs = useMemo(
+    () => searchClubs(query, DROPDOWN_LIMIT, allClubs),
+    [query, allClubs]
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -54,8 +58,8 @@ export function EventSearchBox({ query, onQueryChange }: Props) {
 
   const selectClub = useCallback(
     (club: Club) => {
-      justSelectedRef.current = club.label;
-      onQueryChange(club.label);
+      justSelectedRef.current = club.handle;
+      onQueryChange(club.handle);
       setOpen(false);
       setActiveIndex(-1);
       inputRef.current?.blur();

@@ -41,6 +41,9 @@ function resolveSourceUrl(url) {
 function compileTsModule(sourceUrl) {
   const sourcePath = fileURLToPath(sourceUrl);
   const source = readFileSync(sourceUrl, "utf8");
+  if (extname(sourcePath) === ".json") {
+    return `data:text/javascript,${encodeURIComponent(`export default ${JSON.stringify(JSON.parse(source))};`)}`;
+  }
   const sourceHash = createHash("sha256").update(source).digest("hex").slice(0, 12);
   const cacheKey = `${sourcePath}:${sourceHash}`;
   const cached = moduleCache.get(cacheKey);

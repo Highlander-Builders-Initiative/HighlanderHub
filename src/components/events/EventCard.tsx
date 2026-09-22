@@ -31,6 +31,7 @@ function EventCardComponent({
   const router = useRouter();
   const [imageBroken, setImageBroken] = useState(false);
   const showImage = !compact && !!event.imageUrl && !imageBroken;
+  const cardRef = useRef<HTMLAnchorElement>(null);
   const descRef = useRef<HTMLParagraphElement>(null);
   const [isDescTruncated, setIsDescTruncated] = useState(false);
   const showDescription = !compact && !!event.description?.trim();
@@ -42,7 +43,12 @@ function EventCardComponent({
     if (!el) return;
     const measure = () =>
       setIsDescTruncated(el.scrollHeight - el.clientHeight > 1);
-    measure();
+    // Measuring an off-screen card would lay out the subtree that
+    // content-visibility skips; the observer reports it once it renders.
+    const card = cardRef.current?.getBoundingClientRect();
+    if (!card || (card.bottom >= 0 && card.top <= window.innerHeight)) {
+      measure();
+    }
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
@@ -61,8 +67,13 @@ function EventCardComponent({
 
   const prefetch = () => router.prefetch(href);
 
+  // List cards skip layout, paint and hit-testing while off screen, so a feed
+  // with hundreds of loaded events stays about as cheap as one page. Unrendered
+  // cards hold the measured median height (158px mobile, 141px sm+); `auto`
+  // keeps each card's real height once it has rendered.
   return (
     <Link
+      ref={cardRef}
       href={href}
       // Opens as an overlay (@modal intercepted route); the list keeps its place.
       scroll={false}
@@ -72,7 +83,9 @@ function EventCardComponent({
       aria-label={eventListLinkLabel(event)}
       data-event-id={event.id}
       className={`interactive-focus card-hover group relative isolate flex w-full min-w-0 overflow-hidden rounded-2xl border border-ink/10 bg-canvas transition-[border-color,box-shadow] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-ink/30 hover:shadow-cardHover ${
-        compact ? "" : "min-h-[6rem] shadow-card"
+        compact
+          ? ""
+          : "min-h-[6rem] shadow-card [content-visibility:auto] [contain-intrinsic-height:auto_158px] sm:[contain-intrinsic-height:auto_141px]"
       }`}
     >
       {/* Time column: typographic anchor at the left edge. The right edge is

@@ -179,7 +179,7 @@ export function matchesQuery(searchText: string, normalizedQuery: string) {
 }
 
 export function normalizeEventQuery(query: string | undefined): string {
-  return (query ?? "").trim().toLowerCase();
+  return (query ?? "").trim().replace(/^@/, "").toLowerCase();
 }
 
 export function matchesEventFilters(
