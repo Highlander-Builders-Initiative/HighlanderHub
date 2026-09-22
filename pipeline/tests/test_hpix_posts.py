@@ -16,7 +16,10 @@ NOW = datetime(2026, 9, 20, tzinfo=timezone.utc)
 ACCOUNTS = {'club': {'handle': 'club', 'instagram_user_id': 42},
             'quiet': {'handle': 'quiet', 'instagram_user_id': 43}}
 STATE = {h: {'activated_at': '2026-09-01T00:00:00Z',
-             'scanned_through': '2026-09-19T00:00:00Z'} for h in ACCOUNTS}
+             'scanned_through': '2026-09-19T00:00:00Z',
+             # Existing error assertions exercise repeated failures. Fresh
+             # accounts and streak resets are covered separately below.
+             'last_status': 'incomplete'} for h in ACCOUNTS}
 
 
 def row(handle='club', owner='club', owner_id='42'):
@@ -56,9 +59,98 @@ class HpixCollectionTests(unittest.TestCase):
         self.write = self.enterContext(patch.object(apify, 'write_post'))
         self.upsert = self.enterContext(patch('db.upsert_batched'))
 
-    def collect(self):
-        apify.collect(self.api, ACCOUNTS, copy.deepcopy(STATE), NOW,
+    def collect(self, state=None):
+        apify.collect(self.api, ACCOUNTS, copy.deepcopy(STATE if state is None else state), NOW,
                       limit=100, max_charge=1, timeout=300, archive=apify.ArchiveIndex())
+
+    def next_attempt(self, state, failed):
+        saved = json.loads(self.path.read_text())
+        saved.pop('previous_failed_handles', None)
+        saved['consumed'] = False
+        self.path.write_text(json.dumps(saved))
+        self.api.items.return_value = [
+            {'kind': 'profile', 'input': h, 'error': 'Account not found'} for h in failed]
+        self.collect(state)
+
+    def updated_state(self):
+        return {u['handle']: u for u in self.upsert.call_args.args[1]}
+
+    def test_only_second_consecutive_failure_errors_and_success_resets(self):
+        state = {h: {**entry, 'last_status': 'ok'} for h, entry in STATE.items()}
+        self.next_attempt(state, ['quiet'])
+        report = json.loads(self.path.read_text())
+        self.assertEqual([], report['errors'])
+        self.assertIn('quiet: Account not found', report['warnings'])
+        self.assertEqual('incomplete', self.status('quiet')['last_status'])
+        self.assertEqual(STATE['quiet']['scanned_through'], self.status('quiet')['scanned_through'])
+        with self.assertRaisesRegex(apify.PartialCollection, 'quiet: Account not found'):
+            self.next_attempt(self.updated_state(), ['quiet'])
+        with self.assertRaises(apify.PartialCollection):
+            self.next_attempt(self.updated_state(), ['quiet'])
+        self.next_attempt(self.updated_state(), [])
+        self.assertEqual('ok', self.status('quiet')['last_status'])
+        self.next_attempt(self.updated_state(), ['quiet'])
+        self.assertEqual([], json.loads(self.path.read_text())['errors'])
+
+    def test_different_accounts_failing_in_adjacent_runs_do_not_form_a_streak(self):
+        state = {h: {k: v for k, v in entry.items() if k != 'last_status'} for h, entry in STATE.items()}
+        self.next_attempt(state, ['club'])
+        self.next_attempt(self.updated_state(), ['quiet'])
+        self.assertEqual('ok', self.status('club')['last_status'])
+        self.assertEqual([], json.loads(self.path.read_text())['errors'])
+
+    def test_replayed_paid_run_does_not_increment_the_failure_streak(self):
+        state = {h: {**entry, 'last_status': 'ok'} for h, entry in STATE.items()}
+        # Simulate the database write committing but the response being lost.
+        self.upsert.side_effect = RuntimeError('checkpoint response lost')
+        with self.assertRaisesRegex(RuntimeError, 'checkpoint response lost'):
+            self.next_attempt(state, ['quiet'])
+        state = self.updated_state()
+        self.upsert.side_effect = None
+        self.collect(state)
+        self.assertEqual([], json.loads(self.path.read_text())['errors'])
+        with self.assertRaises(apify.PartialCollection):
+            self.next_attempt(self.updated_state(), ['quiet'])
+        # Replaying a second failure must keep it red, too.
+        with self.assertRaises(apify.PartialCollection):
+            self.collect(self.updated_state())
+
+    def test_first_failure_leaves_plan_green_without_an_extra_actor_run(self):
+        state = {h: {**entry, 'last_status': 'ok'} for h, entry in STATE.items()}
+        self.api.items.return_value = [{'kind': 'profile', 'input': 'quiet', 'error': 'Account not found'}]
+        plan = {'jobs': [{'mode': 'discovery', 'handles': list(ACCOUNTS),
+                         'file': str(self.path), 'cutoff': '2026-09-18T23:54:59Z',
+                         'limit': 100, 'max_charge': 1, 'done': False}], 'complete': False}
+        with patch.object(apify, 'ApifyClient', return_value=self.api), \
+                patch.object(apify, 'PLAN_FILE', self.path.with_name('plan.json')):
+            apify.execute_plan('test', ACCOUNTS, state, NOW, plan, 300, archive=apify.ArchiveIndex())
+        self.assertTrue(plan['complete'])
+        self.assertEqual([], plan['jobs'][0]['errors'])
+        self.assertEqual(1, len(plan['jobs']))
+        self.api.run.assert_called_once()
+
+    def test_first_restricted_profile_failure_is_only_a_warning(self):
+        state = {h: {**entry, 'last_status': 'ok'} for h, entry in STATE.items()}
+        self.api.items.return_value = []
+        self.api.run_log.return_value = (
+            'INFO  Crawler: [club] Finished scraping posts\n'
+            'WARN  Crawler: [quiet] Profile is restricted, posts cannot be scraped (yet)')
+        self.collect(state)
+        self.assertEqual('incomplete', self.status('quiet')['last_status'])
+        self.assertEqual([], json.loads(self.path.read_text())['errors'])
+
+    def test_first_cap_or_actor_failure_still_errors(self):
+        state = {h: {**entry, 'last_status': 'ok'} for h, entry in STATE.items()}
+        self.api.items.return_value = []
+        for update in [dict(status='FAILED'), dict(status='ABORTED'),
+                       dict(options={'maxTotalChargeUsd': .001})]:
+            with self.subTest(update=update):
+                self.api.run.return_value = run(**update)
+                with self.assertRaises(apify.PartialCollection): self.collect(state)
+        self.api.run.return_value = run()
+        self.api.run_log.return_value = ('INFO  Crawler: [club] Scraped 100/100 posts\n'
+                                        'INFO  Crawler: [club] Finished scraping posts')
+        with self.assertRaises(apify.PartialCollection): self.collect(state)
 
     def status(self, handle):
         return next(r for r in self.upsert.call_args.args[1] if r['handle'] == handle)

@@ -206,6 +206,16 @@ after maintenance. The scheduled workflow always leaves it blank.
 
 ## Failure recovery and costs
 
+An account's first incomplete hpix scan logs a warning without failing the
+collection stage. A second consecutive incomplete scan of that same account
+fails collection; a successful scan resets its failure history. The existing
+durable checkpoint status carries this history across workflow runs. Failed
+accounts retain their scan boundary and wait for the normal next eligible cycle;
+there is no extra same-run retry. Replaying the same paid run after an
+interruption does not count as another failure. Warnings remain in the actor-run
+diagnostics. Actor failures, charge/post caps, malformed output and intentional
+safety halts still fail immediately.
+
 `data/apify_plan.json` stores a cycle of discovery batches. Each has its own file under `data/apify_runs/`. Completed batches are
 skipped on recovery; unfinished batches resume their existing actor run and
 replay its dataset. A consumed dataset is never billed again merely because the

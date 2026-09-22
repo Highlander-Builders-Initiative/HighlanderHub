@@ -19,7 +19,8 @@ from typing import Any
 from urllib.parse import urlsplit
 
 import requests
-from hpix_contract import hpix_item, completed_profiles as hpix_completed_profiles
+from hpix_contract import (hpix_item, capped_profiles,
+                           completed_profiles as hpix_completed_profiles)
 
 from config import DATA_DIR, POST_BACKFILL_SINCE, load_accounts
 from post_archive import (ArchiveIndex,
@@ -547,6 +548,7 @@ def collect(api: ApifyClient, accounts: dict, state: dict, now: datetime,
     bad = set()
     seen = set()
     errors = []
+    profile_errors = {handle: [] for handle in accounts}
     dataset = run.get("defaultDatasetId")
     if not dataset:
         raise RuntimeError("Apify run has no dataset")
@@ -561,9 +563,12 @@ def collect(api: ApifyClient, accounts: dict, state: dict, now: datetime,
     invalid = 0
     outside_actor_cutoff = 0
     detail_info = {}
+    capped = set()
     source = api.items(dataset)
     if hpix:
-        completed = hpix_completed_profiles(api.run_log(run["id"]))
+        run_log = api.run_log(run["id"])
+        completed = hpix_completed_profiles(run_log)
+        capped = capped_profiles(run_log)
         rows = list(source)
         # Profile error rows have no data, and override any apparent completion.
         source, detail_info = prepare_hpix(api, run, rows, accounts, boundaries, archive,
@@ -588,7 +593,7 @@ def collect(api: ApifyClient, accounts: dict, state: dict, now: datetime,
                     if handle not in accounts:
                         raise ValueError(f"unrequested profile: {handle}")
                     bad.add(handle)
-                    errors.append(f"{handle}: {item['_collection_error']}")
+                    profile_errors[handle].append(f"{handle}: {item['_collection_error']}")
                     continue
                 if hpix and item.get("_collection_error"):
                     raise ValueError(item["_collection_error"])
@@ -663,12 +668,29 @@ def collect(api: ApifyClient, accounts: dict, state: dict, now: datetime,
     if limited:
         successful = False
         errors.append(limited)
+    # Snapshot prior failures before checkpoint writes. Replaying this paid run
+    # after an interruption must not count it as a second failed attempt.
+    if "previous_failed_handles" not in saved:
+        saved["previous_failed_handles"] = sorted(
+            h for h, entry in state.items() if entry.get("last_status") == "incomplete")
+        write_json(api.run_file, saved)
+    previous_failed = set(saved["previous_failed_handles"])
     updates = []
+    warnings = []
     for handle, entry in state.items():
         coverage = handle in completed if official or hpix else bool(counts[handle])
         complete = successful and handle not in bad and coverage and len(counts[handle]) < limit
         if not complete:
-            errors.append(f"{handle}: incomplete ({len(counts[handle])} posts, limit {limit}, run {run['status']})")
+            failures = profile_errors[handle] + [
+                f"{handle}: incomplete ({len(counts[handle])} posts, limit {limit}, run {run['status']})"]
+            if (hpix and successful and not invalid and not detail_info.get("halt_reason")
+                    and handle not in capped and len(counts[handle]) < limit
+                    and handle not in previous_failed):
+                warnings.extend(failures)
+                log.warning("%s: first consecutive collection failure; will retry next cycle: %s",
+                            handle, "; ".join(failures))
+            else:
+                errors.extend(failures)
         updates.append({"handle": handle, "activated_at": entry["activated_at"],
                         "scanned_through": iso(scan_start) if complete else entry.get("scanned_through"),
                         "last_scan_at": iso(now), "last_status": "ok" if complete else "incomplete"})
@@ -684,7 +706,7 @@ def collect(api: ApifyClient, accounts: dict, state: dict, now: datetime,
     elif limited and "restricted-post" in limited:
         halt_reason = limited
     write_json(api.run_file, {**saved, "consumed": True, "status": run["status"],
-                          "saved_posts": len(seen), "errors": errors,
+                          "saved_posts": len(seen), "errors": errors, "warnings": warnings,
                           "exported": exported, "ignored_old": ignored_old,
                           "invalid": invalid, "halt_reason": halt_reason,
                           **{k: v for k, v in detail_info.items() if k != "halt_reason"},
