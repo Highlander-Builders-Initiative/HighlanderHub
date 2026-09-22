@@ -25,6 +25,7 @@ __pycache__/
 
 # Apify run resume state and per-run report
 data/apify_run.json
+data/apify_avatar_run.json
 data/last_run.json
 
 data/apify_plan.json
