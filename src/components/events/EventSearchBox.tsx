@@ -9,7 +9,8 @@ import {
   useState,
   type KeyboardEvent,
 } from "react";
-import { clubInitials, searchClubs, type Club } from "@/lib/clubs";
+import { searchClubs, type Club } from "@/lib/clubs";
+import { ClubAvatar } from "@/components/ui/ClubAvatar";
 
 type Props = {
   query: string;
@@ -178,12 +179,7 @@ export function EventSearchBox({ query, clubs: allClubs, onQueryChange }: Props)
                     isActive ? "bg-surface" : "bg-canvas"
                   }`}
                 >
-                  <span
-                    aria-hidden
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface text-[11px] font-semibold text-ink ring-1 ring-ink/10"
-                  >
-                    {clubInitials(club.label)}
-                  </span>
+                  <ClubAvatar handle={club.handle} name={club.label} size={32} />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[14px] font-medium text-ink">
                       {club.label}

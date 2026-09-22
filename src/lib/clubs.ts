@@ -55,14 +55,3 @@ export function searchClubs(query: string, limit = 8, clubs = ALL_CLUBS): Club[]
   scored.sort((a, b) => b.score - a.score || a.club.label.localeCompare(b.club.label));
   return scored.slice(0, limit).map((s) => s.club);
 }
-
-export function clubInitials(label: string): string {
-  const skip = new Set(["at", "of", "de", "the", "and", "for", "in"]);
-  const cleaned = label.replace(/[@_.]/g, " ").trim();
-  const parts = cleaned
-    .split(/\s+/)
-    .filter((p) => p && !skip.has(p.toLowerCase()) && !/^\d+$/.test(p));
-  if (parts.length === 0) return "?";
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[1][0]).toUpperCase();
-}
