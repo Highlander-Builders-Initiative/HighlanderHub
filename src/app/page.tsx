@@ -41,7 +41,7 @@ export default async function HomePage() {
       : { href: "/events", label: "See all events" };
 
   return (
-    <main className="min-h-screen bg-canvas">
+    <main className="brand-type min-h-screen bg-canvas">
       <Masthead />
 
       {/* Hero: an editorial masthead over the living bulletin wall, with the
@@ -52,7 +52,7 @@ export default async function HomePage() {
           <div className="skyline-copy relative mx-auto max-w-7xl px-4 pt-11 sm:px-6 md:pt-16">
             {/* Dateline: a campus-paper colophon. */}
             <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
-              <p className="font-mono text-[12px] tracking-[0.04em] text-muted">
+              <p className="text-[12px] text-muted">
                 {dateLabel}
                 {weekLabel ? ` · ${weekLabel}` : ""}
               </p>

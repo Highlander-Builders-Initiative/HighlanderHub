@@ -171,7 +171,7 @@ export default function AdminDashboardClient({
             <h2 className="font-display text-base font-semibold text-ink">
               Live events
             </h2>
-            <p className="font-mono text-[11px] text-muted">
+            <p className="text-[11px] text-muted">
               {initialEvents.length} on the public calendar
             </p>
           </div>

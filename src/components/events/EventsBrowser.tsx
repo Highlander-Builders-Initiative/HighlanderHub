@@ -6,6 +6,7 @@ import {
   useEffect,
   useRef,
   useCallback,
+  useSyncExternalStore,
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import type { CampusEvent } from "@/types/event";
@@ -23,9 +24,11 @@ import { track } from "@/lib/analytics";
 import { getClubs } from "@/lib/clubs";
 import { saveEventFeedSnapshot } from "@/lib/events/feed-session";
 import {
+  FEED_VIEW_COOKIE,
   type CategoryValue,
   type DayWindow,
   type EventFeedQuery,
+  type FeedView,
 } from "./events-filters";
 import { useCalendarMonthEvents } from "./useCalendarMonthEvents";
 import { useEventFeedFilters } from "./useEventFeedFilters";
@@ -34,6 +37,19 @@ import { useEventFeedNavigation } from "./useEventFeedNavigation";
 import type { EventFeedRestorePatch } from "@/lib/events/feed-restore";
 
 export type EventsBrowserInitialFilters = EventFeedQuery;
+
+// The compact view is a desktop layout (the toggle only shows from lg);
+// phones always list cards.
+const DESKTOP_QUERY = "(min-width: 1024px)";
+function subscribeDesktop(onChange: () => void) {
+  const query = window.matchMedia(DESKTOP_QUERY);
+  query.addEventListener("change", onChange);
+  return () => query.removeEventListener("change", onChange);
+}
+const isDesktopNow = () => window.matchMedia(DESKTOP_QUERY).matches;
+// The server renders the saved view; a phone that saved "compact" (only
+// possible after a narrow resize) settles on cards right after hydration.
+const isDesktopOnServer = () => true;
 
 const DEFAULT_INITIAL_FILTERS: EventsBrowserInitialFilters = {
   category: "all",
@@ -49,6 +65,8 @@ type EventsBrowserProps = {
   initialHasMore?: boolean;
   initialNextOffset?: number;
   initialFilters?: EventsBrowserInitialFilters;
+  /** The reader's saved desktop view, from the feed-view cookie. */
+  initialView?: FeedView;
 };
 
 export function EventsBrowser({
@@ -59,6 +77,7 @@ export function EventsBrowser({
   initialHasMore = false,
   initialNextOffset = events.length,
   initialFilters = DEFAULT_INITIAL_FILTERS,
+  initialView = "cards",
 }: EventsBrowserProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -76,6 +95,9 @@ export function EventsBrowser({
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [loadError, setLoadError] = useState("");
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
+  const [view, setView] = useState<FeedView>(initialView);
+  const isDesktop = useSyncExternalStore(subscribeDesktop, isDesktopNow, isDesktopOnServer);
+  const listView: FeedView = isDesktop ? view : "cards";
   const clubs = useMemo(() => getClubs(filterCountSource), [filterCountSource]);
 
   const todayKey = useMemo(() => pacificTodayKey(), []);
@@ -294,6 +316,14 @@ export function EventsBrowser({
     pageFilters: initialFilters,
   });
 
+  const handleViewChange = useCallback((next: FeedView) => {
+    setView(next);
+    // A per-reader preference, read on the server so the next visit paints
+    // straight into it. Scoped to the feed's path.
+    document.cookie = `${FEED_VIEW_COOKIE}=${next}; path=/events; max-age=31536000; samesite=lax`;
+    track("events_view", { view: next });
+  }, []);
+
   const openMobileFilters = useCallback(() => {
     setMobileSheetOpen(true);
   }, []);
@@ -329,7 +359,8 @@ export function EventsBrowser({
           onClearDayWindow={clearDayWindow}
           onClearQuery={clearQuery}
           todayKey={todayKey}
-          observedDayKey={observedDayKey}
+          view={listView}
+          onViewChange={handleViewChange}
           dayKeys={dayKeys}
           grouped={grouped}
           loadedCount={loadedEvents.length}

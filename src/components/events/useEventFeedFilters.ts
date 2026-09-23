@@ -117,8 +117,8 @@ export function useEventFeedFilters({
   );
   const dayKeys = useMemo(() => Array.from(grouped.keys()), [grouped]);
 
-  // Per-day event count drives the calendar heat map. Real counts (not
-  // distinct categories) so a day with five social events reads as busy.
+  // Per-day event count: the calendar marks days that have events, and each
+  // day's button announces its count.
   const countsByDay = useMemo(() => {
     const map = new Map<string, number>();
     for (const [key, evs] of calendarGrouped) {

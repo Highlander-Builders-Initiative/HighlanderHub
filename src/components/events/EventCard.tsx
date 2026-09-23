@@ -21,6 +21,8 @@ type EventCardProps = {
   loadedCount?: number;
 };
 
+type EventHost = { host: string; hostHandle?: string };
+
 const MAX_HOST_AVATARS = 3;
 /**
  * Width of the icon column that leads the hosts and where rows: one avatar
@@ -29,14 +31,17 @@ const MAX_HOST_AVATARS = 3;
  * body text's size.
  */
 const LEAD_COLUMN_PX = 16;
-const PILL = "rounded-full px-2.5 py-0.5 text-[13px] font-medium sm:px-3 sm:text-[14px]";
+/** From lg the pills step down to 12px, Luma's badge size, so the tag row
+ *  stays a footnote under the title. */
+const PILL =
+  "rounded-full px-2.5 py-0.5 text-[13px] font-medium sm:px-3 sm:text-[14px] lg:px-2 lg:text-[12px]";
 
 /**
  * Pin or camera for the where-row, drawn to sit in the text like a glyph. Each
  * viewBox hugs its ink, so the icon nearly fills the lead column (a 1em pin is
  * as tall as the avatar at 16px) and the space before the text stays close to
  * the avatar's. Sizes are in em so the icon follows the 14→16px text step, and
- * strokes render at ~0.09em, Bricolage's regular stem.
+ * strokes render at ~0.09em, the body face's regular stem.
  */
 function LocationIcon({ online }: { online: boolean }) {
   return online ? (
@@ -70,21 +75,42 @@ function LocationIcon({ online }: { online: boolean }) {
   );
 }
 
-/**
- * Feed listing row: start time, title, hosts with their club pictures, where,
- * and a row of tags, with the flyer pinned at the right edge.
- */
-function EventCardComponent({ event, loadedCount }: EventCardProps) {
-  const router = useRouter();
-  const [imageBroken, setImageBroken] = useState(false);
-  const showImage = !!event.imageUrl && !imageBroken;
-  const isDeadline = isDeadlineKind(event.contentKind);
-  const hosts = (event.hosts?.length ? event.hosts : [event]).filter(
+function eventHosts(event: CampusEvent): EventHost[] {
+  return (event.hosts?.length ? event.hosts : [event]).filter(
     (host) => host.host || host.hostHandle
   );
-  const location = event.location?.trim();
+}
 
+/** Up to three club pictures, each cut out from the next by a canvas ring. */
+function HostAvatars({ hosts }: { hosts: EventHost[] }) {
+  return (
+    <span className="flex shrink-0 -space-x-1">
+      {hosts.slice(0, MAX_HOST_AVATARS).map((host) => (
+        // flex, so the ring hugs the avatar instead of the line box.
+        <span key={host.hostHandle || host.host} className="flex rounded-full ring-2 ring-canvas">
+          <ClubAvatar
+            handle={host.hostHandle}
+            name={host.host || host.hostHandle || ""}
+            size={LEAD_COLUMN_PX}
+          />
+        </span>
+      ))}
+    </span>
+  );
+}
+
+/**
+ * What both feed shapes do on open: hand the event to the detail view,
+ * remember where the reader was in the feed, and prefetch on intent.
+ */
+function useEventLink(
+  event: CampusEvent,
+  loadedCount: number | undefined,
+  surface: "list_card" | "list_row"
+) {
+  const router = useRouter();
   const href = `/events/${event.id}`;
+  const prefetch = () => router.prefetch(href);
   const onOpen = (clickEvent: MouseEvent<HTMLAnchorElement>) => {
     stashEventForDetail(event);
     saveEventFeedReturn(href, {
@@ -92,15 +118,29 @@ function EventCardComponent({ event, loadedCount }: EventCardProps) {
       eventTop: clickEvent.currentTarget.getBoundingClientRect().top,
       loadedCount,
     });
-    track("event_open", { id: event.id, category: event.category, surface: "list_card" });
+    track("event_open", { id: event.id, category: event.category, surface });
   };
+  return { href, onOpen, prefetch };
+}
 
-  const prefetch = () => router.prefetch(href);
+/**
+ * Feed listing row: start time, title, hosts with their club pictures, where,
+ * and a row of tags, with the flyer pinned at the right edge.
+ */
+function EventCardComponent({ event, loadedCount }: EventCardProps) {
+  const { href, onOpen, prefetch } = useEventLink(event, loadedCount, "list_card");
+  const [imageBroken, setImageBroken] = useState(false);
+  const showImage = !!event.imageUrl && !imageBroken;
+  const isDeadline = isDeadlineKind(event.contentKind);
+  const hosts = eventHosts(event);
+  const location = event.location?.trim();
 
   // Cards skip layout, paint and hit-testing while off screen, so a feed with
   // hundreds of loaded events stays about as cheap as one page. Unrendered
-  // cards hold the measured median height (207px mobile, 202px sm+); `auto`
-  // keeps each card's real height once it has rendered.
+  // cards hold the measured median height (207px mobile, 202px sm+, 178px
+  // lg+); `auto` keeps each card's real height once it has rendered.
+  // From lg the card is flat: a faint edge, no shadow, Luma's tighter inset
+  // (DESIGN.md, Event Card). Phones keep the resting lift.
   return (
     <Link
       href={href}
@@ -111,7 +151,7 @@ function EventCardComponent({ event, loadedCount }: EventCardProps) {
       onFocus={prefetch}
       aria-label={eventListLinkLabel(event)}
       data-event-id={event.id}
-      className="interactive-focus card-hover group flex w-full min-w-0 gap-4 rounded-2xl border border-ink/10 bg-canvas p-4 shadow-card transition-[border-color,box-shadow] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] [contain-intrinsic-height:auto_207px] [content-visibility:auto] hover:border-ink/30 hover:shadow-cardHover sm:gap-5 sm:p-5 sm:[contain-intrinsic-height:auto_202px]"
+      className="interactive-focus card-hover group flex w-full min-w-0 gap-4 rounded-2xl border border-ink/10 bg-canvas p-4 shadow-card transition-[border-color,box-shadow] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] [contain-intrinsic-height:auto_207px] [content-visibility:auto] hover:border-ink/30 hover:shadow-cardHover sm:gap-5 sm:p-5 sm:[contain-intrinsic-height:auto_202px] lg:rounded-[20px] lg:border-ink/[0.06] lg:py-3.5 lg:pl-[18px] lg:pr-3.5 lg:shadow-none lg:[contain-intrinsic-height:auto_178px] lg:hover:shadow-none"
     >
       <div className="flex min-w-0 flex-1 flex-col">
         <p className="text-[14px] leading-5 tabular-nums text-faint sm:text-[15px]">
@@ -119,27 +159,13 @@ function EventCardComponent({ event, loadedCount }: EventCardProps) {
           {eventTimeLabel(event, "start")}
         </p>
 
-        <h3 className="mt-2 font-display text-[18px] font-semibold leading-[1.25] tracking-[-0.015em] text-ink line-clamp-2 break-words sm:text-[20px]">
+        <h3 className="mt-2 text-[18px] font-semibold leading-[1.25] tracking-[-0.01em] text-ink line-clamp-2 break-words sm:text-[20px] lg:mt-1 lg:font-medium">
           {event.title}
         </h3>
 
         {hosts.length > 0 && (
           <div className="mt-2.5 flex min-w-0 items-center gap-2 text-[14px] text-faint sm:text-[16px]">
-            <span className="flex shrink-0 -space-x-1">
-              {hosts.slice(0, MAX_HOST_AVATARS).map((host) => (
-                // flex, so the ring hugs the avatar instead of the line box.
-                <span
-                  key={host.hostHandle || host.host}
-                  className="flex rounded-full ring-2 ring-canvas"
-                >
-                  <ClubAvatar
-                    handle={host.hostHandle}
-                    name={host.host || host.hostHandle || ""}
-                    size={LEAD_COLUMN_PX}
-                  />
-                </span>
-              ))}
-            </span>
+            <HostAvatars hosts={hosts} />
             {/* Phones name hosts by handle; full club names truncate there. */}
             <span className="min-w-0 truncate">
               By <span className="sm:hidden">{hostHandlesByline(hosts)}</span>
@@ -157,7 +183,7 @@ function EventCardComponent({ event, loadedCount }: EventCardProps) {
           </div>
         ) : null}
 
-        <div className="mt-4 flex flex-wrap gap-1.5">
+        <div className="mt-4 flex flex-wrap gap-1.5 lg:mt-3">
           {eventTags(event).map((tag) => (
             <span key={tag.label} className={`${PILL} ${tag.highlight} ${tag.text}`}>
               {tag.label}
@@ -192,3 +218,92 @@ function EventCardComponent({ event, loadedCount }: EventCardProps) {
 
 export const EventCard = memo(EventCardComponent);
 EventCard.displayName = "EventCard";
+
+/**
+ * The desktop feed's compact view: one line of a day's list. A 40x50 flyer
+ * thumbnail, the start time, the title over its hosts, and the where over the
+ * tags, right-aligned. Rows are divided by hairlines inside one surface per
+ * day (EventsFeedColumn), so about eight events fit where cards show two.
+ */
+function EventCompactRowComponent({ event, loadedCount }: EventCardProps) {
+  const { href, onOpen, prefetch } = useEventLink(event, loadedCount, "list_row");
+  const [imageBroken, setImageBroken] = useState(false);
+  const showImage = !!event.imageUrl && !imageBroken;
+  const isDeadline = isDeadlineKind(event.contentKind);
+  const hosts = eventHosts(event);
+  const location = event.location?.trim();
+  // The Topics rail already sorts by category, so a row keeps only the tags
+  // that change what you do: Deadline, Free food, RSVP.
+  const tags = eventTags(event).filter((tag) => tag.kind !== "category");
+
+  // The focus ring is drawn inside the row: an outside ring would run under
+  // the rows around it. First and last rows round with the day's surface so
+  // the hover wash and the ring follow its corners.
+  return (
+    <Link
+      href={href}
+      // Opens as an overlay (@modal intercepted route); the list keeps its place.
+      scroll={false}
+      onClick={onOpen}
+      onMouseEnter={prefetch}
+      onFocus={prefetch}
+      aria-label={eventListLinkLabel(event)}
+      data-event-id={event.id}
+      className="interactive-focus grid w-full min-w-0 grid-cols-[40px_72px_minmax(0,1fr)_auto] items-center gap-x-3.5 py-2.5 pl-2.5 pr-4 transition-colors duration-150 [contain-intrinsic-height:auto_70px] [content-visibility:auto] first:rounded-t-[19px] last:rounded-b-[19px] hover:bg-ink/[0.03] focus-visible:!shadow-none focus-visible:!outline-offset-[-3px]"
+    >
+      <span className="flex h-[50px] w-10 items-center justify-center [--flyer-max-h:50px] [--flyer-max-w:40px]">
+        {showImage ? (
+          <FlyerPoster
+            src={event.imageUrl!}
+            alt={eventFlyerAlt(event)}
+            sizes="40px"
+            className="rounded-md bg-ink/[0.05] ring-1 ring-ink/10"
+            onError={() => setImageBroken(true)}
+          />
+        ) : (
+          <span aria-hidden className="h-[50px] w-10 rounded-md bg-ink/[0.05]" />
+        )}
+      </span>
+
+      <p className="text-[14px] leading-5 tabular-nums text-faint">
+        {isDeadline && <span className={`block font-medium ${DEADLINE_PILL.text}`}>Due</span>}
+        {eventTimeLabel(event, "start")}
+      </p>
+
+      <div className="min-w-0">
+        <h3 className="truncate text-[16px] font-medium leading-[1.35] tracking-[-0.005em] text-ink">
+          {event.title}
+        </h3>
+        {hosts.length > 0 && (
+          <div className="mt-0.5 flex min-w-0 items-center gap-2 text-[14px] text-faint">
+            <HostAvatars hosts={hosts} />
+            <span className="min-w-0 truncate">By {hostNamesByline(hosts)}</span>
+          </div>
+        )}
+      </div>
+
+      {(location || tags.length > 0) && (
+        <div className="flex min-w-0 max-w-[200px] flex-col items-end gap-1">
+          {location && (
+            <div className="flex min-w-0 max-w-full items-center gap-1.5 text-[14px] text-faint">
+              <LocationIcon online={isOnlineLocation(location)} />
+              <span className="min-w-0 truncate">{location}</span>
+            </div>
+          )}
+          {tags.length > 0 && (
+            <div className="flex gap-1.5">
+              {tags.map((tag) => (
+                <span key={tag.label} className={`${PILL} ${tag.highlight} ${tag.text}`}>
+                  {tag.label}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </Link>
+  );
+}
+
+export const EventCompactRow = memo(EventCompactRowComponent);
+EventCompactRow.displayName = "EventCompactRow";

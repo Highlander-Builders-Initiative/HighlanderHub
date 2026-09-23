@@ -10,7 +10,7 @@ export type HbiCtaLocation =
   | "editors_note";
 
 type EventMap = {
-  event_open: { id: string; category: string; surface: "list_card" | "mosaic_tile" | "calendar_card" };
+  event_open: { id: string; category: string; surface: "list_card" | "list_row" | "mosaic_tile" | "calendar_card" };
   event_primary_cta: { id: string; kind: "rsvp" | "view_source"; surface: "desktop" | "mobile" };
   event_add_to_calendar: { id: string; surface: "desktop" | "mobile"; method: "google" | "ics" };
   event_share: { id: string; method: "native" | "clipboard" | "mailto"; surface: "text" | "icon" };
@@ -18,6 +18,7 @@ type EventMap = {
   events_filter: { category: string };
   events_day_window: { window: "all" | "today" | "week" | "weekend" };
   events_calendar_jump: { day: string };
+  events_view: { view: "cards" | "compact" };
   events_clear_filters: Record<string, never>;
   hbi_cta_click: { location: HbiCtaLocation; channel: string };
 };

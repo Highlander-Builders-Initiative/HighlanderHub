@@ -74,7 +74,7 @@ export function AdminEventEditDrawer({
                     value={form.startsAt}
                     onChange={(e) => setField("startsAt", e.target.value)}
                     required
-                    className="w-full bg-canvas text-ink border border-ink/15 rounded-md py-2 px-3 text-sm focus:border-ink outline-none interactive-focus transition-colors font-mono"
+                    className="w-full bg-canvas text-ink border border-ink/15 rounded-md py-2 px-3 text-sm focus:border-ink outline-none interactive-focus transition-colors"
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -83,7 +83,7 @@ export function AdminEventEditDrawer({
                     type="datetime-local"
                     value={form.endsAt}
                     onChange={(e) => setField("endsAt", e.target.value)}
-                    className="w-full bg-canvas text-ink border border-ink/15 rounded-md py-2 px-3 text-sm focus:border-ink outline-none interactive-focus transition-colors font-mono"
+                    className="w-full bg-canvas text-ink border border-ink/15 rounded-md py-2 px-3 text-sm focus:border-ink outline-none interactive-focus transition-colors"
                   />
                 </div>
               </div>
@@ -160,7 +160,7 @@ export function AdminEventEditDrawer({
                     value={form.hostHandle}
                     onChange={(e) => setField("hostHandle", e.target.value)}
                     placeholder="acm.ucr"
-                    className="w-full bg-canvas text-ink border border-ink/15 rounded-md py-2 px-3 text-sm focus:border-ink outline-none interactive-focus transition-colors font-mono"
+                    className="w-full bg-canvas text-ink border border-ink/15 rounded-md py-2 px-3 text-sm focus:border-ink outline-none interactive-focus transition-colors"
                   />
                 </div>
               </div>
@@ -172,7 +172,7 @@ export function AdminEventEditDrawer({
                     type="text"
                     value={form.imageUrl}
                     onChange={(e) => setField("imageUrl", e.target.value)}
-                    className="w-full bg-canvas text-ink border border-ink/15 rounded-md py-2 px-3 text-sm focus:border-ink outline-none interactive-focus transition-colors font-mono"
+                    className="w-full bg-canvas text-ink border border-ink/15 rounded-md py-2 px-3 text-sm focus:border-ink outline-none interactive-focus transition-colors"
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -181,7 +181,7 @@ export function AdminEventEditDrawer({
                     type="text"
                     value={form.rsvpUrl}
                     onChange={(e) => setField("rsvpUrl", e.target.value)}
-                    className="w-full bg-canvas text-ink border border-ink/15 rounded-md py-2 px-3 text-sm focus:border-ink outline-none interactive-focus transition-colors font-mono"
+                    className="w-full bg-canvas text-ink border border-ink/15 rounded-md py-2 px-3 text-sm focus:border-ink outline-none interactive-focus transition-colors"
                   />
                 </div>
               </div>

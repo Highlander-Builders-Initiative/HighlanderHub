@@ -15,9 +15,10 @@ const TEXT_SIZE_CLASS = {
 } as const;
 
 /**
- * Segmented control for the time window. One rounded track with a canvas
- * "thumb" that springs to the selected window via the shared AnimatedBackground
- * (same motion system as the Topics list and the calendar nav).
+ * Segmented control for the time window: no track, and the selected window
+ * sits on the same neutral ink fill as the Topics rail's selected row (the
+ * one selected state, DESIGN.md). Uses the shared AnimatedBackground, the
+ * same motion system as the Topics list and the calendar nav.
  */
 export function EventDayWindowFilter({
   layout,
@@ -26,7 +27,7 @@ export function EventDayWindowFilter({
 }: EventDayWindowFilterProps) {
   return (
     <div
-      className="flex w-full rounded-full bg-ink/[0.05] p-1"
+      className="flex w-full"
       role="group"
       aria-label="Filter events by time window"
     >
@@ -35,7 +36,7 @@ export function EventDayWindowFilter({
         onValueChange={(id) => {
           if (id) onDayWindowChange(id as DayWindow);
         }}
-        className="rounded-full bg-canvas shadow-card"
+        className="rounded-full bg-ink/[0.06]"
         // Selection only (no hover-follow), and instant: the thumb just sits on
         // the chosen window so it never animates while the feed re-renders.
         transition={{ duration: 0 }}

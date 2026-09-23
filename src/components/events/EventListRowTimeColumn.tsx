@@ -41,7 +41,7 @@ export function EventListRowTimeColumn({
       {prefix}
       {isDeadline && (
         <span
-          className={`font-mono font-semibold uppercase ${DEADLINE_PILL.text} ${
+          className={`font-semibold uppercase ${DEADLINE_PILL.text} ${
             compact
               ? "mb-0.5 text-[8px] tracking-[0.1em]"
               : "mb-1 text-[9px] tracking-[0.14em]"
@@ -51,7 +51,7 @@ export function EventListRowTimeColumn({
         </span>
       )}
       <span
-        className={`font-mono font-medium leading-none text-ink tabular-nums ${
+        className={`font-medium leading-none text-ink tabular-nums ${
           compact ? "text-base" : "text-[22px]"
         }`}
       >
@@ -59,7 +59,7 @@ export function EventListRowTimeColumn({
       </span>
       {period && (
         <span
-          className={`mt-1.5 font-mono font-medium uppercase text-muted ${
+          className={`mt-1.5 font-medium uppercase text-muted ${
             compact ? "text-[9px] tracking-[0.1em]" : "text-[10px] tracking-[0.14em]"
           }`}
         >

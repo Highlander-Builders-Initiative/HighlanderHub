@@ -13,10 +13,10 @@ export const CATEGORY_RAIL: Record<CampusEvent["category"], string> = {
 };
 
 /**
- * Tag and filter-pill colors. `highlight` is the pill background (a bright
- * category wash plus a matched hairline ring; the Topics rail slides it under
- * the selected row); `text` is the matched ink. Literal class strings so
- * Tailwind's JIT compiler keeps them.
+ * Tag colors. `highlight` is the pill background (a bright category wash plus
+ * a matched hairline ring); `text` is the matched ink, which the Topics rail
+ * also uses for its selected row's label. Literal class strings so Tailwind's
+ * JIT compiler keeps them.
  */
 export const CATEGORY_PILL: Record<
   CampusEvent["category"],
@@ -68,7 +68,12 @@ const RSVP_PILL = {
   text: "text-ink/70",
 };
 
-export type EventTag = { label: string; highlight: string; text: string };
+export type EventTag = {
+  kind: "deadline" | "category" | "free_food" | "rsvp";
+  label: string;
+  highlight: string;
+  text: string;
+};
 
 /**
  * The tag row on the feed card and the detail header, in order: Deadline, the
@@ -80,22 +85,20 @@ export function eventTags(
 ): EventTag[] {
   const tags: EventTag[] = [];
   if (isDeadlineKind(event.contentKind)) {
-    tags.push({ label: "Deadline", ...DEADLINE_PILL });
+    tags.push({ kind: "deadline", label: "Deadline", ...DEADLINE_PILL });
   }
   if (event.category !== "free_food") {
-    tags.push({ label: categoryShortLabel(event.category), ...CATEGORY_PILL[event.category] });
+    tags.push({
+      kind: "category",
+      label: categoryShortLabel(event.category),
+      ...CATEGORY_PILL[event.category],
+    });
   }
   if (event.hasFreeFood || event.category === "free_food") {
-    tags.push({ label: "Free food", ...CATEGORY_PILL.free_food });
+    tags.push({ kind: "free_food", label: "Free food", ...CATEGORY_PILL.free_food });
   }
   if (event.rsvpRequired) {
-    tags.push({ label: "RSVP", ...RSVP_PILL });
+    tags.push({ kind: "rsvp", label: "RSVP", ...RSVP_PILL });
   }
   return tags;
 }
-
-// "All" has no category hue; it gets a neutral ink wash in the same shape.
-export const ALL_PILL = {
-  highlight: "bg-ink/[0.06] ring-1 ring-inset ring-ink/15",
-  text: "text-ink",
-};

@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Analytics } from "@vercel/analytics/next";
-import { Bricolage_Grotesque, IBM_Plex_Mono } from "next/font/google";
+import { Bricolage_Grotesque } from "next/font/google";
 import {
   SITE_DESCRIPTION,
   SITE_NAME,
@@ -14,13 +14,6 @@ import "./globals.css";
 const bricolage = Bricolage_Grotesque({
   subsets: ["latin"],
   variable: "--font-bricolage",
-  display: "swap",
-});
-
-const ibmPlexMono = IBM_Plex_Mono({
-  weight: ["400", "500"],
-  subsets: ["latin"],
-  variable: "--font-mono",
   display: "swap",
 });
 
@@ -72,7 +65,7 @@ export default function RootLayout({
   modal: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${bricolage.variable} ${ibmPlexMono.variable}`}>
+    <html lang="en" className={bricolage.variable}>
       <body>
         {children}
         {modal}

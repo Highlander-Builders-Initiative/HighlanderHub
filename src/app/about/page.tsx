@@ -157,7 +157,7 @@ export default function AboutPage() {
               className="h-16 w-16 md:h-[72px] md:w-[72px]"
             />
             <div>
-              <p className="text-[13px] font-mono tracking-wider text-muted uppercase">
+              <p className="text-[13px] text-muted uppercase">
                 The Builders Behind Highlander Hub
               </p>
               <h2 className="mt-2 font-display text-3xl font-semibold leading-[1.1] tracking-[-0.035em] text-ink md:text-4xl">

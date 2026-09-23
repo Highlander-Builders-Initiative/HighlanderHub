@@ -79,7 +79,7 @@ export function EventsMobileFilterSheet({
         }}
       >
         <div className="flex items-center justify-between border-b border-ink/10 px-5 py-3">
-          <h2 className="font-display text-lg font-semibold tracking-[-0.015em] text-ink">
+          <h2 className="text-lg font-semibold tracking-[-0.01em] text-ink">
             Filter events
           </h2>
           <button

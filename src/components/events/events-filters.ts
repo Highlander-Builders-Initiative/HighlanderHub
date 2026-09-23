@@ -90,6 +90,17 @@ export function coerceDayWindowParam(
     : "all";
 }
 
+/** How the desktop feed lists events: flyer cards, or a compact row list. */
+export type FeedView = "cards" | "compact";
+
+/** Cookie that remembers the desktop feed view, read on the server so the
+ *  first paint is already in the chosen view. */
+export const FEED_VIEW_COOKIE = "hh_feed_view";
+
+export function coerceFeedView(raw: string | undefined | null): FeedView {
+  return raw === "compact" ? "compact" : "cards";
+}
+
 export function matchesCategory(
   ev: Pick<CampusEvent, "category" | "hasFreeFood">,
   cat: CategoryValue

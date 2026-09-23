@@ -19,13 +19,13 @@ export function LegalDocumentLayout({
 
       <article className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16 md:py-20">
         <header className="border-b border-ink/10 pb-6">
-          <p className="text-xs font-mono tracking-wider text-muted uppercase">
+          <p className="text-xs text-muted uppercase">
             {kicker}
           </p>
           <h1 className="mt-2 font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
             {title}
           </h1>
-          <p className="mt-2 text-xs text-muted font-mono">
+          <p className="mt-2 text-xs text-muted">
             LAST REVISED: {revisedDate}
           </p>
         </header>

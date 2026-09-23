@@ -1,7 +1,6 @@
 "use client";
 
 import { EventCategoryFilter } from "./EventCategoryFilter";
-import { GLASS_PANEL_CLASS } from "./glass-panel";
 import type { CategoryValue } from "./events-filters";
 
 type Props = {
@@ -18,7 +17,9 @@ export function EventsLeftRail({
   countsPending = false,
 }: Props) {
   return (
-    <div className={GLASS_PANEL_CLASS}>
+    // No panel: the rails sit on the page, so the event cards are the only
+    // boxes on it (DESIGN.md, The One-Surface Rule).
+    <div>
       <p className="px-3 pb-2 text-[12px] font-medium text-muted">Topics</p>
 
       <EventCategoryFilter
