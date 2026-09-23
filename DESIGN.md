@@ -134,7 +134,7 @@ Seven bright hues (the `tag` colors in `tailwind.config.ts`, mapped per category
 
 "Career" reuses **Ink** as its category color (no third neutral is invented).
 
-The home hero's highlight words ("Free food, club nights, …") use each category's `-ink` text color, and each links to the feed filtered to its category (`/events?cat=…`), marked by a hairline `ink/20` underline that takes the word's color on hover. The older editorial hues (`highlander`, `leaf`, `coral`, `sky`, `gold`, `plum`, `sage` and their `deep-` pairs) remain only for admin error states and the flyer placeholder tint; they are no longer category colors. (The calendar's heat wash, in `highlander`, is retired: a hue that signalled no category.)
+The home hero's highlight words ("Free food, club nights, …") use each category's `-ink` text color, and each links to the feed filtered to its category (`/events?cat=…`), marked by a hairline `ink/20` underline that takes the word's color on hover. The older editorial hues (`highlander`, `leaf`, `coral`, `sky`, `gold`, `plum`, `sage` and their `deep-` pairs) remain only for admin error states, the flyer placeholder tint and the calendar heat; they are no longer category colors.
 
 ### Neutral
 
@@ -252,11 +252,12 @@ Type runs larger than the system's `meta` token, matched to Luma's rows; phone s
 
 Padding is `p-4` / `sm:p-5` with a `gap-4` / `sm:gap-5` gutter between text and flyer. From lg the card is flat (see Elevation): `rounded-[20px]`, `border-ink/[0.06]`, no shadow, and Luma's tighter inset (`py-3.5 pl-[18px] pr-3.5`), about 178px tall. The card has no description; the detail view carries it.
 
-### Compact Row (desktop)
+### Compact Row
 
-The feed's second shape, chosen with the Cards / Compact toggle in the feed header (lg and up; phones always list cards). `EventCompactRow` in `EventCard.tsx` shares the card's link behavior (overlay open, feed return, prefetch).
+The feed's second shape, chosen with the Cards / Compact toggle in the feed header, at every width. `EventCompactRow` in `EventCard.tsx` shares the card's link behavior (overlay open, feed return, prefetch).
 
-- **Layout:** a four-column grid, about 70px tall: a 40x50 flyer thumbnail (`FlyerPoster`, whole, `rounded-md`, a 4:5 placeholder when there is no flyer), the start time in a 72px column (deadlines stack "Due" over the time), the title (16px medium, one line) over the hosts (14px faint, avatars and full club names), and the where over the tags, right-aligned and capped at 200px.
+- **Desktop layout (lg+):** a four-column grid, about 70px tall: a 40x50 flyer thumbnail (`FlyerPoster`, whole, `rounded-md`, a 4:5 placeholder when there is no flyer), the start time in a 72px column (deadlines stack "Due" over the time), the title (16px medium, one line) over the hosts (14px faint, avatars and full club names), and the where over the tags, right-aligned and capped at 200px.
+- **Phone layout:** the same DOM restacked as three lines beside the thumbnail, about 84px tall (a phone card is ~200): time and where (13px faint, the pin as the separator), the title (15px medium), then the hosts by handle with the tags at the end. The title/hosts and where/tags groups are `display: contents` below lg, so their children take the phone grid's named areas directly.
 - **Tags:** Deadline, Free food and RSVP only. The category pill is dropped: the Topics rail already sorts by category, and half the feed reads "Community".
 - **Surface:** one per day, `rounded-[20px]` with an `ink/[0.06]` edge on canvas, rows divided by `divide-ink/[0.06]` (borders, so dark mode's edge curve applies). Hover is an `ink/[0.03]` wash; the first and last rows round with the surface.
 - **Focus:** the `.interactive-focus` ring is drawn inside the row (`outline-offset: -3px`, no canvas halo), since an outside ring would run under the neighbouring rows.
@@ -276,7 +277,7 @@ A 6px colored dot (`h-1.5 w-1.5 rounded-full`) is the system's saturated categor
   community: "bg-tag-green", free_food: "bg-tag-amber" }
 ```
 
-Do not invent a separate palette for another surface. (The mini calendar once carried the dots too, then a heat wash; it now marks days by type weight, see Rails.)
+Do not invent a separate palette for another surface. (The mini calendar once carried the dots too; it now uses a heat wash, see Rails.)
 
 Event cards once carried a colored side-stripe rail, and later a dot leading the title; both are retired (see Event Card). Having a single side-stripe carve-out invited propagation, so the carve-out itself is gone (see the side-stripe rule under Don't).
 
@@ -299,22 +300,36 @@ The search bar that pins to the top of the `/events` feed while the cards scroll
 - **Surface:** `.liquid-glass` in `globals.css`: white at 72% fading to 50% top to bottom, `blur(18px) saturate(180%)`. Clear enough that the feed is felt beneath it, saturated so a flyer's colour carries into the bar.
 - **Edge:** a 1px specular rim (the `::before`), bright white along the top and fading down the sides, over a 1px ink hairline at 7%. The rim is what reads as glass over a flyer; the hairline is what keeps the capsule visible over white cards. This rim is the one sanctioned exception to "no inner shadow" in The Hairline-Plus-Lift Rule.
 - **Halo:** `0 12px 32px` at 0.08, sanctioned under the second flavor of The Quiet-Shadow Rule.
-- **Placement:** from `lg`, the capsule floats free at `top-3`, the width of the feed column, so it lines up with the cards' edges. On phones it sits in a full-bleed `bg-surface/80 backdrop-blur-xl` strip that runs on into the sticky day heading below (`top: 56`), so the feed never shows between the two. The heading carries the same frosted fill and closes the stack with an inset `ink/10` hairline aligned to the card edges.
-- **Internals:** controls nest inside the capsule concentrically: 6px inset (`p-1.5`), 36px pills (`h-9 rounded-full bg-ink/[0.06]`). Left to right: the Filter pill (phones only, opens the filter sheet); the search field (from `lg` at a 16px inset); the back-to-top circle, which grows in once you're past the fold. The field has no border of its own. The capsule is the field. The bar carries no date: the day headings do, and from lg the rail calendar marks the day in view. (It once showed the observed day too, which put "Today Wednesday" on screen three times.)
+- **Placement:** from `lg`, the capsule floats free at `top-3`, the width of the feed column, so it lines up with the cards' edges. Behind it, a 48px top-edge fade (the page's bottom fade mirrored: surface gradient, 1.25px blur, masked) dissolves cards passing above the capsule instead of letting them run crisp into the viewport's edge. It spans the column only, so the rails' headings stay sharp. On phones it sits in a full-bleed `bg-surface/80 backdrop-blur-xl` strip that runs on into the sticky day heading below (`top: 56`), so the feed never shows between the two. The heading carries the same frosted fill and closes the stack with an inset `ink/10` hairline aligned to the card edges.
+- **Internals:** controls nest inside the capsule concentrically: 6px inset (`p-1.5`), 36px pills (`h-9 rounded-full bg-ink/[0.06]`). Left to right: the Filter pill (phones only, opens the filter sheet); from `lg`, the day in view ("Tomorrow **Thursday**", 20px in, then a hairline divider 12px either side); the search field (from `lg` at a 16px inset while the day is hidden); the back-to-top circle, which grows in once you're past the fold. The field has no border of its own. The capsule is the field.
+- **The day in view (desktop):** phones pin each day heading under the bar; on desktop the headings scroll with the feed, so the bar names the day instead. A second sticky row would cost desktop about 44px of an already short viewport, so the day rides in the capsule's own row. It is the observed day (the same one the rail calendar marks) and grows in once the first day's heading reaches the spy line just under the bar, so at the top of the feed, where "Today" is in plain view, the date is not repeated. It is `aria-hidden`, since the headings already carry the day.
+- **Left, not right.** The day sits at the capsule's left, directly above the time column, where the eye starts each row. At the right end (where it first sat, so the placeholder would never move) a reader who had just read a title had to look across the column to learn its day. The date takes its own width, as the bar always has, so the search field steps right as it grows in (a `0fr` to `1fr` grid column) and moves a little with each day's length. That movement is accepted: a fixed, centered slot held the field still but left short dates floating far from the capsule's edge.
 - **Focus:** the capsule takes the input's focus ring (1.5px ink at 45%, 3.3:1 on white, with a soft 5px ink halo) and firms up to 92% white while you type. The search clear button is a gray iOS-style circle.
 - **Club suggestions:** drop 8px below the capsule, full capsule width, `rounded-3xl`, with rows highlighted as concentric `rounded-[18px]` pills. Solid canvas, not glass: the capsule's backdrop-filter walls the dropdown off from the feed, so a blur there would only ghost the cards through.
 - **Do not copy** this treatment to non-sticky bars. The glass + halo is what justifies the design language; on a static bar it reads as decoration.
 
+### Event Detail
+
+The overlay (and `/events/[id]`) a card opens into, `EventDetailView` in the `EventModal` panel. It reads in the feed's language:
+
+- **Flat canvas.** No flyer-colored wash behind the header (a mood-color wash, see The Meaning-Carrying Rule), no shadow on the flyer (`ring-ink/10` hairline, `rounded-xl`), panel corners at 20px like the cards.
+- **Byline:** under the title, the card's "By" line with 20px club pictures and every host's name, wrapping rather than truncating. It replaces the desktop rail's "Hosted by" list and the phone-only handle byline.
+- **When and where:** icon rows (calendar, pin or video icon in a 20px lead column, muted), not boxed date and location tiles. Date at 16px (17px) semibold over the time span and "Today"/"Tomorrow".
+- **Actions:** on desktop a plain row (primary ink button, "Add to calendar", "Share", then "via Instagram" at the end), not a bordered box inside the panel. On phones the sticky bar's calendar and share buttons, and the close button, take the neutral `bg-ink/[0.06]` fill instead of an outline.
+- **About:** hairline, heading and caption; left out entirely when the event has no caption and no tags.
+- **Rail:** from md, the flyer alone, sticky.
+
 ### Feed Header
 
-The top of `/events`: the page title "Events" (Bricolage, the feed's one brand moment) over "53 this week · 150 upcoming" (14px muted), with the Cards / Compact toggle at the right from lg. The title is not the date: the day headings carry dates, and a dated title repeated them. Below the chips, the result count ("12 matching events") shows only while a filter is active; unfiltered it is a loading status ("24 of 150 events loaded"), so it stays in the `aria-live` region for screen readers and off the page.
+The top of `/events`: the page title "Events" (Bricolage, the feed's one brand moment) over "53 this week · 150 upcoming" (14px muted), with the Cards / Compact toggle at the right, as two icons (two stacked cards; a list), each named by `aria-label` and a hover `title`: beside the title on phones, so the counts keep a full line, and on the counts' baseline from lg. The title is not the date: the day headings carry dates, and a dated title repeated them. Below the chips, the result count ("12 matching events") shows only while a filter is active; unfiltered it is a loading status ("24 of 150 events loaded"), so it stays in the `aria-live` region for screen readers and off the page.
 
 ### Rails
 
 The `/events` side columns, from lg: Topics on the left, the mini calendar and When on the right. They sit on the page with no panel (The One-Surface Rule).
 
-- **The One Selected State.** Every list or segmented selection (a Topics row, a When window, the Cards / Compact toggle) is the same neutral `bg-ink/[0.06]` fill, with no ring, track or shadow. A selected Topics row keeps its category's `-ink` for the label. The calendar's chosen day is the one solid-ink selection, because it is a date picker's cursor, not a filter.
-- **Mini calendar:** days with events read in ink at semibold, empty days fade to `faint`, adjacent-month days to `muted/45`; today is underlined. No heat wash: nearly every day of the quarter has something on, so the scale said little, and its hue signalled no category.
+- **The One Selected State.** Neutral selections (a When window, the Cards / Compact toggle, "All" in Topics) are the same `bg-ink/[0.06]` fill, with no ring, track or shadow. The calendar's chosen day is the one solid-ink selection, because it is a date picker's cursor, not a filter.
+- **Topics highlight:** one highlight slides under the hovered row and rests on the selected one. Over a category it wears that category's `CATEGORY_PILL` wash and ring, the same one its tag pill wears on a card, so hovering previews the color you are filtering by and the rail and the tags read as one signal; the selected label takes the category's `-ink`. "All" has no hue and takes the neutral fill.
+- **Mini calendar:** a heat wash in `highlander` (7%, 15% and 24% for 1, 3 and 6+ events) marks how busy each day of the focused month is, one calm signal rather than competing category dots. Empty days fade to `faint`, adjacent-month days to `muted/45`; today is underlined; the chosen day is solid ink.
 
 ### Active Filter Chips (signature)
 
@@ -404,7 +419,7 @@ still signals category everywhere a user can act; the skyline is scenery, is
 - **Do** prefer hairline-bordered surfaces (`border-ink/10` to `border-ink/15`) over background-tinted ones for default cards and rows.
 - **Do** ease motion out only (`cubic-bezier(0.16, 1, 0.3, 1)`). Durations: 180–300ms for state. Always.
 - **Do** honor `prefers-reduced-motion` on anything you add. The root `globals.css` already cancels animation duration globally; do not opt back in.
-- **Do** treat the FlyerTile (home mosaic + marquee tiles) and the EventCard (feed listing row: time, title, host avatars, location, tags, flyer at the right, with its desktop Compact Row shape) as **the two canonical ways** to render an event. New event surfaces should use one of these two.
+- **Do** treat the FlyerTile (home mosaic + marquee tiles) and the EventCard (feed listing row: time, title, host avatars, location, tags, flyer at the right, with its Compact Row shape) as **the two canonical ways** to render an event. New event surfaces should use one of these two.
 - **Do** use the `.interactive-focus` global class on every interactive element. Focus is non-negotiable; this is the WCAG AA commitment from PRODUCT.md made concrete.
 - **Do** size for a phone first. Layouts target mobile breakpoints first, then expand. Touch targets ≥44×44px.
 

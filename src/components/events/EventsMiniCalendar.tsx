@@ -13,11 +13,15 @@ import {
 
 const DAY_INITIALS = ["s", "m", "t", "w", "t", "f", "s"];
 
-// Days with events read in ink at semibold; empty days fade to faint. Nearly
-// every day of the quarter has something on, so a heat scale said little, and
-// its wash was a hue that signalled no category (DESIGN.md, Meaning-Carrying).
-function dayTextClass(count: number): string {
-  return count > 0 ? "font-semibold text-ink" : "text-faint";
+// Heat map: event count buckets to a single iris wash that deepens with the
+// day's load. No category hue here, so a busy day reads as one calm signal
+// instead of a row of competing dots. Empty days get no wash and fade to
+// faint, so "nothing on" reads at a glance too.
+function heatClass(count: number): string {
+  if (count >= 6) return "bg-highlander/[0.24]";
+  if (count >= 3) return "bg-highlander/[0.15]";
+  if (count >= 1) return "bg-highlander/[0.07]";
+  return "";
 }
 
 type Props = {
@@ -125,9 +129,11 @@ export function EventsMiniCalendar({
             const isToday = key === todayKey;
             const isSelected = key === selectedKey;
             const count = countsByDay.get(key) ?? 0;
-            // Only the focused month shows which days have events; while it
-            // loads the counts are unknown, so its days sit neutral.
-            const dayText = isLoading ? "text-ink" : dayTextClass(count);
+            // Heat only paints the focused month; adjacent-month days stay
+            // quiet so the eye holds on the current grid. While the month
+            // loads its counts are unknown, so its days sit neutral.
+            const heat = !isLoading && inMonth ? heatClass(count) : "";
+            const dayText = !isLoading && count === 0 ? "text-faint" : "text-ink";
 
             return (
               <button
@@ -143,7 +149,7 @@ export function EventsMiniCalendar({
                   isSelected
                     ? "bg-ink text-canvas"
                     : inMonth
-                      ? `${dayText} hover:bg-ink/[0.04]`
+                      ? `${dayText} ${heat ? `${heat} hover:bg-highlander/[0.28]` : "hover:bg-ink/[0.04]"}`
                       : "text-muted/45 hover:bg-ink/[0.04]",
                 ].join(" ")}
               >

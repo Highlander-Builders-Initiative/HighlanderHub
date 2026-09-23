@@ -10,6 +10,17 @@ function activeText(value: CategoryValue) {
   return value === "all" ? "text-ink" : CATEGORY_PILL[value as EventCategory].text;
 }
 
+/**
+ * The sliding highlight under the hovered, then the selected, row: a
+ * category's own wash (the same one its tag pill wears on a card), or the
+ * neutral fill for "All", which has no hue.
+ */
+function highlightClass(value: CategoryValue) {
+  return value === "all"
+    ? "bg-ink/[0.06]"
+    : CATEGORY_PILL[value as EventCategory].highlight;
+}
+
 type EventCategoryFilterProps = {
   layout: "rail" | "grid";
   category: CategoryValue;
@@ -42,12 +53,10 @@ export function EventCategoryFilter({
       role="group"
       aria-label="Filter events by category"
     >
-      {/* The one selected state (DESIGN.md): a neutral ink fill, the same
-          under every row, so the rail matches the When and view toggles. */}
       <AnimatedBackground
         defaultValue={category}
         enableHover
-        className="rounded-xl bg-ink/[0.06]"
+        className={(id) => `rounded-xl ${highlightClass((id ?? "all") as CategoryValue)}`}
         transition={{ type: "spring", bounce: 0.2, duration: 0.3 }}
       >
         {CATEGORIES.map((c) => {

@@ -68,7 +68,7 @@ export function ShareButton({
         type="button"
         onClick={handleShare}
         aria-label={state === "copied" ? "Link copied" : "Share"}
-        className="interactive-focus inline-flex min-h-12 min-w-12 items-center justify-center rounded-lg border border-ink/15 text-ink"
+        className="interactive-focus inline-flex min-h-12 min-w-12 items-center justify-center rounded-lg bg-ink/[0.06] text-ink transition-colors hover:bg-ink/10"
       >
         {state === "copied" ? (
           <svg

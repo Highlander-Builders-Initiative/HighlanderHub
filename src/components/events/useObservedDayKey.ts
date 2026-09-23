@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type MutableRefObject } from "react";
-import { resolveObservedDayKey } from "@/lib/events/observed-day-key";
+import { SCROLL_SPY_OFFSET_PX, resolveObservedDayKey } from "@/lib/events/observed-day-key";
 
 type UseObservedDayKeyArgs = {
   dayHeaderRefs: MutableRefObject<Map<string, HTMLElement>>;
@@ -30,12 +30,30 @@ export function useObservedDayKey({
     setObservedDayKeyState(next);
   }, []);
 
+  // Whether the feed has scrolled past its first day heading (up to the spy
+  // line, just under the search bar). The desktop bar names the observed day
+  // from then on; above it, the first heading is in plain view. Keyed to the
+  // first heading rather than the observed day's own, which can still be down
+  // the page once the previous day has scrolled away.
+  const [pastFirstDayHeading, setPastFirstDayHeadingState] = useState(false);
+  const pastFirstDayHeadingRef = useRef(false);
+  const setPastFirstDayHeading = useCallback((next: boolean) => {
+    if (pastFirstDayHeadingRef.current === next) return;
+    pastFirstDayHeadingRef.current = next;
+    setPastFirstDayHeadingState(next);
+  }, []);
+
   useEffect(() => {
     if (dayKeys.length === 0) return;
 
     let rafId = 0;
 
     const update = () => {
+      const firstHeader = dayHeaderRefs.current.get(dayKeys[0]);
+      setPastFirstDayHeading(
+        !!firstHeader && firstHeader.getBoundingClientRect().top <= SCROLL_SPY_OFFSET_PX
+      );
+
       if (Date.now() - userInitiatedScrollRef.current < 600) return;
 
       const headerTopByKey = new Map<string, number>();
@@ -76,7 +94,14 @@ export function useObservedDayKey({
       window.removeEventListener("resize", onScroll);
       cancelAnimationFrame(rafId);
     };
-  }, [dayKeys, dayHeaderRefs, daySectionRefs, userInitiatedScrollRef, setObservedDayKey]);
+  }, [
+    dayKeys,
+    dayHeaderRefs,
+    daySectionRefs,
+    userInitiatedScrollRef,
+    setObservedDayKey,
+    setPastFirstDayHeading,
+  ]);
 
-  return { observedDayKey, setObservedDayKey };
+  return { observedDayKey, setObservedDayKey, pastFirstDayHeading };
 }

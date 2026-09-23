@@ -91,13 +91,15 @@ function EventModalDialog({ children, standalone }: { children: ReactNode; stand
         aria-labelledby={EVENT_MODAL_TITLE_ID}
         aria-label="Event details"
         tabIndex={-1}
-        className="event-modal-panel relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-2xl bg-canvas shadow-[0_-8px_28px_rgba(15,17,21,0.08)] outline-none md:max-h-[calc(100dvh-4rem)] md:max-w-4xl md:rounded-2xl md:shadow-[0_24px_40px_rgba(15,17,21,0.08)]"
+        className="event-modal-panel relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-[20px] bg-canvas shadow-[0_-8px_28px_rgba(15,17,21,0.08)] outline-none md:max-h-[calc(100dvh-4rem)] md:max-w-4xl md:rounded-[20px] md:shadow-[0_24px_40px_rgba(15,17,21,0.08)]"
       >
         <button
           type="button"
           onClick={close}
           aria-label="Close event"
-          className="interactive-focus absolute right-3 top-3 z-20 inline-flex h-10 w-10 items-center justify-center rounded-full border border-ink/10 bg-canvas text-muted transition-colors hover:border-ink/30 hover:text-ink sm:right-4 sm:top-4"
+          // The feed's secondary control: a neutral fill, no edge, like the
+          // search bar's back-to-top circle.
+          className="interactive-focus absolute right-3 top-3 z-20 inline-flex h-10 w-10 items-center justify-center rounded-full bg-ink/[0.06] text-ink/70 transition-colors hover:bg-ink/10 hover:text-ink sm:right-4 sm:top-4"
         >
           <svg
             aria-hidden

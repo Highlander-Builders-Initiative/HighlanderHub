@@ -20,7 +20,7 @@ const SURFACE_STYLES: Record<
   mobile: {
     details: "relative shrink-0",
     summary:
-      "interactive-focus inline-flex min-h-12 min-w-12 cursor-pointer list-none items-center justify-center rounded-lg border border-ink/15 text-ink [&::-webkit-details-marker]:hidden",
+      "interactive-focus inline-flex min-h-12 min-w-12 cursor-pointer list-none items-center justify-center rounded-lg bg-ink/[0.06] text-ink transition-colors hover:bg-ink/10 [&::-webkit-details-marker]:hidden",
     popover:
       "absolute bottom-[calc(100%+0.5rem)] right-0 z-10 w-44 overflow-hidden rounded-lg border border-ink/15 bg-canvas shadow-[0_18px_44px_rgba(15,17,21,0.12)]",
   },

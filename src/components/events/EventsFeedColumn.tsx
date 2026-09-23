@@ -35,7 +35,11 @@ type Props = {
   onClearDayWindow: () => void;
   onClearQuery: () => void;
   todayKey: string;
-  /** The list's shape. Always "cards" below lg, where the toggle is hidden. */
+  /** The day in view, which the desktop search bar names while scrolling. */
+  observedDayKey: string;
+  /** True once the feed has scrolled past its first day heading. */
+  showObservedDay: boolean;
+  /** The list's shape: flyer cards or compact rows. */
   view: FeedView;
   onViewChange: (next: FeedView) => void;
   dayKeys: string[];
@@ -68,6 +72,8 @@ export function EventsFeedColumn({
   onClearDayWindow,
   onClearQuery,
   todayKey,
+  observedDayKey,
+  showObservedDay,
   view,
   onViewChange,
   dayKeys,
@@ -83,6 +89,7 @@ export function EventsFeedColumn({
   daySectionRefs,
 }: Props) {
   const showEmptyState = dayKeys.length === 0;
+  const observedHeading = pacificDayHeading(observedDayKey, todayKey);
   const [showBackToTop, setShowBackToTop] = useState(false);
 
   useEffect(() => {
@@ -111,28 +118,45 @@ export function EventsFeedColumn({
     <div className="min-w-0 pt-6 sm:pt-8 lg:py-8">
       {/* The page title is the one brand moment in the feed (Bricolage);
           the day headings below carry the date, so the title doesn't. */}
-      <header className="mb-7 flex items-end justify-between gap-4">
-        <div className="min-w-0">
-          <h1 className="font-display text-[28px] font-semibold leading-[1.05] tracking-[-0.025em] text-ink sm:text-[34px]">
-            Events
-          </h1>
-          <p className="mt-2 max-w-[58ch] text-[14px] text-muted">
-            {summary.upcomingThisWeek} this week · {upcomingTotal} upcoming
-          </p>
-        </div>
+      {/* Phones set the view toggle beside the title, so the counts keep a
+          full line; from lg it drops to the counts' baseline. */}
+      <header className="mb-7 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4">
+        <h1 className="font-display text-[28px] font-semibold leading-[1.05] tracking-[-0.025em] text-ink sm:text-[34px]">
+          Events
+        </h1>
         <EventFeedViewToggle
           view={view}
           onViewChange={onViewChange}
-          className="hidden lg:flex"
+          className="col-start-2 row-start-1 lg:row-span-2 lg:self-end"
         />
+        <p className="col-span-2 mt-2 max-w-[58ch] text-[14px] text-muted lg:col-span-1">
+          {summary.upcomingThisWeek} this week · {upcomingTotal} upcoming
+        </p>
       </header>
 
       {/* Filter bar: a liquid-glass capsule. From lg it floats free over the
-          feed; the rail calendar marks the day in view, so the bar carries no
-          date of its own. On phones it sits in a frosted strip that runs on
-          into the sticky day heading below (top: 56 = the strip's pt-2 +
-          h-12), so the feed never shows between the two. */}
+          feed and names the day in view at its left once that day's heading
+          has scrolled up under it. On phones it sits in a frosted strip that
+          runs on into the sticky day heading below (top: 56 = the strip's
+          pt-2 + h-12), so the feed never shows between the two. */}
       <div className="sticky top-0 z-20 -mx-4 mb-5 bg-surface/80 px-4 py-2 backdrop-blur-xl sm:-mx-6 sm:px-6 lg:top-3 lg:mx-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none">
+        {/* Top-edge softener (desktop): the page's bottom fade, mirrored, so
+            cards passing above the floating capsule dissolve into the page
+            instead of running crisp into the viewport's edge. -top-3 reaches
+            the edge once the bar is stuck; at rest it only covers the
+            header's margin. Column-wide, so the rails' headings stay sharp,
+            and behind the capsule. Phones don't need it: their strip is
+            already frosted to the edge. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 -top-3 hidden h-12 bg-gradient-to-b from-surface via-surface/30 to-transparent lg:block"
+          style={{
+            backdropFilter: "blur(1.25px)",
+            WebkitBackdropFilter: "blur(1.25px)",
+            maskImage: "linear-gradient(to bottom, black 40%, transparent 100%)",
+            WebkitMaskImage: "linear-gradient(to bottom, black 40%, transparent 100%)",
+          }}
+        />
         <div className="liquid-glass relative flex h-12 items-center gap-2 rounded-full p-1.5 lg:gap-3 lg:pl-4">
           <button
             type="button"
@@ -162,6 +186,36 @@ export function EventsFeedColumn({
               </span>
             )}
           </button>
+
+          {/* Desktop's pinned day heading, at the capsule's left, where each
+              row's reading starts. Phones pin the heading itself under the
+              bar; desktop has no height to spare for a second sticky row, so
+              the bar names the day in view instead, the same day the rail
+              calendar marks. It grows in once the first day's heading
+              reaches the bar (above that, "Today" is in plain view).
+              Laid out as the bar always was: the date at its own width, 20px
+              in (the capsule's 16 plus ml-1), then the divider and the field
+              12px apart, so the field moves over with the date's length. The
+              0fr/1fr column animates it open to that width. -mr-3 cancels the
+              capsule's gap while it is closed. The headings already carry the
+              day for screen readers, so this echo stays out of their way. */}
+          {dayKeys.length > 0 && (
+            <span
+              aria-hidden
+              data-observed-day={observedDayKey}
+              className={`-mr-3 hidden shrink-0 transition-[grid-template-columns,opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none lg:grid ${
+                showObservedDay ? "grid-cols-[1fr] opacity-100" : "grid-cols-[0fr] opacity-0"
+              }`}
+            >
+              <span className="flex min-w-0 items-center gap-3 overflow-hidden">
+                <span className="ml-1 shrink-0 whitespace-nowrap text-[14px] font-semibold tracking-[-0.01em] text-ink">
+                  {observedHeading.label}{" "}
+                  <span className="font-medium text-faint">{observedHeading.weekday}</span>
+                </span>
+                <span className="mr-3 h-5 shrink-0 border-l border-ink/10" />
+              </span>
+            </span>
+          )}
 
           <EventSearchBox query={query} clubs={clubs} onQueryChange={onQueryChange} />
 
@@ -277,6 +331,7 @@ export function EventsFeedColumn({
             )}
           </div>
         ))}
+
       </div>
 
       {(hasMore || loadError || isLoadingMore) && (

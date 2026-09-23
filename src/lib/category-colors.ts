@@ -13,10 +13,10 @@ export const CATEGORY_RAIL: Record<CampusEvent["category"], string> = {
 };
 
 /**
- * Tag colors. `highlight` is the pill background (a bright category wash plus
- * a matched hairline ring); `text` is the matched ink, which the Topics rail
- * also uses for its selected row's label. Literal class strings so Tailwind's
- * JIT compiler keeps them.
+ * Tag and filter-pill colors. `highlight` is the pill background (a bright
+ * category wash plus a matched hairline ring; the Topics rail slides it under
+ * the hovered and selected row); `text` is the matched ink. Literal class
+ * strings so Tailwind's JIT compiler keeps them.
  */
 export const CATEGORY_PILL: Record<
   CampusEvent["category"],

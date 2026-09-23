@@ -85,7 +85,7 @@ export function useEventFeedNavigation({
     top: number;
   } | null>(null);
 
-  const { observedDayKey, setObservedDayKey } = useObservedDayKey({
+  const { observedDayKey, setObservedDayKey, pastFirstDayHeading } = useObservedDayKey({
     dayHeaderRefs,
     daySectionRefs,
     dayKeys,
@@ -292,6 +292,7 @@ export function useEventFeedNavigation({
     dayHeaderRefs,
     daySectionRefs,
     observedDayKey,
+    pastFirstDayHeading,
     hideLoadMoreHint,
     handleCalendarSelect,
     loadMore,

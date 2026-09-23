@@ -1,19 +1,14 @@
 import { eventTags } from "@/lib/category-colors";
-import {
-  eventTimeLabel,
-  formatDateStamp,
-  formatDay,
-  relativeDay,
-} from "@/lib/dates";
+import { eventTimeLabel, formatDay, relativeDay } from "@/lib/dates";
 import { EventCalendarMenu } from "@/components/events/EventCalendarMenu";
 import { ShareButton } from "@/components/events/ShareButton";
 import { EventBackButton } from "@/components/events/EventBackButton";
-import { EventFlyerImage } from "@/components/events/EventFlyerImage";
 import { FlyerPoster } from "@/components/events/FlyerPoster";
+import { HostAvatars, eventHosts } from "@/components/events/HostAvatars";
 import { TrackedAnchor } from "@/components/events/TrackedAnchor";
 import { normalizeHttpUrl } from "@/lib/events/validation";
 import { isDeadlineKind } from "@/lib/events/content-kind";
-import { hostHandlesByline } from "@/lib/events/host-byline";
+import { hostNamesByline } from "@/lib/events/host-byline";
 import { isOnlineLocation } from "@/lib/events/location";
 import type { CampusEvent } from "@/types/event";
 
@@ -28,8 +23,11 @@ import type { CampusEvent } from "@/types/event";
  * button), a tighter grid, and an action bar that sticks to the panel instead
  * of the viewport.
  *
- * Phones get their own single-column order: flyer, title, host, when/where,
- * description. The desktop rail (flyer + host/source list) is hidden below md.
+ * It reads in the feed's language (DESIGN.md, Event Detail): flat canvas, no
+ * boxes inside the panel, the card's "By" line with club pictures, and when /
+ * where as icon rows. Phones get their own single-column order: flyer, title,
+ * host, when/where, description. The desktop rail (the flyer) is hidden below
+ * md.
  *
  * Layout classes the skeletons must mirror are exported below.
  */
@@ -46,17 +44,18 @@ export const EVENT_DETAIL_FLYER_GRID_CLASS =
 // covers capped above the fold.
 export const EVENT_DETAIL_ASIDE_CLASS =
   "hidden space-y-6 md:sticky md:top-24 md:block md:self-start [--flyer-max-h:min(32rem,70dvh)] [--flyer-max-w:18rem] lg:[--flyer-max-w:21rem]";
-// The flyer is shown whole at its own shape, so the frame (edge, hairline,
-// lift) is drawn on the image itself rather than on a fixed crop box. Its
-// fill is the placeholder until the image paints over it.
+// The flyer is shown whole at its own shape, so the frame (edge, hairline) is
+// drawn on the image itself rather than on a fixed crop box; flat, as on the
+// feed. Its fill is the placeholder until the image paints over it.
 export const EVENT_DETAIL_FLYER_CLASS =
-  "block rounded-xl bg-ink/[0.04] shadow-card ring-1 ring-ink/10";
+  "block rounded-xl bg-ink/[0.04] ring-1 ring-ink/10";
 // Phone hero: capped by viewport height so the title still shows beneath it,
 // and narrow enough at 375px to clear the overlay's close button.
 export const EVENT_DETAIL_MOBILE_FLYER_CLASS =
   "mb-6 flex justify-center md:hidden [--flyer-max-h:min(20.3125rem,40dvh)] [--flyer-max-w:min(16.25rem,100vw_-_2.5rem)]";
-export const EVENT_DETAIL_TILE_CLASS =
-  "flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-ink/15 bg-canvas md:h-14 md:w-14";
+// When and where rows: the icon sits in a lead column one text line tall, as
+// the pin does on a feed card, so both rows' text starts at the same x.
+const INFO_ICON_CLASS = "flex h-6 w-5 shrink-0 items-center justify-center text-muted";
 export const EVENT_DETAIL_MOBILE_BAR_CLASS =
   "fixed inset-x-0 bottom-0 z-30 border-t border-ink/10 bg-canvas/95 px-4 py-3 backdrop-blur md:hidden";
 
@@ -80,7 +79,7 @@ const SOURCE_LABELS: Record<CampusEvent["source"], string> = {
   manual: "Manual",
 };
 
-export function LocationPinIcon() {
+function CalendarIcon() {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -89,7 +88,24 @@ export function LocationPinIcon() {
       strokeWidth="1.75"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="h-[18px] w-[18px] text-muted"
+      className="h-[18px] w-[18px]"
+    >
+      <rect x="3.5" y="5" width="17" height="15.5" rx="2.5" />
+      <path d="M16 3v4M8 3v4M3.5 10h17" />
+    </svg>
+  );
+}
+
+function LocationPinIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-[18px] w-[18px]"
     >
       <path d="M12 21s-7-7.5-7-12a7 7 0 1 1 14 0c0 4.5-7 12-7 12Z" />
       <circle cx="12" cy="9" r="2.5" />
@@ -97,7 +113,7 @@ export function LocationPinIcon() {
   );
 }
 
-export function VideoCallIcon() {
+function VideoCallIcon() {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -106,7 +122,7 @@ export function VideoCallIcon() {
       strokeWidth="1.75"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="h-[18px] w-[18px] text-muted"
+      className="h-[18px] w-[18px]"
     >
       <rect x="2.5" y="6" width="13.5" height="12" rx="2.5" />
       <path d="m16 10.5 4.4-2.9a.6.6 0 0 1 .9.5v7.8a.6.6 0 0 1-.9.5L16 13.5" />
@@ -126,10 +142,11 @@ export function EventDetailView({
   const safeSourceUrl = normalizeHttpUrl(event.sourceUrl);
   const primaryUrl = safeRsvpUrl ?? safeSourceUrl;
   const primaryKind = safeRsvpUrl ? "rsvp" : "view_source";
-  const stamp = formatDateStamp(event.startsAt);
   const sourceLabel = SOURCE_LABELS[event.source];
   const hasImage = Boolean(event.imageUrl);
-  const showHostedBy = Boolean(event.host || event.hostHandle);
+  const hosts = eventHosts(event);
+  const description = event.description?.trim();
+  const hasAbout = Boolean(description) || event.tags.length > 0;
   const isDeadline = isDeadlineKind(event.contentKind);
   const calendarLabel = isDeadline ? "Add reminder" : "Add to calendar";
   // Past tomorrow, relativeDay repeats the weekday or date formatDay shows.
@@ -176,27 +193,8 @@ export function EventDetailView({
 
   return (
     <>
-      {/* Atmospheric backdrop: the flyer's mood color bleeds in, blurred low,
-          then fades into canvas. On phones it runs taller to sit behind the
-          flyer hero; on desktop it accents the two-column layout. */}
-      {event.imageUrl && (
-        <div
-          aria-hidden
-          className={`pointer-events-none absolute inset-x-0 top-0 overflow-hidden ${
-            isModal ? "h-[26rem] md:h-72" : "h-[40vh] sm:h-[36vh]"
-          }`}
-        >
-          <EventFlyerImage
-            src={event.imageUrl}
-            alt=""
-            fill
-            sizes={isModal ? "(max-width: 768px) 100vw, 56rem" : "100vw"}
-            className="scale-125 object-cover opacity-45 blur-3xl"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-canvas/40 via-canvas/75 to-canvas" />
-        </div>
-      )}
-
+      {/* No flyer-colored wash behind the header: the panel is flat canvas,
+          like the feed (DESIGN.md, Meaning-Carrying: no mood-color washes). */}
       <div
         className={
           isModal ? EVENT_MODAL_CONTAINER_CLASS : EVENT_DETAIL_CONTAINER_CLASS
@@ -224,7 +222,7 @@ export function EventDetailView({
               {eventTags(event).map((tag) => (
                 <span
                   key={tag.label}
-                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[12px] font-medium ${tag.highlight} ${tag.text}`}
+                  className={`inline-flex items-center rounded-full px-2 py-0.5 text-[12px] font-medium ${tag.highlight} ${tag.text}`}
                 >
                   {tag.label}
                 </span>
@@ -240,15 +238,17 @@ export function EventDetailView({
               {event.title}
             </Title>
 
-            {/* Phones: the host reads as a byline, by handle, instead of a
-                rail entry. */}
-            {showHostedBy && (
-              <p className="mt-2 text-[14px] text-muted md:hidden">
-                by{" "}
-                <span className="font-medium text-ink">
-                  {hostHandlesByline(event.hosts?.length ? event.hosts : [event])}
+            {/* The feed card's byline, with its club pictures: every host by
+                name. It wraps here rather than truncating. */}
+            {hosts.length > 0 && (
+              <div className="mt-3 flex items-start gap-2 text-[15px] text-muted md:mt-4">
+                <span className="mt-0.5">
+                  <HostAvatars hosts={hosts} size={20} />
                 </span>
-              </p>
+                <p className="min-w-0">
+                  By <span className="font-medium text-ink">{hostNamesByline(hosts)}</span>
+                </p>
+              </div>
             )}
           </header>
 
@@ -268,52 +268,17 @@ export function EventDetailView({
                 }
               >
                 {renderFlyer("rail")}
-
-                <dl className="space-y-4 text-[14px]">
-                  {showHostedBy && (
-                    <>
-                      <div>
-                        <dt className="text-[12px] text-muted">Hosted by</dt>
-                        <dd className="mt-1 font-medium text-ink">
-                          {(event.hosts?.length ? event.hosts : [event]).map((host) => (
-                            <span key={host.hostHandle || host.host} className="block">
-                              {host.host}
-                              {host.hostHandle && (
-                                <span className="mt-0.5 block text-[13px] font-normal text-muted">
-                                  {host.hostHandle}
-                                </span>
-                              )}
-                            </span>
-                          ))}
-                        </dd>
-                      </div>
-                      <div className="hairline" />
-                    </>
-                  )}
-                  <div>
-                    <dt className="text-[12px] text-muted">Source</dt>
-                    <dd className="mt-1 text-ink">{sourceLabel}</dd>
-                  </div>
-                </dl>
               </aside>
             )}
 
             <div className="min-w-0">
-              <section aria-label="When and where" className="space-y-3">
-                <div className="flex items-center gap-3 md:gap-4">
-                  <div
-                    aria-hidden
-                    className={`${EVENT_DETAIL_TILE_CLASS} flex-col`}
-                  >
-                    <span className="text-[10px] text-muted md:text-[11px]">
-                      {stamp.month}
-                    </span>
-                    <span className="mt-0.5 text-[18px] font-semibold leading-none tabular-nums text-ink md:text-[20px]">
-                      {stamp.day}
-                    </span>
-                  </div>
+              <section aria-label="When and where" className="space-y-3.5">
+                <div className="flex gap-3">
+                  <span aria-hidden className={INFO_ICON_CLASS}>
+                    <CalendarIcon />
+                  </span>
                   <div className="min-w-0">
-                    <div className="text-[16px] font-semibold text-ink md:text-[17px]">
+                    <div className="text-[16px] font-semibold leading-6 text-ink md:text-[17px]">
                       {formatDay(event.startsAt)}
                     </div>
                     <div className="mt-0.5 text-[14px] text-muted">
@@ -333,45 +298,34 @@ export function EventDetailView({
                 </div>
 
                 {event.location?.trim() ? (
-                  <div className="flex items-center gap-3 md:gap-4">
-                    <div aria-hidden className={EVENT_DETAIL_TILE_CLASS}>
+                  <div className="flex gap-3">
+                    <span aria-hidden className={INFO_ICON_CLASS}>
                       {isOnlineLocation(event.location) ? (
                         <VideoCallIcon />
                       ) : (
                         <LocationPinIcon />
                       )}
-                    </div>
-                    <div className="min-w-0">
-                      <div className="text-[15px] text-ink">{event.location}</div>
+                    </span>
+                    <div className="min-w-0 text-[16px] leading-6 text-ink">
+                      {event.location}
                     </div>
                   </div>
                 ) : null}
               </section>
 
-              {/* Registration card — desktop only; mobile is served by the
-                  sticky bottom action bar. Hairline border, no fill, so it
-                  groups the actions without nesting card-on-card. */}
+              {/* Actions, desktop only; phones use the sticky bottom bar. A
+                plain row, not a box: nothing nests inside the panel. */}
               <section
-                aria-label="Registration"
-                className="mt-8 hidden rounded-xl border border-ink/15 bg-canvas p-5 md:block"
+                aria-label={safeRsvpUrl ? "Registration" : "Event links"}
+                className="mt-8 hidden md:block"
               >
-                <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                  <div className="text-[13px] text-muted">
-                    {safeRsvpUrl ? "Registration" : "Event details"}
-                  </div>
-                  {primaryUrl && (
-                    <div className="text-[13px] text-muted">
-                      via {sourceLabel}
-                    </div>
-                  )}
-                </div>
                 {!primaryUrl && (
-                  <p className="mt-2 text-[14px] text-ink/75">
+                  <p className="mb-4 text-[14px] text-ink/75">
                     No external link is on file. Check with the host for the
                     latest info.
                   </p>
                 )}
-                <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-3">
+                <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
                   {primaryUrl && (
                     <TrackedAnchor
                       event="primary"
@@ -392,28 +346,39 @@ export function EventDetailView({
                   />
 
                   <ShareButton event={event} variant="text" />
+
+                  {primaryUrl && (
+                    <span className="ml-auto text-[13px] text-muted">
+                      via {sourceLabel}
+                    </span>
+                  )}
                 </div>
               </section>
 
               {/* Phones drop the divider and heading: the description simply
-                  follows when/where. */}
-              <section aria-label="About" className="mt-6 md:mt-10">
-                <div className="hairline hidden md:block" />
-                <h2 className="mt-7 hidden text-[20px] font-semibold tracking-[-0.01em] text-ink md:block">
-                  About
-                </h2>
-                <p className="max-w-prose whitespace-pre-line text-[15px] leading-relaxed text-ink/80 md:mt-4 md:text-[16px]">
-                  {event.description}
-                </p>
+                  follows when/where. With no caption and no tags there is
+                  nothing to title, so the section goes. */}
+              {hasAbout && (
+                <section aria-label="About" className="mt-6 md:mt-10">
+                  <div className="hairline hidden md:block" />
+                  <h2 className="mt-7 hidden text-[18px] font-semibold tracking-[-0.01em] text-ink md:block">
+                    About
+                  </h2>
+                  {description && (
+                    <p className="max-w-prose whitespace-pre-line text-[15px] leading-relaxed text-ink/80 md:mt-3 md:text-[16px]">
+                      {description}
+                    </p>
+                  )}
 
-                {event.tags.length > 0 && (
-                  <div className="mt-5 flex flex-wrap gap-x-3 gap-y-1 text-[13px] text-muted md:mt-6">
-                    {event.tags.map((t) => (
-                      <span key={t}>#{t.replace(/\s+/g, "")}</span>
-                    ))}
-                  </div>
-                )}
-              </section>
+                  {event.tags.length > 0 && (
+                    <div className="mt-5 flex flex-wrap gap-x-3 gap-y-1 text-[13px] text-muted md:mt-6">
+                      {event.tags.map((t) => (
+                        <span key={t}>#{t.replace(/\s+/g, "")}</span>
+                      ))}
+                    </div>
+                  )}
+                </section>
+              )}
             </div>
           </div>
         </article>
