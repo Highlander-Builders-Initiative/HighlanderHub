@@ -41,7 +41,7 @@ export function Masthead({
   const surfaceClass =
     variant === "solid"
       ? "border-b border-ink/10 bg-canvas/95 backdrop-blur"
-      : "bg-white/40 backdrop-blur-xl";
+      : "bg-canvas/40 backdrop-blur-xl";
   const positionClass = position === "sticky" ? "sticky top-0" : "relative";
 
   useEffect(() => {

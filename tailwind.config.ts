@@ -1,6 +1,17 @@
 import type { Config } from "tailwindcss";
 
+const themeColor = (name: string) => `rgb(var(--color-${name}) / <alpha-value>)`;
+
+// Ink hairlines (`border-ink/10`, `ring-ink/10`, `divide-ink/10`) take their
+// opacity to a power set in globals.css: 1 in light mode (unchanged), 1.3 in
+// dark, where a card already stands a tonal step off the page and the full
+// hairline double-edged it. /10 becomes ~5%, /15 ~8.5%; solid `border-ink`
+// stays solid (1^n = 1), so focus and hover edges keep their weight.
+const edgeInk = "rgb(var(--color-ink) / pow(<alpha-value>, var(--edge-alpha-curve)))";
+
 const config: Config = {
+  // `dark:` variants follow the device setting (prefers-color-scheme).
+  darkMode: "media",
   content: [
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -8,52 +19,62 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      // Every color is a CSS variable (RGB channels, defined in globals.css)
+      // so the palette follows the device's light/dark setting and opacity
+      // modifiers like `border-ink/10` keep working.
       colors: {
-        canvas: "#ffffff",
-        surface: "#fafafa",
-        line: "#e7e7e9",
-        ink: "#0f1115",
-        muted: "#6b7280",
+        canvas: themeColor("canvas"),
+        surface: themeColor("surface"),
+        line: themeColor("line"),
+        ink: themeColor("ink"),
+        muted: themeColor("muted"),
         // Softer than muted, below AA (3.2:1 on canvas). Event card meta and
         // the feed day headings' weekday only.
-        faint: "#8a909a",
+        faint: themeColor("faint"),
+        // Always-dark overlay: modal backdrops and the scrims that keep white
+        // captions legible over flyers. Unlike `ink`, it stays dark in dark mode.
+        scrim: themeColor("scrim"),
         // Editorial category palette: named print-ish hues, not the
         // Tailwind/Material primary rainbow. Each color is its own
         // identity (Iris, Forest, Terracotta, Slate, Copper, Plum,
         // Sage), not a generic "blue / red / green / yellow".
-        highlander: "#2a3680", // Iris
-        leaf: "#4e7a52",       // Forest
-        coral: "#c25e3c",      // Terracotta
-        sky: "#426a9e",        // Slate Blue
-        gold: "#c98429",       // Copper
-        plum: "#8a3f6a",       // Plum (Arts)
-        sage: "#7d9785",       // Sage (Community)
-        "deep-leaf": "#2c4a30",
-        "deep-coral": "#863e23",
-        "deep-sky": "#2e4b73",
-        "deep-gold": "#6e4612",
-        "deep-plum": "#5a274a",
-        "deep-sage": "#3f5644",
+        highlander: themeColor("highlander"), // Iris
+        leaf: themeColor("leaf"),             // Forest
+        coral: themeColor("coral"),           // Terracotta
+        sky: themeColor("sky"),               // Slate Blue
+        gold: themeColor("gold"),             // Copper
+        plum: themeColor("plum"),             // Plum (Arts)
+        sage: themeColor("sage"),             // Sage (Community)
+        "deep-leaf": themeColor("deep-leaf"),
+        "deep-coral": themeColor("deep-coral"),
+        "deep-sky": themeColor("deep-sky"),
+        "deep-gold": themeColor("deep-gold"),
+        "deep-plum": themeColor("deep-plum"),
+        "deep-sage": themeColor("deep-sage"),
         // Tag palette: the vivid category hues on event tags, the Topics
         // rail selection and the category dots (mapped in category-colors).
-        // Each `-ink` is that hue's text color, >=4.9:1 on its own 18% wash.
+        // Each `-ink` is that hue's text color, >=4.9:1 on its own 18% wash
+        // (lighter in dark mode, >=6.4:1 there).
         tag: {
-          blue: "#1f6bff",
-          "blue-ink": "#1450d8",
-          violet: "#8b4dff",
-          "violet-ink": "#6230e0",
-          coral: "#ff5433",
-          "coral-ink": "#b82c14",
-          cyan: "#00b3dc",
-          "cyan-ink": "#006a88",
-          magenta: "#e83cc8",
-          "magenta-ink": "#a8168f",
-          green: "#1fc254",
-          "green-ink": "#0e7432",
-          amber: "#ffb300",
-          "amber-ink": "#9a5800",
+          blue: themeColor("tag-blue"),
+          "blue-ink": themeColor("tag-blue-ink"),
+          violet: themeColor("tag-violet"),
+          "violet-ink": themeColor("tag-violet-ink"),
+          coral: themeColor("tag-coral"),
+          "coral-ink": themeColor("tag-coral-ink"),
+          cyan: themeColor("tag-cyan"),
+          "cyan-ink": themeColor("tag-cyan-ink"),
+          magenta: themeColor("tag-magenta"),
+          "magenta-ink": themeColor("tag-magenta-ink"),
+          green: themeColor("tag-green"),
+          "green-ink": themeColor("tag-green-ink"),
+          amber: themeColor("tag-amber"),
+          "amber-ink": themeColor("tag-amber-ink"),
         },
       },
+      borderColor: { ink: edgeInk },
+      ringColor: { ink: edgeInk },
+      divideColor: { ink: edgeInk },
       fontFamily: {
         sans: ["var(--font-body)", "ui-sans-serif", "system-ui", "sans-serif"],
         display: ["var(--font-display)", "ui-sans-serif", "system-ui", "sans-serif"],

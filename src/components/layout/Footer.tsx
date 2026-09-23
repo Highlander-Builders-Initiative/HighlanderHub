@@ -78,7 +78,7 @@ export function Footer() {
                 ariaLabel={label}
                 location="footer_social"
                 channel={channel}
-                className="interactive-focus flex h-11 w-11 items-center justify-center rounded-lg border border-ink/15 text-ink transition-colors hover:border-ink hover:bg-ink hover:text-white"
+                className="interactive-focus flex h-11 w-11 items-center justify-center rounded-lg border border-ink/15 text-ink transition-colors hover:border-ink hover:bg-ink hover:text-canvas"
               >
                 <Icon aria-hidden="true" className="h-5 w-5" />
               </HbiLink>

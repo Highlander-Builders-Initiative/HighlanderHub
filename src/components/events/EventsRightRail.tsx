@@ -40,7 +40,7 @@ export function EventsRightRail({
         isLoading={isLoading}
       />
 
-      <div className="my-5 h-px bg-ink/10" />
+      <div className="my-5 border-t border-ink/10" />
 
       <p className="px-1 pb-2 text-[12px] font-medium text-muted">When</p>
 

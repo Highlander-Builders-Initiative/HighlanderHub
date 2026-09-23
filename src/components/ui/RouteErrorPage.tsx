@@ -65,7 +65,7 @@ export function RouteErrorPage({ error, reset, variant }: RouteErrorPageProps) {
           <button
             type="button"
             onClick={reset}
-            className="interactive-focus mt-8 inline-flex min-h-12 items-center rounded-lg bg-ink px-5 py-3 text-sm font-medium text-white transition-opacity hover:opacity-85"
+            className="interactive-focus mt-8 inline-flex min-h-12 items-center rounded-lg bg-ink px-5 py-3 text-sm font-medium text-canvas transition-opacity hover:opacity-85"
           >
             Try again
           </button>

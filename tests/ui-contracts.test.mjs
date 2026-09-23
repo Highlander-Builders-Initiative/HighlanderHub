@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { test } from "node:test";
 
 const sourceFile = (path) => new URL(`../${path}`, import.meta.url);
 const read = (path) => readFileSync(sourceFile(path), "utf8");
+const walk = (dir) =>
+  readdirSync(sourceFile(dir), { recursive: true }).map((file) => `${dir}/${file}`);
 
 test("event browser paginates the list instead of rendering every event at once", () => {
   const browser = read("src/components/events/EventsBrowser.tsx");
@@ -459,9 +461,39 @@ test("motion and focus behavior have accessible fallbacks", () => {
 
   assert.match(source, /prefers-reduced-motion: reduce/);
   assert.match(source, /\.interactive-focus/);
-  assert.match(source, /outline: 3px solid #0f1115/);
+  assert.match(source, /outline: 3px solid rgb\(var\(--color-ink\)\)/);
   assert.match(source, /\.card-hover:focus-visible/);
   assert.match(source, /touch-action: manipulation/);
+});
+
+test("dark mode follows the device setting through the shared palette", () => {
+  const globals = read("src/app/globals.css");
+  const tailwind = read("tailwind.config.ts");
+  const layout = read("src/app/layout.tsx");
+
+  // One palette, re-pointed under the media query: no class-based toggle.
+  assert.match(globals, /@media \(prefers-color-scheme: dark\)/);
+  assert.match(globals, /--color-ink: 236 238 241/);
+  assert.match(tailwind, /darkMode: "media"/);
+  // Dark-mode hairlines soften by an opacity curve; solid ink edges stay solid.
+  assert.match(tailwind, /pow\(<alpha-value>, var\(--edge-alpha-curve\)\)/);
+  assert.match(tailwind, /borderColor: \{ ink: edgeInk \}/);
+  assert.match(globals, /--edge-alpha-curve: 1\.3/);
+  // Cards answer hover with their edge; they do not move.
+  assert.doesNotMatch(globals, /\.card-hover[^}]*translate/);
+  assert.match(tailwind, /rgb\(var\(--color-\$\{name\}\) \/ <alpha-value>\)/);
+  assert.match(layout, /colorScheme: "light dark"/);
+
+  // `ink` turns light in dark mode, so nothing may assume it stays dark:
+  // text on an ink fill is `text-canvas`, overlays on flyers and modal
+  // backdrops use the always-dark `scrim`, and surfaces use canvas, not white.
+  for (const file of walk("src")) {
+    if (!/\.(tsx?|css)$/.test(file)) continue;
+    const source = read(file);
+    assert.doesNotMatch(source, /bg-ink\b[^"`]*\btext-white\b/, file);
+    assert.doesNotMatch(source, /(from|via)-ink\/\d/, file);
+    assert.doesNotMatch(source, /bg-white\//, file);
+  }
 });
 
 test("badge colors avoid low-contrast accent text", () => {

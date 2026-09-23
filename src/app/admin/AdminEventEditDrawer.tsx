@@ -21,7 +21,7 @@ export function AdminEventEditDrawer({
   isPending: boolean;
 }) {
   return (
-    <div className="fixed inset-0 bg-ink/35 backdrop-blur-sm z-50 flex items-center justify-end animate-fade-in p-4 sm:p-0">
+    <div className="fixed inset-0 bg-scrim/35 backdrop-blur-sm z-50 flex items-center justify-end animate-fade-in p-4 sm:p-0">
       <div className="bg-canvas w-full max-w-[540px] h-full sm:h-screen sm:rounded-l-xl border-l border-ink/10 p-6 sm:p-8 flex flex-col justify-between overflow-y-auto animate-scale-in">
         <form onSubmit={onSubmit} className="space-y-6 flex-1 flex flex-col justify-between">
           <div>
