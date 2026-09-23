@@ -131,12 +131,11 @@ test("calendar loads its own month-range events outside feed pagination", () => 
   assert.match(filters, /for \(const \[key, evs\] of calendarGrouped\)/);
   assert.match(calendar, /pacificCalendarGridRange/);
   assert.match(calendar, /aria-busy=\{isLoading\}/);
-  // Days with events read darker than empty days; no heat wash (its hue
-  // signalled no category).
-  assert.match(calendar, /dayTextClass/);
+  assert.match(calendar, /heatClass/);
   assert.match(calendar, /countsByDay\.get\(key\)/);
-  assert.match(calendar, /isLoading \? "text-ink" : dayTextClass\(count\)/);
-  assert.doesNotMatch(calendar, /bg-highlander/);
+  assert.match(calendar, /!isLoading && inMonth \? heatClass\(count\) : ""/);
+  // Empty days fade once the month's counts are in.
+  assert.match(calendar, /!isLoading && count === 0 \? "text-faint" : "text-ink"/);
   assert.match(calendarHook, /fetchCalendarEvents\(calendarRange\.start, calendarRange\.end\)/);
   assert.match(calendarHook, /isCalendarLoading/);
   assert.match(calendarHook, /finally/);

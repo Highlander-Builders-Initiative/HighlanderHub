@@ -5,7 +5,7 @@ import { memo, type MouseEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { CampusEvent } from "@/types/event";
 import { FlyerPoster } from "@/components/events/FlyerPoster";
-import { ClubAvatar } from "@/components/ui/ClubAvatar";
+import { HostAvatars, eventHosts } from "@/components/events/HostAvatars";
 import { eventFlyerAlt, eventListLinkLabel } from "@/lib/events/a11y";
 import { isDeadlineKind } from "@/lib/events/content-kind";
 import { isOnlineLocation } from "@/lib/events/location";
@@ -21,9 +21,6 @@ type EventCardProps = {
   loadedCount?: number;
 };
 
-type EventHost = { host: string; hostHandle?: string };
-
-const MAX_HOST_AVATARS = 3;
 /**
  * Width of the icon column that leads the hosts and where rows: one avatar
  * fills it and the where-row icon is centered in it, so both rows' text
@@ -35,6 +32,8 @@ const LEAD_COLUMN_PX = 16;
  *  stays a footnote under the title. */
 const PILL =
   "rounded-full px-2.5 py-0.5 text-[13px] font-medium sm:px-3 sm:text-[14px] lg:px-2 lg:text-[12px]";
+/** Compact rows use the 12px pill at every width. */
+const ROW_PILL = "rounded-full px-2 py-0.5 text-[12px] font-medium";
 
 /**
  * Pin or camera for the where-row, drawn to sit in the text like a glyph. Each
@@ -72,30 +71,6 @@ function LocationIcon({ online }: { online: boolean }) {
       <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
       <circle cx="12" cy="10" r="3" />
     </svg>
-  );
-}
-
-function eventHosts(event: CampusEvent): EventHost[] {
-  return (event.hosts?.length ? event.hosts : [event]).filter(
-    (host) => host.host || host.hostHandle
-  );
-}
-
-/** Up to three club pictures, each cut out from the next by a canvas ring. */
-function HostAvatars({ hosts }: { hosts: EventHost[] }) {
-  return (
-    <span className="flex shrink-0 -space-x-1">
-      {hosts.slice(0, MAX_HOST_AVATARS).map((host) => (
-        // flex, so the ring hugs the avatar instead of the line box.
-        <span key={host.hostHandle || host.host} className="flex rounded-full ring-2 ring-canvas">
-          <ClubAvatar
-            handle={host.hostHandle}
-            name={host.host || host.hostHandle || ""}
-            size={LEAD_COLUMN_PX}
-          />
-        </span>
-      ))}
-    </span>
   );
 }
 
@@ -165,7 +140,7 @@ function EventCardComponent({ event, loadedCount }: EventCardProps) {
 
         {hosts.length > 0 && (
           <div className="mt-2.5 flex min-w-0 items-center gap-2 text-[14px] text-faint sm:text-[16px]">
-            <HostAvatars hosts={hosts} />
+            <HostAvatars hosts={hosts} size={LEAD_COLUMN_PX} />
             {/* Phones name hosts by handle; full club names truncate there. */}
             <span className="min-w-0 truncate">
               By <span className="sm:hidden">{hostHandlesByline(hosts)}</span>
@@ -220,10 +195,15 @@ export const EventCard = memo(EventCardComponent);
 EventCard.displayName = "EventCard";
 
 /**
- * The desktop feed's compact view: one line of a day's list. A 40x50 flyer
- * thumbnail, the start time, the title over its hosts, and the where over the
- * tags, right-aligned. Rows are divided by hairlines inside one surface per
- * day (EventsFeedColumn), so about eight events fit where cards show two.
+ * The feed's compact view: one line of a day's list, about 70px tall on
+ * desktop and 84px on phones, where a card is 200. Rows are divided by
+ * hairlines inside one surface per day (EventsFeedColumn).
+ *
+ * From lg, four columns: a 40x50 flyer thumbnail, the start time, the title
+ * over its hosts, and the where over the tags, right-aligned. Phones stack
+ * three lines beside the thumbnail: time and where, the title, then the hosts
+ * with the tags at the end. The two groups are `display: contents` there, so
+ * their children take the phone grid's areas directly.
  */
 function EventCompactRowComponent({ event, loadedCount }: EventCardProps) {
   const { href, onOpen, prefetch } = useEventLink(event, loadedCount, "list_row");
@@ -232,7 +212,7 @@ function EventCompactRowComponent({ event, loadedCount }: EventCardProps) {
   const isDeadline = isDeadlineKind(event.contentKind);
   const hosts = eventHosts(event);
   const location = event.location?.trim();
-  // The Topics rail already sorts by category, so a row keeps only the tags
+  // The Topics filter already sorts by category, so a row keeps only the tags
   // that change what you do: Deadline, Free food, RSVP.
   const tags = eventTags(event).filter((tag) => tag.kind !== "category");
 
@@ -249,9 +229,9 @@ function EventCompactRowComponent({ event, loadedCount }: EventCardProps) {
       onFocus={prefetch}
       aria-label={eventListLinkLabel(event)}
       data-event-id={event.id}
-      className="interactive-focus grid w-full min-w-0 grid-cols-[40px_72px_minmax(0,1fr)_auto] items-center gap-x-3.5 py-2.5 pl-2.5 pr-4 transition-colors duration-150 [contain-intrinsic-height:auto_70px] [content-visibility:auto] first:rounded-t-[19px] last:rounded-b-[19px] hover:bg-ink/[0.03] focus-visible:!shadow-none focus-visible:!outline-offset-[-3px]"
+      className="interactive-focus grid w-full min-w-0 grid-cols-[40px_auto_minmax(0,1fr)_auto] items-center gap-x-2.5 gap-y-0.5 py-2.5 pl-2.5 pr-3.5 transition-colors duration-150 [contain-intrinsic-height:auto_84px] [content-visibility:auto] [grid-template-areas:'thumb_time_loc_loc'_'thumb_title_title_title'_'thumb_host_host_tags'] first:rounded-t-[19px] last:rounded-b-[19px] hover:bg-ink/[0.03] focus-visible:!shadow-none focus-visible:!outline-offset-[-3px] lg:grid-cols-[40px_72px_minmax(0,1fr)_auto] lg:gap-x-3.5 lg:gap-y-0 lg:pr-4 lg:[contain-intrinsic-height:auto_70px] lg:[grid-template-areas:'thumb_time_main_aside']"
     >
-      <span className="flex h-[50px] w-10 items-center justify-center [--flyer-max-h:50px] [--flyer-max-w:40px]">
+      <span className="flex h-[50px] w-10 items-center justify-center [--flyer-max-h:50px] [--flyer-max-w:40px] [grid-area:thumb]">
         {showImage ? (
           <FlyerPoster
             src={event.imageUrl!}
@@ -265,35 +245,40 @@ function EventCompactRowComponent({ event, loadedCount }: EventCardProps) {
         )}
       </span>
 
-      <p className="text-[14px] leading-5 tabular-nums text-faint">
-        {isDeadline && <span className={`block font-medium ${DEADLINE_PILL.text}`}>Due</span>}
+      {/* Deadlines read "Due 11:59 PM" inline on phones, stacked from lg. */}
+      <p className="whitespace-nowrap text-[13px] leading-[18px] tabular-nums text-faint [grid-area:time] lg:whitespace-normal lg:text-[14px] lg:leading-5">
+        {isDeadline && <span className={`font-medium ${DEADLINE_PILL.text} lg:block`}>Due </span>}
         {eventTimeLabel(event, "start")}
       </p>
 
-      <div className="min-w-0">
-        <h3 className="truncate text-[16px] font-medium leading-[1.35] tracking-[-0.005em] text-ink">
+      <div className="contents lg:block lg:min-w-0 lg:[grid-area:main]">
+        <h3 className="truncate text-[15px] font-medium leading-5 tracking-[-0.005em] text-ink [grid-area:title] lg:text-[16px] lg:leading-[1.35]">
           {event.title}
         </h3>
         {hosts.length > 0 && (
-          <div className="mt-0.5 flex min-w-0 items-center gap-2 text-[14px] text-faint">
-            <HostAvatars hosts={hosts} />
-            <span className="min-w-0 truncate">By {hostNamesByline(hosts)}</span>
+          <div className="flex min-w-0 items-center gap-2 text-[13px] leading-[18px] text-faint [grid-area:host] lg:mt-0.5 lg:text-[14px] lg:leading-5">
+            <HostAvatars hosts={hosts} size={LEAD_COLUMN_PX} />
+            {/* Phones name hosts by handle, as the cards do. */}
+            <span className="min-w-0 truncate">
+              By <span className="sm:hidden">{hostHandlesByline(hosts)}</span>
+              <span className="hidden sm:inline">{hostNamesByline(hosts)}</span>
+            </span>
           </div>
         )}
       </div>
 
       {(location || tags.length > 0) && (
-        <div className="flex min-w-0 max-w-[200px] flex-col items-end gap-1">
+        <div className="contents lg:flex lg:min-w-0 lg:max-w-[200px] lg:flex-col lg:items-end lg:gap-1 lg:[grid-area:aside]">
           {location && (
-            <div className="flex min-w-0 max-w-full items-center gap-1.5 text-[14px] text-faint">
+            <div className="flex min-w-0 items-center gap-1.5 text-[13px] leading-[18px] text-faint [grid-area:loc] lg:max-w-full lg:text-[14px] lg:leading-5">
               <LocationIcon online={isOnlineLocation(location)} />
               <span className="min-w-0 truncate">{location}</span>
             </div>
           )}
           {tags.length > 0 && (
-            <div className="flex gap-1.5">
+            <div className="flex gap-1 justify-self-end [grid-area:tags] lg:gap-1.5">
               {tags.map((tag) => (
-                <span key={tag.label} className={`${PILL} ${tag.highlight} ${tag.text}`}>
+                <span key={tag.label} className={`${ROW_PILL} ${tag.highlight} ${tag.text}`}>
                   {tag.label}
                 </span>
               ))}
