@@ -46,7 +46,7 @@ function EventRowSkeleton({ width }: { width: string }) {
       </div>
 
       {/* Flyer slot */}
-      <span className="block h-[100px] w-20 shrink-0 rounded-lg bg-ink/[0.05] sm:h-[150px] sm:w-[120px]" />
+      <span className="block aspect-[4/5] w-[clamp(80px,100vw_-_263px,120px)] shrink-0 rounded-lg bg-ink/[0.05]" />
     </div>
   );
 }
