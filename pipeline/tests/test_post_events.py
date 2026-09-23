@@ -132,14 +132,31 @@ class PostExtractionTests(unittest.TestCase):
         self.upload_flyer.side_effect = [None, None, "https://storage.example/recovered.jpg"]
         with self.ocr("Study Jam") as vision:
             original = posts.process_post(item)
-            for failure in (RuntimeError("timeout"), posts.ImageExpired("expired")):
-                with patch.object(posts, "_download_image", side_effect=failure):
-                    self.assertEqual(original, posts.process_post(item))
+            with patch.object(posts, "_download_image", side_effect=RuntimeError("timeout")):
+                self.assertEqual(original, posts.process_post(item))
             self.assertEqual(original, posts.process_post(item))
             recovered = posts.process_post(item)
         vision.assert_called_once()
         self.assertEqual(3, self.upload_flyer.call_count)
         self.assertEqual("https://storage.example/recovered.jpg", recovered["images"][0]["image_url"])
+
+    def test_an_expired_flyer_url_is_not_requested_again_until_it_is_refreshed(self):
+        item = record()
+        self.upload_flyer.side_effect = [None, "https://storage.example/recovered.jpg"]
+        with self.ocr("Study Jam") as vision:
+            original = posts.process_post(item)
+            with patch.object(posts, "_download_image", side_effect=posts.ImageExpired("HTTP 403")) as expired:
+                failed = posts.process_post(item)
+                self.assertEqual(failed, posts.process_post(item))
+            expired.assert_called_once()
+            self.assertEqual(original["images"][0]["ocr_text"], failed["images"][0]["ocr_text"])
+            self.assertFalse(failed["images"][0].get("image_url"))
+            self.assertEqual(failed, posts._read_json(posts._cache_path("700")))
+            item["media"][0]["image_url"] = "https://cdn.example/refreshed.jpg"
+            recovered = posts.process_post(item)
+        vision.assert_called_once()
+        self.assertEqual("https://storage.example/recovered.jpg", recovered["images"][0]["image_url"])
+        self.assertNotIn("flyer_expired_url", recovered["images"][0])
 
     def test_cached_only_does_not_attempt_missing_flyer_recovery(self):
         item = record()

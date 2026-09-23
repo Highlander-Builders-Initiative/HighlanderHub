@@ -28,6 +28,27 @@ _FUNDRAISER_TERMS = (
     "percentage night", "bake sale", "merch sale", "benefit night", "gofundme",
 )
 
+# A board position named for fundraising ("Fundraising Chair", "VP of
+# Fundraising") recruits an officer; it does not advertise a fundraiser.
+_FUNDRAISING_ROLE_PATTERN = re.compile(
+    r"""
+    \b(?:
+        (?:fundrais(?:ing|er)|donations?)\s+
+        (?:co-?)?(?:chairs?|chairpersons?|coordinators?|directors?|officers?
+          |leads?|managers?|committees?|positions?|roles?|interns?)
+      | (?:vp|vice\s+president|director|head|chair|coordinator|officer)
+        \s+(?:of|for)\s+fundrais(?:ing|er)
+    )\b
+    """,
+    re.IGNORECASE | re.VERBOSE,
+)
+
+
+def _mentions_fundraising(text: str) -> bool:
+    text = _FUNDRAISING_ROLE_PATTERN.sub(" ", text.casefold())
+    return any(term in text for term in _FUNDRAISER_TERMS)
+
+
 _DEADLINE_TITLE_TERMS = (
     "deadline", "apply by", "register by", "closing date", "last day to",
     "applications due", "application due", "registration closes",
@@ -182,7 +203,7 @@ def detect_free_food(*texts: str | None) -> bool:
 
 def is_informational_notice(title: str, description: str = "", ocr_text: str = "") -> bool:
     """Recognize dated service notices and awareness/resource posts, not gatherings."""
-    if any(term in f"{title} {description}".casefold() for term in _FUNDRAISER_TERMS):
+    if _mentions_fundraising(f"{title} {description}"):
         return False
     if re.search(r"\b(?:closures?|closed|modified hours)\b", title, re.IGNORECASE):
         return not _OCCASION_TITLE_PATTERN.search(title.replace("Hours", "").replace("hours", ""))
@@ -254,7 +275,7 @@ def classify_content_kind(
         return "other"
     if assessed_kind is None and is_informational_notice(title, description, ocr_text):
         return "other"
-    if any(term in text for term in _FUNDRAISER_TERMS):
+    if _mentions_fundraising(text):
         return "fundraiser"
 
     # Student/club origins bypass audience and text eligibility checks.

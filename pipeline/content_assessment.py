@@ -148,6 +148,10 @@ Distinguish an occasion from content publication or ordinary availability:
   hours can be service_schedule/occurrence; recurring hours require a bounded
   schedule. An advertised open house, grand-opening celebration, special sale,
   or workshop is an activity even if held in a shop or service office.
+- A recap, photo dump or thank-you for an occasion that already happened
+  ('thank you for participating', 'thanks to everyone who came') is an
+  announcement even when it prints that occasion's date: nobody can still
+  attend it. Extract only a separately advertised upcoming occasion.
 - Missing clock times do not establish all-day availability. Date-only
   occurrences remain valid for independently established occasions such as a
   festival, exhibition, or special sale. Decide what is advertised before
@@ -195,7 +199,11 @@ use [] when location is empty. Cite the slide that prints the location even when
 activity and date evidence come from the caption or another slide. Respect explicit
 years/timezones; otherwise use America/Los_Angeles and infer the year from
 posted_at. An explicit relative date may use posted_at to resolve it, but
-posted_at alone is never an event date. Date-only events start at local midnight
+posted_at alone is never an event date. posted_at is UTC: resolve 'today',
+'tonight', 'tomorrow' and 'this Friday' from the local publication date stated
+after these instructions, never from posted_at's UTC calendar date. Cite the
+text field containing the relative word; posted_at is not a text field.
+Date-only events start at local midnight
 and end at midnight AFTER the last included day (exclusive end). A timed
 occurrence never spans more than 24 hours: anything longer is an all-day
 activity, a schedule, or separate occurrences, never one clock-bounded range.
@@ -325,6 +333,13 @@ def _instant(value: Any) -> datetime:
     return parsed
 
 
+_WEEKDAY_NUMBERS = {name: number for number, name in enumerate(
+    ("mon", "tue", "wed", "thu", "fri", "sat", "sun"))}
+_THIS_WEEKDAY = re.compile(
+    r"\bthis\s+(?:coming\s+)?(monday|tuesday|wednesday|thursday|friday|saturday|sunday"
+    r"|mon|tues?|wed|thur?s?|fri|sat|sun)\b", re.I)
+
+
 def _day_supported(day: date, text: str, source: dict) -> bool:
     from event_dates import evidence_dates, weekday_range_dates, _scan_printed_dates, _labeled_date, _OCR_DATE_RE, _MONTHS
 
@@ -394,7 +409,27 @@ def _day_supported(day: date, text: str, source: dict) -> bool:
         for word, offset in (("today", 0), ("tonight", 0), ("tomorrow", 1)):
             if re.search(rf"\b{word}\b", text, re.I) and day == reference + timedelta(days=offset):
                 return True
+        # "This Friday" is the first Friday on or after the local publication
+        # date. A bare weekday or "next Friday" (this week's or the next?) is
+        # not a qualified reference and stays unsupported.
+        for match in _THIS_WEEKDAY.finditer(text):
+            weekday = _WEEKDAY_NUMBERS[match.group(1).lower()[:3]]
+            if day == reference + timedelta(days=(weekday - reference.weekday()) % 7):
+                return True
     return False
+
+
+def _publication_reference(source: dict) -> str:
+    """The local publication date that relative dates are resolved against.
+
+    posted_at is UTC, so an evening post in California already carries the
+    next calendar date. Stated for the model; the source itself is unchanged.
+    """
+    try:
+        local = _instant(source.get("posted_at")).astimezone(PACIFIC)
+    except (TypeError, ValueError):
+        return ""
+    return f"{local:%A}, {local:%B} {local.day}, {local.year} (America/Los_Angeles)"
 
 
 def _clock_supported(clock: time, text: str) -> bool:
@@ -470,8 +505,11 @@ def validate_occurrence(item: dict, source: dict) -> None:
         raise ValueError("A timed occurrence cannot exceed 24 hours; recurring hours need a schedule or separate occurrences")
     # Use the supplied offset for sources that explicitly name another zone.
     if not _day_supported(start.date(), text, source):
+        reference = _publication_reference(source)
         raise ValueError(f"Occurrence start date lacks source support: {start.date()}; "
                          "cite a printed date or explicit relative date, never posted_at alone. "
+                         + (f"Relative dates count from the local publication date, {reference}, "
+                            "not the UTC date in posted_at. " if reference else "") +
                          "In this occurrence's date_evidence, cite both caption and slide when "
                          "the month/range and day/time are split across fields; top-level citations "
                          "do not supply occurrence evidence. Do not guess activity/date associations")
@@ -667,7 +705,10 @@ def _generate(prompt: str):
 
 def assess(source: dict, *, usage: list | None = None) -> dict:
     """Assess one source; `usage`, when given, collects token counts per model call."""
-    prompt = PROMPT + json.dumps(source, ensure_ascii=False, sort_keys=True)
+    reference = _publication_reference(source)
+    prompt = (PROMPT + (f"Local publication date (never an event date by itself): {reference}\n"
+                        if reference else "")
+              + json.dumps(source, ensure_ascii=False, sort_keys=True))
     failures = []
     for attempt in range(2):
         response = _generate(prompt)

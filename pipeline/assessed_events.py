@@ -355,7 +355,8 @@ def _complete(updates: list[dict], *, notify: bool) -> None:
 
 def post_updates(processed: list[tuple[dict, dict]], meta: dict, now: str,
                  registry: dict | None = None, stats: dict | None = None,
-                 *, stop_on_error: bool = False) -> list[dict]:
+                 *, stop_on_error: bool = False,
+                 canonical: dict[str, dict] | None = None) -> list[dict]:
     """Build publication updates for collected posts.
 
     A usable extraction (`ok`) and a retryable failure (`error`) produce an
@@ -425,14 +426,80 @@ def post_updates(processed: list[tuple[dict, dict]], meta: dict, now: str,
                               streak, source["source_key"], failure.get("error"))
                     break
                 log.warning("Assessment failed for %s; continuing: %s", source["source_key"], failure.get("error"))
+    if canonical is not None:
+        updates = _withhold_reconciled(updates, registry, canonical, stats)
     return updates
+
+
+def _withhold_reconciled(updates: list[dict], registry: dict, canonical: dict[str, dict],
+                         stats: dict | None = None) -> list[dict]:
+    """Stop recreating repeat advertisements that reconciliation already merged.
+
+    Reconciliation removes a duplicate and remaps its source onto the listing
+    that survived. Republishing the same decision only recreates the duplicate
+    until the next reconciliation removes it again. A source is withheld while
+    its decision is unchanged, its canonical listing is live, and its row still
+    matches that listing directly or through another withheld repeat. A changed
+    decision, a missing listing, or a row that no longer matches publishes.
+    """
+    from reconcile_events import merge_duplicates, same_event
+    pending: dict[str, list[dict]] = {}
+    for update in updates:
+        prior = registry.get(update["source_key"]) or {}
+        rows, supported = update.get("rows") or [], prior.get("event_ids") or []
+        if (len(rows) == 1 and len(supported) == 1 and supported[0] in canonical
+                and rows[0]["id"] != supported[0]
+                and rows[0]["id"] in (prior.get("known_event_ids") or [])
+                and update["assessment"] == prior.get("assessment")):
+            pending.setdefault(supported[0], []).append(update)
+    withheld: dict[str, list[dict]] = {}
+    for canonical_id, candidates in pending.items():
+        group = [canonical[canonical_id]]
+        while joined := [item for item in candidates
+                         if any(same_event(item["rows"][0], member) for member in group)]:
+            group.extend(item["rows"][0] for item in joined)
+            candidates = [item for item in candidates if item not in joined]
+        withheld[canonical_id] = group[1:]
+    skipped = {row["id"] for rows in withheld.values() for row in rows}
+    if stats is not None and skipped:
+        stats["reconciled_duplicates_skipped"] = len(skipped)
+    kept = []
+    for update in updates:
+        rows = update.get("rows") or []
+        if rows and all(row["id"] in skipped for row in rows):
+            continue
+        # The canonical source republishes its own row every run. Keep what
+        # reconciliation merged into it from these duplicates (free food, a
+        # partner's signup, a missing end or image), or the merge is undone.
+        # Hosts are left to reconciliation; publication does not write them.
+        update["rows"] = [
+            {key: value for key, value in merge_duplicates(row, [row, *withheld[row["id"]]]).items()
+             if key != "hosts"} if withheld.get(row["id"]) else row
+            for row in rows]
+        kept.append(update)
+    return kept
+
+
+def _canonical_listings(processed: list[tuple[dict, dict]], registry: dict) -> dict[str, dict]:
+    """Live listings that collected posts were remapped onto by reconciliation."""
+    wanted = set()
+    for record, _ in processed:
+        prior = registry.get(f"instagram:post:{record.get('media_id')}") or {}
+        own = f"_p{record.get('media_id')}"
+        wanted.update(event_id for event_id in prior.get("event_ids") or [] if not event_id.endswith(own))
+    if not wanted:
+        return {}
+    from db import get_event_rows_by_ids
+    return {row["id"]: row for row in get_event_rows_by_ids(sorted(wanted))}
 
 
 def publish_posts(processed: list[tuple[dict, dict]], now: str, *, notify: bool,
                   meta: dict | None = None) -> None:
     stats: dict[str, int] = {}
+    registry = load_registry()
     updates = post_updates(processed, meta if meta is not None else load_account_meta(), now,
-                           stats=stats, stop_on_error=True)
+                           registry=registry, stats=stats, stop_on_error=True,
+                           canonical=_canonical_listings(processed, registry))
     log.info("Instagram publication: %d post source(s); %s",
              len(processed), dict(sorted(stats.items())) or "fully cached")
     _complete(updates, notify=notify)
