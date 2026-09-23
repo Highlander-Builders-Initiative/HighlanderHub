@@ -15,6 +15,23 @@ export default function GlobalError({
 
   return (
     <html lang="en">
+      {/* This page replaces the root layout, so globals.css is not loaded:
+          it carries its own light/dark palette, following the device. */}
+      <style>{`
+        :root {
+          color-scheme: light dark;
+          --ge-canvas: #ffffff;
+          --ge-ink: #0f1115;
+          --ge-muted: #6b7280;
+        }
+        @media (prefers-color-scheme: dark) {
+          :root {
+            --ge-canvas: #1e1f22;
+            --ge-ink: #eceef1;
+            --ge-muted: #bec0c4;
+          }
+        }
+      `}</style>
       <body
         style={{
           margin: 0,
@@ -22,8 +39,8 @@ export default function GlobalError({
           padding: "56px 24px",
           fontFamily:
             "var(--font-body), \"Bricolage Grotesque\", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
-          background: "#ffffff",
-          color: "#0f1115",
+          background: "var(--ge-canvas)",
+          color: "var(--ge-ink)",
         }}
       >
         <main style={{ maxWidth: 720, margin: "0 auto" }}>
@@ -32,7 +49,7 @@ export default function GlobalError({
               fontFamily:
                 "var(--font-body), ui-sans-serif, system-ui, sans-serif",
               fontSize: 13,
-              color: "#6b7280",
+              color: "var(--ge-muted)",
               margin: 0,
             }}
           >
@@ -58,7 +75,7 @@ export default function GlobalError({
               maxWidth: 560,
               fontSize: 16,
               lineHeight: 1.6,
-              color: "#6b7280",
+              color: "var(--ge-muted)",
               marginTop: 16,
             }}
           >
@@ -72,8 +89,8 @@ export default function GlobalError({
               minHeight: 48,
               padding: "12px 22px",
               borderRadius: 8,
-              background: "#0f1115",
-              color: "#fff",
+              background: "var(--ge-ink)",
+              color: "var(--ge-canvas)",
               border: 0,
               fontSize: 14,
               fontWeight: 500,

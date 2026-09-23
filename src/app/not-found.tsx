@@ -21,7 +21,7 @@ export default function NotFound() {
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link
               href="/events"
-              className="interactive-focus inline-flex min-h-12 items-center justify-center rounded-lg bg-ink px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-85"
+              className="interactive-focus inline-flex min-h-12 items-center justify-center rounded-lg bg-ink px-6 py-3 text-sm font-medium text-canvas transition-opacity hover:opacity-85"
             >
               Browse events
             </Link>

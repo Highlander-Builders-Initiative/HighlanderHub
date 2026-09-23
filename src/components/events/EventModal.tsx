@@ -81,7 +81,7 @@ function EventModalDialog({ children, standalone }: { children: ReactNode; stand
         aria-label="Close event"
         tabIndex={-1}
         onClick={close}
-        className="event-modal-backdrop absolute inset-0 cursor-default bg-ink/40"
+        className="event-modal-backdrop absolute inset-0 cursor-default bg-scrim/40 dark:bg-scrim/60"
       />
 
       <div

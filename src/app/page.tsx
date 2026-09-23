@@ -51,10 +51,7 @@ export default async function HomePage() {
           <CampusSkyline />
           <div className="skyline-copy relative mx-auto max-w-7xl px-4 pt-11 sm:px-6 md:pt-16">
             {/* Dateline: a campus-paper colophon. */}
-            <div
-              className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 animate-fade-up"
-              style={{ animationDelay: "0ms" }}
-            >
+            <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
               <p className="font-mono text-[12px] tracking-[0.04em] text-muted">
                 {dateLabel}
                 {weekLabel ? ` · ${weekLabel}` : ""}
@@ -84,27 +81,22 @@ export default async function HomePage() {
             </div>
 
             <h1
-              className="mt-8 max-w-[15ch] font-display text-[44px] font-semibold leading-[1.03] tracking-[-0.035em] text-ink animate-fade-up sm:text-[56px] md:mt-10 md:text-[64px] lg:text-[72px]"
-              style={{ animationDelay: "80ms" }}
+              className="mt-8 max-w-[15ch] font-display text-[44px] font-semibold leading-[1.03] tracking-[-0.035em] text-ink sm:text-[56px] md:mt-10 md:text-[64px] lg:text-[72px]"
             >
               Every UCR event,
               <span className="block text-ink">one page.</span>
             </h1>
 
             <p
-              className="mt-7 max-w-md text-base leading-relaxed text-ink/75 animate-fade-up md:mt-9 md:text-lg"
-              style={{ animationDelay: "180ms" }}
+              className="mt-7 max-w-md text-base leading-relaxed text-ink/75 md:mt-9 md:text-lg"
             >
               <HeroHighlightCopy />
             </p>
 
-            <div
-              className="mt-6 animate-fade-up md:mt-8"
-              style={{ animationDelay: "260ms" }}
-            >
+            <div className="mt-6 md:mt-8">
               <Link
                 href="/events"
-                className="interactive-focus group inline-flex min-h-12 items-center gap-2 rounded-lg bg-ink px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-85"
+                className="interactive-focus group inline-flex min-h-12 items-center gap-2 rounded-lg bg-ink px-6 py-3 text-sm font-medium text-canvas transition-opacity hover:opacity-85"
               >
                 Browse events
                 <svg
@@ -127,10 +119,7 @@ export default async function HomePage() {
         <div className="hairline" />
 
         {/* The wall: a full-bleed, self-scrolling strip of real flyers. */}
-        <div
-          className="pt-4 pb-12 animate-fade-up md:pt-6 md:pb-16"
-          style={{ animationDelay: "300ms" }}
-        >
+        <div className="pt-4 pb-12 md:pt-6 md:pb-16">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
             <p className="text-[13px] text-muted">Now on the wall</p>
             <Link

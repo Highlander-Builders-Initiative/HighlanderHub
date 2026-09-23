@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import { Bricolage_Grotesque, IBM_Plex_Mono } from "next/font/google";
 import {
@@ -51,6 +51,16 @@ export const metadata: Metadata = {
     description: SITE_DESCRIPTION,
     images: [SITE_SOCIAL_CARD.url],
   },
+};
+
+// Browser chrome (the iOS status bar, Android's toolbar) matches the page,
+// following the device's light/dark setting like the palette does.
+export const viewport: Viewport = {
+  colorScheme: "light dark",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#1e1f22" },
+  ],
 };
 
 export default function RootLayout({

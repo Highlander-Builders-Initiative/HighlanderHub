@@ -162,7 +162,7 @@ export function EventsFeedColumn({
               </span>
               <span
                 aria-hidden
-                className="hidden h-5 w-px bg-ink/10 lg:inline-block"
+                className="hidden h-5 border-l border-ink/10 lg:inline-block"
               />
             </>
           )}
@@ -254,7 +254,7 @@ export function EventsFeedColumn({
               else dayHeaderRefs.current.delete(day);
             }}
             data-day-key={day}
-            className="sticky z-10 -mx-4 mb-3 flex scroll-mt-24 items-baseline gap-1.5 bg-surface/80 px-4 py-2 font-display text-xl font-semibold tracking-[-0.02em] text-ink backdrop-blur-xl after:absolute after:inset-x-4 after:bottom-0 after:h-px after:bg-ink/10 sm:-mx-6 sm:px-6 sm:after:inset-x-6 lg:static lg:mx-0 lg:mb-4 lg:bg-transparent lg:px-0 lg:py-0 lg:text-lg lg:backdrop-blur-none lg:after:hidden"
+            className="sticky z-10 -mx-4 mb-3 flex scroll-mt-24 items-baseline gap-1.5 bg-surface/80 px-4 py-2 font-display text-xl font-semibold tracking-[-0.02em] text-ink backdrop-blur-xl after:absolute after:inset-x-4 after:bottom-0 after:border-t after:border-ink/10 sm:-mx-6 sm:px-6 sm:after:inset-x-6 lg:static lg:mx-0 lg:mb-4 lg:bg-transparent lg:px-0 lg:py-0 lg:text-lg lg:backdrop-blur-none lg:after:hidden"
             style={{ top: 56 }}
           >
             {heading.label}{" "}

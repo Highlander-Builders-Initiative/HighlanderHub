@@ -109,7 +109,7 @@ The system reads as **edited and paper-confident**: display type does the work, 
 The system explicitly rejects three aesthetic families called out as anti-references in PRODUCT.md: **generic SaaS landing** (hero-metric templates, identical card grids, gradient text), **university .edu CMS** (institutional navy soup, brochure density, slow chrome), and **Eventbrite / Meetup transactional** (ad clutter, RSVP-button soup, marketplace dating). If a screen could be confused for any of those at a glance, it has failed.
 
 **Key Characteristics:**
-- Hairline-bordered surfaces; depth via 1px lifts, not shadow blooms (current state; see Elevation for direction).
+- Hairline-bordered surfaces; hover darkens the edge and nothing moves; no shadow blooms (see Elevation for direction).
 - Bricolage Grotesque carries display and body; IBM Plex Mono carries numerics. Two faces, never a third.
 - OKLCH thinking, hex frontmatter; tinted neutrals only, no pure #000.
 - Restrained color strategy: category accents at ≤10% of any surface, expressed as bright tinted washes (18%) plus a darker matched text color for AA contrast.
@@ -145,6 +145,17 @@ The home hero's highlight words ("Free food, club nights, …") use each categor
 - **Muted** (#6b7280): Secondary text, eyebrow labels, meta information.
 - **Faint** (#8a909a): The Event Card's time, hosts and location, and the weekday in the feed's day headings ("Today **Tuesday**", "Sep 24 **Thursday**"). A softer, Luma-like read at 3.2:1 on canvas, a deliberate exception to WCAG AA for that meta; everything else secondary stays Muted.
 
+### Dark mode
+
+The site follows the device's light/dark setting (`prefers-color-scheme`); there is no in-page toggle. Every color above is a CSS variable in `globals.css` (RGB channels, read by `tailwind.config.ts`), and the dark block re-points the same names, so components keep writing `bg-canvas`, `text-ink`, `border-ink/10` and get both themes.
+
+- **Canvas** (#1e1f22) and **Surface** (#151618): soft charcoals at Luma's levels (card #1e1e1e, page #151515), with only a trace of the cool tint; never near-black. Canvas stays a step above surface, the same order as light mode, so white-card-on-surface layouts become lifted-card-on-darker-page.
+- **Ink** (#eceef1), **Muted** (#bec0c4), **Faint** (#a6a8ac): muted and faint keep light mode's steps below ink as measured by APCA (about 70% and 56% of ink's contrast), not by WCAG ratio. The WCAG ratio flatters light-on-dark text: matching light mode's 4.8:1 and 3.2:1 left them reading roughly half as strong.
+- **Tag `-ink`s** lighten (for example blue #86a9ff) to stay ≥5.9:1 on their 18% washes. The vivid tag hues themselves do not change.
+- **Scrim** (always dark): modal backdrops and the gradient behind white flyer captions. `ink` turns light in dark mode, so it must never be used for either. Text on an ink fill is `text-canvas`, not `text-white`.
+- **Hairlines soften.** In dark mode a card already sits a visible step above the page, so a full-strength hairline double-edges it. Ink edges (`border-`, `ring-`, `divide-ink/N` and `.hairline`) take their opacity to the power 1.3 (`--edge-alpha-curve`): `/10` renders at ~5%, about 9 levels above the card, as on Luma. Solid `border-ink` is unaffected (1ⁿ = 1), so focus and hover edges keep their weight. Draw separators as borders, not `bg-ink/N` fills, so they follow the curve.
+- **Campus Skyline** turns to dusk: the art multiplies into a night gradient that meets the canvas at its top edge.
+
 ### Named Rules
 
 **The One Voice Rule.** Category color appears as a tinted wash (`CATEGORY_PILL`, 18% opacity), never as a saturated fill behind content. Total accent coverage on any screen stays at or below 10% of the surface. Saturated category color appears only at the 6px Category Dot size: `EventsMiniCalendar` (day-cell dots) and `ActiveFilterChips` (category chip dot). One palette, one visual language.
@@ -179,18 +190,18 @@ The home hero's highlight words ("Free food, club nights, …") use each categor
 
 ## 4. Elevation
 
-The current implementation is **flat-by-default with hairlines**: surfaces use `border-ink/10` to `border-ink/15` to convey edges, and hover applies a 1px transform-Y lift with a border darken, not a shadow bloom. Two shadow tokens (`card`, `cardHover`) exist in `tailwind.config.ts` but are sparingly applied.
+The current implementation is **flat-by-default with hairlines**: surfaces use `border-ink/10` to `border-ink/15` to convey edges, and hover darkens the border, not a shadow bloom. Cards do not move on hover. Two shadow tokens (`card`, `cardHover`) exist in `tailwind.config.ts` but are sparingly applied.
 
 **Direction (PRODUCT decision):** the design should move toward slightly more lifted surfaces than the code currently honors. Reach for: subtle ambient shadow on cards at rest (`card`), a stronger ambient on hover (`cardHover`), and tonal layering for grouped regions. Hairlines remain the default edge treatment; shadows are an addition, not a replacement.
 
 ### Shadow Vocabulary
 
 - **card** (`box-shadow: 0 1px 2px rgba(15, 17, 21, 0.04), 0 4px 12px rgba(15, 17, 21, 0.04)`): Ambient lift for resting cards and elevated surfaces. Subtle enough to be felt, not seen.
-- **cardHover** (`box-shadow: 0 4px 8px rgba(15, 17, 21, 0.06), 0 12px 28px rgba(15, 17, 21, 0.08)`): Hover state on lifted cards. Pair with the 1px transform-Y lift; never apply standalone.
+- **cardHover** (`box-shadow: 0 4px 8px rgba(15, 17, 21, 0.06), 0 12px 28px rgba(15, 17, 21, 0.08)`): Hover state on lifted cards. Pair with the darkened hover edge; never apply standalone.
 
 ### Named Rules
 
-**The Hairline-Plus-Lift Rule.** Edges live in 1px borders tinted from ink (`border-ink/10` to `border-ink/15`). Depth is a 1px translate on hover, optionally with a tonal shadow. No glow, no double-shadow, no inner shadow.
+**The Hairline-Plus-Lift Rule.** Edges live in 1px borders tinted from ink (`border-ink/10` to `border-ink/15`). Hover darkens the edge, optionally with a tonal shadow; the card itself stays put. No glow, no double-shadow, no inner shadow.
 
 **The Quiet-Shadow Rule.** Shadows are tonal (ink-tinted) and low-opacity (≤0.08). No black shadows. No colored shadows. Two flavors are allowed:
 
@@ -216,7 +227,7 @@ Outside those two flavors, if a shadow is visible enough to describe its blur ra
 - **Border:** Hairline ink-tinted (`border-ink/15`). Hover darkens to full ink edge.
 - **Shadow Strategy:** Reach for `card` at rest, `cardHover` on hover. See Elevation.
 - **Internal Padding:** 16px (`p-4`) for compact, 16–20px (`px-4 py-3` to `px-5 py-4`) for text rows. Image tiles use a `4/5` frame (Instagram's portrait post) with bottom-anchored overlay copy; flyers of other shapes follow The Whole-Flyer Rule.
-- **Card-Hover Treatment:** 1px transform-Y lift, 180ms ease, border darkens to ink. Defined globally via `.card-hover`. Hover is canceled under `prefers-reduced-motion`.
+- **Card-Hover Treatment:** the border darkens, 180ms ease; nothing moves. Defined globally via `.card-hover`. (The earlier 1px lift was retired: the edge change is feedback enough, and phones never hover.)
 
 ### Event Card (signature)
 
@@ -225,7 +236,7 @@ Feed listing row, laid out like a Luma event row: text on the left, the flyer pi
 Type runs larger than the system's `meta` token, matched to Luma's rows; phone sizes first, `sm+` in parentheses.
 
 - **Time** (14px (15px), `tabular-nums text-faint`): start time as "7:00 PM". Deadlines read "Due 11:59 PM", with "Due" in `font-medium text-deep-coral`.
-- **Title** (`font-display` 18px (20px) `font-semibold`, `line-clamp-2`, `mt-2` below the time). No hover underline; the card's lift and darkened edge carry the hover.
+- **Title** (`font-display` 18px (20px) `font-semibold`, `line-clamp-2`, `mt-2` below the time). No hover underline; the card's darkened edge carries the hover.
 - **Hosts row** (14px (16px) `text-faint`): up to three 16px `ClubAvatar`s overlapping by 4px, each cut out from the next by a 2px canvas ring, then, 8px on, "By A, B & C" truncated to one line. A club without a picture shows its monogram. 16px is Luma's proportion, an avatar about the text's size; the old 22px avatar ran twice the cap height and pushed the byline 12px past the location.
 - **Location row** (same size and color): a 1em pin (or a 1em-wide video icon for online events), in the text's color, centered in the same 16px column as the first avatar with the same 8px gap, so the location starts at the byline's x. The icon's viewBox hugs its ink, so the pin nearly fills the column (16px tall at `sm+`) and sits ~9.5px (phones ~10.3px) from its text, close to the avatar's 8px, as on Luma. (A 24-unit icon box left ~5px of air in the column, and the pin read 13px from its text.) With several hosts the byline starts after the stack; the location stays with the first avatar.
 - **Tags row** (`mt-4`, about 21px from the pin to the pill edge as on Luma; wraps): pills at 13px (14px) medium, `rounded-full`, from `eventTags` (the detail header renders the same list at 12px), in this order:
@@ -372,7 +383,7 @@ still signals category everywhere a user can act; the skyline is scenery, is
 - **Do** keep eyebrows, taglines, and summary lines quiet: Bricolage Grotesque regular, small (12–13px), sentence case, normal tracking, muted color. The "edited bulletin caption" look, not the "SaaS landing eyebrow" look.
 - **Do** reserve IBM Plex Mono for content that is genuinely numeric (dates, times, coordinates, identifiers), never as decorative label-style.
 - **Do** prefer hairline-bordered surfaces (`border-ink/10` to `border-ink/15`) over background-tinted ones for default cards and rows.
-- **Do** ease motion out only (`cubic-bezier(0.16, 1, 0.3, 1)`). Durations: 180–300ms for state, 700–800ms for entrance. Always.
+- **Do** ease motion out only (`cubic-bezier(0.16, 1, 0.3, 1)`). Durations: 180–300ms for state. Always.
 - **Do** honor `prefers-reduced-motion` on anything you add. The root `globals.css` already cancels animation duration globally; do not opt back in.
 - **Do** treat the FlyerTile (home mosaic + marquee tiles) and the EventCard (feed listing row: time, title, host avatars, location, tags, flyer at the right) as **the two canonical ways** to render an event. New event surfaces should use one of these two.
 - **Do** use the `.interactive-focus` global class on every interactive element. Focus is non-negotiable; this is the WCAG AA commitment from PRODUCT.md made concrete.
@@ -380,6 +391,7 @@ still signals category everywhere a user can act; the skyline is scenery, is
 
 ### Don't:
 
+- **Don't** animate content in on page load (fade-ups, staggered entrances, scale-ins). Students come back to the home page weekly; a delay that sells the site once costs them on every visit after. Motion there is the content (the Flyer Marquee), a state change (sliding highlights, the modal), or a response to input (hover).
 - **Don't** ship the **generic SaaS landing** look. No hero-metric templates, no identical icon-heading-text card grids, no gradient text, no stock photos of diverse-people-smiling-at-laptops. If a section could land on a Y Combinator company's homepage unchanged, rework it.
 - **Don't** ship **university .edu CMS energy**. No institutional navy headers, no brochure-density link soup, no accessibility-as-checkbox afterthought. UCR.edu is not Hub.
 - **Don't** ship the **Eventbrite / Meetup transactional** look. No ad-cluttered list rows, no RSVP-button stripes, no dated marketplace chrome.

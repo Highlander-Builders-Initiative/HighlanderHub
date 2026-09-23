@@ -9,10 +9,107 @@
   --masthead-h: 56px;
 }
 
+/* ----- Color tokens -----
+   The Tailwind palette (tailwind.config.ts) reads these as RGB channels, so
+   `bg-ink/10` and friends keep their opacity modifiers. Dark mode follows the
+   device setting: the same names, re-pointed under prefers-color-scheme. */
+:root {
+  color-scheme: light;
+
+  --color-canvas: 255 255 255;
+  --color-surface: 250 250 250;
+  --color-line: 231 231 233;
+  --color-ink: 15 17 21;
+  --color-muted: 107 114 128;
+  --color-faint: 138 144 154;
+  --color-scrim: 15 17 21;
+  /* Shadows stay dark in both themes; never tint them from ink. */
+  --color-shadow: 15 17 21;
+  /* Hairline opacity curve (tailwind.config.ts, edgeInk): 1 = as written. */
+  --edge-alpha-curve: 1;
+
+  --color-highlander: 42 54 128;
+  --color-leaf: 78 122 82;
+  --color-coral: 194 94 60;
+  --color-sky: 66 106 158;
+  --color-gold: 201 132 41;
+  --color-plum: 138 63 106;
+  --color-sage: 125 151 133;
+  --color-deep-leaf: 44 74 48;
+  --color-deep-coral: 134 62 35;
+  --color-deep-sky: 46 75 115;
+  --color-deep-gold: 110 70 18;
+  --color-deep-plum: 90 39 74;
+  --color-deep-sage: 63 86 68;
+
+  --color-tag-blue: 31 107 255;
+  --color-tag-blue-ink: 20 80 216;
+  --color-tag-violet: 139 77 255;
+  --color-tag-violet-ink: 98 48 224;
+  --color-tag-coral: 255 84 51;
+  --color-tag-coral-ink: 184 44 20;
+  --color-tag-cyan: 0 179 220;
+  --color-tag-cyan-ink: 0 106 136;
+  --color-tag-magenta: 232 60 200;
+  --color-tag-magenta-ink: 168 22 143;
+  --color-tag-green: 31 194 84;
+  --color-tag-green-ink: 14 116 50;
+  --color-tag-amber: 255 179 0;
+  --color-tag-amber-ink: 154 88 0;
+}
+
+/* Dark: soft charcoals, not near-black, pitched at Luma's levels (page
+   #151515, card #1e1e1e) with only a whisper of the cool ink tint. Canvas
+   (cards, sheets, the home page) sits a step above surface (the /events
+   page), the same order as light mode. Muted and faint are tuned by
+   perceptual contrast (APCA), not the WCAG ratio, which flatters light-on-dark
+   text: matching light mode's 4.8:1 left them reading far dimmer here. They
+   keep light mode's steps below ink instead (muted ~70% of ink's contrast,
+   faint ~56%; Lc 67 and 53 on canvas). The tag and editorial inks lighten to
+   stay legible on their washes (>=5.9:1). The vivid tag hues are unchanged. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+
+    --color-canvas: 30 31 34;
+    --color-surface: 21 22 24;
+    --color-line: 40 41 45;
+    --color-ink: 236 238 241;
+    --color-muted: 190 192 196;
+    --color-faint: 166 168 172;
+    --color-scrim: 5 6 8;
+    --color-shadow: 0 0 0;
+    /* Softer hairlines: ink/10 lands ~9 levels above the card, as on Luma. */
+    --edge-alpha-curve: 1.3;
+
+    --color-highlander: 154 165 240;
+    --color-leaf: 127 176 131;
+    --color-coral: 232 134 107;
+    --color-sky: 127 163 212;
+    --color-gold: 224 164 82;
+    --color-plum: 212 138 180;
+    --color-sage: 159 184 167;
+    --color-deep-leaf: 168 212 171;
+    --color-deep-coral: 240 164 138;
+    --color-deep-sky: 169 196 234;
+    --color-deep-gold: 238 194 122;
+    --color-deep-plum: 230 176 207;
+    --color-deep-sage: 191 211 197;
+
+    --color-tag-blue-ink: 134 169 255;
+    --color-tag-violet-ink: 182 153 255;
+    --color-tag-coral-ink: 255 145 121;
+    --color-tag-cyan-ink: 93 207 238;
+    --color-tag-magenta-ink: 242 138 222;
+    --color-tag-green-ink: 94 216 136;
+    --color-tag-amber-ink: 255 197 74;
+  }
+}
+
 html,
 body {
-  background: #ffffff;
-  color: #0f1115;
+  background: rgb(var(--color-canvas));
+  color: rgb(var(--color-ink));
   font-family: var(--font-body);
   font-size: 16px;
   line-height: 1.55;
@@ -46,28 +143,27 @@ body {
 .hairline {
   height: 1px;
   width: 100%;
-  background: #0f1115;
-  opacity: 0.08;
+  background: rgb(var(--color-ink));
+  opacity: pow(0.08, var(--edge-alpha-curve));
 }
 
 .interactive-focus {
   touch-action: manipulation;
 }
 .interactive-focus:focus-visible {
-  outline: 3px solid #0f1115;
+  outline: 3px solid rgb(var(--color-ink));
   outline-offset: 3px;
-  box-shadow: 0 0 0 5px #ffffff;
+  box-shadow: 0 0 0 5px rgb(var(--color-canvas));
 }
 
-/* Card with a subtle lift, hairline border, no rounded-blob aesthetic */
+/* Card hover: the hairline edge darkens; nothing moves. */
 .card-hover {
-  transition: transform 180ms ease, border-color 180ms ease;
+  transition: border-color 180ms ease;
 }
 .card-hover:hover,
 .card-hover:focus-visible,
 .card-hover:focus-within {
-  transform: translateY(-1px);
-  border-color: #0f1115;
+  border-color: rgb(var(--color-ink));
 }
 
 /* Liquid glass: the /events filter bar's floating capsule (DESIGN.md, Sticky
@@ -76,20 +172,35 @@ body {
    specular rim, bright along the top edge and fading down the sides, the way
    light catches the lip of a glass lens. The ink hairline keeps the capsule
    legible over white cards, where the rim alone would vanish. Needs a
-   positioned element (sticky or relative) for the rim. */
+   positioned element (sticky or relative) for the rim. In dark mode the glass
+   is smoked canvas, the hairline is light ink, and the rim dims to a glint. */
 .liquid-glass {
+  --glass-rim-top: 0.95;
+  --glass-rim-mid: 0.15;
+  --glass-rim-bottom: 0.45;
   background: linear-gradient(
     180deg,
-    rgba(255, 255, 255, 0.72),
-    rgba(255, 255, 255, 0.5)
+    rgb(var(--color-canvas) / 0.72),
+    rgb(var(--color-canvas) / 0.5)
   );
   -webkit-backdrop-filter: blur(18px) saturate(180%);
   backdrop-filter: blur(18px) saturate(180%);
   box-shadow:
-    0 0 0 1px rgba(15, 17, 21, 0.07),
-    0 1px 2px rgba(15, 17, 21, 0.04),
-    0 12px 32px rgba(15, 17, 21, 0.08);
+    0 0 0 1px rgb(var(--color-ink) / 0.07),
+    0 1px 2px rgb(var(--color-shadow) / 0.04),
+    0 12px 32px rgb(var(--color-shadow) / 0.08);
   transition: box-shadow 200ms ease;
+}
+@media (prefers-color-scheme: dark) {
+  .liquid-glass {
+    --glass-rim-top: 0.14;
+    --glass-rim-mid: 0.02;
+    --glass-rim-bottom: 0.06;
+    box-shadow:
+      0 0 0 1px rgb(var(--color-ink) / 0.1),
+      0 1px 2px rgb(var(--color-shadow) / 0.2),
+      0 12px 32px rgb(var(--color-shadow) / 0.35);
+  }
 }
 .liquid-glass::before {
   content: "";
@@ -99,9 +210,9 @@ body {
   padding: 1px;
   background: linear-gradient(
     180deg,
-    rgba(255, 255, 255, 0.95),
-    rgba(255, 255, 255, 0.15) 55%,
-    rgba(255, 255, 255, 0.45)
+    rgb(255 255 255 / var(--glass-rim-top)),
+    rgb(255 255 255 / var(--glass-rim-mid)) 55%,
+    rgb(255 255 255 / var(--glass-rim-bottom))
   );
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,
@@ -114,11 +225,11 @@ body {
    white), and firms up while you type so the query stays legible over a
    busy flyer. */
 .liquid-glass:has(input:focus-visible) {
-  background: rgba(255, 255, 255, 0.92);
+  background: rgb(var(--color-canvas) / 0.92);
   box-shadow:
-    0 0 0 1.5px rgba(15, 17, 21, 0.45),
-    0 0 0 5px rgba(15, 17, 21, 0.06),
-    0 12px 32px rgba(15, 17, 21, 0.1);
+    0 0 0 1.5px rgb(var(--color-ink) / 0.45),
+    0 0 0 5px rgb(var(--color-ink) / 0.06),
+    0 12px 32px rgb(var(--color-shadow) / 0.1);
 }
 /* iOS-style clear button in place of Chrome's blue cross. */
 .liquid-glass input[type="search"]::-webkit-search-cancel-button {
@@ -131,9 +242,14 @@ body {
   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'%3E%3Ccircle cx='9' cy='9' r='9' fill='%230f1115' fill-opacity='.28'/%3E%3Cpath d='M6.2 6.2l5.6 5.6M11.8 6.2l-5.6 5.6' stroke='%23fff' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E")
     center / contain no-repeat;
 }
+@media (prefers-color-scheme: dark) {
+  .liquid-glass input[type="search"]::-webkit-search-cancel-button {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'%3E%3Ccircle cx='9' cy='9' r='9' fill='%23eceef1' fill-opacity='.32'/%3E%3Cpath d='M6.2 6.2l5.6 5.6M11.8 6.2l-5.6 5.6' stroke='%231e1f22' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E");
+  }
+}
 @media (prefers-reduced-transparency: reduce) {
   .liquid-glass {
-    background: rgba(255, 255, 255, 0.97);
+    background: rgb(var(--color-canvas) / 0.97);
   }
 }
 
@@ -141,12 +257,12 @@ body {
 .tab {
   position: relative;
   padding: 10px 2px;
-  color: #6b7280;
+  color: rgb(var(--color-muted));
   font-weight: 500;
   font-size: 14px;
 }
 .tab[aria-selected="true"] {
-  color: #0f1115;
+  color: rgb(var(--color-ink));
 }
 .tab[aria-selected="true"]::after {
   content: "";
@@ -155,7 +271,7 @@ body {
   right: 0;
   bottom: -1px;
   height: 2px;
-  background: #0f1115;
+  background: rgb(var(--color-ink));
 }
 
 /* ----- Motion ----- */
@@ -268,6 +384,36 @@ body {
   isolation: isolate;
 }
 
+/* Dark mode: dusk. The art multiplies into a night gradient painted on the
+   band itself: the cream sky comes down to the canvas at the top edge
+   (sky x canvas ~= canvas, so there is still no visible seam) and lifts
+   toward the horizon, where the mountains and the tower keep their shape.
+   The band's top edge usually lands on a fractional pixel. In that partly
+   covered row the blend's backdrop is partly transparent, and multiply over
+   transparency falls back to plain compositing, so the raw cream sky leaked
+   through as a hairline. The mask keeps the art 2px clear of that edge (it is
+   sky there, which multiplies to canvas anyway). The hero's own fade
+   flattens to canvas. */
+@media (prefers-color-scheme: dark) {
+  .skyline-hero {
+    background: rgb(var(--color-canvas));
+  }
+  .skyline-root {
+    background: linear-gradient(
+      to bottom,
+      rgb(var(--color-canvas)) 0%,
+      rgb(30 34 50) 35%,
+      rgb(70 78 110) 70%,
+      rgb(92 100 132) 100%
+    );
+  }
+  .skyline-root > img {
+    mix-blend-mode: multiply;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 2px, #000 2px);
+    mask-image: linear-gradient(to bottom, transparent 2px, #000 2px);
+  }
+}
+
 /* ----- Whole-flyer poster -----
    Club flyers come in every Instagram post shape (4:5, 3:4, 1:1, 9:16 reel
    covers, landscape), so none is cropped to a box. The poster takes its own
@@ -297,8 +443,8 @@ body {
   transform: translate3d(0, calc(var(--focal) * -7px), 0)
     scale(calc(1 + var(--focal) * 0.05));
   box-shadow:
-    0 2px 6px -2px rgba(15, 17, 21, calc(var(--focal) * 0.18)),
-    0 16px 36px -10px rgba(15, 17, 21, calc(var(--focal) * 0.22));
+    0 2px 6px -2px rgb(var(--color-shadow) / calc(var(--focal) * 0.18)),
+    0 16px 36px -10px rgb(var(--color-shadow) / calc(var(--focal) * 0.22));
   will-change: transform;
 }
 
@@ -310,11 +456,6 @@ body {
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
-  }
-
-  .card-hover:hover,
-  .card-hover:focus-within {
-    transform: none;
   }
 
   .reveal {

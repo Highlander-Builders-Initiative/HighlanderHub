@@ -36,7 +36,6 @@ export function FlyerTile({
   event,
   size,
   className = "",
-  enterDelayMs = 0,
   aspectClassName = "aspect-[4/5] md:aspect-auto",
   sizes = "(max-width: 768px) 100vw, 50vw",
   decorative = false,
@@ -45,7 +44,6 @@ export function FlyerTile({
   event: CampusEvent;
   size: FlyerTileSize;
   className?: string;
-  enterDelayMs?: number;
   /** Aspect-ratio utilities for the tile. The mosaic lets its grid drive
    *  height on desktop; the marquee needs a fixed ratio at every breakpoint. */
   aspectClassName?: string;
@@ -100,8 +98,7 @@ export function FlyerTile({
       aria-hidden={decorative || undefined}
       tabIndex={decorative ? -1 : undefined}
       data-event-id={event.id}
-      style={{ animationDelay: `${enterDelayMs}ms` }}
-      className={`interactive-focus card-hover group relative block overflow-hidden rounded-xl border border-ink/15 bg-highlander/[0.07] transition-[filter,opacity,border-color] duration-300 hover:border-ink/30 ${aspectClassName} animate-scale-in ${className}`}
+      className={`interactive-focus card-hover group relative block overflow-hidden rounded-xl border border-ink/15 bg-highlander/[0.07] transition-[filter,opacity,border-color] duration-300 hover:border-ink/30 ${aspectClassName} ${className}`}
     >
       {showImage ? (
         <EventFlyerImage
@@ -136,7 +133,7 @@ export function FlyerTile({
              most of the flyer and flickering as the strip moved. */}
           <div
             aria-hidden
-            className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-ink/70 to-transparent opacity-0 transition-opacity duration-200 ease-out group-hover:opacity-100 group-focus-visible:opacity-100"
+            className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-scrim/70 to-transparent opacity-0 transition-opacity duration-200 ease-out group-hover:opacity-100 group-focus-visible:opacity-100"
           />
           <div className="absolute inset-x-0 bottom-0 p-3 opacity-0 transition-opacity duration-200 ease-out group-hover:opacity-100 group-focus-visible:opacity-100 md:p-4">
             {caption}
@@ -147,7 +144,7 @@ export function FlyerTile({
           {/* Gradient overlay keeps title readable over any flyer. */}
           <div
             aria-hidden
-            className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-ink/90 via-ink/50 to-transparent"
+            className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-scrim/90 via-scrim/50 to-transparent"
           />
           <div className="absolute inset-x-0 bottom-0 p-3 md:p-4">{caption}</div>
         </>

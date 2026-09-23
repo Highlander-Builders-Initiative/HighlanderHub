@@ -15,6 +15,10 @@ import skyline from "./campus-skyline.webp";
  * floor height and crops the sides; `object-position` holds the tower in frame.
  * Nothing here animates, so the scrolling wall below stays the only thing in
  * motion.
+ *
+ * In dark mode the art multiplies into a dusk gradient (`.skyline-root` in
+ * globals.css): the sky meets the page's canvas at the top edge and lifts
+ * toward the horizon, so the hero copy stays legible over it.
  */
 
 // Rendered width once the height floor kicks in (240px x the art's 4000:1484

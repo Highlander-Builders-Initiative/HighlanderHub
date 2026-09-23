@@ -379,7 +379,7 @@ export function EventDetailView({
                       eventId={event.id}
                       surface="desktop"
                       href={primaryUrl}
-                      className="interactive-focus inline-flex min-h-12 items-center gap-2 rounded-lg bg-ink px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-85"
+                      className="interactive-focus inline-flex min-h-12 items-center gap-2 rounded-lg bg-ink px-6 py-3 text-sm font-medium text-canvas transition-opacity hover:opacity-85"
                     >
                       {safeRsvpUrl ? "RSVP" : "View source"}
                       <span aria-hidden>↗</span>
@@ -433,7 +433,7 @@ export function EventDetailView({
               eventId={event.id}
               surface="mobile"
               href={primaryUrl}
-              className="interactive-focus flex-1 inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-ink px-4 py-3 text-sm font-medium text-white"
+              className="interactive-focus flex-1 inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-ink px-4 py-3 text-sm font-medium text-canvas"
             >
               {safeRsvpUrl ? "RSVP" : "View source"}
               <span aria-hidden>↗</span>

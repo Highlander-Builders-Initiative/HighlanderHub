@@ -64,7 +64,7 @@ export function EventsMobileFilterSheet({
         type="button"
         aria-label="Close filters"
         onClick={onClose}
-        className="absolute inset-0 bg-ink/40 transition-opacity"
+        className="absolute inset-0 bg-scrim/40 transition-opacity dark:bg-scrim/60"
         tabIndex={-1}
       />
 
