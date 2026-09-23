@@ -104,9 +104,21 @@ export default async function HomePage() {
             >
               <Link
                 href="/events"
-                className="interactive-focus inline-flex min-h-12 items-center rounded-lg bg-ink px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-85"
+                className="interactive-focus group inline-flex min-h-12 items-center gap-2 rounded-lg bg-ink px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-85"
               >
                 Browse events
+                <svg
+                  aria-hidden
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5"
+                >
+                  <path d="M3 8h10M9 4l4 4-4 4" />
+                </svg>
               </Link>
           </div>
           </div>

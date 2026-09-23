@@ -22,13 +22,21 @@ type EventCardProps = {
 };
 
 const MAX_HOST_AVATARS = 3;
+/**
+ * Width of the icon column that leads the hosts and where rows: one avatar
+ * fills it and the where-row icon is centered in it, so both rows' text
+ * starts at the same x. 16px is Luma's proportion, an avatar about the
+ * body text's size.
+ */
+const LEAD_COLUMN_PX = 16;
 const PILL = "rounded-full px-2.5 py-0.5 text-[13px] font-medium sm:px-3 sm:text-[14px]";
 
 /**
  * Pin or camera for the where-row, drawn to sit in the text like a glyph. Each
- * viewBox hugs its ink, so the icon's left edge lines up with the avatars' and
- * the row gap is the gap you see. Heights are in em so the icon follows the
- * 14→16px text step, and strokes render at ~0.09em, Bricolage's regular stem.
+ * viewBox hugs its ink, so the icon nearly fills the lead column (a 1em pin is
+ * as tall as the avatar at 16px) and the space before the text stays close to
+ * the avatar's. Sizes are in em so the icon follows the 14→16px text step, and
+ * strokes render at ~0.09em, Bricolage's regular stem.
  */
 function LocationIcon({ online }: { online: boolean }) {
   return online ? (
@@ -48,13 +56,13 @@ function LocationIcon({ online }: { online: boolean }) {
   ) : (
     <svg
       aria-hidden
-      viewBox="2.85 0.85 18.3 22.3"
+      viewBox="3 1 18 22"
       fill="none"
       stroke="currentColor"
-      strokeWidth="2.3"
+      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="h-[0.9em] w-[0.74em] shrink-0"
+      className="h-[1em] w-[0.818em] shrink-0"
     >
       <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
       <circle cx="12" cy="10" r="3" />
@@ -117,16 +125,17 @@ function EventCardComponent({ event, loadedCount }: EventCardProps) {
 
         {hosts.length > 0 && (
           <div className="mt-2.5 flex min-w-0 items-center gap-2 text-[14px] text-faint sm:text-[16px]">
-            <span className="flex shrink-0 -space-x-1.5">
+            <span className="flex shrink-0 -space-x-1">
               {hosts.slice(0, MAX_HOST_AVATARS).map((host) => (
+                // flex, so the ring hugs the avatar instead of the line box.
                 <span
                   key={host.hostHandle || host.host}
-                  className="rounded-full ring-2 ring-canvas"
+                  className="flex rounded-full ring-2 ring-canvas"
                 >
                   <ClubAvatar
                     handle={host.hostHandle}
                     name={host.host || host.hostHandle || ""}
-                    size={22}
+                    size={LEAD_COLUMN_PX}
                   />
                 </span>
               ))}
@@ -140,8 +149,10 @@ function EventCardComponent({ event, loadedCount }: EventCardProps) {
         )}
 
         {location ? (
-          <div className="mt-1.5 flex min-w-0 items-center gap-[0.4em] text-[14px] text-faint sm:text-[16px]">
-            <LocationIcon online={isOnlineLocation(location)} />
+          <div className="mt-1.5 flex min-w-0 items-center gap-2 text-[14px] text-faint sm:text-[16px]">
+            <span className="flex shrink-0 justify-center" style={{ width: LEAD_COLUMN_PX }}>
+              <LocationIcon online={isOnlineLocation(location)} />
+            </span>
             <span className="min-w-0 truncate">{location}</span>
           </div>
         ) : null}
@@ -158,13 +169,18 @@ function EventCardComponent({ event, loadedCount }: EventCardProps) {
       {/* Flyer pinned whole in a fixed 4:5 slot (Instagram's portrait post),
          anchored to the slot's top-right corner. Squares, reel covers and
          landscape posts keep their own shape inside it, so nothing is cropped
-         and every card keeps the same rhythm. */}
+         and every card keeps the same rhythm.
+         The slot takes the width left once the text column has 181px (its
+         width on a 375px phone, where the bigger slot clamps no more titles
+         than the old 80x100 did): 263px = that column plus the gutters,
+         padding and gap. So it grows from 80x100 on the narrowest phones to
+         the sm+ size, 120x150, from a 383px screen up. */}
       {showImage && (
-        <div className="flex h-[var(--flyer-max-h)] w-[var(--flyer-max-w)] shrink-0 items-start justify-end [--flyer-max-h:100px] [--flyer-max-w:80px] sm:[--flyer-max-h:150px] sm:[--flyer-max-w:120px]">
+        <div className="flex h-[var(--flyer-max-h)] w-[var(--flyer-max-w)] shrink-0 items-start justify-end [--flyer-max-h:calc(var(--flyer-max-w)*1.25)] [--flyer-max-w:clamp(80px,100vw_-_263px,120px)]">
           <FlyerPoster
             src={event.imageUrl!}
             alt={eventFlyerAlt(event)}
-            sizes="(min-width: 640px) 120px, 80px"
+            sizes="120px"
             className="rounded-lg bg-ink/[0.05] ring-1 ring-ink/10"
             onError={() => setImageBroken(true)}
           />
