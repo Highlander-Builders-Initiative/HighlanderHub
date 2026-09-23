@@ -1,12 +1,13 @@
 "use client";
 
 import { AnimatedBackground } from "@/components/core/animated-background";
-import { ALL_PILL, CATEGORY_PILL } from "@/lib/category-colors";
+import { CATEGORY_PILL } from "@/lib/category-colors";
 import type { EventCategory } from "@/types/event";
 import { CATEGORIES, type CategoryValue } from "./events-filters";
 
-function pillColors(value: CategoryValue) {
-  return value === "all" ? ALL_PILL : CATEGORY_PILL[value as EventCategory];
+/** The selected row's label keeps its category's ink; "All" has none. */
+function activeText(value: CategoryValue) {
+  return value === "all" ? "text-ink" : CATEGORY_PILL[value as EventCategory].text;
 }
 
 type EventCategoryFilterProps = {
@@ -41,12 +42,12 @@ export function EventCategoryFilter({
       role="group"
       aria-label="Filter events by category"
     >
+      {/* The one selected state (DESIGN.md): a neutral ink fill, the same
+          under every row, so the rail matches the When and view toggles. */}
       <AnimatedBackground
         defaultValue={category}
         enableHover
-        className={(id) =>
-          `rounded-xl ${pillColors((id ?? "all") as CategoryValue).highlight}`
-        }
+        className="rounded-xl bg-ink/[0.06]"
         transition={{ type: "spring", bounce: 0.2, duration: 0.3 }}
       >
         {CATEGORIES.map((c) => {
@@ -61,7 +62,7 @@ export function EventCategoryFilter({
               onClick={() => onCategoryChange(c.value)}
               className={`interactive-focus w-full transition-colors ${BUTTON_CLASS[layout]} ${
                 active
-                  ? `${pillColors(c.value).text} font-medium`
+                  ? `${activeText(c.value)} font-medium`
                   : "text-ink/80 hover:text-ink"
               }`}
             >
@@ -69,7 +70,7 @@ export function EventCategoryFilter({
                 {c.label}
               </span>
               <span
-                className={`pl-2 font-mono text-[11px] tabular-nums ${
+                className={`pl-2 text-[11px] tabular-nums ${
                   active ? "text-muted" : "text-muted/80"
                 }`}
               >

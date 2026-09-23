@@ -2,10 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Two faces (DESIGN.md, Typography). UI text is the device's own face: SF on
+   Apple, Segoe on Windows, Roboto on Android, the quiet face Luma's lists read
+   in. Bricolage is the brand's display face: the wordmark, page titles and the
+   landing page (.brand-type). */
 :root {
+  --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
-  --font-body: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-mono), ui-monospace, monospace;
+  --font-body: var(--font-ui);
   --masthead-h: 56px;
 }
 
@@ -134,9 +138,11 @@ body {
 .font-body {
   font-family: var(--font-body);
 }
-.font-mono {
-  font-family: var(--font-mono);
-  letter-spacing: 0;
+/* The landing page keeps Bricolage for its body copy too: it is the brand's
+   front door, where the product pages are UI. */
+.brand-type {
+  --font-body: var(--font-display);
+  font-family: var(--font-body);
 }
 
 /* Hairline rule */

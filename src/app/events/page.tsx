@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { Masthead } from "@/components/layout/Masthead";
 import { EventsBrowser } from "@/components/events/EventsBrowser";
 import {
+  FEED_VIEW_COOKIE,
   coerceCategoryParam,
   coerceDayWindowParam,
+  coerceFeedView,
 } from "@/components/events/events-filters";
 import { Footer } from "@/components/layout/Footer";
 import {
@@ -37,6 +40,7 @@ type EventsPageProps = {
 
 export default async function EventsPage({ searchParams }: EventsPageProps) {
   const params = await searchParams;
+  const initialView = coerceFeedView((await cookies()).get(FEED_VIEW_COOKIE)?.value);
   const initialFilters = {
     category: coerceCategoryParam(firstParam(params.cat)),
     query: firstParam(params.q) ?? "",
@@ -69,6 +73,7 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
         initialHasMore={initialPage.hasMore}
         initialNextOffset={initialPage.nextOffset}
         initialFilters={initialFilters}
+        initialView={initialView}
       />
 
       {/* Page-edge softener: a quiet fade at the very bottom of the

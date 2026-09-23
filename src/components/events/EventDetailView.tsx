@@ -233,7 +233,7 @@ export function EventDetailView({
 
             <Title
               id={isModal ? EVENT_MODAL_TITLE_ID : undefined}
-              className={`mt-3 max-w-3xl font-display font-semibold leading-[1.05] tracking-[-0.025em] text-ink md:mt-5 ${
+              className={`mt-3 max-w-3xl font-semibold leading-[1.05] tracking-[-0.02em] text-ink md:mt-5 ${
                 isModal ? "text-[28px] sm:text-[36px]" : "text-[34px] sm:text-[44px]"
               }`}
             >
@@ -308,16 +308,16 @@ export function EventDetailView({
                     <span className="text-[10px] text-muted md:text-[11px]">
                       {stamp.month}
                     </span>
-                    <span className="mt-0.5 font-mono text-[18px] font-semibold leading-none tabular-nums text-ink md:text-[20px]">
+                    <span className="mt-0.5 text-[18px] font-semibold leading-none tabular-nums text-ink md:text-[20px]">
                       {stamp.day}
                     </span>
                   </div>
                   <div className="min-w-0">
-                    <div className="font-display text-[16px] font-semibold text-ink md:text-[17px]">
+                    <div className="text-[16px] font-semibold text-ink md:text-[17px]">
                       {formatDay(event.startsAt)}
                     </div>
                     <div className="mt-0.5 text-[14px] text-muted">
-                      <span className="font-mono tabular-nums text-ink/85">
+                      <span className="tabular-nums text-ink/85">
                         {eventTimeLabel(event, "span")}
                       </span>
                       {showRelative && (
@@ -399,7 +399,7 @@ export function EventDetailView({
                   follows when/where. */}
               <section aria-label="About" className="mt-6 md:mt-10">
                 <div className="hairline hidden md:block" />
-                <h2 className="mt-7 hidden font-display text-[20px] font-semibold tracking-[-0.015em] text-ink md:block">
+                <h2 className="mt-7 hidden text-[20px] font-semibold tracking-[-0.01em] text-ink md:block">
                   About
                 </h2>
                 <p className="max-w-prose whitespace-pre-line text-[15px] leading-relaxed text-ink/80 md:mt-4 md:text-[16px]">

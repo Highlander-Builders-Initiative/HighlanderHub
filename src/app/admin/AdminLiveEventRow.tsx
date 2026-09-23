@@ -33,7 +33,7 @@ export function AdminLiveEventRow({
           startsAt={campusEvent.startsAt}
           category={campusEvent.category}
           prefix={
-            <span className="font-mono text-[10px] text-muted tabular-nums mb-1">
+            <span className="text-[10px] text-muted tabular-nums mb-1">
               #{feedIndex + 1}
             </span>
           }
@@ -66,14 +66,14 @@ export function AdminLiveEventRow({
 
         <div className="min-w-0 flex-1 py-3 pr-3 pl-3 sm:pl-4">
           <div className="flex flex-wrap items-center gap-2 mb-1">
-            <span className="bg-ink/5 border border-ink/10 text-muted font-mono text-[9px] px-1 py-0.5 rounded font-semibold uppercase">
+            <span className="bg-ink/5 border border-ink/10 text-muted text-[9px] px-1 py-0.5 rounded font-semibold uppercase">
               {event.source}
             </span>
-            <span className="font-mono text-[10px] text-muted">
+            <span className="text-[10px] text-muted">
               {formatDate(event.starts_at)}
             </span>
             {event.is_locked && (
-              <span className="bg-gold/10 border border-gold/20 text-deep-gold font-mono text-[9px] px-1 py-0.5 rounded font-semibold tracking-wider">
+              <span className="bg-gold/10 border border-gold/20 text-deep-gold text-[9px] px-1 py-0.5 rounded font-semibold">
                 Locked
               </span>
             )}

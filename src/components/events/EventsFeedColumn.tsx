@@ -9,11 +9,13 @@ import {
 } from "react";
 import type { CampusEvent } from "@/types/event";
 import type { Club } from "@/lib/clubs";
-import { formatPacificDayKey, pacificDayHeading } from "@/lib/dates";
+import { pacificDayHeading } from "@/lib/dates";
 import type { EmptyFeedCopy } from "@/lib/events/empty-feed-copy";
-import { EventCard } from "./EventCard";
+import { EventCard, EventCompactRow } from "./EventCard";
 import { ActiveFilterChips } from "./ActiveFilterChips";
+import { EventFeedViewToggle } from "./EventFeedViewToggle";
 import { EventSearchBox } from "./EventSearchBox";
+import type { FeedView } from "./events-filters";
 import type { EventFeedActiveFilters } from "./useEventFeedFilters";
 
 type Props = {
@@ -33,7 +35,9 @@ type Props = {
   onClearDayWindow: () => void;
   onClearQuery: () => void;
   todayKey: string;
-  observedDayKey: string;
+  /** The list's shape. Always "cards" below lg, where the toggle is hidden. */
+  view: FeedView;
+  onViewChange: (next: FeedView) => void;
   dayKeys: string[];
   grouped: Map<string, CampusEvent[]>;
   loadedCount: number;
@@ -64,7 +68,8 @@ export function EventsFeedColumn({
   onClearDayWindow,
   onClearQuery,
   todayKey,
-  observedDayKey,
+  view,
+  onViewChange,
   dayKeys,
   grouped,
   loadedCount,
@@ -78,7 +83,6 @@ export function EventsFeedColumn({
   daySectionRefs,
 }: Props) {
   const showEmptyState = dayKeys.length === 0;
-  const observedHeading = pacificDayHeading(observedDayKey, todayKey);
   const [showBackToTop, setShowBackToTop] = useState(false);
 
   useEffect(() => {
@@ -105,23 +109,31 @@ export function EventsFeedColumn({
 
   return (
     <div className="min-w-0 pt-6 sm:pt-8 lg:py-8">
-      <header className="mb-7">
-        <h1 className="font-display text-[28px] font-semibold leading-[1.05] tracking-[-0.025em] text-ink sm:text-[34px]">
-          {formatPacificDayKey(todayKey)}
-        </h1>
-        <p className="mt-2 max-w-[58ch] text-[14px] text-muted">
-          {upcomingTotal}{" "}
-          {upcomingTotal === 1 ? "event" : "events"} upcoming ·{" "}
-          {summary.upcomingThisWeek} this week
-        </p>
+      {/* The page title is the one brand moment in the feed (Bricolage);
+          the day headings below carry the date, so the title doesn't. */}
+      <header className="mb-7 flex items-end justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className="font-display text-[28px] font-semibold leading-[1.05] tracking-[-0.025em] text-ink sm:text-[34px]">
+            Events
+          </h1>
+          <p className="mt-2 max-w-[58ch] text-[14px] text-muted">
+            {summary.upcomingThisWeek} this week · {upcomingTotal} upcoming
+          </p>
+        </div>
+        <EventFeedViewToggle
+          view={view}
+          onViewChange={onViewChange}
+          className="hidden lg:flex"
+        />
       </header>
 
       {/* Filter bar: a liquid-glass capsule. From lg it floats free over the
-          feed. On phones it sits in a frosted strip that runs on into the
-          sticky day heading below (top: 56 = the strip's pt-2 + h-12), so
-          the feed never shows between the two. */}
+          feed; the rail calendar marks the day in view, so the bar carries no
+          date of its own. On phones it sits in a frosted strip that runs on
+          into the sticky day heading below (top: 56 = the strip's pt-2 +
+          h-12), so the feed never shows between the two. */}
       <div className="sticky top-0 z-20 -mx-4 mb-5 bg-surface/80 px-4 py-2 backdrop-blur-xl sm:-mx-6 sm:px-6 lg:top-3 lg:mx-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none">
-        <div className="liquid-glass relative flex h-12 items-center gap-2 rounded-full p-1.5 lg:gap-3 lg:pl-5">
+        <div className="liquid-glass relative flex h-12 items-center gap-2 rounded-full p-1.5 lg:gap-3 lg:pl-4">
           <button
             type="button"
             onClick={onOpenMobileFilters}
@@ -144,28 +156,12 @@ export function EventsFeedColumn({
             {activeFilterCount > 0 && (
               <span
                 aria-hidden
-                className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-ink px-1 font-mono text-[10px] text-canvas"
+                className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-ink px-1 text-[10px] text-canvas"
               >
                 {activeFilterCount}
               </span>
             )}
           </button>
-
-          {dayKeys.length > 0 && (
-            <>
-              <span
-                aria-live="polite"
-                className="hidden shrink-0 items-baseline gap-1 whitespace-nowrap font-display text-[14px] font-semibold tracking-[-0.005em] text-ink lg:inline-flex"
-              >
-                {observedHeading.label}{" "}
-                <span className="font-medium text-faint">{observedHeading.weekday}</span>
-              </span>
-              <span
-                aria-hidden
-                className="hidden h-5 border-l border-ink/10 lg:inline-block"
-              />
-            </>
-          )}
 
           <EventSearchBox query={query} clubs={clubs} onQueryChange={onQueryChange} />
 
@@ -206,20 +202,20 @@ export function EventsFeedColumn({
         onClearAll={onClearFilters}
       />
 
-      <div className="mb-6">
-        <p
-          id="event-filter-summary"
-          className="text-sm text-muted"
-          aria-live="polite"
-          aria-atomic="true"
-        >
-          {resultsLabel}
-        </p>
-      </div>
+      {/* The count shows only as a filter result ("12 matching events").
+          Unfiltered it is a loading status, so it stays for screen readers. */}
+      <p
+        id="event-filter-summary"
+        className={hasActiveFilters ? "mb-6 text-sm text-muted" : "sr-only"}
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        {resultsLabel}
+      </p>
 
       {showEmptyState && (
         <div className="py-14 sm:py-20">
-          <p className="max-w-[42ch] font-display text-2xl font-semibold leading-[1.2] tracking-[-0.02em] text-ink sm:text-[28px]">
+          <p className="max-w-[42ch] text-2xl font-semibold leading-[1.2] tracking-[-0.015em] text-ink sm:text-[28px]">
             {emptyCopy.headline}
           </p>
           <p className="mt-3 max-w-[52ch] text-[15px] leading-[1.55] text-ink/70">
@@ -239,34 +235,49 @@ export function EventsFeedColumn({
         </div>
       )}
 
-      {daySections.map(({ day, dayEvents, heading }) => (
-        <div
-          key={day}
-          ref={(el) => {
-            if (el) daySectionRefs.current.set(day, el);
-            else daySectionRefs.current.delete(day);
-          }}
-          className="mb-10 lg:border-t lg:border-ink/15 lg:pt-7 lg:first:border-t-0 lg:first:pt-0"
-        >
-          <h3
+      {/* Day sections get their own wrapper so `first:` matches the first
+          day. As siblings of the header, bar and chips it never did, and the
+          first day kept a top rule under the search bar. */}
+      <div>
+        {daySections.map(({ day, dayEvents, heading }) => (
+          <div
+            key={day}
             ref={(el) => {
-              if (el) dayHeaderRefs.current.set(day, el);
-              else dayHeaderRefs.current.delete(day);
+              if (el) daySectionRefs.current.set(day, el);
+              else daySectionRefs.current.delete(day);
             }}
-            data-day-key={day}
-            className="sticky z-10 -mx-4 mb-3 flex scroll-mt-24 items-baseline gap-1.5 bg-surface/80 px-4 py-2 font-display text-xl font-semibold tracking-[-0.02em] text-ink backdrop-blur-xl after:absolute after:inset-x-4 after:bottom-0 after:border-t after:border-ink/10 sm:-mx-6 sm:px-6 sm:after:inset-x-6 lg:static lg:mx-0 lg:mb-4 lg:bg-transparent lg:px-0 lg:py-0 lg:text-lg lg:backdrop-blur-none lg:after:hidden"
-            style={{ top: 56 }}
+            className="mb-10 lg:border-t lg:border-ink/15 lg:pt-7 lg:first:border-t-0 lg:first:pt-0"
           >
-            {heading.label}{" "}
-            <span className="font-medium text-faint">{heading.weekday}</span>
-          </h3>
-          <div className="flex flex-col gap-5 sm:gap-2.5">
-            {dayEvents.map((ev) => (
-              <EventCard key={ev.id} event={ev} loadedCount={loadedCount} />
-            ))}
+            <h3
+              ref={(el) => {
+                if (el) dayHeaderRefs.current.set(day, el);
+                else dayHeaderRefs.current.delete(day);
+              }}
+              data-day-key={day}
+              className="sticky z-10 -mx-4 mb-3 flex scroll-mt-24 items-baseline gap-1.5 bg-surface/80 px-4 py-2 text-xl font-semibold tracking-[-0.01em] text-ink backdrop-blur-xl after:absolute after:inset-x-4 after:bottom-0 after:border-t after:border-ink/10 sm:-mx-6 sm:px-6 sm:after:inset-x-6 lg:static lg:mx-0 lg:mb-4 lg:bg-transparent lg:px-0 lg:py-0 lg:text-lg lg:backdrop-blur-none lg:after:hidden"
+              style={{ top: 56 }}
+            >
+              {heading.label}{" "}
+              <span className="font-medium text-faint">{heading.weekday}</span>
+            </h3>
+            {view === "compact" ? (
+              // One surface per day, rows divided by hairlines (borders, so
+              // dark mode's edge curve applies).
+              <div className="divide-y divide-ink/[0.06] rounded-[20px] border border-ink/[0.06] bg-canvas">
+                {dayEvents.map((ev) => (
+                  <EventCompactRow key={ev.id} event={ev} loadedCount={loadedCount} />
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col gap-5 sm:gap-2.5">
+                {dayEvents.map((ev) => (
+                  <EventCard key={ev.id} event={ev} loadedCount={loadedCount} />
+                ))}
+              </div>
+            )}
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
 
       {(hasMore || loadError || isLoadingMore) && (
         <div ref={loadMoreRef} className="mt-2 flex min-h-14 flex-col items-center gap-3">

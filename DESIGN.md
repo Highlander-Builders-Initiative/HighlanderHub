@@ -31,29 +31,29 @@ typography:
     lineHeight: 1.15
     letterSpacing: "-0.02em"
   title:
-    fontFamily: "Bricolage Grotesque, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif"
     fontSize: "1.125rem"
     fontWeight: 600
     lineHeight: 1.2
     letterSpacing: "-0.015em"
   body:
-    fontFamily: "Bricolage Grotesque, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif"
     fontSize: "1rem"
     fontWeight: 400
     lineHeight: 1.55
     letterSpacing: "normal"
   meta:
-    fontFamily: "Bricolage Grotesque, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif"
     fontSize: "0.8125rem"
     fontWeight: 400
     lineHeight: 1.4
     letterSpacing: "normal"
   numeric:
-    fontFamily: "IBM Plex Mono, ui-monospace, monospace"
+    fontFamily: "-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif"
     fontSize: "0.6875rem"
     fontWeight: 400
     lineHeight: 1
-    letterSpacing: "0.04em"
+    letterSpacing: "normal"
 rounded:
   sm: "4px"
   md: "8px"
@@ -104,13 +104,13 @@ components:
 
 Highlander Hub is the screen-side stand-in for the physical UCR campus: many voices, edited gathering, a place rather than a tool. The interface is a place a student passes through, glances at, and leaves having seen something they wouldn't have seen otherwise. It is not a search engine, not a feed, not a marketplace. It is a quad with a bulletin in it.
 
-The system reads as **edited and paper-confident**: display type does the work, chrome stays hairline-thin, and the page is built to be skimmed in five seconds before it asks for any commitment. Color is tightly rationed and meaningful (the category palette is the only place hue lives); everything else sits in tinted neutrals. The voice is warm, never corporate; specific to UCR, never genericized. The brand personality from PRODUCT.md, **warm, curated, quick**, is enforced visually by a small set of doctrine: tinted neutrals, two faces (Bricolage Grotesque for display and body, IBM Plex Mono for numerics), and a Restrained color strategy that holds accent usage well below 10% of any surface.
+The system reads as **edited and paper-confident**: display type does the work, chrome stays hairline-thin, and the page is built to be skimmed in five seconds before it asks for any commitment. Color is tightly rationed and meaningful (the category palette is the only place hue lives); everything else sits in tinted neutrals. The voice is warm, never corporate; specific to UCR, never genericized. The brand personality from PRODUCT.md, **warm, curated, quick**, is enforced visually by a small set of doctrine: tinted neutrals, two faces (Bricolage Grotesque for the brand's display moments, the device's own UI face for everything a reader scans), and a Restrained color strategy that holds accent usage well below 10% of any surface.
 
 The system explicitly rejects three aesthetic families called out as anti-references in PRODUCT.md: **generic SaaS landing** (hero-metric templates, identical card grids, gradient text), **university .edu CMS** (institutional navy soup, brochure density, slow chrome), and **Eventbrite / Meetup transactional** (ad clutter, RSVP-button soup, marketplace dating). If a screen could be confused for any of those at a glance, it has failed.
 
 **Key Characteristics:**
 - Hairline-bordered surfaces; hover darkens the edge and nothing moves; no shadow blooms (see Elevation for direction).
-- Bricolage Grotesque carries display and body; IBM Plex Mono carries numerics. Two faces, never a third.
+- Bricolage Grotesque carries the brand's display moments (wordmark, page titles, the landing page); the device's UI face carries the product. Two faces, never a third.
 - OKLCH thinking, hex frontmatter; tinted neutrals only, no pure #000.
 - Restrained color strategy: category accents at ≤10% of any surface, expressed as bright tinted washes (18%) plus a darker matched text color for AA contrast.
 - Mobile-first: every layout is designed for a phone first, scaled out.
@@ -134,7 +134,7 @@ Seven bright hues (the `tag` colors in `tailwind.config.ts`, mapped per category
 
 "Career" reuses **Ink** as its category color (no third neutral is invented).
 
-The home hero's highlight words ("Free food, club nights, …") use each category's `-ink` text color, and each links to the feed filtered to its category (`/events?cat=…`), marked by a hairline `ink/20` underline that takes the word's color on hover. The older editorial hues (`highlander`, `leaf`, `coral`, `sky`, `gold`, `plum`, `sage` and their `deep-` pairs) remain only for admin error states, the flyer placeholder tint and the calendar heat; they are no longer category colors.
+The home hero's highlight words ("Free food, club nights, …") use each category's `-ink` text color, and each links to the feed filtered to its category (`/events?cat=…`), marked by a hairline `ink/20` underline that takes the word's color on hover. The older editorial hues (`highlander`, `leaf`, `coral`, `sky`, `gold`, `plum`, `sage` and their `deep-` pairs) remain only for admin error states and the flyer placeholder tint; they are no longer category colors. (The calendar's heat wash, in `highlander`, is retired: a hue that signalled no category.)
 
 ### Neutral
 
@@ -158,7 +158,7 @@ The site follows the device's light/dark setting (`prefers-color-scheme`); there
 
 ### Named Rules
 
-**The One Voice Rule.** Category color appears as a tinted wash (`CATEGORY_PILL`, 18% opacity), never as a saturated fill behind content. Total accent coverage on any screen stays at or below 10% of the surface. Saturated category color appears only at the 6px Category Dot size: `EventsMiniCalendar` (day-cell dots) and `ActiveFilterChips` (category chip dot). One palette, one visual language.
+**The One Voice Rule.** Category color appears as a tinted wash (`CATEGORY_PILL`, 18% opacity), never as a saturated fill behind content. Total accent coverage on any screen stays at or below 10% of the surface. Saturated category color appears only at the 6px Category Dot size, on the `ActiveFilterChips` category chip. One palette, one visual language.
 
 **The Tinted-Neutral Rule.** No new pure-hex grayscale values. Every neutral tints toward the cool ink hue. If you need a step between `surface` and `line`, derive it from the existing ramp, do not invent a flat gray.
 
@@ -166,33 +166,37 @@ The site follows the device's light/dark setting (`prefers-color-scheme`); there
 
 ## 3. Typography
 
-**Display & Body Font:** Bricolage Grotesque (with `ui-sans-serif, system-ui, sans-serif` fallback)
-**Numeric / Mono Font:** IBM Plex Mono (with `ui-monospace, monospace` fallback)
+**Display Font:** Bricolage Grotesque (`--font-display`, the `font-display` class). The wordmark, page titles (the feed's "Events", About, the legal pages) and the landing page, whose body copy keeps it too (`.brand-type` on its `<main>`).
+**UI Font:** the device's own face (`--font-ui`: `-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`), which `--font-body` points at. SF on Apple, Segoe on Windows, Roboto on Android. Everything a reader scans on the product pages: the feed, the rails, filters, the event detail.
 
-**Character:** Bricolage Grotesque carries both display and body. At display sizes (28–72px) it runs with optical-sizing on, semibold weight, and negative tracking (-0.02 to -0.035em). At body sizes (16px / 1.55 line-height) the same family drops to regular weight, neutral tracking, and the variable font's `opsz` axis automatically picks the body master, reading quiet and magazine-like. Meta strings (13px, muted) use the same family without uppercase or tracked-out treatment. IBM Plex Mono is reserved for content that is genuinely numeric (dates, times, location coordinates, identifiers), never decorative caps. A single-family display+body pairing reads more confidently edited than the earlier Bricolage-over-Inter pairing did, and it is one fewer face for the AI Slop Test to flag (Inter, alongside Roboto, Geist, and Plus Jakarta Sans, has become a reflex font on the web).
+**Character:** The /events layout follows Luma's event list, and Luma's list reads calm because its face disappears: it runs on `-apple-system`. Bricolage at 13–16px kept drawing the eye, so the layout said "quiet list" while the type said "poster". Bricolage now appears where the brand should be felt, at display sizes (28–72px, optical sizing on, semibold, tracking -0.02 to -0.035em), and the UI face carries the rest at regular and medium weights. On phones the UI face is SF, what students' other apps read in. It costs no font download. Meta strings (13px, muted) use the UI face without uppercase or tracked-out treatment.
+
+**Numerics** are the UI face's tabular figures (`tabular-nums`). IBM Plex Mono is retired: its `--font-mono` variable was defined in terms of itself, so it resolved to nothing and never rendered anywhere; every "mono" numeral on the site was already Bricolage.
 
 ### Hierarchy
 
-- **Display** (600 weight, `clamp(2.25rem, 5.5vw, 4.5rem)`, line-height 1.0, tracking -0.035em): Hero headlines only. One per page.
-- **Headline** (600, 1.75rem / 28px, line-height 1.15, tracking -0.02em): Section openers (Features, FinalCTA, page titles).
-- **Title** (600, 1.125rem / 18px, line-height 1.2, tracking -0.015em): Event card titles, card-level headings. Two-line clamp.
-- **Body** (400, 1rem / 16px, line-height 1.55): Paragraph text. Cap line length at 65–75ch.
-- **Meta** (400, 0.8125rem / 13px, line-height 1.4, normal tracking): Quiet labels above or beside primary content: eyebrows, taglines, summary lines, captions. Bricolage Grotesque regular, sentence case, muted color. No uppercase, no tracking-out.
-- **Numeric** (400, 0.6875–0.75rem / 11–12px, line-height 1, light tracking ≤0.06em, sentence case): Dates, times, location strings, identifiers, calendar grid numbers. IBM Plex Mono. Used only where the content is genuinely numeric or coordinate-like, never as decorative label-style. The home dateline anchors at 12px (top of range); secondary tabular usages (filter counts, event time strips) sit at 11px.
+- **Display** (Bricolage, 600 weight, `clamp(2.25rem, 5.5vw, 4.5rem)`, line-height 1.0, tracking -0.035em): Hero headlines only. One per page.
+- **Headline** (Bricolage, 600, 1.75rem / 28px, line-height 1.15, tracking -0.02em): Page titles and section openers (the feed's "Events", About, Features, FinalCTA).
+- **Title** (UI face, 600, 1.125rem / 18px, line-height 1.2, tracking -0.01em): Event card titles, day headings, card-level headings. Event card titles drop to 500 from lg, as on Luma. Two-line clamp.
+- **Body** (UI face, 400, 1rem / 16px, line-height 1.55): Paragraph text. Cap line length at 65–75ch.
+- **Meta** (UI face, 400, 0.8125rem / 13px, line-height 1.4, normal tracking): Quiet labels above or beside primary content: eyebrows, taglines, summary lines, captions. Sentence case, muted color. No uppercase, no tracking-out.
+- **Numeric** (UI face, `tabular-nums`, 11–12px): Dates, times, counts, calendar grid numbers. The home dateline anchors at 12px; secondary tabular usages (filter counts) sit at 11px.
 
 ### Named Rules
 
-**The Two-Face Rule.** Bricolage Grotesque carries display and body. IBM Plex Mono carries numerics. Those are the two faces. No third font is added without retiring one of the two. (This rule replaces the earlier One-Display Rule, which assumed a separate body face; Inter was retired when its overuse on the web outweighed the contrast it provided against the display.)
+**The Two-Face Rule.** Bricolage Grotesque is the display face; the device's UI face is the other. Those are the two faces. No third font (no UI webfont, no mono) is added without retiring one of the two. (Earlier versions paired Bricolage with Inter, then ran Bricolage for display and body with IBM Plex Mono for numerics; Plex never actually rendered, and Bricolage at UI sizes fought the Luma-style layout.)
 
-**The Tracking Rule.** Display type tracks tight (-0.02em to -0.035em). Body and labels use normal tracking; numeric mono uses ≤0.06em. Tracked-out uppercase (`tracking-[0.12em]` and friends, in any font) is prohibited as a decorative label pattern. It is the SaaS / dev-tool reflex the AI Slop Test rejects.
+**The Tracking Rule.** Display type tracks tight (-0.02em to -0.035em). UI-face titles take at most -0.01em (SF already tightens its display sizes); body and labels use normal tracking. Tracked-out uppercase (`tracking-[0.12em]` and friends, in any font) is prohibited as a decorative label pattern. It is the SaaS / dev-tool reflex the AI Slop Test rejects.
 
-**The Quiet-Label Rule.** Eyebrows, taglines, summary lines, and captions render in Bricolage Grotesque regular, sentence case, small (12–13px), normal tracking, muted color. No uppercase. No tracked-out caps. No mono-as-decoration. IBM Plex Mono is reserved for genuinely numeric content (dates, times, coordinates, identifiers), never for label decoration. (This rule replaces the earlier Eyebrow-Mono Rule; that pattern read as AI/SaaS reflex.)
+**The Quiet-Label Rule.** Eyebrows, taglines, summary lines, and captions render in the page's body face at regular weight, sentence case, small (12–13px), normal tracking, muted color. No uppercase. No tracked-out caps. No mono-as-decoration. (This rule replaces the earlier Eyebrow-Mono Rule; that pattern read as AI/SaaS reflex.)
 
 ## 4. Elevation
 
 The current implementation is **flat-by-default with hairlines**: surfaces use `border-ink/10` to `border-ink/15` to convey edges, and hover darkens the border, not a shadow bloom. Cards do not move on hover. Two shadow tokens (`card`, `cardHover`) exist in `tailwind.config.ts` but are sparingly applied.
 
-**Direction (PRODUCT decision):** the design should move toward slightly more lifted surfaces than the code currently honors. Reach for: subtle ambient shadow on cards at rest (`card`), a stronger ambient on hover (`cardHover`), and tonal layering for grouped regions. Hairlines remain the default edge treatment; shadows are an addition, not a replacement.
+**Phones lift, desktop sits flat.** On phones an event card keeps the subtle resting shadow (`card`) and the stronger one on hover (`cardHover`). From lg, event cards are flat, a faint `ink/[0.06]` edge and no shadow, as Luma's rows are: at that width each card holds more white space, and a border plus a shadow framed that space as something missing instead of air. Hairlines remain the default edge treatment everywhere.
+
+**The One-Surface Rule.** On /events the event cards (or, in the compact view, each day's list) are the only boxes on the page. The rails, the header and the day headings sit directly on the page's `surface`; they are not panels. (The rails used to be frosted panels with a shadow, the same material as the cards, so three columns of white boxes competed and none led.)
 
 ### Shadow Vocabulary
 
@@ -225,7 +229,7 @@ Outside those two flavors, if a shadow is visible enough to describe its blur ra
 - **Corner Style:** Generous rounding (16px, `rounded-xl`).
 - **Background:** Canvas (#ffffff) on Surface (#fafafa) page; never bare-on-canvas. Cards sit on a tonal step.
 - **Border:** Hairline ink-tinted (`border-ink/15`). Hover darkens to full ink edge.
-- **Shadow Strategy:** Reach for `card` at rest, `cardHover` on hover. See Elevation.
+- **Shadow Strategy:** `card` at rest and `cardHover` on hover on phones; none from lg. See Elevation.
 - **Internal Padding:** 16px (`p-4`) for compact, 16–20px (`px-4 py-3` to `px-5 py-4`) for text rows. Image tiles use a `4/5` frame (Instagram's portrait post) with bottom-anchored overlay copy; flyers of other shapes follow The Whole-Flyer Rule.
 - **Card-Hover Treatment:** the border darkens, 180ms ease; nothing moves. Defined globally via `.card-hover`. (The earlier 1px lift was retired: the edge change is feedback enough, and phones never hover.)
 
@@ -233,20 +237,30 @@ Outside those two flavors, if a shadow is visible enough to describe its blur ra
 
 Feed listing row, laid out like a Luma event row: text on the left, the flyer pinned at the top-right.
 
-Type runs larger than the system's `meta` token, matched to Luma's rows; phone sizes first, `sm+` in parentheses.
+Type runs larger than the system's `meta` token, matched to Luma's rows; phone sizes first, `sm+` in parentheses. All of it is the UI face.
 
 - **Time** (14px (15px), `tabular-nums text-faint`): start time as "7:00 PM". Deadlines read "Due 11:59 PM", with "Due" in `font-medium text-deep-coral`.
-- **Title** (`font-display` 18px (20px) `font-semibold`, `line-clamp-2`, `mt-2` below the time). No hover underline; the card's darkened edge carries the hover.
+- **Title** (18px (20px), `font-semibold`, `lg:font-medium`, tracking -0.01em, `line-clamp-2`, `mt-2` (`lg:mt-1`) below the time). No hover underline; the card's darkened edge carries the hover.
 - **Hosts row** (14px (16px) `text-faint`): up to three 16px `ClubAvatar`s overlapping by 4px, each cut out from the next by a 2px canvas ring, then, 8px on, "By A, B & C" truncated to one line. A club without a picture shows its monogram. 16px is Luma's proportion, an avatar about the text's size; the old 22px avatar ran twice the cap height and pushed the byline 12px past the location.
 - **Location row** (same size and color): a 1em pin (or a 1em-wide video icon for online events), in the text's color, centered in the same 16px column as the first avatar with the same 8px gap, so the location starts at the byline's x. The icon's viewBox hugs its ink, so the pin nearly fills the column (16px tall at `sm+`) and sits ~9.5px (phones ~10.3px) from its text, close to the avatar's 8px, as on Luma. (A 24-unit icon box left ~5px of air in the column, and the pin read 13px from its text.) With several hosts the byline starts after the stack; the location stays with the first avatar.
-- **Tags row** (`mt-4`, about 21px from the pin to the pill edge as on Luma; wraps): pills at 13px (14px) medium, `rounded-full`, from `eventTags` (the detail header renders the same list at 12px), in this order:
+- **Tags row** (`mt-4`, `lg:mt-3`; wraps): pills at 13px (14px) medium, 12px from lg (Luma's badge size, so the row stays a footnote), `rounded-full`, from `eventTags` (the detail header renders the same list at 12px), in this order:
   - `Deadline` (`DEADLINE_PILL`, the coral wash), deadlines only.
-  - The category ("Academic", "Social", …), in the same `CATEGORY_PILL` wash the Topics rail uses for that category when selected, so the two read as one signal. Skipped for the Free food category, which the next pill covers.
+  - The category ("Academic", "Social", …), in its `CATEGORY_PILL` wash; its ink matches the Topics rail's label when that category is selected. Skipped for the Free food category, which the next pill covers.
   - `Free food` (the `free_food` wash), when `hasFreeFood` or the category is Free food.
   - `RSVP` (unfilled: `ring-ink/15 text-ink/70`), when `rsvpRequired`. It notes something to do before going, not a kind of event, so it carries no fill.
 - **Flyer slot** (120×150, shrinking on narrow phones to `clamp(80px, 100vw - 263px, 120px)` wide at 4:5; optional): the slot takes the width left once the text column has 181px, its width on a 375px phone, so it reaches 120×150 from a 383px screen and bottoms out at the old 80×100 below 344px. The fixed 80×100 phone slot was too small to read a flyer at, and left ~50px of empty card under it. the flyer is pinned whole at its own shape (`FlyerPoster`), anchored to the slot's top-right corner, 8px radius, `ring-ink/10` hairline. A 4:5 placeholder holds the slot while the image loads. See The Whole-Flyer Rule.
 
-Padding is `p-4` / `sm:p-5` with a `gap-4` / `sm:gap-5` gutter between text and flyer. The card has no description; the detail view carries it.
+Padding is `p-4` / `sm:p-5` with a `gap-4` / `sm:gap-5` gutter between text and flyer. From lg the card is flat (see Elevation): `rounded-[20px]`, `border-ink/[0.06]`, no shadow, and Luma's tighter inset (`py-3.5 pl-[18px] pr-3.5`), about 178px tall. The card has no description; the detail view carries it.
+
+### Compact Row (desktop)
+
+The feed's second shape, chosen with the Cards / Compact toggle in the feed header (lg and up; phones always list cards). `EventCompactRow` in `EventCard.tsx` shares the card's link behavior (overlay open, feed return, prefetch).
+
+- **Layout:** a four-column grid, about 70px tall: a 40x50 flyer thumbnail (`FlyerPoster`, whole, `rounded-md`, a 4:5 placeholder when there is no flyer), the start time in a 72px column (deadlines stack "Due" over the time), the title (16px medium, one line) over the hosts (14px faint, avatars and full club names), and the where over the tags, right-aligned and capped at 200px.
+- **Tags:** Deadline, Free food and RSVP only. The category pill is dropped: the Topics rail already sorts by category, and half the feed reads "Community".
+- **Surface:** one per day, `rounded-[20px]` with an `ink/[0.06]` edge on canvas, rows divided by `divide-ink/[0.06]` (borders, so dark mode's edge curve applies). Hover is an `ink/[0.03]` wash; the first and last rows round with the surface.
+- **Focus:** the `.interactive-focus` ring is drawn inside the row (`outline-offset: -3px`, no canvas halo), since an outside ring would run under the neighbouring rows.
+- **Persistence:** the choice is a cookie (`hh_feed_view`, path `/events`, one year) that the page reads on the server, so a returning reader's first paint is already in their view.
 
 The time column with its 2px category rail, and before it the leading category dot, have both been retired: a reader had to decode a color to get the category, and both cost width. The category now reads as a labeled pill.
 
@@ -254,12 +268,7 @@ The time column with its 2px category rail, and before it the leading category d
 
 ### Category Dot (signature)
 
-A 6px colored dot (`h-1.5 w-1.5 rounded-full`) is the system's category signal. Used in exactly two places, always at the same size and palette:
-
-1. **EventsMiniCalendar day cells**: up to three dots at `bottom-1`, encoding which categories have events that day. A density-by-type signal.
-2. **ActiveFilterChips**: leads the category chip in the filter row above the feed.
-
-Both use `CATEGORY_RAIL` from `@/lib/category-colors`:
+A 6px colored dot (`h-1.5 w-1.5 rounded-full`) is the system's saturated category signal. It leads the category chip in `ActiveFilterChips`, the filter row above the feed, using `CATEGORY_RAIL` from `@/lib/category-colors`:
 
 ```ts
 { club: "bg-tag-blue", academic: "bg-tag-violet", social: "bg-tag-coral",
@@ -267,7 +276,7 @@ Both use `CATEGORY_RAIL` from `@/lib/category-colors`:
   community: "bg-tag-green", free_food: "bg-tag-amber" }
 ```
 
-The two surfaces speak the same color language: pick "Free Food" in the chip-bar and gold dots leap out of the calendar at the same time. That coupling is the whole point of the dot; do not invent a separate palette for a third surface.
+Do not invent a separate palette for another surface. (The mini calendar once carried the dots too, then a heat wash; it now marks days by type weight, see Rails.)
 
 Event cards once carried a colored side-stripe rail, and later a dot leading the title; both are retired (see Event Card). Having a single side-stripe carve-out invited propagation, so the carve-out itself is gone (see the side-stripe rule under Don't).
 
@@ -291,10 +300,21 @@ The search bar that pins to the top of the `/events` feed while the cards scroll
 - **Edge:** a 1px specular rim (the `::before`), bright white along the top and fading down the sides, over a 1px ink hairline at 7%. The rim is what reads as glass over a flyer; the hairline is what keeps the capsule visible over white cards. This rim is the one sanctioned exception to "no inner shadow" in The Hairline-Plus-Lift Rule.
 - **Halo:** `0 12px 32px` at 0.08, sanctioned under the second flavor of The Quiet-Shadow Rule.
 - **Placement:** from `lg`, the capsule floats free at `top-3`, the width of the feed column, so it lines up with the cards' edges. On phones it sits in a full-bleed `bg-surface/80 backdrop-blur-xl` strip that runs on into the sticky day heading below (`top: 56`), so the feed never shows between the two. The heading carries the same frosted fill and closes the stack with an inset `ink/10` hairline aligned to the card edges.
-- **Internals:** controls nest inside the capsule concentrically: 6px inset (`p-1.5`), 36px pills (`h-9 rounded-full bg-ink/[0.06]`). Left to right: the Filter pill (phones only, opens the filter sheet) or, from `lg`, the observed day ("Today **Tuesday**") at a 20px inset with a hairline divider; the search field; the back-to-top circle, which grows in once you're past the fold. The field has no border of its own. The capsule is the field.
+- **Internals:** controls nest inside the capsule concentrically: 6px inset (`p-1.5`), 36px pills (`h-9 rounded-full bg-ink/[0.06]`). Left to right: the Filter pill (phones only, opens the filter sheet); the search field (from `lg` at a 16px inset); the back-to-top circle, which grows in once you're past the fold. The field has no border of its own. The capsule is the field. The bar carries no date: the day headings do, and from lg the rail calendar marks the day in view. (It once showed the observed day too, which put "Today Wednesday" on screen three times.)
 - **Focus:** the capsule takes the input's focus ring (1.5px ink at 45%, 3.3:1 on white, with a soft 5px ink halo) and firms up to 92% white while you type. The search clear button is a gray iOS-style circle.
 - **Club suggestions:** drop 8px below the capsule, full capsule width, `rounded-3xl`, with rows highlighted as concentric `rounded-[18px]` pills. Solid canvas, not glass: the capsule's backdrop-filter walls the dropdown off from the feed, so a blur there would only ghost the cards through.
 - **Do not copy** this treatment to non-sticky bars. The glass + halo is what justifies the design language; on a static bar it reads as decoration.
+
+### Feed Header
+
+The top of `/events`: the page title "Events" (Bricolage, the feed's one brand moment) over "53 this week · 150 upcoming" (14px muted), with the Cards / Compact toggle at the right from lg. The title is not the date: the day headings carry dates, and a dated title repeated them. Below the chips, the result count ("12 matching events") shows only while a filter is active; unfiltered it is a loading status ("24 of 150 events loaded"), so it stays in the `aria-live` region for screen readers and off the page.
+
+### Rails
+
+The `/events` side columns, from lg: Topics on the left, the mini calendar and When on the right. They sit on the page with no panel (The One-Surface Rule).
+
+- **The One Selected State.** Every list or segmented selection (a Topics row, a When window, the Cards / Compact toggle) is the same neutral `bg-ink/[0.06]` fill, with no ring, track or shadow. A selected Topics row keeps its category's `-ink` for the label. The calendar's chosen day is the one solid-ink selection, because it is a date picker's cursor, not a filter.
+- **Mini calendar:** days with events read in ink at semibold, empty days fade to `faint`, adjacent-month days to `muted/45`; today is underlined. No heat wash: nearly every day of the quarter has something on, so the scale said little, and its hue signalled no category.
 
 ### Active Filter Chips (signature)
 
@@ -379,13 +399,12 @@ still signals category everywhere a user can act; the skyline is scenery, is
 ### Do:
 
 - **Do** keep the hue-as-meaning discipline: color signals category, full stop. If you reach for a color and it is not a category, stop and use type weight or spacing.
-- **Do** use Bricolage Grotesque for display, headline, body, and non-numeric labels, and IBM Plex Mono for numerics (dates, times, identifiers, calendar numbers). Two faces. No third.
-- **Do** keep eyebrows, taglines, and summary lines quiet: Bricolage Grotesque regular, small (12–13px), sentence case, normal tracking, muted color. The "edited bulletin caption" look, not the "SaaS landing eyebrow" look.
-- **Do** reserve IBM Plex Mono for content that is genuinely numeric (dates, times, coordinates, identifiers), never as decorative label-style.
+- **Do** use Bricolage Grotesque for the wordmark, page titles and the landing page, and the UI face for everything a reader scans. Numbers are the UI face's `tabular-nums`. Two faces. No third.
+- **Do** keep eyebrows, taglines, and summary lines quiet: body face at regular weight, small (12–13px), sentence case, normal tracking, muted color. The "edited bulletin caption" look, not the "SaaS landing eyebrow" look.
 - **Do** prefer hairline-bordered surfaces (`border-ink/10` to `border-ink/15`) over background-tinted ones for default cards and rows.
 - **Do** ease motion out only (`cubic-bezier(0.16, 1, 0.3, 1)`). Durations: 180–300ms for state. Always.
 - **Do** honor `prefers-reduced-motion` on anything you add. The root `globals.css` already cancels animation duration globally; do not opt back in.
-- **Do** treat the FlyerTile (home mosaic + marquee tiles) and the EventCard (feed listing row: time, title, host avatars, location, tags, flyer at the right) as **the two canonical ways** to render an event. New event surfaces should use one of these two.
+- **Do** treat the FlyerTile (home mosaic + marquee tiles) and the EventCard (feed listing row: time, title, host avatars, location, tags, flyer at the right, with its desktop Compact Row shape) as **the two canonical ways** to render an event. New event surfaces should use one of these two.
 - **Do** use the `.interactive-focus` global class on every interactive element. Focus is non-negotiable; this is the WCAG AA commitment from PRODUCT.md made concrete.
 - **Do** size for a phone first. Layouts target mobile breakpoints first, then expand. Touch targets ≥44×44px.
 

@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { EventsLeftRail } from "./EventsLeftRail";
 import { EventsRightRail } from "./EventsRightRail";
-import { formatPacificDayKey, pacificTodayKey, startOfPacificMonthKey } from "@/lib/dates";
+import { pacificTodayKey, startOfPacificMonthKey } from "@/lib/dates";
 import type { CategoryValue } from "./events-filters";
 
 /**
@@ -26,23 +26,23 @@ function Bar({ className }: { className: string }) {
   return <span aria-hidden className={`block rounded-full bg-ink/10 ${className}`} />;
 }
 
-/** One stubbed feed row, matched to EventCard's geometry. */
+/** One stubbed feed row, matched to EventCard's geometry (flat from lg). */
 function EventRowSkeleton({ width }: { width: string }) {
   return (
     <div
       aria-hidden
-      className="flex w-full min-w-0 gap-4 rounded-2xl border border-ink/10 bg-canvas p-4 shadow-card sm:gap-5 sm:p-5"
+      className="flex w-full min-w-0 gap-4 rounded-2xl border border-ink/10 bg-canvas p-4 shadow-card sm:gap-5 sm:p-5 lg:rounded-[20px] lg:border-ink/[0.06] lg:py-3.5 lg:pl-[18px] lg:pr-3.5 lg:shadow-none"
     >
       {/* Time, title, hosts, location, tags */}
       <div className="flex min-w-0 flex-1 flex-col">
         <Bar className="h-3.5 w-16" />
-        <Bar className={`mt-3.5 h-5 ${width}`} />
+        <Bar className={`mt-3.5 h-5 lg:mt-2.5 ${width}`} />
         <div className="mt-3.5 flex items-center gap-2">
-          <Bar className="h-[22px] w-[22px] shrink-0" />
+          <Bar className="h-4 w-4 shrink-0" />
           <Bar className="h-3.5 w-1/3" />
         </div>
-        <Bar className="ml-[30px] mt-3 h-3.5 w-1/2" />
-        <Bar className="mt-4 h-6 w-20" />
+        <Bar className="ml-6 mt-3 h-3.5 w-1/2" />
+        <Bar className="mt-4 h-6 w-20 lg:mt-3 lg:h-5" />
       </div>
 
       {/* Flyer slot */}
@@ -54,6 +54,7 @@ function EventRowSkeleton({ width }: { width: string }) {
 const ROW_WIDTHS = ["w-3/4", "w-2/3", "w-5/6", "w-1/2"];
 
 function DayGroupSkeleton({ rows }: { rows: number }) {
+  // Rendered inside one wrapper (below), so `first:` drops the first day's rule.
   return (
     <div className="mb-10 lg:border-t lg:border-ink/15 lg:pt-7 lg:first:border-t-0 lg:first:pt-0">
       <div className="mb-3 px-4 py-2 sm:px-6 lg:mb-4 lg:px-0 lg:py-0">
@@ -92,7 +93,7 @@ export function EventsBrowserSkeleton() {
         <div className="min-w-0 pt-6 sm:pt-8 lg:py-8" aria-busy="true">
           <header className="mb-7">
             <h1 className="font-display text-[28px] font-semibold leading-[1.05] tracking-[-0.025em] text-ink sm:text-[34px]">
-              {formatPacificDayKey(todayKey)}
+              Events
             </h1>
             <p className="mt-2 flex h-[21px] items-center">
               <Bar className="h-3 w-52" />
@@ -101,7 +102,7 @@ export function EventsBrowserSkeleton() {
 
           {/* Filter bar: same sticky shell as the live feed, controls inert. */}
           <div className="sticky top-0 z-20 -mx-4 mb-5 bg-surface/80 px-4 py-2 backdrop-blur-xl sm:-mx-6 sm:px-6 lg:top-3 lg:mx-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none">
-            <div className="liquid-glass pointer-events-none relative flex h-12 items-center gap-2 rounded-full p-1.5 lg:gap-3 lg:pl-5">
+            <div className="liquid-glass pointer-events-none relative flex h-12 items-center gap-2 rounded-full p-1.5 lg:gap-3 lg:pl-4">
               <span className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-ink/[0.06] px-3.5 text-[13px] font-medium text-ink/50 lg:hidden">
                 <svg
                   aria-hidden
@@ -139,14 +140,15 @@ export function EventsBrowserSkeleton() {
             </div>
           </div>
 
-          <div className="mb-6">
-            <p className="text-sm text-muted" role="status">
-              Loading events…
-            </p>
-          </div>
+          {/* Like the live feed's count line: heard, not shown. */}
+          <p className="sr-only" role="status">
+            Loading events…
+          </p>
 
-          <DayGroupSkeleton rows={3} />
-          <DayGroupSkeleton rows={2} />
+          <div>
+            <DayGroupSkeleton rows={3} />
+            <DayGroupSkeleton rows={2} />
+          </div>
         </div>
 
         <aside

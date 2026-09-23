@@ -45,7 +45,7 @@ export default function AdminLoginPage() {
 
       <div className="w-full max-w-[420px] bg-canvas border border-ink/10 rounded-xl p-8 shadow-card animate-fade-up relative z-10">
         <header className="mb-8">
-          <div className="flex items-center gap-1 text-[11px] font-mono tracking-wider text-muted uppercase mb-2">
+          <div className="flex items-center gap-1 text-[11px] text-muted uppercase mb-2">
             <span>Highlander Builders Initiative</span>
             <span className="text-coral">·</span>
             <span>HBI</span>
@@ -73,7 +73,7 @@ export default function AdminLoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               disabled={isPending}
               placeholder="••••••••"
-              className="w-full bg-canvas text-ink border border-ink/15 rounded-md py-3 px-3.5 text-base font-mono placeholder:text-muted/40 transition-colors focus:border-ink interactive-focus outline-none"
+              className="w-full bg-canvas text-ink border border-ink/15 rounded-md py-3 px-3.5 text-base placeholder:text-muted/40 transition-colors focus:border-ink interactive-focus outline-none"
               required
               autoFocus
             />
@@ -122,7 +122,7 @@ export default function AdminLoginPage() {
         </form>
       </div>
 
-      <footer className="mt-8 text-[11px] font-mono text-muted/60 tracking-wider">
+      <footer className="mt-8 text-[11px] text-muted/60">
         <span>© {new Date().getFullYear()} HIGHLANDER HUB · UCR CAMPUS</span>
       </footer>
     </main>

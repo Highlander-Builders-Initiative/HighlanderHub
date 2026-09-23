@@ -13,14 +13,11 @@ import {
 
 const DAY_INITIALS = ["s", "m", "t", "w", "t", "f", "s"];
 
-// Heat map: event count buckets to a single iris wash that deepens with the
-// day's load. No category hue here, so a busy day reads as one calm signal
-// instead of a row of competing dots.
-function heatClass(count: number): string {
-  if (count >= 6) return "bg-highlander/[0.24]";
-  if (count >= 3) return "bg-highlander/[0.15]";
-  if (count >= 1) return "bg-highlander/[0.07]";
-  return "";
+// Days with events read in ink at semibold; empty days fade to faint. Nearly
+// every day of the quarter has something on, so a heat scale said little, and
+// its wash was a hue that signalled no category (DESIGN.md, Meaning-Carrying).
+function dayTextClass(count: number): string {
+  return count > 0 ? "font-semibold text-ink" : "text-faint";
 }
 
 type Props = {
@@ -63,7 +60,7 @@ export function EventsMiniCalendar({
   return (
     <div>
       <div className="mb-3 flex items-center justify-between gap-2">
-        <h2 className="min-w-0 font-display text-base font-semibold tracking-[-0.015em] text-ink">
+        <h2 className="min-w-0 text-base font-semibold tracking-[-0.01em] text-ink">
           {monthLabel}
         </h2>
         <div className="flex items-center gap-0.5">
@@ -128,9 +125,9 @@ export function EventsMiniCalendar({
             const isToday = key === todayKey;
             const isSelected = key === selectedKey;
             const count = countsByDay.get(key) ?? 0;
-            // Heat only paints the focused month; adjacent-month days stay
-            // quiet so the eye holds on the current grid.
-            const heat = !isLoading && inMonth ? heatClass(count) : "";
+            // Only the focused month shows which days have events; while it
+            // loads the counts are unknown, so its days sit neutral.
+            const dayText = isLoading ? "text-ink" : dayTextClass(count);
 
             return (
               <button
@@ -146,7 +143,7 @@ export function EventsMiniCalendar({
                   isSelected
                     ? "bg-ink text-canvas"
                     : inMonth
-                      ? `text-ink ${heat || "hover:bg-ink/[0.04]"} ${heat ? "hover:bg-highlander/[0.28]" : ""}`
+                      ? `${dayText} hover:bg-ink/[0.04]`
                       : "text-muted/45 hover:bg-ink/[0.04]",
                 ].join(" ")}
               >

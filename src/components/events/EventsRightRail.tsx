@@ -2,7 +2,6 @@
 
 import { EventDayWindowFilter } from "./EventDayWindowFilter";
 import { EventsMiniCalendar } from "./EventsMiniCalendar";
-import { GLASS_PANEL_CLASS } from "./glass-panel";
 import type { DayWindow } from "./events-filters";
 
 type Props = {
@@ -29,7 +28,7 @@ export function EventsRightRail({
   onDayWindowChange,
 }: Props) {
   return (
-    <div className={GLASS_PANEL_CLASS}>
+    <div>
       <EventsMiniCalendar
         cursor={cursor}
         onCursorChange={onCursorChange}

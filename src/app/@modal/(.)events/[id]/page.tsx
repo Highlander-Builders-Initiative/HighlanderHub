@@ -25,7 +25,7 @@ export default async function EventModalPage({
       <div className={EVENT_MODAL_CONTAINER_CLASS}>
         <h2
           id={EVENT_MODAL_TITLE_ID}
-          className="pr-12 font-display text-[24px] font-semibold tracking-[-0.02em] text-ink"
+          className="pr-12 text-[24px] font-semibold tracking-[-0.015em] text-ink"
         >
           This event is no longer listed.
         </h2>
