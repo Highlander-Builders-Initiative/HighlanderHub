@@ -103,10 +103,11 @@ class RepeatedAnnouncementsTests(unittest.TestCase):
         self.assertEqual(([], set(), {}), plan([b | {'is_locked': True}], [a]))
         self.assertEqual(([], {b['id']}, {b['id']: a['id']}), plan([a | {'is_locked': True}, b]))
 
-    def test_acronyms_require_explicit_alias_evidence(self):
+    def test_acronyms_require_host_and_account_evidence_or_explicit_alias(self):
         a, b = [r for r in ROWS if r['host_handle'] == 'popucr']
+        self.assertTrue(same_event(a, b))
+        a, b = [r | {'host_handle': 'unrelated_handle'} for r in (a, b)]
         self.assertFalse(same_event(a, b))
-        self.assertEqual(([], set(), {}), plan([a, b]))
         self.assertTrue(same_event(a | {'host': a['host'] + ' (POP)'}, b))
         for noun in ('Workshop', 'Meeting'):
             left = a | {'host': 'Example Club (EC)', 'title': f'Example Club Leadership {noun}'}
