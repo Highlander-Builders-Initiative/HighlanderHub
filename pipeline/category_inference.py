@@ -17,10 +17,10 @@ _CATEGORY_CONCEPTS: dict[str, tuple[tuple[str, ...], ...]] = {
     "career": (
         ("career", "careers"),
         ("internship", "internships"),
-        ("workshop", "workshops"),
         ("networking",),
         ("resume", "resumes"),
-        ("interview", "interviews", "interviewing"),
+        ("interviewing", "mock interview", "mock interviews", "interview prep",
+         "interview preparation", "interview skills", "interview tips"),
         ("hiring",),
         ("recruit", "recruits"),
     ),
@@ -43,6 +43,10 @@ _CATEGORY_CONCEPTS: dict[str, tuple[tuple[str, ...], ...]] = {
         ("dance performance", "dance performances"),
         ("film", "films"),
         ("screening", "screenings"),
+        ("dancers", "dancer", "choreography", "dance workshop", "dance workshops",
+         "dance class", "dance classes", "dance team", "dance troupe"),
+        ("live performance", "live performances", "his performance", "her performance",
+         "their performance", "performing arts"),
     ),
     "social": (
         ("mixer", "mixers"),
@@ -65,6 +69,16 @@ _CATEGORY_CONCEPTS: dict[str, tuple[tuple[str, ...], ...]] = {
         ("volunteer", "volunteers", "volunteering"),
         ("outreach",),
         ("donate", "donates"),
+    ),
+}
+
+# A format or an incidental mention, not the activity: "dance workshop" is
+# arts and "watch the full interview" promotes a performance. These count at
+# description weight wherever they appear, so the advertised activity wins.
+_INCIDENTAL_CONCEPTS: dict[str, tuple[tuple[str, ...], ...]] = {
+    "career": (
+        ("workshop", "workshops"),
+        ("interview", "interviews"),
     ),
 }
 
@@ -111,6 +125,25 @@ _CATEGORY_PATTERNS = {
     category: tuple(_concept_pattern(aliases) for aliases in concepts)
     for category, concepts in _CATEGORY_CONCEPTS.items()
 }
+_INCIDENTAL_PATTERNS = {
+    category: tuple(_concept_pattern(aliases) for aliases in concepts)
+    for category, concepts in _INCIDENTAL_CONCEPTS.items()
+}
+
+
+def _score(patterns: tuple[re.Pattern[str], ...],
+           fields: tuple[tuple[str, int], ...]) -> int:
+    return sum(
+        max(
+            (
+                weight
+                for text, weight in fields
+                if text and pattern.search(text)
+            ),
+            default=0,
+        )
+        for pattern in patterns
+    )
 
 
 def infer_category_from_text(
@@ -121,19 +154,11 @@ def infer_category_from_text(
         (title.lower(), _TITLE_WEIGHT),
         (description.lower(), _DESCRIPTION_WEIGHT),
     )
+    incidental = tuple((text, _DESCRIPTION_WEIGHT) for text, _ in fields)
     scores: dict[str, int] = {}
     for category, patterns in _CATEGORY_PATTERNS.items():
-        score = sum(
-            max(
-                (
-                    weight
-                    for text, weight in fields
-                    if text and pattern.search(text)
-                ),
-                default=0,
-            )
-            for pattern in patterns
-        )
+        score = (_score(patterns, fields)
+                 + _score(_INCIDENTAL_PATTERNS.get(category, ()), incidental))
         if score:
             scores[category] = score
     if not scores:

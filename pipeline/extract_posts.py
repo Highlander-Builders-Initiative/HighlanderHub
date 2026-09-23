@@ -237,8 +237,17 @@ def _ensure_durable_flyer(record: dict[str, Any], slide: dict[str, Any],
     if recovery:
         if not slide.get("image_url"):
             return entry
+        # A signed CDN URL that has expired stays expired. Remember it so each
+        # run does not request it again; a refreshed saved URL is tried anew.
+        attempt = hashlib.sha256(slide["image_url"].encode()).hexdigest()[:16]
+        if entry.get("flyer_expired_url") == attempt:
+            return entry
         try:
             image = _download_image(slide["image_url"])
+        except ImageExpired as exc:
+            log.warning("post flyer URL expired for %s: %s", key, exc)
+            stats.bump("flyer_recovery_failed")
+            return {**entry, "flyer_expired_url": attempt}
         except Exception as exc:  # noqa: BLE001 - keep usable OCR if the download fails.
             log.warning("post flyer download failed for %s: %s", key, exc)
             stats.bump("flyer_recovery_failed")
@@ -250,7 +259,7 @@ def _ensure_durable_flyer(record: dict[str, Any], slide: dict[str, Any],
         return entry
     if recovery:
         stats.bump("flyers_recovered")
-    return {**entry, "image_url": durable}
+    return {**{k: v for k, v in entry.items() if k != "flyer_expired_url"}, "image_url": durable}
 
 
 def process_post(record: dict[str, Any], stats: Stats | None = None, *,

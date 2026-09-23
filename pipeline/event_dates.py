@@ -353,9 +353,10 @@ def was_stale_when_posted(
     raw: dict[str, Any],
     starts_at: str,
     ends_at: str | None,
+    grace: timedelta = _STALE_EVENT_GRACE,
 ) -> bool:
     posted_at = local_posted_at(raw)
     if posted_at is None:
         return False
     latest_event_time = datetime.fromisoformat(ends_at or starts_at)
-    return latest_event_time < posted_at - _STALE_EVENT_GRACE
+    return latest_event_time < posted_at - grace

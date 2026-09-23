@@ -19,6 +19,9 @@ _GENERIC_WORDS = frozenset("first second third general body meeting club weekly 
 _TITLE_NOISE = frozenset("the of at and for to a an annual save date".split())
 _TITLE_QUALIFIERS = frozenset("network celebration ucr uc riverside university california".split())
 _EVENT_NOUNS = frozenset("conference fair celebration party reception".split())
+# Words that name how a work is presented, not which work: "Joel Mejia Smith:
+# It's been a while" and "Joel Mejia Smith performance: It's been a while".
+_PRESENTATION_WORDS = frozenset("performance performances screening film live concert recital".split())
 _SHORTCODE_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
 _FEED_PERMALINK = re.compile(r"https?://(?:www\.)?instagram\.com/(?:p|reel|tv)/([A-Za-z0-9_-]{1,11})/?(?:[?#]|$)")
 # Current rows end in _p<media_id>; retired story reshares were keyed on the
@@ -63,7 +66,10 @@ def _same_host(left: dict, right: dict) -> bool:
 
 
 def _place_words(row: dict) -> set[str]:
-    noise = {'the', 'and', 'at', 'of', 'ucr', 'uc', 'riverside', 'university', 'california', 'campus'}
+    # City and state suffixes: "Culver Center of the Arts, Riverside, CA" and
+    # "..., Downtown Riverside" name the same venue.
+    noise = {'the', 'and', 'at', 'of', 'ucr', 'uc', 'riverside', 'university', 'california', 'campus',
+             'ca', 'downtown', 'usa'}
     return set(re.findall(r'[a-z]+|[0-9]+', str(row.get('location') or '').casefold())) - noise
 
 
@@ -251,10 +257,19 @@ def same_event(left: dict, right: dict) -> bool:
                          and len(distinctive) >= 2)
         # Only exact normalized repeats may use the two-word teaser threshold.
         exact_repeat = same_account and a == b and bool(distinctive)
-        return bool(len(common) >= (2 if exact_repeat else 3) and distinctive
-                    and _teaser_titles(a, b, left, right)
-                    and (place == 'same' or venue_pending or exact_repeat)
-                    and (same_host or credited or shared_rsvp))
+        # The timed announcement quotes the teaser's whole title: the teaser
+        # named this occasion before its time (and possibly venue) was out.
+        # Another account also needs the same venue and a distinctive name.
+        teaser_words = a if teaser is left else b
+        quoted = (_title_phrase_in_description(teaser, timed) and (
+            (place == 'same' and len(distinctive) >= 3)
+            or (same_account and not _place_words(teaser) and len(distinctive) >= 2
+                and teaser_words <= (b if teaser is left else a))))
+        return bool(quoted or (
+            len(common) >= (2 if exact_repeat else 3) and distinctive
+            and _teaser_titles(a, b, left, right)
+            and (place == 'same' or venue_pending or exact_repeat)
+            and (same_host or credited or shared_rsvp)))
     ends = {_parse_instant(r.get('ends_at')) for r in (left, right)} - {None}
     if len(ends) > 1:
         return False
@@ -266,9 +281,10 @@ def same_event(left: dict, right: dict) -> bool:
               and (min(len(a), len(b)) >= 2 or (left_title[1] and right_title[1] and bool(common & _EVENT_NOUNS)))
               and (same_account or (len(distinctive) >= 2 and place == 'same')))
     if left.get('content_kind') == 'student_deadline':
-        return bool(equivalent and distinctive and (same_account or (
+        # Two clubs relaying one cutoff with the same registration form.
+        return bool(equivalent and distinctive and (same_account or shared_rsvp or (
             credited and len(distinctive - {'first', 'review', 'date', 'program', 'applications'}) >= 2)))
-    qualified_variant = (a <= b or b <= a) and (a ^ b) <= _TITLE_QUALIFIERS
+    qualified_variant = (a <= b or b <= a) and (a ^ b) <= _TITLE_QUALIFIERS | _PRESENTATION_WORDS
     return bool(repeat or (shared_rsvp and len(common) >= 2)
                 or (len(distinctive) >= 2 and (credited or ((place == 'same' or same_host) and qualified_variant))))
 
@@ -356,35 +372,41 @@ def plan(rows: list[dict], tombstones: list[dict] = (), *, now: datetime | None 
         replacements.update((event_id, winner['id']) for event_id in duplicates)
         if winner.get('is_locked'):
             continue
-        merged = dict(winner)
-        merged['has_free_food'] = any(r.get('has_free_food') for r in live)
-        # A partner's registration can target a restricted audience (e.g.
-        # graduate wristbands). Do not turn it into the organizer's signup.
-        signup_rows = [r for r in live if r['id'] == winner['id'] or
-                       _same_host(winner, r)]
-        if any(r.get('rsvp_required') for r in signup_rows):
-            merged['rsvp_required'] = True
-        hosts = _merged_hosts(winner, live)
-        if len(hosts) > 1 or winner.get('hosts'):
-            merged['hosts'] = hosts
-        for key in ('ends_at', 'rsvp_url', 'image_url', 'location'):
-            if not merged.get(key) or (key == 'location' and _host_venue(winner)):
-                options = {r[key] for r in (signup_rows if key == 'rsvp_url' else live) if r.get(key)
-                           and not (key == 'location' and _host_venue(r))
-                           and not (key == 'ends_at' and _date_only(r) and not _date_only(winner))}
-                if len(options) == 1:
-                    merged[key] = options.pop()
-        # Date-only weekend announcements often omit the end on the campus
-        # listing. The corrected flyers supply the complete final day.
-        start = _parse_instant(winner.get('starts_at'))
-        if start and start.astimezone(PACIFIC_TZ).time().isoformat() == '00:00:00':
-            ends = [_parse_instant(r.get('ends_at')) for r in live]
-            ends = [e for e in ends if e and e > start and e.astimezone(PACIFIC_TZ).time().isoformat() in {'00:00:00', '23:59:59'}]
-            if ends:
-                merged['ends_at'] = max(ends).isoformat()
+        merged = merge_duplicates(winner, live)
         if merged != winner:
             updates.append(merged)
     return updates, tombstoned | replacements.keys(), replacements
+
+
+def merge_duplicates(winner: dict, live: list[dict]) -> dict:
+    """The canonical row with the details its corroborated duplicates add."""
+    merged = dict(winner)
+    merged['has_free_food'] = any(r.get('has_free_food') for r in live)
+    # A partner's registration can target a restricted audience (e.g.
+    # graduate wristbands). Do not turn it into the organizer's signup.
+    signup_rows = [r for r in live if r['id'] == winner['id'] or
+                   _same_host(winner, r)]
+    if any(r.get('rsvp_required') for r in signup_rows):
+        merged['rsvp_required'] = True
+    hosts = _merged_hosts(winner, live)
+    if len(hosts) > 1 or winner.get('hosts'):
+        merged['hosts'] = hosts
+    for key in ('ends_at', 'rsvp_url', 'image_url', 'location'):
+        if not merged.get(key) or (key == 'location' and _host_venue(winner)):
+            options = {r[key] for r in (signup_rows if key == 'rsvp_url' else live) if r.get(key)
+                       and not (key == 'location' and _host_venue(r))
+                       and not (key == 'ends_at' and _date_only(r) and not _date_only(winner))}
+            if len(options) == 1:
+                merged[key] = options.pop()
+    # Date-only weekend announcements often omit the end on the campus
+    # listing. The corrected flyers supply the complete final day.
+    start = _parse_instant(winner.get('starts_at'))
+    if start and start.astimezone(PACIFIC_TZ).time().isoformat() == '00:00:00':
+        ends = [_parse_instant(r.get('ends_at')) for r in live]
+        ends = [e for e in ends if e and e > start and e.astimezone(PACIFIC_TZ).time().isoformat() in {'00:00:00', '23:59:59'}]
+        if ends:
+            merged['ends_at'] = max(ends).isoformat()
+    return merged
 
 
 def _tombstoned_candidates(deleted: set[str]) -> list[dict]:
