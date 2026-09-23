@@ -72,7 +72,16 @@ def _same_place(left: dict, right: dict) -> str:
     a, b = _place_words(left), _place_words(right)
     if not a or not b:
         return 'missing'
-    return 'same' if a <= b or b <= a else 'conflicting'
+    if a <= b or b <= a:
+        return 'same'
+    # An organizer's center name omits its street/room detail. Only treat it
+    # as unspecified for repeat titles from that same account; an actual room
+    # qualifier ("MESC 112") must still conflict with a different room.
+    if (_same_account(left, right)
+            and _title_form(left, right)[0] == _title_form(right, left)[0]
+            and (_host_venue(left) or _host_venue(right))):
+        return 'missing'
+    return 'conflicting'
 
 
 def _date_only(row: dict) -> bool:
@@ -117,7 +126,23 @@ def _host_aliases(row: dict) -> list[list[str]]:
     if trimmed != full:
         aliases.append(trimmed)
     aliases.extend(re.findall(r'[a-z0-9]+', value) for value in re.findall(r'\(([^)]+)\)', host))
+    # Initials alone are not evidence of an alias. Require the account itself
+    # to use those initials (POP + UCR, MESC + UCR), with no extra characters.
+    name = re.sub(r'\([^)]*\)', '', host)
+    handle = re.sub(r'[._]', '', _account(row))
+    for noise in (campus | {'the', 'and'}, campus | {'of', 'the', 'and'}):
+        initials = ''.join(w[0] for w in re.findall(r'[a-z0-9]+', name) if w not in noise)
+        if len(initials) >= 2 and handle in {initials, f'ucr{initials}', f'{initials}ucr'}:
+            aliases.append([initials])
     return [alias for alias in aliases if alias]
+
+
+def _host_venue(row: dict) -> bool:
+    """A center/office name alone, without a building or room qualifier."""
+    host_words = set(re.findall(r'[a-z0-9]+', str(row.get('host') or '').casefold()))
+    return bool(host_words & {'center', 'office', 'library', 'museum'} and any(
+        _place_words(row) == _place_words({'location': ' '.join(alias)})
+        for alias in _host_aliases(row)))
 
 
 def _strip_host_prefix(words: list[str], row: dict) -> tuple[list[str], bool]:
@@ -139,8 +164,16 @@ def _strip_host_prefix(words: list[str], row: dict) -> tuple[list[str], bool]:
 
 
 def _title_form(row: dict, other: dict) -> tuple[set[str], bool]:
-    """Normalize titles once; host aliases must be present in host metadata."""
+    """Normalize titles using aliases corroborated by host/account metadata."""
     words = re.findall(r'[a-z0-9]+', str(row.get('title') or '').casefold())
+    if row.get('content_kind') == 'student_deadline' and 'review' in words:
+        # Preserve the program identity wherever it occurs in a paraphrase.
+        # "First review of applications for X" and "X first review date"
+        # describe the same action; interview/final/round qualifiers remain.
+        tokens = {'signup' if w in {'application', 'applications', 'registration', 'registrations'} else w
+                  for w in words} - _TITLE_NOISE - {'ucr', 'uc', 'riverside', 'university', 'california', 'deadline'}
+        tokens -= {'signup', 'date'}
+        return tokens, False
     matched = False
     for host_row in (row, other):
         words, found = _strip_host_prefix(words, host_row)
@@ -149,7 +182,7 @@ def _title_form(row: dict, other: dict) -> tuple[set[str], bool]:
     year = str(start.astimezone(PACIFIC_TZ).year) if start else ''
     tokens = {'celebration' if w == 'gala' else w for w in words} - _TITLE_NOISE - {year}
     if row.get('content_kind') == 'student_deadline':
-        tokens = {'signup' if w in {'application', 'registration'} else w
+        tokens = {'signup' if w in {'application', 'applications', 'registration', 'registrations'} else w
                   for w in tokens if w != 'deadline'}
     return tokens, matched
 
@@ -233,7 +266,8 @@ def same_event(left: dict, right: dict) -> bool:
               and (min(len(a), len(b)) >= 2 or (left_title[1] and right_title[1] and bool(common & _EVENT_NOUNS)))
               and (same_account or (len(distinctive) >= 2 and place == 'same')))
     if left.get('content_kind') == 'student_deadline':
-        return bool(same_account and equivalent and distinctive)
+        return bool(equivalent and distinctive and (same_account or (
+            credited and len(distinctive - {'first', 'review', 'date', 'program', 'applications'}) >= 2)))
     qualified_variant = (a <= b or b <= a) and (a ^ b) <= _TITLE_QUALIFIERS
     return bool(repeat or (shared_rsvp and len(common) >= 2)
                 or (len(distinctive) >= 2 and (credited or ((place == 'same' or same_host) and qualified_variant))))
@@ -262,7 +296,25 @@ def plan(rows: list[dict], tombstones: list[dict] = (), *, now: datetime | None 
         _parse_instant(other.get('starts_at')) for other in candidates
         if not _date_only(other) and same_event(row, other)
     }) > 1}
+    # An abbreviated conference title or an organizer-only venue must not
+    # bridge two separately specified events. Include tombstones in this check.
+    ambiguous_details = set()
+    for row in candidates:
+        title, alias = _title_form(row, row)
+        vague_title = alias and bool(title) and title <= _EVENT_NOUNS
+        vague_venue = _host_venue(row)
+        if not (vague_title or vague_venue):
+            continue
+        peers = [other for other in candidates if other['id'] != row['id'] and same_event(row, other)]
+        for i, left in enumerate(peers):
+            for right in peers[i + 1:]:
+                a, b = _title_form(left, right)[0], _title_form(right, left)[0]
+                if ((vague_title and not (a <= b or b <= a))
+                        or (vague_venue and _same_place(left, right) == 'conflicting')):
+                    ambiguous_details.add(row['id'])
     def matches_pair(left, right):
+        if {left['id'], right['id']} & ambiguous_details:
+            return False
         if ({left['id'], right['id']} & ambiguous
                 and _parse_instant(left.get('starts_at')) != _parse_instant(right.get('starts_at'))):
             return False
@@ -316,8 +368,9 @@ def plan(rows: list[dict], tombstones: list[dict] = (), *, now: datetime | None 
         if len(hosts) > 1 or winner.get('hosts'):
             merged['hosts'] = hosts
         for key in ('ends_at', 'rsvp_url', 'image_url', 'location'):
-            if not merged.get(key):
+            if not merged.get(key) or (key == 'location' and _host_venue(winner)):
                 options = {r[key] for r in (signup_rows if key == 'rsvp_url' else live) if r.get(key)
+                           and not (key == 'location' and _host_venue(r))
                            and not (key == 'ends_at' and _date_only(r) and not _date_only(winner))}
                 if len(options) == 1:
                     merged[key] = options.pop()
