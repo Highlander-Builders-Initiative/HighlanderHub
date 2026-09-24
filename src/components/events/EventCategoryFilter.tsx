@@ -26,8 +26,6 @@ type EventCategoryFilterProps = {
   category: CategoryValue;
   onCategoryChange: (cat: CategoryValue) => void;
   counts: Map<CategoryValue, number>;
-  /** Counts are still loading: show a placeholder instead of a misleading 0. */
-  countsPending?: boolean;
 };
 
 const GROUP_CLASS = {
@@ -45,7 +43,6 @@ export function EventCategoryFilter({
   category,
   onCategoryChange,
   counts,
-  countsPending = false,
 }: EventCategoryFilterProps) {
   return (
     <div
@@ -83,14 +80,7 @@ export function EventCategoryFilter({
                   active ? "text-muted" : "text-muted/80"
                 }`}
               >
-                {countsPending ? (
-                  <span
-                    aria-hidden
-                    className="skeleton inline-block h-2 w-3.5 rounded-full bg-ink/10 align-middle"
-                  />
-                ) : (
-                  count
-                )}
+                {count}
               </span>
             </button>
           );

@@ -7,14 +7,12 @@ type Props = {
   category: CategoryValue;
   onCategoryChange: (cat: CategoryValue) => void;
   counts: Map<CategoryValue, number>;
-  countsPending?: boolean;
 };
 
 export function EventsLeftRail({
   category,
   onCategoryChange,
   counts,
-  countsPending = false,
 }: Props) {
   return (
     // No panel: the rails sit on the page, so the event cards are the only
@@ -27,7 +25,6 @@ export function EventsLeftRail({
         category={category}
         onCategoryChange={onCategoryChange}
         counts={counts}
-        countsPending={countsPending}
       />
     </div>
   );

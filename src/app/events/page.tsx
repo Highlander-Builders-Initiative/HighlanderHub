@@ -15,6 +15,7 @@ import {
   getEventsPage,
   getEventsSummary,
 } from "@/lib/events";
+import { shareCalendarEvents } from "@/lib/events/share-calendar-events";
 import {
   pacificCalendarGridRange,
   pacificTodayKey,
@@ -49,7 +50,7 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
   const calendarRange = pacificCalendarGridRange(
     startOfPacificMonthKey(pacificTodayKey())
   );
-  const [initialPage, calendarEvents, summary, filterCountSource] =
+  const [initialPage, calendarEvents, summary, countSource] =
     await Promise.all([
       getEventsPage(initialFilters),
       getCalendarEvents({
@@ -59,7 +60,10 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
       getEventsSummary(),
       getEventFilterCountSource(),
     ]);
-  const events = initialPage.events;
+  const { events, filterCountSource } = shareCalendarEvents(calendarEvents, {
+    events: initialPage.events,
+    filterCountSource: countSource,
+  });
 
   return (
     <main className="min-h-screen bg-surface">

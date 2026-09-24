@@ -35,8 +35,9 @@ function LineBar({ line, bar }: { line: string; bar: string }) {
 }
 
 /**
- * Shared by intercepted cards and direct loads. In-app cards hand off their
- * event immediately; refreshes and shared links use the same compact skeleton.
+ * The overlay's loading state for in-app opens. Cards hand off their event,
+ * so it renders at once; anything else (a link with no handoff) shows this
+ * compact skeleton. Direct loads have no loading state: they paint whole.
  */
 function EventModalSkeleton() {
   return (

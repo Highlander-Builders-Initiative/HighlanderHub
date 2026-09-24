@@ -87,6 +87,19 @@ const nextConfig = {
         source: "/:path*",
         headers: securityHeaders,
       },
+      {
+        // Public files default to max-age=0, so every reload revalidated each
+        // club picture before painting it. The pipeline rewrites them in place
+        // (no hash in the name), so cache for a day and refresh in the
+        // background rather than marking them immutable.
+        source: "/club-avatars/:file*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=86400, stale-while-revalidate=604800",
+          },
+        ],
+      },
     ];
   },
   images: {

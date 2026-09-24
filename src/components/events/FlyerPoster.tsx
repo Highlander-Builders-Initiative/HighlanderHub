@@ -6,7 +6,12 @@ import { EventFlyerImage } from "@/components/events/EventFlyerImage";
 type FlyerPosterProps = {
   src: string;
   alt: string;
-  sizes: string;
+  /** Rendered widths, for a flyer whose size follows the viewport. */
+  sizes?: string;
+  /** Or, for a fixed slot, its widest rendered width in CSS px. The browser
+   *  then chooses between a 1x and a 2x file, instead of every width in the
+   *  image config written into each card's HTML. */
+  width?: number;
   /** Edge, fill and radius. Bounds come from --flyer-max-w / --flyer-max-h
    *  on the slot around it. */
   className?: string;
@@ -27,7 +32,7 @@ const ratioStyle = (ratio: number | null) =>
   ratio ? ({ "--flyer-ratio": ratio } as CSSProperties) : undefined;
 
 /**
- * A flyer shown whole, at its own shape (see .flyer-poster in globals.css).
+ * A flyer shown whole, at its own shape (see .flyer-fit in globals.css).
  * The caller's slot keeps rows and rails consistent; the flyer is never
  * cropped to fit it.
  */
@@ -35,6 +40,7 @@ export function FlyerPoster({
   src,
   alt,
   sizes,
+  width,
   className = "",
   priority,
   reserveSpace = false,
@@ -58,11 +64,12 @@ export function FlyerPoster({
   // flyer fails, so a dead link never reads as still loading.
   const pending = loaded?.src !== src && failedSrc !== src;
 
-  // The frame (className) is drawn on this box, which takes the flyer's shape;
-  // the image fills it and fades in over the placeholder.
+  // The frame (className) is drawn on this box, which the image sizes to the
+  // flyer's shape; a browser-mounted image fades in over the placeholder.
+  // The known ratio only shapes the placeholder and narrows reel covers.
   const image = (
     <span
-      className={`flyer-poster relative block overflow-hidden ${
+      className={`flyer-fit relative block overflow-hidden ${
         pending ? "skeleton" : ""
       } ${className}`}
       style={ratioStyle(ratio)}
@@ -70,11 +77,10 @@ export function FlyerPoster({
       <EventFlyerImage
         src={src}
         alt={alt}
-        sizes={sizes}
-        width={1000}
-        height={1250}
+        sizes={width ? undefined : sizes}
+        width={width ?? 1000}
+        height={Math.round((width ?? 1000) * 1.25)}
         priority={priority}
-        className="absolute inset-0 h-full w-full object-contain"
         onLoad={(img) => {
           const next =
             img.naturalWidth && img.naturalHeight
