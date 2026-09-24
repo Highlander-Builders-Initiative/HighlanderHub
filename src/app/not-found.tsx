@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Footer } from "@/components/layout/Footer";
 import { Masthead } from "@/components/layout/Masthead";
+import { EventsFeedLink } from "@/components/events/EventsFeedLink";
 
 export default function NotFound() {
   return (
@@ -19,12 +20,12 @@ export default function NotFound() {
           </p>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Link
+            <EventsFeedLink
               href="/events"
               className="interactive-focus inline-flex min-h-12 items-center justify-center rounded-lg bg-ink px-6 py-3 text-sm font-medium text-canvas transition-opacity hover:opacity-85"
             >
               Browse events
-            </Link>
+            </EventsFeedLink>
             <Link
               href="/"
               className="interactive-focus inline-flex min-h-12 items-center justify-center rounded-lg border border-ink/15 px-6 py-3 text-sm font-medium text-ink transition-colors hover:border-ink"
