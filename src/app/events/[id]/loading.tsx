@@ -1,8 +1,0 @@
-import { EventModalDetailLoading } from "@/components/events/EventDetailLoading";
-
-/**
- * The persistent layout owns the dialog; loading only replaces its contents.
- */
-export default function Loading() {
-  return <EventModalDetailLoading />;
-}
