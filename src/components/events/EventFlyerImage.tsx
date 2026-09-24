@@ -26,6 +26,9 @@ const subscribe = () => () => {};
 // again finds it cached, so it skips the fade: a remount, like the overlay
 // swapping its instant view for the server's, would otherwise blink.
 const shownFlyers = new Set<string>();
+// The feed's optimized thumbnail can paint immediately while a detail view
+// downloads a larger variant, especially on high-density phone screens.
+const loadedFlyers = new Map<string, string>();
 
 /**
  * Whether this flyer fades in when it arrives, decided once at mount. Flyers
@@ -66,12 +69,28 @@ export function EventFlyerImage({
   const shownKey = `${sizes ?? width ?? ""} ${src}`;
   const fadesIn = useFadesIn(shownKey);
   const [shownSrc, setShownSrc] = useState<string | null>(null);
-  const hidden = fadesIn && shownSrc !== src;
+  const previewSrc = useSyncExternalStore(
+    subscribe,
+    () => loadedFlyers.get(src) ?? null,
+    () => null
+  );
+  const loading = fadesIn && shownSrc !== src;
+  const hidden = loading && !previewSrc;
+  const imageStyle: CSSProperties | undefined = loading && previewSrc
+    ? {
+        ...style,
+        backgroundImage: `url(${JSON.stringify(previewSrc)})`,
+        backgroundSize: "contain",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+      }
+    : style;
   const fadeClassName = `transition-opacity duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]${
     hidden ? " opacity-0" : ""
   }`;
   const handleLoad = (img: HTMLImageElement) => {
     shownFlyers.add(shownKey);
+    loadedFlyers.set(src, img.currentSrc || img.src);
     setShownSrc(src);
     onLoad?.(img);
   };
@@ -86,7 +105,7 @@ export function EventFlyerImage({
         height={fill ? undefined : height}
         sizes={sizes}
         className={`${className ?? ""} ${fadeClassName}`.trim()}
-        style={style}
+        style={imageStyle}
         priority={priority}
         onLoad={(event) => handleLoad(event.currentTarget)}
         onError={onError}
@@ -121,7 +140,7 @@ export function EventFlyerImage({
       width={fill ? undefined : width}
       height={fill ? undefined : height}
       className={imgClassName}
-      style={style}
+      style={imageStyle}
       loading={priority ? "eager" : "lazy"}
       decoding="async"
       onLoad={(event) => reportLoad(event.currentTarget)}
