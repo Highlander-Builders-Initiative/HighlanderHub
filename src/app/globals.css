@@ -370,6 +370,12 @@ body {
     animation: skeleton-shimmer 1.6s linear infinite;
     pointer-events: none;
   }
+  /* A flyer's slot waits a beat before its first sweep, so a flyer that is
+     already cached never flashes one, and slots whose shape script is still
+     settling (a reel cover's, before hydration) stay still. */
+  .flyer-fit.skeleton::before {
+    animation-delay: 400ms;
+  }
 }
 
 /* Reveal-on-scroll: hidden by default, played when the JS hook flips
@@ -474,15 +480,41 @@ body {
 
 /* ----- Whole-flyer poster -----
    Club flyers come in every Instagram post shape (4:5, 3:4, 1:1, 9:16 reel
-   covers, landscape), so none is cropped to a box. The poster takes its own
-   ratio, contained within --flyer-max-w x --flyer-max-h (set by the slot).
-   Until FlyerPoster knows the ratio it holds Instagram's portrait 4:5, so
-   the space is reserved and a flyer that paints early still shows whole. */
+   covers, landscape), so none is cropped to a box. Both boxes below fit
+   within --flyer-max-w x --flyer-max-h (set by the slot).
+
+   .flyer-poster is a box at --flyer-ratio, Instagram's portrait 4:5 until
+   the shape is known: loading placeholders, and space held for a flyer.
+
+   .flyer-fit is the flyer's own frame, sized by its image. Until the image
+   arrives, the min-width and aspect-ratio hold the 4:5 placeholder; once it
+   has a shape the browser sizes it, with no script. So a flyer in the
+   server's HTML paints at its own shape on first paint, and a reload shows
+   the page as it was instead of placeholders snapping to shape on hydrate.
+   Shapes narrower than 4:5 (reel covers) keep the placeholder's width until
+   FlyerPoster sets their --flyer-ratio; --flyer-anchor pins the image to the
+   side the slot pins the frame to, so the image never moves when it does. */
 .flyer-poster {
   --flyer-ratio: 0.8;
   width: min(var(--flyer-max-w), var(--flyer-max-h) * var(--flyer-ratio));
   height: min(var(--flyer-max-h), var(--flyer-max-w) / var(--flyer-ratio));
+}
+.flyer-fit {
+  --flyer-ratio: 0.8;
+  width: fit-content;
+}
+.flyer-fit > img {
+  /* Positioned, so it paints over the .skeleton shimmer. */
+  position: relative;
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: var(--flyer-max-w);
+  max-height: var(--flyer-max-h);
+  min-width: min(var(--flyer-max-w), var(--flyer-max-h) * var(--flyer-ratio));
+  aspect-ratio: auto var(--flyer-ratio);
   object-fit: contain;
+  object-position: var(--flyer-anchor, center);
 }
 
 /* ----- Flyer marquee focal spotlight -----

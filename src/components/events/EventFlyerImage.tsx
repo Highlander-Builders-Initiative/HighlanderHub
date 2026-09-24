@@ -21,10 +21,10 @@ type EventFlyerImageProps = {
 
 const subscribe = () => () => {};
 
-// Flyers this session has shown, by source and rendered size (which picks the
-// optimized file). Showing one again finds it cached, so it skips the fade: a
-// remount, like the overlay swapping its instant view for the server's, would
-// otherwise blink.
+// Flyers this session has shown, by source and rendered size (`sizes`, or the
+// fixed width when there is none), which picks the optimized file. Showing one
+// again finds it cached, so it skips the fade: a remount, like the overlay
+// swapping its instant view for the server's, would otherwise blink.
 const shownFlyers = new Set<string>();
 
 /**
@@ -63,7 +63,7 @@ export function EventFlyerImage({
   onLoad,
   onError,
 }: EventFlyerImageProps) {
-  const shownKey = `${sizes ?? ""} ${src}`;
+  const shownKey = `${sizes ?? width ?? ""} ${src}`;
   const fadesIn = useFadesIn(shownKey);
   const [shownSrc, setShownSrc] = useState<string | null>(null);
   const hidden = fadesIn && shownSrc !== src;

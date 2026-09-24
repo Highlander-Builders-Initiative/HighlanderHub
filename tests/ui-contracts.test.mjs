@@ -166,7 +166,7 @@ test("app routes expose loading UI while server data resolves", () => {
 });
 
 test("event detail loading renders handed-off events inside the card layout", () => {
-  const loader = read("src/app/events/[id]/loading.tsx");
+  const loader = read("src/app/@modal/(.)events/[id]/loading.tsx");
   const loading = read("src/components/events/EventDetailLoading.tsx");
   const view = read("src/components/events/EventDetailView.tsx");
   const page = read("src/app/events/[id]/page.tsx");
@@ -240,25 +240,38 @@ test("event cards use the same overlay on soft navigation and direct loads", () 
   assert.doesNotMatch(modalPage, /generateMetadata/);
 });
 
-test("/events loading mirrors the live shell and skeletons only the feed", () => {
-  const loader = read("src/app/events/loading.tsx");
-  const skeleton = read("src/components/events/EventsBrowserSkeleton.tsx");
-  const browser = read("src/components/events/EventsBrowser.tsx");
+test("/events and direct event loads paint whole, with no streamed skeleton", () => {
+  // A route loading state is a Suspense fallback, and on a document load the
+  // server streams it first, so every refresh flashed skeletons over data the
+  // page was about to have. Direct loads wait for the data and paint once.
+  assert.equal(existsSync(sourceFile("src/app/events/loading.tsx")), false);
+  assert.equal(existsSync(sourceFile("src/app/events/[id]/loading.tsx")), false);
+  const detailLayout = read("src/app/events/[id]/layout.tsx");
+  assert.match(detailLayout, /<EventsPage searchParams=/);
+  assert.doesNotMatch(detailLayout, /Suspense/);
 
-  // Same chrome as the real page, not the generic interstitial.
-  assert.match(loader, /EventsBrowserSkeleton/);
-  assert.doesNotMatch(loader, /RouteLoadingPage/);
-  assert.match(loader, /<Masthead position="static" variant="solid" \/>/);
+  // In-app opens still get an instant overlay (see the @modal loading route).
+  assert.equal(existsSync(sourceFile("src/app/@modal/(.)events/[id]/loading.tsx")), true);
+});
 
-  // Fixed furniture renders for real: topics rail and calendar rail.
-  assert.match(skeleton, /EventsLeftRail/);
-  assert.match(skeleton, /EventsRightRail/);
-  assert.match(skeleton, /countsPending/);
+test("flyers take their shape from the image, not from script", () => {
+  const css = read("src/app/globals.css");
+  const poster = read("src/components/events/FlyerPoster.tsx");
+  const card = read("src/components/events/EventCard.tsx");
 
-  // Same three-column grid as EventsBrowser, so nothing reflows on hydrate.
-  const grid = /lg:grid-cols-\[208px_minmax\(0,1fr\)_312px\]/;
-  assert.match(skeleton, grid);
-  assert.match(browser, grid);
+  // The frame shrink-wraps its image, which holds a 4:5 placeholder until it
+  // loads and then takes its own shape; server HTML paints at its final shape.
+  assert.match(css, /\.flyer-fit \{[^}]*width: fit-content/);
+  assert.match(css, /\.flyer-fit > img \{[^}]*aspect-ratio: auto var\(--flyer-ratio\)/);
+  assert.match(css, /\.flyer-fit > img \{[^}]*min-width: min\(var\(--flyer-max-w\), var\(--flyer-max-h\) \* var\(--flyer-ratio\)\)/);
+  assert.match(css, /\.flyer-fit > img \{[^}]*position: relative/);
+  assert.match(poster, /flyer-fit relative block/);
+  assert.doesNotMatch(poster, /absolute inset-0/);
+
+  // Reel covers narrow once their ratio is known; the image stays where the
+  // slot pins the frame, so that never moves it.
+  assert.match(css, /object-position: var\(--flyer-anchor, center\)/);
+  assert.match(card, /\[--flyer-anchor:right_top\]/);
 });
 
 test("loading placeholders shimmer and flyers fade in over them", () => {
@@ -274,10 +287,8 @@ test("loading placeholders shimmer and flyers fade in over them", () => {
 
   // Every skeleton bar and stubbed flyer slot carries it.
   for (const path of [
-    "src/components/events/EventsBrowserSkeleton.tsx",
     "src/components/events/EventDetailLoading.tsx",
     "src/components/ui/RouteLoadingPage.tsx",
-    "src/components/events/EventCategoryFilter.tsx",
   ]) {
     assert.match(read(path), /\bskeleton\b[^"`]*rounded-full bg-ink\/10/);
   }

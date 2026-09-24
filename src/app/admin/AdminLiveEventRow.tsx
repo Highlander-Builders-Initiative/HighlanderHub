@@ -48,7 +48,7 @@ export function AdminLiveEventRow({
             <FlyerPoster
               src={campusEvent.imageUrl!}
               alt={`${campusEvent.title} flyer`}
-              sizes="80px"
+              width={80}
               className="rounded bg-ink/[0.05] shadow-[0_1px_2px_rgba(15,17,21,0.06),0_3px_8px_-2px_rgba(15,17,21,0.08)] ring-1 ring-ink/10"
               onError={() => setImageBroken(true)}
             />

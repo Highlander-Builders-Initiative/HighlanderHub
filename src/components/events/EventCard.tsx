@@ -177,11 +177,11 @@ function EventCardComponent({ event, loadedCount }: EventCardProps) {
          padding and gap. So it grows from 80x100 on the narrowest phones to
          the sm+ size, 120x150, from a 383px screen up. */}
       {showImage && (
-        <div className="flex h-[var(--flyer-max-h)] w-[var(--flyer-max-w)] shrink-0 items-start justify-end [--flyer-max-h:calc(var(--flyer-max-w)*1.25)] [--flyer-max-w:clamp(80px,100vw_-_263px,120px)]">
+        <div className="flex h-[var(--flyer-max-h)] w-[var(--flyer-max-w)] shrink-0 items-start justify-end [--flyer-anchor:right_top] [--flyer-max-h:calc(var(--flyer-max-w)*1.25)] [--flyer-max-w:clamp(80px,100vw_-_263px,120px)]">
           <FlyerPoster
             src={event.imageUrl!}
             alt={eventFlyerAlt(event)}
-            sizes="120px"
+            width={120}
             className="rounded-lg bg-ink/[0.05] ring-1 ring-ink/10"
             onError={() => setImageBroken(true)}
           />
@@ -236,7 +236,7 @@ function EventCompactRowComponent({ event, loadedCount }: EventCardProps) {
           <FlyerPoster
             src={event.imageUrl!}
             alt={eventFlyerAlt(event)}
-            sizes="40px"
+            width={40}
             className="rounded-md bg-ink/[0.05] ring-1 ring-ink/10"
             onError={() => setImageBroken(true)}
           />

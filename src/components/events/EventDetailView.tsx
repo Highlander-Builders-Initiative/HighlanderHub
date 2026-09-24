@@ -40,10 +40,10 @@ export const EVENT_DETAIL_CONTAINER_CLASS =
   "relative mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6";
 export const EVENT_DETAIL_FLYER_GRID_CLASS =
   "mt-6 grid grid-cols-1 gap-10 md:mt-10 md:grid-cols-[minmax(0,18rem)_minmax(0,1fr)] md:gap-12 lg:grid-cols-[minmax(0,21rem)_minmax(0,1fr)] lg:gap-14";
-// Rails bound the flyer (see .flyer-poster) to their width, with tall reel
-// covers capped above the fold.
+// Rails bound the flyer (see .flyer-fit) to their width, with tall reel
+// covers capped above the fold, and pin it to their left edge.
 export const EVENT_DETAIL_ASIDE_CLASS =
-  "hidden space-y-6 md:sticky md:top-24 md:block md:self-start [--flyer-max-h:min(32rem,70dvh)] [--flyer-max-w:18rem] lg:[--flyer-max-w:21rem]";
+  "hidden space-y-6 md:sticky md:top-24 md:block md:self-start [--flyer-anchor:left_top] [--flyer-max-h:min(32rem,70dvh)] [--flyer-max-w:18rem] lg:[--flyer-max-w:21rem]";
 // The flyer is shown whole at its own shape, so the frame (edge, hairline) is
 // drawn on the image itself rather than on a fixed crop box; flat, as on the
 // feed. Its fill is the placeholder until the image paints over it.
@@ -66,7 +66,7 @@ export const EVENT_MODAL_CONTAINER_CLASS =
 export const EVENT_MODAL_FLYER_GRID_CLASS =
   "mt-6 grid grid-cols-1 gap-8 md:mt-8 md:grid-cols-[minmax(0,15rem)_minmax(0,1fr)] md:gap-10";
 export const EVENT_MODAL_ASIDE_CLASS =
-  "hidden space-y-6 md:sticky md:top-8 md:block md:self-start [--flyer-max-h:min(32rem,70dvh)] [--flyer-max-w:15rem]";
+  "hidden space-y-6 md:sticky md:top-8 md:block md:self-start [--flyer-anchor:left_top] [--flyer-max-h:min(32rem,70dvh)] [--flyer-max-w:15rem]";
 // Sticky, not fixed: the panel's open animation leaves a transform on it,
 // which would make a fixed bar position against the panel anyway.
 export const EVENT_MODAL_MOBILE_BAR_CLASS =
