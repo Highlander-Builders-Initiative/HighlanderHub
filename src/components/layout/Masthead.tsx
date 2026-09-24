@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { SITE_NAV_LINKS, isNavLinkActive } from "@/lib/site-nav";
+import { EventsFeedLink } from "@/components/events/EventsFeedLink";
 
 // Current page: ink with an underline (DESIGN.md's underline-from-active).
 // The rest sit a step quieter so the marker reads at a glance. Links sit inline
@@ -26,6 +27,9 @@ type MastheadProps = {
    * because no rail exists below the lg breakpoint.
    */
   hideNavOnDesktop?: boolean;
+  /** Mark the nav as if on this path. The /events skeleton shows before the
+   *  URL changes, and should already read as the feed. */
+  activePath?: string;
 };
 
 export function Masthead({
@@ -33,8 +37,10 @@ export function Masthead({
   position = "sticky",
   variant = "glass",
   hideNavOnDesktop = false,
+  activePath,
 }: MastheadProps) {
-  const pathname = usePathname();
+  const currentPath = usePathname();
+  const pathname = activePath ?? currentPath;
   const [hidden, setHidden] = useState(false);
   const lastY = useRef(0);
   const canHide = position === "sticky" && hideOnScroll;
@@ -103,15 +109,16 @@ export function Masthead({
         >
           {SITE_NAV_LINKS.map((link) => {
             const active = isNavLinkActive(link.href, pathname);
+            const NavLink = link.href === "/events" ? EventsFeedLink : Link;
             return (
-              <Link
+              <NavLink
                 key={link.href}
                 href={link.href}
                 aria-current={active ? "page" : undefined}
                 className={`${NAV_LINK_CLASS} ${active ? NAV_LINK_ACTIVE_CLASS : NAV_LINK_IDLE_CLASS}`}
               >
                 {link.label}
-              </Link>
+              </NavLink>
             );
           })}
         </nav>

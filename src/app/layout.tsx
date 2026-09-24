@@ -9,6 +9,7 @@ import {
   SITE_TITLE,
   SITE_URL,
 } from "@/lib/seo";
+import { EventsNavSkeleton } from "@/components/events/EventsNavSkeleton";
 import "./globals.css";
 
 const bricolage = Bricolage_Grotesque({
@@ -69,6 +70,7 @@ export default function RootLayout({
       <body>
         {children}
         {modal}
+        <EventsNavSkeleton />
         <Analytics />
       </body>
     </html>

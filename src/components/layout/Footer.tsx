@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { FaDiscord, FaInstagram, FaLinkedin } from "react-icons/fa";
 import { HbiLink } from "@/components/analytics/HbiLink";
+import { EventsFeedLink } from "@/components/events/EventsFeedLink";
 import { HBI_ABOUT_URL, HBI_INSTAGRAM_URL } from "@/lib/hbi";
 
 const socialLinks = [
@@ -49,16 +50,19 @@ export function Footer() {
             Site
           </p>
           <ul className="mt-4 space-y-2 text-sm">
-            {siteLinks.map((l) => (
-              <li key={l.href}>
-                <Link
-                  href={l.href}
-                  className="interactive-focus text-ink/80 transition-colors hover:text-ink"
-                >
-                  {l.label}
-                </Link>
-              </li>
-            ))}
+            {siteLinks.map((l) => {
+              const SiteLink = l.href === "/events" ? EventsFeedLink : Link;
+              return (
+                <li key={l.href}>
+                  <SiteLink
+                    href={l.href}
+                    className="interactive-focus text-ink/80 transition-colors hover:text-ink"
+                  >
+                    {l.label}
+                  </SiteLink>
+                </li>
+              );
+            })}
           </ul>
         </nav>
 

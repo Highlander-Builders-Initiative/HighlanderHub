@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Masthead } from "@/components/layout/Masthead";
 import { Footer } from "@/components/layout/Footer";
+import { EventsFeedLink } from "@/components/events/EventsFeedLink";
 import { FlyerMarquee } from "@/components/home/FlyerMarquee";
 import { CampusSkyline } from "@/components/home/CampusSkyline";
 import { HeroHighlightCopy } from "@/components/home/hero-highlights";
@@ -97,7 +98,7 @@ export default async function HomePage() {
             </p>
 
             <div className="mt-6 md:mt-8">
-              <Link
+              <EventsFeedLink
                 href="/events"
                 className="interactive-focus group inline-flex min-h-12 items-center gap-2 rounded-lg bg-ink px-6 py-3 text-sm font-medium text-canvas transition-opacity hover:opacity-85"
               >
@@ -114,7 +115,7 @@ export default async function HomePage() {
                 >
                   <path d="M3 8h10M9 4l4 4-4 4" />
                 </svg>
-              </Link>
+              </EventsFeedLink>
           </div>
           </div>
         </div>
@@ -125,12 +126,12 @@ export default async function HomePage() {
         <div className="pt-4 pb-12 md:pt-6 md:pb-16">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
             <p className="text-[13px] text-muted">Now on the wall</p>
-            <Link
+            <EventsFeedLink
               href={seeAll.href}
               className="interactive-focus inline-flex min-h-11 items-center text-[13px] font-medium text-ink underline decoration-ink/25 underline-offset-4 transition-colors hover:decoration-ink"
             >
               {seeAll.label}
-            </Link>
+            </EventsFeedLink>
           </div>
           <FlyerMarquee events={events} />
         </div>

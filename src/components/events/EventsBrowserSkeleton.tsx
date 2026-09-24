@@ -7,10 +7,12 @@ import { pacificTodayKey, startOfPacificMonthKey } from "@/lib/dates";
 import type { CategoryValue } from "./events-filters";
 
 /**
- * Route-level placeholder for /events. The page chrome that does not depend on
- * data — masthead, Topics rail, mini calendar, the day heading, the search bar —
- * renders for real and in its final position, so navigating to
- * /events never shows a layout that then rearranges itself. Only the feed
+ * Placeholder for /events while an in-app link to it waits on its data
+ * (EventsNavSkeleton). Direct loads never show it: they paint whole. The page
+ * chrome that does not depend on data — masthead, Topics rail, mini calendar,
+ * the day heading, the search bar — renders for real and in its final
+ * position, so navigating to /events never shows a layout that then
+ * rearranges itself. Only the feed
  * column's event rows are stubbed, because those are the part still in flight.
  *
  * Rails are inert (pointer-events-none) rather than absent: a control that

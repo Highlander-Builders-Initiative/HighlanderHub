@@ -254,6 +254,44 @@ test("/events and direct event loads paint whole, with no streamed skeleton", ()
   assert.equal(existsSync(sourceFile("src/app/@modal/(.)events/[id]/loading.tsx")), true);
 });
 
+test("in-app links to /events open it the way Luma does: prefetched, else its skeleton at once", () => {
+  const link = read("src/components/events/EventsFeedLink.tsx");
+  const overlay = read("src/components/events/EventsNavSkeleton.tsx");
+  const css = read("src/app/globals.css");
+  const skeleton = read("src/components/events/EventsBrowserSkeleton.tsx");
+  const browser = read("src/components/events/EventsBrowser.tsx");
+
+  // The bare feed is prefetched in full from anywhere but the feed itself, so
+  // a click usually lands at once without a skeleton.
+  assert.match(link, /prefetch=\{!onFeed && href === "\/events" \? true : undefined\}/);
+
+  // Otherwise the link's pending status holds the feed's skeleton up, and it
+  // lifts in the same commit as the page (a layout effect, not a timer).
+  assert.match(link, /useLinkStatus\(\)/);
+  assert.match(link, /useLayoutEffect\(\(\) => \{\s*if \(pending\) return holdEventsNavSkeleton\(\);/);
+  assert.match(read("src/app/layout.tsx"), /<EventsNavSkeleton \/>/);
+  assert.match(overlay, /useEventsNavPending\(\)/);
+  assert.match(overlay, /<Masthead position="static" variant="solid" activePath="\/events" \/>/);
+  assert.match(overlay, /<EventsBrowserSkeleton \/>/);
+
+  // A beat before it shows, so a near-instant navigation never flashes it.
+  assert.match(css, /\.nav-skeleton \{[^}]*animation: nav-skeleton-in [^;]* 100ms both/);
+
+  // Every in-app way onto the feed uses it.
+  assert.match(read("src/components/layout/Masthead.tsx"), /link\.href === "\/events" \? EventsFeedLink : Link/);
+  assert.match(read("src/components/layout/Footer.tsx"), /l\.href === "\/events" \? EventsFeedLink : Link/);
+  assert.equal((read("src/app/page.tsx").match(/<EventsFeedLink/g) ?? []).length, 2);
+  assert.match(read("src/app/not-found.tsx"), /<EventsFeedLink\s+href="\/events"/);
+
+  // Same shell as the real page, so when it lands only the rows change.
+  assert.match(skeleton, /EventsLeftRail/);
+  assert.match(skeleton, /EventsRightRail/);
+  assert.match(skeleton, /countsPending/);
+  const grid = /lg:grid-cols-\[208px_minmax\(0,1fr\)_312px\]/;
+  assert.match(skeleton, grid);
+  assert.match(browser, grid);
+});
+
 test("flyers take their shape from the image, not from script", () => {
   const css = read("src/app/globals.css");
   const poster = read("src/components/events/FlyerPoster.tsx");
@@ -287,8 +325,10 @@ test("loading placeholders shimmer and flyers fade in over them", () => {
 
   // Every skeleton bar and stubbed flyer slot carries it.
   for (const path of [
+    "src/components/events/EventsBrowserSkeleton.tsx",
     "src/components/events/EventDetailLoading.tsx",
     "src/components/ui/RouteLoadingPage.tsx",
+    "src/components/events/EventCategoryFilter.tsx",
   ]) {
     assert.match(read(path), /\bskeleton\b[^"`]*rounded-full bg-ink\/10/);
   }

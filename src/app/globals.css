@@ -353,6 +353,14 @@ body {
     transform: translateX(1040px);
   }
 }
+@keyframes nav-skeleton-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
 @layer components {
   .skeleton {
     position: relative;
@@ -375,6 +383,13 @@ body {
      settling (a reel cover's, before hydration) stay still. */
   .flyer-fit.skeleton::before {
     animation-delay: 400ms;
+  }
+  /* The /events skeleton shown while an in-app link waits (EventsNavSkeleton)
+     holds off a beat, then fades in, so a navigation that is nearly instant
+     (a prefetched feed) never flashes it. Fill mode keeps it hidden until
+     then. */
+  .nav-skeleton {
+    animation: nav-skeleton-in 150ms cubic-bezier(0.16, 1, 0.3, 1) 100ms both;
   }
 }
 
