@@ -22,7 +22,7 @@ function eventIdFromPath(pathname: string | null): string | null {
 }
 
 function Bar({ className }: { className: string }) {
-  return <span aria-hidden className={`block rounded-full bg-ink/10 ${className}`} />;
+  return <span aria-hidden className={`skeleton block rounded-full bg-ink/10 ${className}`} />;
 }
 
 /** A bar vertically centered in a box sized to one line of the real text. */
@@ -47,7 +47,7 @@ function EventModalSkeleton() {
 
       {/* The same 4:5 placeholder the real flyer holds until it loads. */}
       <div className={EVENT_DETAIL_MOBILE_FLYER_CLASS}>
-        <div className={`flyer-poster ${EVENT_DETAIL_FLYER_CLASS}`} />
+        <div className={`flyer-poster skeleton ${EVENT_DETAIL_FLYER_CLASS}`} />
       </div>
 
       <div className="flex flex-wrap items-center gap-2 md:pr-12">
@@ -68,7 +68,7 @@ function EventModalSkeleton() {
 
       <div className={EVENT_MODAL_FLYER_GRID_CLASS}>
         <div className={EVENT_MODAL_ASIDE_CLASS}>
-          <div className={`flyer-poster ${EVENT_DETAIL_FLYER_CLASS}`} />
+          <div className={`flyer-poster skeleton ${EVENT_DETAIL_FLYER_CLASS}`} />
         </div>
 
         <div className="min-w-0">

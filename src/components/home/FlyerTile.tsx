@@ -59,6 +59,7 @@ export function FlyerTile({
   const router = useRouter();
   const [imageBroken, setImageBroken] = useState(false);
   const [pinned, setPinned] = useState(false);
+  const [loaded, setLoaded] = useState(false);
   const showImage = !!event.imageUrl && !imageBroken;
   const href = `/events/${event.id}`;
 
@@ -98,7 +99,10 @@ export function FlyerTile({
       aria-hidden={decorative || undefined}
       tabIndex={decorative ? -1 : undefined}
       data-event-id={event.id}
-      className={`interactive-focus card-hover group relative block overflow-hidden rounded-xl border border-ink/15 bg-highlander/[0.07] transition-[filter,opacity,border-color] duration-300 hover:border-ink/30 ${aspectClassName} ${className}`}
+      // The tile's tint shimmers until the flyer paints over it.
+      className={`interactive-focus card-hover group relative block overflow-hidden rounded-xl border border-ink/15 bg-highlander/[0.07] transition-[filter,opacity,border-color] duration-300 hover:border-ink/30 ${
+        showImage && !loaded ? "skeleton" : ""
+      } ${aspectClassName} ${className}`}
     >
       {showImage ? (
         <EventFlyerImage
@@ -113,6 +117,7 @@ export function FlyerTile({
               : "absolute inset-0 h-full w-full object-cover"
           }
           onLoad={(img) => {
+            setLoaded(true);
             const tile = img.parentElement;
             if (!tile?.clientHeight || !img.naturalHeight) return;
             const flyerRatio = img.naturalWidth / img.naturalHeight;

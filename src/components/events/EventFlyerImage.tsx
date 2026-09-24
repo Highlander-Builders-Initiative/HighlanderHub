@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import type { CSSProperties } from "react";
+import { type CSSProperties, useState, useSyncExternalStore } from "react";
 import { isOptimizableFlyerHost } from "@/lib/events/flyer-hosts";
 
 type EventFlyerImageProps = {
@@ -18,6 +18,32 @@ type EventFlyerImageProps = {
   onLoad?: (img: HTMLImageElement) => void;
   onError?: () => void;
 };
+
+const subscribe = () => () => {};
+
+// Flyers this session has shown, by source and rendered size (which picks the
+// optimized file). Showing one again finds it cached, so it skips the fade: a
+// remount, like the overlay swapping its instant view for the server's, would
+// otherwise blink.
+const shownFlyers = new Set<string>();
+
+/**
+ * Whether this flyer fades in when it arrives, decided once at mount. Flyers
+ * mounted in the browser (a client navigation, the next page of the feed,
+ * the event overlay) stay hidden over their shimmering slot until loaded,
+ * then fade in, so they never paint in strips. Flyers in the server's HTML
+ * show as soon as they paint: hiding them until hydration would hold back
+ * the page's largest image on JS.
+ */
+function useFadesIn(key: string) {
+  const mountedInBrowser = useSyncExternalStore(
+    subscribe,
+    () => true,
+    () => false
+  );
+  const [fadesIn] = useState(() => mountedInBrowser && !shownFlyers.has(key));
+  return fadesIn;
+}
 
 /**
  * Optimizes flyers from allowlisted CDNs via next/image; serves arbitrary
@@ -37,6 +63,19 @@ export function EventFlyerImage({
   onLoad,
   onError,
 }: EventFlyerImageProps) {
+  const shownKey = `${sizes ?? ""} ${src}`;
+  const fadesIn = useFadesIn(shownKey);
+  const [shownSrc, setShownSrc] = useState<string | null>(null);
+  const hidden = fadesIn && shownSrc !== src;
+  const fadeClassName = `transition-opacity duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]${
+    hidden ? " opacity-0" : ""
+  }`;
+  const handleLoad = (img: HTMLImageElement) => {
+    shownFlyers.add(shownKey);
+    setShownSrc(src);
+    onLoad?.(img);
+  };
+
   if (isOptimizableFlyerHost(src)) {
     return (
       <Image
@@ -46,25 +85,25 @@ export function EventFlyerImage({
         width={fill ? undefined : width}
         height={fill ? undefined : height}
         sizes={sizes}
-        className={className}
+        className={`${className ?? ""} ${fadeClassName}`.trim()}
         style={style}
         priority={priority}
-        onLoad={onLoad ? (event) => onLoad(event.currentTarget) : undefined}
+        onLoad={(event) => handleLoad(event.currentTarget)}
         onError={onError}
       />
     );
   }
 
-  const imgClassName = fill
-    ? `absolute inset-0 h-full w-full ${className ?? ""}`.trim()
-    : className;
+  const imgClassName = `${fill ? "absolute inset-0 h-full w-full " : ""}${
+    className ?? ""
+  } ${fadeClassName}`.trim();
 
   // React re-attaches an inline ref on every render, so report each loaded
   // source once, as next/image does.
   const reportLoad = (img: HTMLImageElement) => {
     if (reportedSrc.get(img) === img.currentSrc) return;
     reportedSrc.set(img, img.currentSrc);
-    onLoad?.(img);
+    handleLoad(img);
   };
 
   return (

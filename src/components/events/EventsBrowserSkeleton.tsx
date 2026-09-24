@@ -15,7 +15,8 @@ import type { CategoryValue } from "./events-filters";
  *
  * Rails are inert (pointer-events-none) rather than absent: a control that
  * looks live but silently swallows a click is worse than one that is visibly
- * waiting. Bars are static — no pulse — matching the rest of the site.
+ * waiting. Bars and flyer slots shimmer (.skeleton in globals.css), the same
+ * sweep a flyer's slot shows while its image loads.
  */
 
 const noop = () => {};
@@ -23,7 +24,7 @@ const EMPTY_CATEGORY_COUNTS = new Map<CategoryValue, number>();
 const EMPTY_DAY_COUNTS = new Map<string, number>();
 
 function Bar({ className }: { className: string }) {
-  return <span aria-hidden className={`block rounded-full bg-ink/10 ${className}`} />;
+  return <span aria-hidden className={`skeleton block rounded-full bg-ink/10 ${className}`} />;
 }
 
 /** One stubbed feed row, matched to EventCard's geometry (flat from lg). */
@@ -46,7 +47,7 @@ function EventRowSkeleton({ width }: { width: string }) {
       </div>
 
       {/* Flyer slot */}
-      <span className="block aspect-[4/5] w-[clamp(80px,100vw_-_263px,120px)] shrink-0 rounded-lg bg-ink/[0.05]" />
+      <span className="skeleton block aspect-[4/5] w-[clamp(80px,100vw_-_263px,120px)] shrink-0 rounded-lg bg-ink/[0.05]" />
     </div>
   );
 }

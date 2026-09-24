@@ -60,6 +60,9 @@
   --color-tag-green-ink: 14 116 50;
   --color-tag-amber: 255 179 0;
   --color-tag-amber-ink: 154 88 0;
+
+  /* The band of light a loading placeholder's shimmer sweeps (.skeleton). */
+  --skeleton-shine: rgb(var(--color-canvas) / 0.9);
 }
 
 /* Dark: soft charcoals, not near-black, pitched at Luma's levels (page
@@ -107,6 +110,8 @@
     --color-tag-magenta-ink: 242 138 222;
     --color-tag-green-ink: 94 216 136;
     --color-tag-amber-ink: 255 197 74;
+
+    --skeleton-shine: rgb(var(--color-ink) / 0.08);
   }
 }
 
@@ -328,6 +333,43 @@ body {
 }
 .animate-field-reveal {
   animation: field-reveal 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Loading shimmer. A placeholder (a skeleton bar, a flyer's slot before the
+   flyer paints) carries .skeleton, and a soft band of light sweeps across
+   its fill, left to right, as on Instagram and X. The band is a fixed width
+   moving at one speed, so bars that share a left edge light up together and
+   a stack of them reads as one sweep; narrow bars rest between passes. It is
+   a ::before, so an image painting into the slot covers it. Callers keep
+   their own fill and radius. It loops at a constant speed, so it is linear
+   where state changes ease out. Under reduced motion the root rule ends the
+   loop at once and the fill stays still. Components layer, so utilities
+   (`absolute`) still win. */
+@keyframes skeleton-shimmer {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(1040px);
+  }
+}
+@layer components {
+  .skeleton {
+    position: relative;
+    overflow: hidden;
+  }
+  .skeleton::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 240px;
+    background: linear-gradient(90deg, transparent, var(--skeleton-shine), transparent);
+    transform: translateX(-100%);
+    animation: skeleton-shimmer 1.6s linear infinite;
+    pointer-events: none;
+  }
 }
 
 /* Reveal-on-scroll: hidden by default, played when the JS hook flips

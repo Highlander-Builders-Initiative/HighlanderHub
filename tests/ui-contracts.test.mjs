@@ -261,6 +261,37 @@ test("/events loading mirrors the live shell and skeletons only the feed", () =>
   assert.match(browser, grid);
 });
 
+test("loading placeholders shimmer and flyers fade in over them", () => {
+  const css = read("src/app/globals.css");
+  const poster = read("src/components/events/FlyerPoster.tsx");
+  const image = read("src/components/events/EventFlyerImage.tsx");
+  const tile = read("src/components/home/FlyerTile.tsx");
+
+  // One shared shimmer, transform-only, under any image painting into the slot.
+  assert.match(css, /@keyframes skeleton-shimmer/);
+  assert.match(css, /\.skeleton::before \{[^}]*animation: skeleton-shimmer/);
+  assert.match(css, /\.skeleton::before \{[^}]*transform: translateX/);
+
+  // Every skeleton bar and stubbed flyer slot carries it.
+  for (const path of [
+    "src/components/events/EventsBrowserSkeleton.tsx",
+    "src/components/events/EventDetailLoading.tsx",
+    "src/components/ui/RouteLoadingPage.tsx",
+    "src/components/events/EventCategoryFilter.tsx",
+  ]) {
+    assert.match(read(path), /\bskeleton\b[^"`]*rounded-full bg-ink\/10/);
+  }
+
+  // Flyer slots shimmer until the image loads or fails, never forever.
+  assert.match(poster, /pending \? "skeleton" : ""/);
+  assert.match(poster, /setFailedSrc\(src\)/);
+  assert.match(tile, /showImage && !loaded \? "skeleton" : ""/);
+
+  // Only browser-mounted flyers wait to fade in; server HTML paints at once.
+  assert.match(image, /useSyncExternalStore\(\s*subscribe,\s*\(\) => true,\s*\(\) => false\s*\)/);
+  assert.match(image, /opacity-0/);
+});
+
 test("app routes expose 500-level error boundaries", () => {
   const sharedError = read("src/components/ui/RouteErrorPage.tsx");
   const routeErrors = [
