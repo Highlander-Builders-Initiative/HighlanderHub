@@ -40,9 +40,11 @@ export function FlyerPoster({
   reserveSpace = false,
   onError,
 }: FlyerPosterProps) {
-  const [loaded, setLoaded] = useState<{ src: string; ratio: number } | null>(
-    null
-  );
+  const [loaded, setLoaded] = useState<{
+    src: string;
+    ratio: number | null;
+  } | null>(null);
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
   // Hydration renders the server's null, then the client's remembered shape.
   const knownRatio = useSyncExternalStore(
     subscribe,
@@ -52,27 +54,43 @@ export function FlyerPoster({
   const [knownAtFirstPaint] = useState(knownRatio !== null);
   const ownRatio = loaded?.src === src ? loaded.ratio : null;
   const ratio = ownRatio ?? knownRatio;
+  // The slot shimmers until the flyer paints over it, and goes still if the
+  // flyer fails, so a dead link never reads as still loading.
+  const pending = loaded?.src !== src && failedSrc !== src;
 
+  // The frame (className) is drawn on this box, which takes the flyer's shape;
+  // the image fills it and fades in over the placeholder.
   const image = (
-    <EventFlyerImage
-      src={src}
-      alt={alt}
-      sizes={sizes}
-      width={1000}
-      height={1250}
-      priority={priority}
-      className={`flyer-poster ${className}`}
+    <span
+      className={`flyer-poster relative block overflow-hidden ${
+        pending ? "skeleton" : ""
+      } ${className}`}
       style={ratioStyle(ratio)}
-      onLoad={(img) => {
-        if (!img.naturalWidth || !img.naturalHeight) return;
-        const next = img.naturalWidth / img.naturalHeight;
-        knownRatios.set(src, next);
-        setLoaded((prev) =>
-          prev?.src === src && prev.ratio === next ? prev : { src, ratio: next }
-        );
-      }}
-      onError={onError}
-    />
+    >
+      <EventFlyerImage
+        src={src}
+        alt={alt}
+        sizes={sizes}
+        width={1000}
+        height={1250}
+        priority={priority}
+        className="absolute inset-0 h-full w-full object-contain"
+        onLoad={(img) => {
+          const next =
+            img.naturalWidth && img.naturalHeight
+              ? img.naturalWidth / img.naturalHeight
+              : null;
+          if (next) knownRatios.set(src, next);
+          setLoaded((prev) =>
+            prev?.src === src && prev.ratio === next ? prev : { src, ratio: next }
+          );
+        }}
+        onError={() => {
+          setFailedSrc(src);
+          onError?.();
+        }}
+      />
+    </span>
   );
 
   if (!reserveSpace) return image;

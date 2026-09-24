@@ -86,7 +86,7 @@ export function EventCategoryFilter({
                 {countsPending ? (
                   <span
                     aria-hidden
-                    className="inline-block h-2 w-3.5 rounded-full bg-ink/10 align-middle"
+                    className="skeleton inline-block h-2 w-3.5 rounded-full bg-ink/10 align-middle"
                   />
                 ) : (
                   count
