@@ -202,7 +202,11 @@ export function EventDetailView({
       >
         {!isModal && <EventBackButton />}
 
-        <article className={isModal ? undefined : "mt-7 md:mt-10"}>
+        {/* Captions and locations can carry long unbroken runs (links,
+            divider lines). They wrap at the column's edge instead of widening
+            the panel into a sideways scroll. break-word leaves min-content
+            sizes alone, so nothing else in the layout reflows. */}
+        <article className={isModal ? "break-words" : "mt-7 break-words md:mt-10"}>
           {hasImage && (
             <div className={EVENT_DETAIL_MOBILE_FLYER_CLASS}>
               {renderFlyer("hero")}
