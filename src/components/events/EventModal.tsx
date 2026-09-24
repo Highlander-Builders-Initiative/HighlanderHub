@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, type ReactNode } from "react";
 import { EVENT_MODAL_TITLE_ID } from "@/components/events/EventDetailView";
 import { useDialogFocusTrap } from "@/components/ui/useDialogFocusTrap";
+import { useSheetSwipeDismiss } from "@/components/ui/useSheetSwipeDismiss";
 import {
   clearEventFeedReturnState,
   getSavedReturnPath,
@@ -32,6 +33,8 @@ export function EventModal({ children, standalone = false }: {
 function EventModalDialog({ children, standalone }: { children: ReactNode; standalone: boolean }) {
   const router = useRouter();
   const panelRef = useRef<HTMLDivElement>(null);
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const backdropRef = useRef<HTMLButtonElement>(null);
   const closingRef = useRef(false);
   const close = useCallback(() => {
     if (closingRef.current) return;
@@ -50,6 +53,9 @@ function EventModalDialog({ children, standalone }: { children: ReactNode; stand
     initialFocusRef: panelRef,
     onClose: close,
   });
+
+  // Phones: pull the sheet down from the top of its content to close it.
+  useSheetSwipeDismiss({ panelRef, scrollerRef, backdropRef, onDismiss: close });
 
   useEffect(() => {
     syncEventFeedReturnHistory();
@@ -77,6 +83,7 @@ function EventModalDialog({ children, standalone }: { children: ReactNode; stand
   return (
     <div className="fixed inset-0 z-[60] flex items-end justify-center md:items-center md:p-8">
       <button
+        ref={backdropRef}
         type="button"
         aria-label="Close event"
         tabIndex={-1}
@@ -115,14 +122,19 @@ function EventModalDialog({ children, standalone }: { children: ReactNode; stand
           </svg>
         </button>
 
-        <div className="relative flex-1 overflow-y-auto overscroll-contain">
+        <div
+          ref={scrollerRef}
+          className="relative flex-1 overflow-y-auto overscroll-contain"
+        >
           {children}
         </div>
       </div>
 
       <style jsx>{`
+        /* Backwards, not both: a held fill would outrank the inline
+           opacity the pull-to-close fades it with. */
         .event-modal-backdrop {
-          animation: event-modal-fade 200ms ease-out both;
+          animation: event-modal-fade 200ms ease-out backwards;
         }
         .event-modal-panel {
           animation: event-modal-sheet-up 280ms cubic-bezier(0.16, 1, 0.3, 1)
