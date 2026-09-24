@@ -16,8 +16,15 @@ const KEEP_SPEED = 0.3;
 // The release speed is read over the drag's last stretch, so a finger that
 // stops before lifting lets go at rest.
 const VELOCITY_WINDOW_MS = 100;
+// A release with a full sheet left to travel and no flick behind it. Reel
+// paging settles in about this long; a flick shortens it, down to the floor,
+// and a shorter leftover scales down so the sheet leaves at the same pace.
+const SETTLE_SLOW_MS = 220;
 const SETTLE_MIN_MS = 140;
-const SETTLE_MAX_MS = 400;
+const SETTLE_FULL_PX = 720;
+// Per px/ms of release speed. A brisk flick (2 px/ms, 2000 px/s) divides the
+// slow snap by about 1.4; a harder one hits the floor.
+const SETTLE_FLICK_GAIN = 0.22;
 
 type Sample = { y: number; t: number };
 
@@ -26,33 +33,31 @@ const clamp = (value: number, min: number, max: number) =>
 
 /**
  * Timing for the sheet to travel `distance` px when released at `speed` (px/ms
- * toward the target). A cubic-bezier's opening slope is its start speed in
- * distance-per-duration units, so the curve is built to leave at exactly the
- * finger's speed, the way a spring handed the release velocity would: a hard
- * flick goes as fast as it was thrown and eases out. The duration is capped,
- * so a slow release picks up speed from the finger's instead of crawling.
+ * toward the target). A full-height release with no speed takes about
+ * SETTLE_SLOW_MS, and a faster flick finishes sooner. The ease-out is the iOS
+ * one: steep at the start, so a finger that stopped still leaves immediately
+ * instead of crawling off.
  */
 function settleTiming(distance: number, speed: number) {
   const travel = Math.max(distance, 1);
   const pace = Math.max(speed, 0);
+  const span = SETTLE_SLOW_MS * clamp(travel / SETTLE_FULL_PX, 0, 1);
   const duration = clamp(
-    pace > 0 ? (2 * travel) / pace : Infinity,
+    span / (1 + pace * SETTLE_FLICK_GAIN),
     SETTLE_MIN_MS,
-    Math.min(SETTLE_MAX_MS, 180 + travel * 0.3)
+    SETTLE_SLOW_MS
   );
-  // P1.x is 0.2, so P1.y = 0.2 * slope; past 5 it would overshoot.
-  const slope = clamp((pace * duration) / travel, 0, 5);
   return {
     duration,
-    easing: `cubic-bezier(0.2, ${(slope * 0.2).toFixed(3)}, 0.4, 1)`,
+    easing: "cubic-bezier(0.32, 0.72, 0, 1)",
   };
 }
 
 /**
  * Pull-to-close for a bottom sheet, as on TikTok's and Instagram's sheets: with
  * its body scrolled to the top, pulling down drags the whole sheet with the
- * finger. Let go past a threshold, or flick, and it leaves at the speed it was
- * thrown; otherwise it settles back.
+ * finger. Let go past a threshold, or flick, and it snaps off. A harder flick
+ * finishes sooner; otherwise it settles back.
  *
  * The panel moves by `translate`, not `transform`, so the drag composes with
  * an open animation that holds the panel's transform (fill: both).
