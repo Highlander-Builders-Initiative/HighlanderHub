@@ -10,7 +10,7 @@ import { chromium } from "@playwright/test";
 import { fileURLToPath } from "node:url";
 
 const root = new URL("..", import.meta.url);
-const skyline = new URL("src/components/home/campus-skyline.webp", root).href;
+const skyline = new URL("src/components/home/campus-skyline-golden.webp", root).href;
 const out = fileURLToPath(new URL("public/og-card.jpg", root));
 
 // The sky seam matches .skyline-hero in globals.css: white into the art's

@@ -9,6 +9,7 @@ import { HbiLink } from "@/components/analytics/HbiLink";
 import { HBI_ABOUT_URL, HBI_INSTAGRAM_URL } from "@/lib/hbi";
 import { TRACKED_ACCOUNT_COUNT } from "@/lib/clubs";
 import { getEvents, getEventsSummary } from "@/lib/events";
+import { campusDaypart } from "@/lib/daylight";
 import {
   formatPacificDayKey,
   formatUpcomingWeekLabel,
@@ -29,6 +30,8 @@ export default async function HomePage() {
   ]);
 
   const dateLabel = formatPacificDayKey(pacificTodayKey());
+  // Which skyline the hero shows: day, golden hour or night over campus.
+  const daypart = campusDaypart();
   const weekLabel = formatUpcomingWeekLabel(
     summary?.upcomingThisWeek ?? null
   );
@@ -47,8 +50,8 @@ export default async function HomePage() {
       {/* Hero: an editorial masthead over the living bulletin wall, with the
           campus skyline standing on the hairline that separates the two. */}
       <section className="relative overflow-hidden border-b border-ink/10">
-        <div className="skyline-hero relative">
-          <CampusSkyline />
+        <div className="skyline-hero relative" data-daypart={daypart}>
+          <CampusSkyline daypart={daypart} />
           <div className="skyline-copy relative mx-auto max-w-7xl px-4 pt-11 sm:px-6 md:pt-16">
             {/* Dateline: a campus-paper colophon. */}
             <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">

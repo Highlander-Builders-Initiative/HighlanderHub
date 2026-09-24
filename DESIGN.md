@@ -154,7 +154,7 @@ The site follows the device's light/dark setting (`prefers-color-scheme`); there
 - **Tag `-ink`s** lighten (for example blue #86a9ff) to stay ≥5.9:1 on their 18% washes. The vivid tag hues themselves do not change.
 - **Scrim** (always dark): modal backdrops and the gradient behind white flyer captions. `ink` turns light in dark mode, so it must never be used for either. Text on an ink fill is `text-canvas`, not `text-white`.
 - **Hairlines soften.** In dark mode a card already sits a visible step above the page, so a full-strength hairline double-edges it. Ink edges (`border-`, `ring-`, `divide-ink/N` and `.hairline`) take their opacity to the power 1.3 (`--edge-alpha-curve`): `/10` renders at ~5%, about 9 levels above the card, as on Luma. Solid `border-ink` is unaffected (1ⁿ = 1), so focus and hover edges keep their weight. Draw separators as borders, not `bg-ink/N` fills, so they follow the curve.
-- **Campus Skyline** turns to dusk: the art multiplies into a night gradient that meets the canvas at its top edge.
+- **Campus Skyline** turns to dusk whatever the time of day: the art multiplies into a night gradient that meets the canvas at its top edge. That includes the night art, whose moonlit greys are graded for white and would otherwise be the brightest thing on the dark page.
 
 ### Named Rules
 
@@ -376,12 +376,36 @@ The hero's landmark illustration: the Bell Tower standing on the horizon line
 that doubles as the hairline above the flyer wall. It replaces the abstract
 navy-and-gold hero ribbon, which was decorative without being about anywhere.
 
-- **Subject:** a single low-poly illustration
-  (`components/home/campus-skyline.webp`, 4000x1484, a 2x Real-ESRGAN
-  upscale of the 2000px original): the 1966 carillon against
-  a low sun, the Box Springs range with the Big C cut into the hillside, and
-  palms over a Riverside grove at its feet. The clock face is painted in, so
+- **Subject:** a low-poly illustration in three versions: the 1966 carillon,
+  the Box Springs range with the Big C cut into the hillside, and palms over
+  a Riverside grove at its feet. By day the range is hazy blue and tan;
+  at golden hour the tower stands against a low sun in a cream sky; by night the
+  range goes moonlit lavender, a full moon rises behind the tower, and the
+  belfry and the antenna lights on the summit are lit. The clock face is painted in, so
   it shows a fixed time.
+- **Time of day:** the hero follows the sun over campus
+  (`campusDaypart` in `lib/daylight.ts`, a solar-position formula, so the
+  switches move with the seasons): golden hour around sunrise and sunset
+  (the sun from 4 degrees below the horizon to 6 above, about 45-55
+  minutes each), day between, night after dark. The home page renders per
+  request, so the server picks one and only that one loads. The page's light
+  or dark theme is separate: every version works in both.
+- **Files:** `components/home/campus-skyline-{day,golden,night}.webp`, all
+  4000x1484 2x Real-ESRGAN upscales of the originals, sharing one canvas
+  where the tower lands in the same place. Day and night have the sky cut
+  out to alpha. The night original came on flat grey; its key works in luma
+  plus warmth, because the JPEG's smeared chroma left a sky-bright rim in
+  each neighbour's hue that a colour key keeps. Golden hour keeps its painted
+  sky, because the sun is a glow in it.
+- **Grade:** the golden-hour art sets the tone: pastel, low contrast, with
+  the mountains hazed lighter than the tree line. Day and night were
+  graded to match in OKLab, so hue is untouched: chroma down (to ~55-70%),
+  lightness range compressed and lifted, more so on the far band (the
+  mountains) than the near one (the trees), blended by height. The tower
+  is masked out of the haze, since it is foreground. The night art stays
+  night (moon, lit belfry) but in moonlit greys and lavender rather than
+  navy, so it does not sit on the white page as a dark mass. Re-grade if
+  either original changes.
 - **Composition:** anchored bottom, so the tree line and the tower's base land
   on the hairline. The band's height (`--skyline-h` on `.skyline-hero`)
   tracks the art's ratio at laptop widths. On phones it keeps a 240px floor
@@ -389,9 +413,11 @@ navy-and-gold hero ribbon, which was decorative without being about anywhere.
   ~1940px it stops growing and crops the tree line. On phones the copy sits
   above the art; from `md` up it overlaps the open sky at left, which is why
   the copy column stays narrow.
-- **Seam:** the hero fades from white into the art's sky (`#fff9f2`, sampled
-  from its top edge), reaching it exactly where the image begins, so the
-  picture has no visible top edge. Re-sample if the art changes.
+- **Seam:** day and night have none to hide; their sky is transparent, so
+  the page itself is the sky. At golden hour the hero fades from white into the
+  art's sky (`#fff9f2`, sampled from its top edge), reaching it exactly where
+  the image begins, so the picture has no visible top edge. Re-sample if
+  that art changes.
 - **Technique:** `next/image` with `preload` (it is the LCP) at `quality={90}`
   (75 bands the sky and softens facet edges), decorative
   (`alt=""`, `aria-hidden`), and no animation, so the flyer wall stays the
