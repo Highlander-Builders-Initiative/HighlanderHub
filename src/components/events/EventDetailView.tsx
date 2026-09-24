@@ -166,8 +166,8 @@ export function EventDetailView({
         alt={`Flyer for ${event.title}`}
         sizes={
           isModal
-            ? "(max-width: 768px) 80vw, 15rem"
-            : "(max-width: 768px) 80vw, (max-width: 1024px) 18rem, 21rem"
+            ? "(max-width: 767px) min(16.25rem, 100vw - 2.5rem), 15rem"
+            : "(max-width: 767px) min(16.25rem, 100vw - 2.5rem), (max-width: 1024px) 18rem, 21rem"
         }
         className={EVENT_DETAIL_FLYER_CLASS}
         reserveSpace={placement === "hero"}

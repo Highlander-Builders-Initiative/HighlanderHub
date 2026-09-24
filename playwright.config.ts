@@ -2,6 +2,7 @@ import { defineConfig, devices } from "@playwright/test";
 
 const PORT = Number(process.env.PORT ?? 3002);
 const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? `http://127.0.0.1:${PORT}`;
+const production = process.env.PLAYWRIGHT_PRODUCTION === "1";
 
 export default defineConfig({
   testDir: "./tests/e2e",
@@ -16,7 +17,9 @@ export default defineConfig({
     trace: "on-first-retry",
   },
   webServer: {
-    command: `HIGHLANDERHUB_E2E_FIXTURES=1 next dev -H 127.0.0.1 -p ${PORT}`,
+    command: production
+      ? `HIGHLANDERHUB_E2E_FIXTURES=1 next build && HIGHLANDERHUB_E2E_FIXTURES=1 next start -H 127.0.0.1 -p ${PORT}`
+      : `HIGHLANDERHUB_E2E_FIXTURES=1 next dev -H 127.0.0.1 -p ${PORT}`,
     url: BASE_URL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
