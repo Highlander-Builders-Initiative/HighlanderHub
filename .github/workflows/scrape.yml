@@ -47,6 +47,8 @@ jobs:
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           GOOGLE_VISION_API_KEY: ${{ secrets.GOOGLE_VISION_API_KEY }}
           GOOGLE_VISION_API_KEY_PRIMARY: ${{ secrets.GOOGLE_VISION_API_KEY_PRIMARY }}
+          GOOGLE_VISION_API_KEY_SECONDARY: ${{ secrets.GOOGLE_VISION_API_KEY_SECONDARY }}
+          GOOGLE_VISION_API_KEY_TERTIARY: ${{ secrets.GOOGLE_VISION_API_KEY_TERTIARY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GOOGLE_CLOUD_PROJECT: ${{ secrets.GOOGLE_CLOUD_PROJECT }}
           GOOGLE_APPLICATION_CREDENTIALS_B64: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_B64 }}
@@ -58,10 +60,18 @@ jobs:
               exit 1
             fi
           done
-          if [ "$GOOGLE_VISION_API_KEY_PRIMARY" = "$GOOGLE_VISION_API_KEY" ]; then
-            echo "Vision primary and overflow keys must be different" >&2
-            exit 1
-          fi
+          vision_keys=()
+          for name in GOOGLE_VISION_API_KEY_PRIMARY GOOGLE_VISION_API_KEY_SECONDARY GOOGLE_VISION_API_KEY_TERTIARY GOOGLE_VISION_API_KEY; do
+            key="${!name}"
+            if [ -z "$key" ]; then continue; fi
+            for existing in "${vision_keys[@]}"; do
+              if [ "$key" = "$existing" ]; then
+                echo "All configured Vision keys must be different" >&2
+                exit 1
+              fi
+            done
+            vision_keys+=("$key")
+          done
           if [ -z "$GEMINI_API_KEY" ]; then
             if [ -z "$GOOGLE_CLOUD_PROJECT" ] || [ -z "$GOOGLE_APPLICATION_CREDENTIALS_B64" ]; then
               echo "Set GEMINI_API_KEY, or both GOOGLE_CLOUD_PROJECT and GOOGLE_APPLICATION_CREDENTIALS_B64" >&2
@@ -109,6 +119,8 @@ jobs:
           PIPELINE_POST_BACKFILL_SINCE: ''
           GOOGLE_VISION_API_KEY: ${{ secrets.GOOGLE_VISION_API_KEY }}
           GOOGLE_VISION_API_KEY_PRIMARY: ${{ secrets.GOOGLE_VISION_API_KEY_PRIMARY }}
+          GOOGLE_VISION_API_KEY_SECONDARY: ${{ secrets.GOOGLE_VISION_API_KEY_SECONDARY }}
+          GOOGLE_VISION_API_KEY_TERTIARY: ${{ secrets.GOOGLE_VISION_API_KEY_TERTIARY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GOOGLE_CLOUD_PROJECT: ${{ secrets.GOOGLE_CLOUD_PROJECT }}
           GOOGLE_CLOUD_LOCATION: global

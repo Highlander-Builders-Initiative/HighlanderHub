@@ -1,6 +1,6 @@
-"""OCR the first slide of Instagram feed posts for assessment.
+"""OCR every slide of Instagram feed posts for assessment.
 
-Only the first slide and the caption supply event details. The first image is
+Every slide and the caption supply event details. Each image is
 cached under a signature-free media key, so editing a caption reuses its OCR
 and a re-signed CDN URL costs nothing at all.
 
@@ -32,10 +32,10 @@ log = logging.getLogger("pipeline.extract_posts")
 # Bump when the meaning of a cached extraction changes — a new media type
 # becoming readable, a different OCR engine, a different slide decomposition.
 # A bump invalidates post extractions.
-EXTRACTION_VERSION = 2
+EXTRACTION_VERSION = 3
 
 # Retain unsupported_media for reading legacy caches, but reopen those skips:
-# carousel length no longer prevents reading the first slide.
+# carousel length no longer prevents reading every slide.
 # A failed post stays retryable and extraction moves on. Stop after this many
 # service failures in a row; expired image URLs do not establish an outage.
 MAX_CONSECUTIVE_FAILURES = 3
@@ -208,17 +208,14 @@ def _upload_flyer(record: dict[str, Any], media_key: str, image: bytes) -> str |
 
 
 def _readable_slides(record: dict[str, Any]) -> list[dict[str, Any]]:
-    """Read only the first slide, using its cover JPEG when it is a video.
-
-    Slice before filtering so an invalid first entry never selects slide two.
-    """
-    return [entry for entry in (record.get("media") or [])[:1] if isinstance(entry, dict)]
+    """Read every slide, using the cover JPEG for video slides."""
+    return [entry for entry in (record.get("media") or []) if isinstance(entry, dict)]
 
 
 def _cached_decision_still_applies(record: dict[str, Any], payload: Any) -> bool:
     """True when a terminal cache is still the decision for this record.
 
-    Legacy video and long-carousel skips are reopened under first-slide reading.
+    Legacy video and long-carousel skips are reopened under all-slide reading.
     """
     if not (isinstance(payload, dict) and payload.get("status") in TERMINAL_STATUSES
             and payload.get("fingerprint") == fingerprint(record)):
@@ -323,8 +320,8 @@ def process_post(record: dict[str, Any], stats: Stats | None = None, *,
     for slide in slides:
         key = str(slide.get("media_key") or "")
         if not slide.get("image_url"):
-            # A missing first-slide URL stays retryable; never fall back to a
-            # later slide. Repairing a saved URL requires explicit maintenance.
+            # Missing media stays retryable rather than producing partial evidence.
+            # Repairing a saved URL requires explicit maintenance.
             stats.bump("failed")
             log.warning("extract %s: slide %s has no image URL", label, key or slide.get("index"))
             return _persist_error(record, digest, "download",
@@ -370,9 +367,11 @@ def process_post(record: dict[str, Any], stats: Stats | None = None, *,
             "qr_urls": qr_urls,
             "qr_scan_version": QR_SCAN_VERSION,
         }
-        # Keep the first slide as the flyer even when only the caption has text.
-        images.append(_ensure_durable_flyer(record, slide, entry, stats,
-                                            cached_only=cached_only, image=image))
+        # Any slide can supply the cited evidence and become the event's flyer.
+        entry = _ensure_durable_flyer(record, slide, entry, stats,
+                                      cached_only=cached_only, image=image)
+        images.append(entry)
+        reusable[key] = entry
 
     if not images:
         stats.bump("skipped")
