@@ -21,10 +21,10 @@ Set these repository **Actions secrets**:
 | `APIFY_TOKEN` | Apify API token with access to run the actor and read its dataset |
 | `SUPABASE_URL` | Existing project URL |
 | `SUPABASE_SERVICE_KEY` | Existing service-role key |
-| `GOOGLE_VISION_API_KEY_PRIMARY` | New Vision key: first 1,000 OCR attempts each month |
+| `GOOGLE_VISION_API_KEY` | Existing Vision key: first 1,000 OCR attempts each month |
 | `GOOGLE_VISION_API_KEY_SECONDARY` | Optional second allowance: up to 1,000 OCR attempts each month |
 | `GOOGLE_VISION_API_KEY_TERTIARY` | Optional third allowance: up to 1,000 OCR attempts each month |
-| `GOOGLE_VISION_API_KEY` | Existing Vision key: all remaining OCR attempts, including paid usage |
+| `GOOGLE_VISION_API_KEY_PRIMARY` | Newer Vision key: all remaining OCR attempts, including paid usage |
 | `GEMINI_API_KEY` | Gemini assessment; alternatively use Vertex AI below |
 
 For Vertex AI instead of `GEMINI_API_KEY`, set `GOOGLE_CLOUD_PROJECT` and
@@ -59,9 +59,10 @@ usage and reassess saved posts; it does not refresh their Instagram snapshots.
 ### Monthly Vision key switching
 
 Apply `supabase/migrations/20260921000000_vision_ocr_usage.sql` before running the
-updated pipeline. Add the newly created key as `GOOGLE_VISION_API_KEY_PRIMARY`
-in Actions secrets and in `pipeline/.env` for local runs. Keep the existing key
-as `GOOGLE_VISION_API_KEY`. Both keys are required.
+updated pipeline. Set `GOOGLE_VISION_API_KEY` and `GOOGLE_VISION_API_KEY_PRIMARY`
+in Actions secrets and in `pipeline/.env` for local runs. Both keys are required.
+Despite its name, the `_PRIMARY` secret is the overflow key; the database's
+`primary` slot counts attempts on `GOOGLE_VISION_API_KEY`.
 
 For two additional keys, also apply
 `supabase/migrations/20260925000000_add_vision_ocr_keys.sql` and set
@@ -69,12 +70,12 @@ For two additional keys, also apply
 Actions secrets and `pipeline/.env`. These slots are optional; unset slots are
 skipped. All configured keys must differ. The migration preserves existing counts.
 
-The first 1,000 image OCR attempts of each calendar month use the primary key.
+The first 1,000 image OCR attempts of each calendar month use `GOOGLE_VISION_API_KEY`.
 Then each configured secondary and tertiary key receives up to 1,000 attempts,
-in that order. Once these allowances are exhausted, the existing overflow key
+in that order. Once these allowances are exhausted, `GOOGLE_VISION_API_KEY_PRIMARY`
 handles every remaining attempt, **continuing paid usage** even after that key
 reaches 1,000. Months are determined by the database clock in
-`America/Los_Angeles`; the next month starts with the primary key again.
+`America/Los_Angeles`; the next month starts with `GOOGLE_VISION_API_KEY` again.
 
 Supabase's private `vision_ocr_usage` table shares counters between local runs
 and GitHub Actions. Atomic reservations happen before each request, so concurrent
@@ -84,14 +85,13 @@ consume no reservations. If accounting is unavailable, new OCR fails and stays
 retryable; it never silently bypasses the counter. No keys are stored in this
 table or included in request URLs.
 
-This counts **this pipeline's attempts**, not Google's billable usage. The new
-primary account is assumed unused at setup; previous use and other applications
-are not automatically discovered. Before starting, include prior usage
-in the current month's `primary_requests`, `secondary_requests`, or
-`tertiary_requests` as appropriate (each capped at 1,000). Stable slots keep their
-counts when secrets are replaced; keep the same slot
-assignments across machines using this database. Historical usage of the old key
-is not backfilled because its overflow usage is intentionally uncapped.
+This counts **this pipeline's attempts**, not Google's billable usage. Previous
+use and other applications are not automatically discovered. Before starting,
+include prior usage in the current month's `primary_requests` (for
+`GOOGLE_VISION_API_KEY`), `secondary_requests`, or `tertiary_requests` as
+appropriate (each capped at 1,000). Stable slots keep their counts when secrets
+are replaced; keep the same slot assignments across machines using this database.
+Overflow usage is intentionally uncapped and not backfilled.
 
 Google's [free allowances are per billing account](https://docs.cloud.google.com/free/docs/free-cloud-features),
 not per API key. Two keys attached to the same billing account do not provide

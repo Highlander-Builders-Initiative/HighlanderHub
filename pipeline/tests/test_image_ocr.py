@@ -13,8 +13,8 @@ import instagram_cooldown
 
 class ImageOcrTests(unittest.TestCase):
     def setUp(self):
-        self.enterContext(patch.object(image_ocr, "GOOGLE_VISION_API_KEY_PRIMARY", "new-test-key"))
-        self.enterContext(patch.object(image_ocr, "GOOGLE_VISION_API_KEY", "old-test-key"))
+        self.enterContext(patch.object(image_ocr, "GOOGLE_VISION_API_KEY_PRIMARY", "old-test-key"))
+        self.enterContext(patch.object(image_ocr, "GOOGLE_VISION_API_KEY", "new-test-key"))
         self.enterContext(patch.object(image_ocr, "GOOGLE_VISION_API_KEY_SECONDARY", None))
         self.enterContext(patch.object(image_ocr, "GOOGLE_VISION_API_KEY_TERTIARY", None))
         self.db = self.enterContext(patch("db.client")).return_value
@@ -85,8 +85,7 @@ class ImageOcrTests(unittest.TestCase):
     def test_vision_reads_the_uploaded_image_and_surfaces_api_errors(self):
         response = Mock()
         response.json.return_value = {"responses": [{"fullTextAnnotation": {"text": " Workshop "}}]}
-        with patch.object(image_ocr, "GOOGLE_VISION_API_KEY", "test-key"), \
-             patch("requests.post", return_value=response) as request:
+        with patch("requests.post", return_value=response) as request:
             self.assertEqual("Workshop", image_ocr._vision_ocr(b"flyer"))
             request.assert_called_once_with(
                 "https://vision.googleapis.com/v1/images:annotate",
@@ -196,10 +195,10 @@ class ImageOcrTests(unittest.TestCase):
             request.assert_called_once()
         self.db.rpc.assert_called_once_with("reserve_vision_ocr_request", {})
 
-    def test_missing_primary_or_duplicate_keys_do_not_consume_usage(self):
+    def test_missing_overflow_or_duplicate_keys_do_not_consume_usage(self):
         with patch("requests.post") as request:
-            for primary in (None, "old-test-key"):
-                with patch.object(image_ocr, "GOOGLE_VISION_API_KEY_PRIMARY", primary):
+            for overflow in (None, "new-test-key"):
+                with patch.object(image_ocr, "GOOGLE_VISION_API_KEY_PRIMARY", overflow):
                     with self.assertRaises(RuntimeError):
                         image_ocr._vision_ocr(b"flyer")
             self.db.rpc.assert_not_called()
