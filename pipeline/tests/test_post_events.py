@@ -79,13 +79,13 @@ class PostExtractionTests(unittest.TestCase):
         with self.ocr("", "Study Jam September 15") as vision:
             first = posts.process_post(item)
             self.assertEqual("ok", first["status"])
-            self.assertEqual(1, vision.call_count)
+            self.assertEqual(2, vision.call_count)
             second = posts.process_post(item)
-            self.assertEqual(1, vision.call_count)
+            self.assertEqual(2, vision.call_count)
         self.assertEqual(first, second)
 
     def test_fresh_flyer_uses_ocr_bytes_without_another_download(self):
-        item = record()
+        item = record(slides=1)
         with patch.object(posts, "_download_image", return_value=b"same image") as download, self.ocr(""):
             extracted = posts.process_post(item)
         download.assert_called_once_with(item["media"][0]["image_url"])
@@ -96,7 +96,7 @@ class PostExtractionTests(unittest.TestCase):
         for cache in ("local", "remote", "edited_caption"):
             with self.subTest(cache=cache):
                 posts._cache_path("700").unlink(missing_ok=True)
-                item = record()
+                item = record(slides=1)
                 self.upload_flyer.reset_mock(side_effect=True)
                 self.upload_flyer.side_effect = [None, "https://storage.example/recovered.jpg"]
                 with self.ocr("") as vision, \
@@ -128,7 +128,7 @@ class PostExtractionTests(unittest.TestCase):
                 self.assertEqual("https://storage.example/recovered.jpg", rows[0]["image_url"])
 
     def test_flyer_recovery_failures_preserve_ocr_and_remain_retryable(self):
-        item = record()
+        item = record(slides=1)
         self.upload_flyer.side_effect = [None, None, "https://storage.example/recovered.jpg"]
         with self.ocr("Study Jam") as vision:
             original = posts.process_post(item)
@@ -141,7 +141,7 @@ class PostExtractionTests(unittest.TestCase):
         self.assertEqual("https://storage.example/recovered.jpg", recovered["images"][0]["image_url"])
 
     def test_an_expired_flyer_url_is_not_requested_again_until_it_is_refreshed(self):
-        item = record()
+        item = record(slides=1)
         self.upload_flyer.side_effect = [None, "https://storage.example/recovered.jpg"]
         with self.ocr("Study Jam") as vision:
             original = posts.process_post(item)
@@ -260,7 +260,7 @@ class PostExtractionTests(unittest.TestCase):
             for slide in resigned["media"]:
                 slide["image_url"] = slide["image_url"].replace("oh=sig", "oh=fresh")
             posts.process_post(resigned)
-            self.assertEqual(1, vision.call_count)
+            self.assertEqual(2, vision.call_count)
 
     def test_a_caption_edit_reuses_image_ocr_and_only_reassesses(self):
         item = record()
@@ -269,7 +269,7 @@ class PostExtractionTests(unittest.TestCase):
             edited = record(caption="Study Jam moved to Tuesday")
             second = posts.process_post(edited)
             # No image changed, so no image was read again...
-            self.assertEqual(1, vision.call_count)
+            self.assertEqual(2, vision.call_count)
         # ...but the assessment inputs did change, so the decision expires.
         self.assertNotEqual(first["fingerprint"], second["fingerprint"])
         self.assertEqual([entry["ocr_text"] for entry in posts.ordered_slides(first)],
@@ -283,7 +283,7 @@ class PostExtractionTests(unittest.TestCase):
             swapped["media"][0]["media_key"] = "700_0b_n"
             swapped["media"][0]["image_url"] = "https://cdn.example/v/t51/700_0b_n.jpg?oh=x"
             posts.process_post(swapped)
-            self.assertEqual(2, vision.call_count)
+            self.assertEqual(3, vision.call_count)
 
     def test_first_slide_download_failure_retries_without_reading_later_slides(self):
         item = record(slides=3)
@@ -294,38 +294,97 @@ class PostExtractionTests(unittest.TestCase):
         self.assertEqual("download", failed["result"]["stage"])
         download.assert_called_once_with(item["media"][0]["image_url"])
         vision.assert_not_called()
-        with self.ocr("Slide one") as vision:
+        with self.ocr("Slide one", "Slide two", "Slide three") as vision:
             repaired = posts.process_post(item)
         self.assertEqual("ok", repaired["status"])
-        vision.assert_called_once()
-        self.assertEqual(["Slide one"],
+        self.assertEqual(3, vision.call_count)
+        self.assertEqual(["Slide one", "Slide two", "Slide three"],
                          [entry["ocr_text"] for entry in posts.ordered_slides(repaired)])
 
-    def test_later_slide_changes_do_not_invalidate_extraction(self):
+    def test_later_slide_changes_invalidate_extraction_and_reuse_unchanged_images(self):
         item = record(slides=3)
         with self.ocr("First slide") as vision:
             original = posts.process_post(item)
             item["media"][1]["media_key"] = "replacement"
-            item["media"].append({"index": 3, "media_key": "added"})
-            self.assertEqual(original, posts.process_post(item))
-        vision.assert_called_once()
+            item["media"].append({"index": 3, "media_key": "added",
+                                  "image_url": "https://cdn.example/added.jpg"})
+            changed = posts.process_post(item)
+            self.assertNotEqual(original["fingerprint"], changed["fingerprint"])
+            self.assertEqual(4, len(changed["images"]))
+        self.assertEqual(5, vision.call_count)
 
-    def test_only_first_slide_is_downloaded_read_and_scanned_for_qr_codes(self):
+    def test_every_slide_is_downloaded_read_and_scanned_for_qr_codes(self):
         item = record(slides=20)
         with self.ocr("First slide") as vision, \
              patch.object(posts, "_download_image", return_value=b"first") as download, \
              patch.object(posts, "qr_rsvp_urls", return_value=[]) as qr:
             result = posts.process_post(item)
-        download.assert_called_once_with(item["media"][0]["image_url"])
-        vision.assert_called_once_with(b"first")
-        qr.assert_called_once_with(b"first")
-        self.assertEqual([0], [image["index"] for image in result["images"]])
+        self.assertEqual([slide["image_url"] for slide in item["media"]],
+                         [call.args[0] for call in download.call_args_list])
+        self.assertEqual(20, vision.call_count)
+        self.assertEqual(20, qr.call_count)
+        self.assertEqual(list(range(20)), [image["index"] for image in result["images"]])
 
     def test_an_ocr_failure_never_becomes_a_negative_decision(self):
         with patch.object(posts, "_vision_ocr", side_effect=RuntimeError("vision 503")):
             result = posts.process_post(record(slides=1))
         self.assertEqual("error", result["status"])
         self.assertNotIn(result["status"], posts.TERMINAL_STATUSES)
+
+    def test_later_slide_failure_keeps_work_and_retries_only_unfinished_images(self):
+        item = record(slides=3)
+        for failure in ("download", "ocr", "missing_url"):
+            with self.subTest(failure=failure):
+                posts._cache_path("700").unlink(missing_ok=True)
+                raw = copy.deepcopy(item)
+                if failure == "missing_url":
+                    raw["media"][1]["image_url"] = None
+                downloads = [b"first", RuntimeError("offline")] if failure == "download" else [b"first", b"second"]
+                texts = ["Slide one", RuntimeError("OCR unavailable")] if failure == "ocr" else ["Slide one"]
+                with patch.object(posts, "_download_image", side_effect=downloads), \
+                     patch.object(posts, "_vision_ocr", side_effect=texts):
+                    failed = posts.process_post(raw)
+                self.assertEqual("error", failed["status"])
+                self.assertEqual(["Slide one"], [entry["ocr_text"] for entry in failed["images"]])
+                with patch.object(semantic, "assess") as assess:
+                    updates = publication.post_updates([(raw, failed)], {}, "2026-09-11T12:00:00Z", registry={})
+                    self.assertEqual("error", updates[0]["assessment"]["status"])
+                    self.assertEqual([], updates[0]["rows"])
+                assess.assert_not_called()
+                with patch.object(posts, "_download_image", return_value=b"retry") as download, \
+                     self.ocr("Slide two", "Slide three") as vision:
+                    repaired = posts.process_post(item)
+                self.assertEqual("ok", repaired["status"])
+                self.assertEqual(2, vision.call_count)
+                self.assertEqual([slide["image_url"] for slide in item["media"][1:]],
+                                 [call.args[0] for call in download.call_args_list])
+                self.assertEqual(["Slide one", "Slide two", "Slide three"],
+                                 [entry["ocr_text"] for entry in repaired["images"]])
+
+    def test_first_slide_cache_upgrade_reads_only_remaining_images(self):
+        item = record(caption="", slides=3)
+        with patch.object(posts, "EXTRACTION_VERSION", 2), \
+             patch.object(posts, "_readable_slides", return_value=item["media"][:1]), self.ocr(""):
+            legacy = posts.process_post(item)
+        self.assertEqual("no_text", legacy["status"])
+        for location in ("local", "remote"):
+            with self.subTest(location=location):
+                posts._cache_path("700").unlink(missing_ok=True)
+                if location == "local":
+                    posts._write_cache("700", legacy)
+                with patch.object(posts, "_load_remote_cache", return_value=legacy if location == "remote" else None), \
+                     patch.object(posts, "_download_image", return_value=b"later") as download, \
+                     self.ocr("Study Jam September 15, 2026, 3-5 PM", "Bring a friend") as vision:
+                    pending = posts.process_post(item, cached_only=True)
+                    self.assertEqual("pending", pending["status"])
+                    download.assert_not_called()
+                    upgraded = posts.process_post(item)
+                self.assertEqual(2, vision.call_count)
+                self.assertEqual("ok", upgraded["status"])
+                self.assertEqual(3, upgraded["extraction_version"])
+                source = publication.post_source(item, upgraded)
+                decision = post_decision(source, field="slide_2_ocr")
+                self.assertEqual(decision, semantic.validate(decision, source))
 
     def test_a_video_cover_frame_is_read_like_any_other_slide(self):
         item = record(slides=1)
@@ -340,14 +399,14 @@ class PostExtractionTests(unittest.TestCase):
         self.assertEqual("Study Jam September 15, 2026, 3-5 PM",
                          result["images"][0]["ocr_text"])
 
-    def test_a_mixed_carousel_reads_only_the_first_image(self):
+    def test_a_mixed_carousel_reads_images_and_video_covers(self):
         item = record(slides=2)
         item["media"][1]["is_video"] = True
         item["has_video"] = True
         with self.ocr("", "Study Jam September 15") as vision:
             result = posts.process_post(item)
         self.assertEqual("ok", result["status"])
-        self.assertEqual(1, vision.call_count)
+        self.assertEqual(2, vision.call_count)
 
     def test_a_cached_video_skip_is_reopened_once_covers_are_readable(self):
         item = record(slides=1)
@@ -372,7 +431,7 @@ class PostExtractionTests(unittest.TestCase):
         with self.ocr("First slide") as vision:
             result = posts.process_post(item)
         self.assertEqual("ok", result["status"])
-        vision.assert_called_once()
+        self.assertEqual(20, vision.call_count)
 
     def test_a_slide_recorded_without_a_url_is_retryable_not_partial(self):
         item = record(slides=3)
@@ -410,7 +469,7 @@ class PostExtractionTests(unittest.TestCase):
         vision.assert_not_called()
         self.assertEqual("ok", result["status"])
         self.assertEqual(posts.fingerprint(item), result["fingerprint"])
-        self.assertEqual([""],
+        self.assertEqual(["", "Study Jam September 15"],
                          [entry["ocr_text"] for entry in posts.ordered_slides(result)])
 
     def test_a_remote_cache_survives_local_cache_loss(self):
@@ -425,7 +484,7 @@ class PostExtractionTests(unittest.TestCase):
         vision.assert_not_called()
         self.assertEqual(original["fingerprint"], recovered["fingerprint"])
 
-    def test_legacy_carousel_cache_reuses_first_slide_and_drops_later_evidence(self):
+    def test_legacy_carousel_cache_reuses_all_slide_evidence(self):
         item = record(caption="Join us")
         legacy = {"status": "ok", "fingerprint": "legacy-version-1", "extraction_version": 1,
                   "images": [{"index": n, "media_key": f"700_{n}_n", "ocr_text": text,
@@ -443,9 +502,10 @@ class PostExtractionTests(unittest.TestCase):
                 download.assert_not_called()
                 vision.assert_not_called()
                 self.assertEqual(posts.EXTRACTION_VERSION, result["extraction_version"])
-                self.assertEqual([0], [image["index"] for image in result["images"]])
+                self.assertEqual([0, 1], [image["index"] for image in result["images"]])
                 source = publication.post_source(item, result)
-                self.assertEqual({"caption": "Join us", "slide_1_ocr": "Club announcement"}, source["texts"])
+                self.assertEqual({"caption": "Join us", "slide_1_ocr": "Club announcement",
+                                  "slide_2_ocr": "September 15 event"}, source["texts"])
 
     def test_extraction_restores_missing_raw_posts_and_reuses_their_durable_ocr(self):
         item = {**record(), "posted_at": "2026-09-01T17:00:00+00:00"}
@@ -478,12 +538,12 @@ class PostExtractionTests(unittest.TestCase):
         self.assertEqual("ok", result["status"])
         self.assertEqual(1, vision.call_count)
 
-    def test_only_the_first_slide_is_stored_as_a_flyer(self):
+    def test_every_slide_is_stored_as_a_possible_flyer(self):
         # Even a blank first slide is kept for caption-only events.
         with self.ocr("", "Study Jam September 15", "") as _:
             posts.process_post(record(slides=3))
         stored = [call.args[1] for call in self.upload_flyer.call_args_list]
-        self.assertEqual(["700_0_n"], stored)
+        self.assertEqual(["700_0_n", "700_1_n", "700_2_n"], stored)
 
 
 class PostSourceTests(unittest.TestCase):

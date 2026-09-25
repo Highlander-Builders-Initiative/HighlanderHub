@@ -6,7 +6,12 @@ import logging
 import time
 from urllib.parse import urlsplit, urlunsplit
 
-from config import GOOGLE_VISION_API_KEY, GOOGLE_VISION_API_KEY_PRIMARY
+from config import (
+    GOOGLE_VISION_API_KEY,
+    GOOGLE_VISION_API_KEY_PRIMARY,
+    GOOGLE_VISION_API_KEY_SECONDARY,
+    GOOGLE_VISION_API_KEY_TERTIARY,
+)
 
 log = logging.getLogger("pipeline.image_ocr")
 VISION_URL = "https://vision.googleapis.com/v1/images:annotate"
@@ -53,8 +58,15 @@ def _vision_ocr(image_bytes: bytes) -> str:
             "GOOGLE_VISION_API_KEY_PRIMARY (new key) and GOOGLE_VISION_API_KEY "
             "(existing overflow key) are required for Vision OCR"
         )
-    if GOOGLE_VISION_API_KEY_PRIMARY == GOOGLE_VISION_API_KEY:
-        raise RuntimeError("Vision primary and overflow keys must be different")
+    keys = {
+        "primary": GOOGLE_VISION_API_KEY_PRIMARY,
+        "secondary": GOOGLE_VISION_API_KEY_SECONDARY,
+        "tertiary": GOOGLE_VISION_API_KEY_TERTIARY,
+        "overflow": GOOGLE_VISION_API_KEY,
+    }
+    configured = [key for key in keys.values() if key]
+    if len(configured) != len(set(configured)):
+        raise RuntimeError("All configured Vision keys must be different")
 
     import requests
     from db import client
@@ -70,11 +82,15 @@ def _vision_ocr(image_bytes: bytes) -> str:
     }
     # Reserve durably before sending: crashes/timeouts may have reached Google.
     # Never refund an uncertain attempt or fall back if accounting is unavailable.
-    reservation = client().rpc("reserve_vision_ocr_request", {}).execute().data
-    if not isinstance(reservation, dict) or reservation.get("slot") not in {"primary", "overflow"}:
+    options = {}
+    if GOOGLE_VISION_API_KEY_SECONDARY or GOOGLE_VISION_API_KEY_TERTIARY:
+        options = {"p_secondary_enabled": bool(GOOGLE_VISION_API_KEY_SECONDARY),
+                   "p_tertiary_enabled": bool(GOOGLE_VISION_API_KEY_TERTIARY)}
+    reservation = client().rpc("reserve_vision_ocr_request", options).execute().data
+    if not isinstance(reservation, dict) or not keys.get(reservation.get("slot")):
         raise RuntimeError("Invalid Vision usage reservation; no OCR request sent")
     slot = reservation["slot"]
-    api_key = GOOGLE_VISION_API_KEY_PRIMARY if slot == "primary" else GOOGLE_VISION_API_KEY
+    api_key = keys[slot]
     log.info("Vision OCR: %s key, month %s, attempt %s", slot,
              reservation.get("month"), reservation.get("used"))
     resp = requests.post(

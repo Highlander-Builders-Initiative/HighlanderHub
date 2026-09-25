@@ -15,6 +15,8 @@ class ImageOcrTests(unittest.TestCase):
     def setUp(self):
         self.enterContext(patch.object(image_ocr, "GOOGLE_VISION_API_KEY_PRIMARY", "new-test-key"))
         self.enterContext(patch.object(image_ocr, "GOOGLE_VISION_API_KEY", "old-test-key"))
+        self.enterContext(patch.object(image_ocr, "GOOGLE_VISION_API_KEY_SECONDARY", None))
+        self.enterContext(patch.object(image_ocr, "GOOGLE_VISION_API_KEY_TERTIARY", None))
         self.db = self.enterContext(patch("db.client")).return_value
         self.db.rpc.return_value.execute.return_value.data = {
             "slot": "primary", "month": "2026-09-01", "used": 1,
@@ -135,6 +137,51 @@ class ImageOcrTests(unittest.TestCase):
                 with self.assertRaisesRegex(RuntimeError, "Invalid Vision usage reservation"):
                     image_ocr._vision_ocr(b"flyer")
             request.assert_not_called()
+
+    def test_additional_keys_follow_reserved_slots_without_exposing_secrets_to_db(self):
+        response = Mock()
+        response.json.return_value = {"responses": [{}]}
+        self.db.rpc.return_value.execute.side_effect = [
+            Mock(data={"slot": slot, "used": 1000})
+            for slot in ("primary", "secondary", "tertiary", "overflow")
+        ]
+        with patch.object(image_ocr, "GOOGLE_VISION_API_KEY_SECONDARY", "second-key"), \
+             patch.object(image_ocr, "GOOGLE_VISION_API_KEY_TERTIARY", "third-key"), \
+             patch("requests.post", return_value=response) as request:
+            for _ in range(4):
+                image_ocr._vision_ocr(b"flyer")
+        self.assertEqual(["new-test-key", "second-key", "third-key", "old-test-key"],
+                         [call.kwargs["headers"]["X-Goog-Api-Key"] for call in request.call_args_list])
+        self.db.rpc.assert_called_with("reserve_vision_ocr_request", {
+            "p_secondary_enabled": True, "p_tertiary_enabled": True})
+
+    def test_optional_keys_can_be_enabled_independently(self):
+        for slot in ("secondary", "tertiary"):
+            with self.subTest(slot=slot), \
+                 patch.object(image_ocr, f"GOOGLE_VISION_API_KEY_{slot.upper()}", "extra-key"), \
+                 patch("requests.post", return_value=Mock(json=lambda: {"responses": [{}]})) as request:
+                self.db.rpc.return_value.execute.return_value.data = {"slot": slot}
+                image_ocr._vision_ocr(b"flyer")
+                self.db.rpc.assert_called_with("reserve_vision_ocr_request", {
+                    "p_secondary_enabled": slot == "secondary", "p_tertiary_enabled": slot == "tertiary"})
+                self.assertEqual("extra-key", request.call_args.kwargs["headers"]["X-Goog-Api-Key"])
+
+    def test_unconfigured_reserved_slot_never_sends_ocr(self):
+        self.db.rpc.return_value.execute.return_value.data = {"slot": "secondary"}
+        with patch("requests.post") as request:
+            with self.assertRaisesRegex(RuntimeError, "Invalid Vision usage reservation"):
+                image_ocr._vision_ocr(b"flyer")
+        request.assert_not_called()
+
+    def test_duplicate_optional_keys_never_reserve_or_send_ocr(self):
+        for second, third in (("old-test-key", None), (None, "new-test-key"), ("same", "same")):
+            with self.subTest(second=second, third=third), \
+                 patch.object(image_ocr, "GOOGLE_VISION_API_KEY_SECONDARY", second), \
+                 patch.object(image_ocr, "GOOGLE_VISION_API_KEY_TERTIARY", third), patch("requests.post") as request:
+                with self.assertRaisesRegex(RuntimeError, "must be different"):
+                    image_ocr._vision_ocr(b"flyer")
+                self.db.rpc.assert_not_called()
+                request.assert_not_called()
 
     def test_timeout_keeps_reservation_and_does_not_retry_another_key(self):
         import requests

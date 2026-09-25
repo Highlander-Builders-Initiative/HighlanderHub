@@ -1,6 +1,6 @@
 # Event ingestion pipeline
 
-`python pipeline/run.py` runs four stages: Apify post collection, first-slide
+`python pipeline/run.py` runs four stages: Apify post collection, all-slide
 Google Vision OCR, grounded Gemini event assessment/publication, and event
 reconciliation. Publication retains the existing evidence, deduplication,
 admin-lock, deletion and notification rules. Failed collection still processes
@@ -22,6 +22,8 @@ Set these repository **Actions secrets**:
 | `SUPABASE_URL` | Existing project URL |
 | `SUPABASE_SERVICE_KEY` | Existing service-role key |
 | `GOOGLE_VISION_API_KEY_PRIMARY` | New Vision key: first 1,000 OCR attempts each month |
+| `GOOGLE_VISION_API_KEY_SECONDARY` | Optional second allowance: up to 1,000 OCR attempts each month |
+| `GOOGLE_VISION_API_KEY_TERTIARY` | Optional third allowance: up to 1,000 OCR attempts each month |
 | `GOOGLE_VISION_API_KEY` | Existing Vision key: all remaining OCR attempts, including paid usage |
 | `GEMINI_API_KEY` | Gemini assessment; alternatively use Vertex AI below |
 
@@ -45,16 +47,33 @@ A valid JSON key alone does not grant model access. A `403 IAM_PERMISSION_DENIED
 for this permission requires fixing the service account's access on that target
 project; changing base64 formatting or rerunning the job will not resolve it.
 
+### Every image in a post
+
+OCR and QR scanning read every carousel image in order, including video cover
+images. Each slide retains its own evidence field and durable flyer. A failure
+on any slide keeps the post retryable; completed image work is reused on retry.
+Version 3 reopens saved first-slide extractions on the next normal extraction run,
+reuses their OCR, and reads the remaining saved images. This can increase OCR
+usage and reassess saved posts; it does not refresh their Instagram snapshots.
+
 ### Monthly Vision key switching
 
 Apply `supabase/migrations/20260921000000_vision_ocr_usage.sql` before running the
 updated pipeline. Add the newly created key as `GOOGLE_VISION_API_KEY_PRIMARY`
 in Actions secrets and in `pipeline/.env` for local runs. Keep the existing key
-as `GOOGLE_VISION_API_KEY`. Both keys are required and must differ.
+as `GOOGLE_VISION_API_KEY`. Both keys are required.
+
+For two additional keys, also apply
+`supabase/migrations/20260925000000_add_vision_ocr_keys.sql` and set
+`GOOGLE_VISION_API_KEY_SECONDARY` and `GOOGLE_VISION_API_KEY_TERTIARY` in
+Actions secrets and `pipeline/.env`. These slots are optional; unset slots are
+skipped. All configured keys must differ. The migration preserves existing counts.
 
 The first 1,000 image OCR attempts of each calendar month use the primary key.
-Attempt 1,001 onward uses the existing key, **continuing paid usage** even after
-that key reaches 1,000. Months are determined by the database clock in
+Then each configured secondary and tertiary key receives up to 1,000 attempts,
+in that order. Once these allowances are exhausted, the existing overflow key
+handles every remaining attempt, **continuing paid usage** even after that key
+reaches 1,000. Months are determined by the database clock in
 `America/Los_Angeles`; the next month starts with the primary key again.
 
 Supabase's private `vision_ocr_usage` table shares counters between local runs
@@ -67,9 +86,10 @@ table or included in request URLs.
 
 This counts **this pipeline's attempts**, not Google's billable usage. The new
 primary account is assumed unused at setup; previous use and other applications
-are not automatically discovered. Before starting, include any such primary usage
-in the current month's `primary_requests` (capped at 1,000). Stable primary and
-overflow slots keep their counts when secrets are replaced; keep the same slot
+are not automatically discovered. Before starting, include prior usage
+in the current month's `primary_requests`, `secondary_requests`, or
+`tertiary_requests` as appropriate (each capped at 1,000). Stable slots keep their
+counts when secrets are replaced; keep the same slot
 assignments across machines using this database. Historical usage of the old key
 is not backfilled because its overflow usage is intentionally uncapped.
 
@@ -168,7 +188,7 @@ or Gemini rerun. A failed durable ID lookup stops collection before starting a
 paid actor rather than treating every post as new.
 
 There is no live-event refresh queue, daily post recheck, or separate request to
-renew an expired image URL. New posts still receive first-slide OCR, assessment
+renew an expired image URL. New posts still receive all-slide OCR, assessment
 and publication. Cached results and unfinished processing can be retried from
 saved data; that does not request another scrape of the post. If an image expires
 before initial extraction succeeds, this policy can leave that post unprocessed
