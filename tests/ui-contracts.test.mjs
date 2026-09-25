@@ -103,7 +103,7 @@ test("calendar loads its own month-range events outside feed pagination", () => 
   assert.match(browser, /useEventFeedRestore/);
   assert.match(browser, /useEventFeedNavigation/);
   assert.match(navigation, /mergeUniqueEventsByStart\(current, eventsToMerge\)/);
-  assert.match(navigation, /key > lastLoadedDay && key <= dayKey/);
+  assert.match(navigation, /key >= lastLoadedDay && key <= dayKey/);
   assert.match(navigation, /calendarJumpSuppressUntilRef/);
   assert.match(navigation, /calendarJumpEndsAtLoadedBoundary/);
   assert.match(browser, /hideLoadMoreHint=\{hideLoadMoreHint\}/);
