@@ -17,7 +17,8 @@ const migrationNames = ['20260513073310_init_schema.sql', '20260527000000_add_ev
   '20260911000000_source_assessments.sql', '20260912000000_source_assessment_fanout_overrides.sql',
   '20260913000000_instagram_posts.sql', '20260916000000_instagram_only_publication.sql',
   '20260919000000_drop_event_is_free.sql', '20260922000000_event_duplicate_hosts.sql',
-  '20260922010000_reconcile_legacy_duplicates.sql'];
+  '20260922010000_reconcile_legacy_duplicates.sql',
+  '20260925010000_drop_highlander_link_reconcile.sql'];
 for (const name of migrationNames) {
   await db.exec(await readFile(new URL(name, migrations), 'utf8'));
 }
@@ -276,23 +277,32 @@ test('retired campus duplicates can only reconcile into an Instagram survivor', 
   await publish([update('post:1', [row('ig_survivor')])]);
   await db.query(`insert into events(id,title,description,starts_at,ends_at,location,host,category,
     content_kind,tags,source,has_free_food,rsvp_required,scraped_at)
-    values ('highlander_link_1','Workshop','An actual workshop',$1,$2,'HUB','Club','academic',
+    values ('ucr_events_1','Workshop','An actual workshop',$1,$2,'HUB','Club','academic',
     'student_event','{}','campus_website',false,false,$3)`,
     ['2026-09-15T22:00:00Z', '2026-09-16T00:00:00Z', '2026-09-11T19:00:00Z']);
   await db.query('select remap_assessed_event_sources($1::jsonb)', [JSON.stringify([
-    { id: 'highlander_link_1', replacement_id: 'ig_survivor' },
+    { id: 'ucr_events_1', replacement_id: 'ig_survivor' },
   ])]);
   assert.deepEqual(await ids(), ['ig_survivor']);
 
   await db.query(`insert into events(id,title,description,starts_at,location,host,category,
     content_kind,tags,source,has_free_food,rsvp_required,scraped_at)
-    values ('highlander_link_2','Other','Other event',$1,'HUB','Club','academic',
+    values ('ucr_events_2','Other','Other event',$1,'HUB','Club','academic',
     'student_event','{}','campus_website',false,false,$2)`,
     ['2026-09-15T22:00:00Z', '2026-09-11T19:00:00Z']);
   await assert.rejects(db.query('select remap_assessed_event_sources($1::jsonb)', [JSON.stringify([
-    { id: 'highlander_link_2', replacement_id: null },
+    { id: 'ucr_events_2', replacement_id: null },
   ])]), /must reconcile into Instagram/);
-  assert.deepEqual(await ids(), ['highlander_link_2', 'ig_survivor']);
+  assert.deepEqual(await ids(), ['ig_survivor', 'ucr_events_2']);
+
+  await db.query(`insert into events(id,title,description,starts_at,location,host,category,
+    content_kind,tags,source,has_free_food,rsvp_required,scraped_at)
+    values ('retired_campus_1','Other','Other event',$1,'HUB','Club','academic',
+    'student_event','{}','campus_website',false,false,$2)`,
+    ['2026-09-15T22:00:00Z', '2026-09-11T19:00:00Z']);
+  await assert.rejects(db.query('select remap_assessed_event_sources($1::jsonb)', [JSON.stringify([
+    { id: 'retired_campus_1', replacement_id: 'ig_survivor' },
+  ])]), /Only imported duplicates can be removed/);
 });
 
 test('concurrent edits abort duplicate ownership remapping', async () => {
@@ -367,12 +377,12 @@ test('planner outputs apply atomically across legacy, tombstoned, locked and Ins
   for (const locked of [false, true]) {
     await reset();
     const campusRows = [
-      row('highlander_link_only', { title: 'Legacy Only', source: 'campus_website' }),
+      row('ucr_events_legacy', { title: 'Legacy Only', source: 'campus_website' }),
       row('ucr_events_only', { title: 'Legacy Only', source: 'campus_website' }),
-      row('highlander_link_deleted', { title: 'Deleted Study Jam', source: 'campus_website' }),
-      row('highlander_link_merge', { title: 'Merged Study Jam', source: 'campus_website', is_locked: locked }),
+      row('ucr_events_deleted', { title: 'Deleted Study Jam', source: 'campus_website' }),
+      row('ucr_events_locked', { title: 'Merged Study Jam', source: 'campus_website', is_locked: locked }),
       row('ucr_events_merge', { title: 'Merged Study Jam', source: 'campus_website' }),
-      row('highlander_link_manual', { title: 'Merged Study Jam', source: 'manual' }),
+      row('kept_manual', { title: 'Merged Study Jam', source: 'manual' }),
     ];
     for (const event of campusRows) {
       await db.query(`insert into events(id,title,description,starts_at,ends_at,location,host,
@@ -392,16 +402,16 @@ test('planner outputs apply atomically across legacy, tombstoned, locked and Ins
     const [, removed, replacements] = await applyReconciliation(rows, tombstones);
     assert.deepEqual(removed, locked
       ? ['ig_deleted_p101', 'ig_independent_p301', 'ig_merge_p201']
-      : ['highlander_link_merge', 'ig_deleted_p101', 'ig_independent_p301', 'ucr_events_merge']);
+      : ['ig_deleted_p101', 'ig_independent_p301', 'ucr_events_locked', 'ucr_events_merge']);
     assert.deepEqual(replacements, locked
-      ? { ig_independent_p301: 'ig_independent_p302', ig_merge_p201: 'highlander_link_merge' }
-      : { highlander_link_merge: 'ig_merge_p201', ig_independent_p301: 'ig_independent_p302', ucr_events_merge: 'ig_merge_p201' });
+      ? { ig_independent_p301: 'ig_independent_p302', ig_merge_p201: 'ucr_events_locked' }
+      : { ig_independent_p301: 'ig_independent_p302', ucr_events_locked: 'ig_merge_p201', ucr_events_merge: 'ig_merge_p201' });
     assert.deepEqual(await ids(), rows.map(r => r.id).filter(id => !removed.includes(id)).sort());
     const sources = (await db.query('select source_key,event_ids from source_assessments')).rows;
     assert.deepEqual(sources.find(r => r.source_key === 'instagram:deleted').event_ids, []);
     assert.deepEqual(sources.find(r => r.source_key === 'instagram:independent1').event_ids, ['ig_independent_p302']);
     assert.deepEqual(sources.find(r => r.source_key === 'instagram:merge').event_ids,
-      [locked ? 'highlander_link_merge' : 'ig_merge_p201']);
+      [locked ? 'ucr_events_locked' : 'ig_merge_p201']);
     assert.deepEqual(reconciliationPlan((await db.query('select * from events')).rows, tombstones), [[], [], {}]);
   }
 });

@@ -1,6 +1,6 @@
 [
   {
-    "id": "highlander_link_12672469",
+    "id": "ucr_events_12672469",
     "title": "ASPB Presents Silent Disglo",
     "description": "Join ASPB for a night of fun, dancing, music, and good vibes at Silent Disglo. Grab a set of wireless headphones and choose between different music channels throughout the night, featuring a special guest DJ. Find your favorite sound and hit the dance floor with your friends.",
     "starts_at": "2026-09-30T01:00:00+00:00",
@@ -11,7 +11,7 @@
     "host_handle": null,
     "hosts": [],
     "source": "campus_website",
-    "source_url": "https://highlanderlink.ucr.edu/event/12672469",
+    "source_url": null,
     "rsvp_required": false,
     "rsvp_url": null,
     "content_kind": "student_event",

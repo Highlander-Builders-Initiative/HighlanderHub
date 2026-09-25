@@ -26,13 +26,13 @@ class CrossSourceReconciliationTests(unittest.TestCase):
                 'rsvp_url':None, 'is_locked':False, **extra}
 
     def test_instagram_wins_and_retains_compatible_campus_metadata(self):
-        campus = self.event('highlander_link_1', ends_at='2026-09-12T15:30:00-07:00', rsvp_url='https://example.org/register')
+        campus = self.event('ucr_events_1', ends_at='2026-09-12T15:30:00-07:00', rsvp_url='https://example.org/register')
         ig = self.event('ig_arts_1')
         for rows in ([campus, ig], [ig, campus]):
             before = copy.deepcopy(rows)
             updates, deleted, replacements = reconcile.plan(rows)
-            self.assertEqual({'highlander_link_1'}, deleted)
-            self.assertEqual({'highlander_link_1': 'ig_arts_1'}, replacements)
+            self.assertEqual({'ucr_events_1'}, deleted)
+            self.assertEqual({'ucr_events_1': 'ig_arts_1'}, replacements)
             self.assertEqual(campus['ends_at'], updates[0]['ends_at'])
             self.assertEqual(campus['rsvp_url'], updates[0]['rsvp_url'])
             self.assertEqual(([], set(), {}), reconcile.plan(updates))
@@ -40,12 +40,12 @@ class CrossSourceReconciliationTests(unittest.TestCase):
             self.assertEqual(([], set(), {}), reconcile.plan([campus]))
 
     def test_cnas_room_description_matches_the_same_room(self):
-        rows = [self.event('highlander_link_1', 'CNAS NEW FAMILY WELCOME', location='HUB (Highlander Union Building), 302', host='UCR Social'),
+        rows = [self.event('ucr_events_1', 'CNAS NEW FAMILY WELCOME', location='HUB (Highlander Union Building), 302', host='UCR Social'),
                 self.event('ig_cnas_1', 'CNAS NEW FAMILY WELCOME', location='HUB 302', host='CNAS')]
-        self.assertEqual({'highlander_link_1'}, reconcile.plan(rows)[1])
+        self.assertEqual({'ucr_events_1'}, reconcile.plan(rows)[1])
 
     def test_family_weekend_merges_variants_and_keeps_the_full_range(self):
-        rows = [self.event('highlander_link_1', 'Save the Date: Highlander Family Weekend', starts_at='2026-11-06T00:00:00-08:00', location='UC Riverside')]
+        rows = [self.event('ucr_events_1', 'Save the Date: Highlander Family Weekend', starts_at='2026-11-06T00:00:00-08:00', location='UC Riverside')]
         for i, title in enumerate(['Highlander Family Weekend', 'Highlander Family Network Family Weekend', 'Highlander FAMILY WEEKEND']):
             rows.append(self.event(f'ig_club{i}_1', title, starts_at=rows[0]['starts_at'], location='UC Riverside', ends_at='2026-11-08T23:59:59-08:00'))
         updates, deleted, replacements = reconcile.plan(rows)
@@ -53,18 +53,18 @@ class CrossSourceReconciliationTests(unittest.TestCase):
         self.assertEqual('2026-11-09T07:59:59+00:00', updates[0]['ends_at'])
 
     def test_shared_rsvp_confirms_physician_day_despite_title_variation(self):
-        a = self.event('highlander_link_1', '4th Annual National Latino Physician Day Celebration', rsvp_url='https://ucr.qualtrics.com/jfe/form/ONE')
+        a = self.event('ucr_events_1', '4th Annual National Latino Physician Day Celebration', rsvp_url='https://ucr.qualtrics.com/jfe/form/ONE')
         b = self.event('ig_ppac_1', 'NATIONAL LATINO PHYSICIAN DAY', rsvp_url=a['rsvp_url']+'?utm_source=instagram', host='GradSuccess')
-        self.assertEqual({'highlander_link_1'}, reconcile.plan([a,b])[1])
+        self.assertEqual({'ucr_events_1'}, reconcile.plan([a,b])[1])
 
     def test_distinct_clubs_dates_places_and_registration_forms_stay_separate(self):
         cases = [
             [self.event('ig_a_1','General Meeting'), self.event('ig_b_1','General Meeting')],
             [self.event('ig_a_1','Fall Club General Meeting'), self.event('ig_b_1','Fall Club General Meeting')],
-            [self.event('ig_a_1'), self.event('highlander_link_1', starts_at='2026-09-13T14:00:00-07:00')],
-            [self.event('ig_a_1', location='Venue A',host='Club A'), self.event('highlander_link_1',location='Venue B',host='Club B')],
+            [self.event('ig_a_1'), self.event('ucr_events_1', starts_at='2026-09-13T14:00:00-07:00')],
+            [self.event('ig_a_1', location='Venue A',host='Club A'), self.event('ucr_events_1',location='Venue B',host='Club B')],
             [self.event('ig_a_1','General Meeting', rsvp_url='https://forms.example/signup?event=a'), self.event('ig_b_1','General Meeting', rsvp_url='https://forms.example/signup?event=b')],
-            [self.event('highlander_link_1','Fall Involvement Fair'), self.event('manual_1','Fall Involvement Fair - SDU Appearance!')],
+            [self.event('ucr_events_1','Fall Involvement Fair'), self.event('manual_1','Fall Involvement Fair - SDU Appearance!')],
         ]
         for rows in cases:
             self.assertEqual(([], set(), {}), reconcile.plan(rows))
@@ -125,14 +125,14 @@ class CrossSourceReconciliationTests(unittest.TestCase):
         self.assertEqual(([], set(), {}), reconcile.plan([alumni, chass]))
 
     def test_lock_wins_and_deleted_group_cannot_reappear_via_another_source(self):
-        campus, ig = self.event('highlander_link_1'), self.event('ig_a_1', is_locked=True)
-        self.assertEqual(([], {'highlander_link_1'}, {'highlander_link_1': ig['id']}), reconcile.plan([campus,ig]))
+        campus, ig = self.event('ucr_events_1'), self.event('ig_a_1', is_locked=True)
+        self.assertEqual(([], {'ucr_events_1'}, {'ucr_events_1': ig['id']}), reconcile.plan([campus,ig]))
         self.assertEqual(([], set(), {}), reconcile.plan([campus], [self.event('ig_old_1')]))
         self.assertEqual(([], set(), {}), reconcile.plan([ig], [campus]))
 
     def test_failed_canonical_write_never_deletes_duplicates(self):
         import db
-        rows = [self.event('highlander_link_1',has_free_food=True), self.event('ig_a_1')]
+        rows = [self.event('ucr_events_1',has_free_food=True), self.event('ig_a_1')]
         database = Mock()
         database.table.return_value.update.return_value.eq.return_value.eq.return_value.execute.side_effect = RuntimeError('write failed')
         with patch.object(db,'get_event_rows',return_value=rows), \
@@ -145,7 +145,7 @@ class CrossSourceReconciliationTests(unittest.TestCase):
 
     def test_concurrent_admin_change_stops_reconciliation_before_deletion(self):
         import db
-        rows = [self.event('highlander_link_1',has_free_food=True), self.event('ig_a_1',updated_at=NOW)]
+        rows = [self.event('ucr_events_1',has_free_food=True), self.event('ig_a_1',updated_at=NOW)]
         database = Mock()
         query = database.table.return_value.update.return_value
         query.eq.return_value = query
@@ -166,19 +166,19 @@ class CrossSourceReconciliationTests(unittest.TestCase):
                                   ('2026-09-12T23:00:00+00:00', False),
                                   ('2026-09-13T01:00:00+00:00', True)):
             with self.subTest(ends_at=ends_at):
-                rows = [self.event('highlander_link_1', ends_at=ends_at, has_free_food=True),
+                rows = [self.event('ucr_events_1', ends_at=ends_at, has_free_food=True),
                         self.event('ig_a_1', ends_at=ends_at)]
                 updates, removed, replacements = reconcile.plan(rows, now=now)
                 if eligible:
                     self.assertEqual(['ig_a_1'], [row['id'] for row in updates])
                     self.assertTrue(updates[0]['has_free_food'])
-                    self.assertEqual({'highlander_link_1'}, removed)
+                    self.assertEqual({'ucr_events_1'}, removed)
                 else:
                     self.assertEqual(([], set()), (updates, removed))
 
     def test_merging_an_already_notified_duplicate_preserves_alert_history(self):
         import db
-        campus = self.event('highlander_link_1', 'Save the Date: Highlander Family Weekend')
+        campus = self.event('ucr_events_1', 'Save the Date: Highlander Family Weekend')
         ig = self.event('ig_family_1', 'Highlander Family Weekend')
         database = Mock()
         database.table.return_value.select.return_value.eq.return_value.in_.return_value.execute.return_value.data = [{

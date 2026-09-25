@@ -198,7 +198,7 @@ class RepeatedAnnouncementsTests(unittest.TestCase):
     def test_precise_campus_winner_does_not_lose_time_or_remove_other_campus_rows(self):
         from test_duplicate_hosts import gala, celebration
         teaser = gala()
-        timed = celebration(id='highlander_link_timed', source='campus_website')
+        timed = celebration(id='ucr_events_early', source='campus_website')
         sibling = timed | {'id': 'ucr_events_timed'}
         updates, removed, replacements = plan([teaser, timed, sibling])
         self.assertEqual({teaser['id']}, removed)
@@ -208,9 +208,9 @@ class RepeatedAnnouncementsTests(unittest.TestCase):
     def test_reconcile_scan_and_publication_share_import_identity(self):
         rows = [group('silent disglo')[0], group('rush')[0],
                 {'id': 'manual_1', 'source': 'manual'},
-                {'id': 'highlander_link_manual', 'source': 'manual'},
+                {'id': 'ucr_events_manual', 'source': 'manual'},
                 {'id': 'ig_manual', 'source': 'manual'},
-                {'id': 'highlander_link_wrong', 'source': 'instagram'},
+                {'id': 'ucr_events_wrong', 'source': 'instagram'},
                 {'id': 'ig_wrong', 'source': 'campus_website'}]
         query = Mock()
         query.table.return_value = query.select.return_value = query.order.return_value = query.range.return_value = query
