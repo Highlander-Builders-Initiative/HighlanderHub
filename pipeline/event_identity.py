@@ -13,7 +13,7 @@ def imported_row_kind(row: dict[str, Any]) -> str:
     row_id = str(row.get('id') or '')
     if row.get('source') == 'instagram' and row_id.startswith('ig_'):
         return 'instagram'
-    if row.get('source') == 'campus_website' and row_id.startswith(('highlander_link_', 'ucr_events_')):
+    if row.get('source') == 'campus_website' and row_id.startswith('ucr_events_'):
         return 'retired_campus'
     return 'other'
 
