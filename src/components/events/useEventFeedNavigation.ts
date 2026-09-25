@@ -19,6 +19,7 @@ import { track } from "@/lib/analytics";
 import { fetchEventsPage } from "@/lib/events/api";
 import { calendarJumpEndsAtLoadedBoundary } from "@/lib/events/calendar-feed-pagination";
 import { mergeUniqueEventsByStart } from "@/lib/events/merge";
+import { SCROLL_SPY_OFFSET_PX } from "@/lib/events/observed-day-key";
 import {
   eventFeedQueriesEqual,
   matchesEventFilters,
@@ -109,7 +110,8 @@ export function useEventFeedNavigation({
         dayKey > lastLoadedDay
           ? calendarEvents.filter((event) => {
               const key = pacificDayKey(event.startsAt);
-              return key > lastLoadedDay && key <= dayKey;
+              // The final page can end partway through this day.
+              return key >= lastLoadedDay && key <= dayKey;
             })
           : calendarEvents.filter(
               (event) => pacificDayKey(event.startsAt) === dayKey
@@ -146,10 +148,14 @@ export function useEventFeedNavigation({
   );
 
   useLayoutEffect(() => {
+    if (!active) {
+      pendingCalendarScrollRef.current = null;
+      return;
+    }
     const pending = pendingCalendarScrollRef.current;
     if (!pending) return;
 
-    const el = dayHeaderRefs.current.get(pending);
+    const el = daySectionRefs.current.get(pending);
     if (!el) {
       if (mergeCalendarEventsForDay(pending) || isCalendarLoading) {
         return;
@@ -162,17 +168,59 @@ export function useEventFeedNavigation({
 
     userInitiatedScrollRef.current = Date.now();
     setObservedDayKey(pending);
-    el.scrollIntoView({ behavior: "smooth", block: "start" });
 
-    const dayKey = pending;
-    const timeoutId = window.setTimeout(() => {
-      if (pendingCalendarScrollRef.current === dayKey) {
-        pendingCalendarScrollRef.current = null;
+    // A mobile heading is sticky: its viewport position is not the start of
+    // the day. Measure the section plus its heading inset instead.
+    const targetTop = () => {
+      const headingInset = el.clientTop + parseFloat(getComputedStyle(el).paddingTop);
+      const top = window.scrollY + el.getBoundingClientRect().top + headingInset - SCROLL_SPY_OFFSET_PX;
+      return Math.max(0, Math.min(top, document.documentElement.scrollHeight - window.innerHeight));
+    };
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.scrollTo({ top: targetTop(), behavior: reduced ? "instant" : "smooth" });
+
+    let rafId = 0;
+    let previousY = window.scrollY;
+    let stableFrames = 0;
+    const inputs = ["wheel", "touchstart", "pointerdown", "keydown"] as const;
+    const cleanup = () => {
+      cancelAnimationFrame(rafId);
+      for (const input of inputs) window.removeEventListener(input, cancel);
+    };
+    const cancel = () => {
+      // Stop the browser's animation too, so the user's scroll takes over.
+      window.scrollTo({ top: window.scrollY, behavior: "instant" });
+      pendingCalendarScrollRef.current = null;
+      calendarJumpSuppressUntilRef.current = 0;
+      userInitiatedScrollRef.current = 0;
+      cleanup();
+    };
+    const settle = () => {
+      userInitiatedScrollRef.current = Date.now();
+      const y = window.scrollY;
+      stableFrames = Math.abs(y - previousY) < 1 ? stableFrames + 1 : 0;
+      previousY = y;
+      if (stableFrames >= 3) {
+        // content-visibility replaces estimated card heights as we scroll.
+        // Correct after the smooth scroll stops, then verify the new layout
+        // also settles. Only do this while the user still wants this jump.
+        const top = targetTop();
+        if (Math.abs(top - y) <= 1) {
+          pendingCalendarScrollRef.current = null;
+          cleanup();
+          return;
+        }
+        window.scrollTo({ top, behavior: "instant" });
+        stableFrames = 0;
       }
-    }, 1200);
+      rafId = requestAnimationFrame(settle);
+    };
+    for (const input of inputs) window.addEventListener(input, cancel, { passive: true });
+    rafId = requestAnimationFrame(settle);
 
-    return () => window.clearTimeout(timeoutId);
+    return cleanup;
   }, [
+    active,
     calendarJumpCount,
     dayKeys,
     isCalendarLoading,
@@ -183,8 +231,9 @@ export function useEventFeedNavigation({
 
   useLayoutEffect(() => {
     const anchor = pendingLoadAnchorRef.current;
-    if (!anchor) return;
     pendingLoadAnchorRef.current = null;
+    // A page that was already in flight must not override a calendar jump.
+    if (!anchor || pendingCalendarScrollRef.current) return;
 
     const el = dayHeaderRefs.current.get(anchor.dayKey);
     if (!el) return;
