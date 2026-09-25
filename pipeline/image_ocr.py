@@ -55,14 +55,16 @@ def _download_image(url: str | None) -> bytes:
 def _vision_ocr(image_bytes: bytes) -> str:
     if not GOOGLE_VISION_API_KEY_PRIMARY or not GOOGLE_VISION_API_KEY:
         raise RuntimeError(
-            "GOOGLE_VISION_API_KEY_PRIMARY (new key) and GOOGLE_VISION_API_KEY "
-            "(existing overflow key) are required for Vision OCR"
+            "GOOGLE_VISION_API_KEY (first allowance) and GOOGLE_VISION_API_KEY_PRIMARY "
+            "(overflow key) are required for Vision OCR"
         )
+    # The existing key takes the first monthly allowance; the newer
+    # _PRIMARY key receives uncapped overflow, including paid usage.
     keys = {
-        "primary": GOOGLE_VISION_API_KEY_PRIMARY,
+        "primary": GOOGLE_VISION_API_KEY,
         "secondary": GOOGLE_VISION_API_KEY_SECONDARY,
         "tertiary": GOOGLE_VISION_API_KEY_TERTIARY,
-        "overflow": GOOGLE_VISION_API_KEY,
+        "overflow": GOOGLE_VISION_API_KEY_PRIMARY,
     }
     configured = [key for key in keys.values() if key]
     if len(configured) != len(set(configured)):

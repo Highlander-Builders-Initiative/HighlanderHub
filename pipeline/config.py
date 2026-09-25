@@ -47,7 +47,7 @@ IG_USERNAME = os.environ.get("IG_USERNAME")
 IG_PASSWORD = os.environ.get("IG_PASSWORD")
 SESSION_FILE = os.environ.get("IG_SESSION_FILE")  # absolute path, optional
 GOOGLE_VISION_API_KEY = os.environ.get("GOOGLE_VISION_API_KEY")
-# New billing account first; the existing key handles monthly overflow.
+# Overflow key: GOOGLE_VISION_API_KEY takes the first monthly allowance.
 GOOGLE_VISION_API_KEY_PRIMARY = os.environ.get("GOOGLE_VISION_API_KEY_PRIMARY")
 # Optional additional billing accounts, each capped before paid overflow.
 GOOGLE_VISION_API_KEY_SECONDARY = os.environ.get("GOOGLE_VISION_API_KEY_SECONDARY")
