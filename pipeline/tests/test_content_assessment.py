@@ -38,6 +38,20 @@ class ContentAssessmentTests(unittest.TestCase):
             self.assertFalse(assess._clock_supported(time(11), text))
         self.assertFalse(assess._clock_supported(time(7, 30), "at 7:30p"))
 
+    def test_a_shared_meridiem_range_that_crosses_noon_starts_in_the_morning(self):
+        # CALPIRG, 2026-09-24: "SEPTEMBER 24TH, 11-3PM" was refused its 11 AM start.
+        for text, start, end in (("SEPTEMBER 24TH, 11-3PM", time(11), time(15)),
+                                 ("10-12PM", time(10), time(12)),
+                                 ("11:30-1:30 p.m.", time(11, 30), time(13, 30)),
+                                 ("11-1AM", time(23), time(1)),
+                                 ("3-5 PM", time(15), time(17)),
+                                 ("12-2PM", time(12), time(14))):
+            with self.subTest(text=text):
+                self.assertTrue(assess._clock_supported(start, text))
+                self.assertTrue(assess._clock_supported(end, text))
+                wrong = time((start.hour + 12) % 24, start.minute)
+                self.assertFalse(assess._clock_supported(wrong, text))
+
     def test_day_of_month_caption_preserves_explicit_year(self):
         text = "Our first practice is going to be the 28th of September!"
         self.assertTrue(assess._day_supported(date(2026, 9, 28), text, source(text)))

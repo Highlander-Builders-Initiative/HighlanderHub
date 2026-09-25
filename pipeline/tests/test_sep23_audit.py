@@ -262,6 +262,14 @@ class DuplicateTests(unittest.TestCase):
             with self.subTest(changes=changes):
                 self.assertFalse(same_event(rows[0], rows[1] | changes))
 
+    def test_a_post_about_one_event_outranks_the_same_session_in_a_schedule(self):
+        # SWE, 2026-09-24: "Movie Night" from the welcome-week schedule would
+        # have replaced the dedicated "SWE Movie Night: Big Hero 6" post.
+        dedicated = copy.deepcopy(ROWS['ig_bluejadeandjoel_p3981934097668906335'])
+        session = dedicated | {"id": "ig_bluejadeandjoel_p3990000000000000000-20260927T0200Z",
+                               "description": dedicated["description"] + " Also this week: open studio, DJ night."}
+        self.converges([dedicated, session], {session["id"]}, dedicated["id"])
+
     def test_a_same_account_teaser_quoted_by_the_official_flyer_merges(self):
         teaser, official = 'ig_hznupes_p3954373440643336519', 'ig_hznupes_p3976807495708125337'
         self.converges([copy.deepcopy(ROWS[i]) for i in (teaser, official)], {teaser}, official)
@@ -334,6 +342,68 @@ class ReconciledRepublicationTests(unittest.TestCase):
         row = kept[0]["rows"][0]
         self.assertTrue(row["has_free_food"])
         self.assertNotIn("hosts", row)
+
+    def session_post(self, *, supported):
+        """KUCR's post listing three sessions; the performance was merged into the organizer's."""
+        media = "3992123687598225649"
+        merged = copy.deepcopy(self.first) | {"id": f"ig_kucr883fm_p{media}-20260926T0700Z"}
+        others = [copy.deepcopy(self.first) | {"id": f"ig_kucr883fm_p{media}-{stamp}", "title": title,
+                                               "starts_at": start, "ends_at": None, "location": "KUCR Studio"}
+                  for stamp, title, start in (("20261001T0200Z", "KUCR Open Studio", "2026-10-01T02:00:00+00:00"),
+                                              ("20261008T0200Z", "DJ Training Night", "2026-10-08T02:00:00+00:00"))]
+        update = {"source_key": f"instagram:post:{media}", "origin": "instagram",
+                  "assessment": {"status": "complete", "result": "sessions"},
+                  "rows": [*others, merged], "known_event_ids": []}
+        own = [row["id"] for row in update["rows"]]
+        registry = {self.updates[0]["source_key"]: self.registry[self.updates[0]["source_key"]],
+                    update["source_key"]: {"assessment": copy.deepcopy(update["assessment"]),
+                                           "event_ids": supported(own, self.organizer["id"]),
+                                           "known_event_ids": [*own, self.organizer["id"]]}}
+        return [copy.deepcopy(self.updates[0]), update], registry, merged
+
+    def withheld_sessions(self, updates, registry, live=None):
+        stats = {}
+        kept = publication._withhold_reconciled(updates, registry, self.live if live is None else live, stats)
+        return {update["source_key"]: [row["id"] for row in update["rows"]] for update in kept}, stats
+
+    def test_a_merged_session_is_withheld_while_its_siblings_publish(self):
+        # Right after reconciliation remapped it, and on every run after that.
+        for supported in (lambda own, organizer: [*own[:2], organizer], lambda own, organizer: own[:2]):
+            with self.subTest(supported=supported):
+                updates, registry, merged = self.session_post(supported=supported)
+                published, stats = self.withheld_sessions(updates, registry)
+                self.assertEqual({updates[0]["source_key"]: [self.organizer["id"]],
+                                  updates[1]["source_key"]: [row["id"] for row in updates[1]["rows"][:2]]},
+                                 published)
+                self.assertEqual({"reconciled_duplicates_skipped": 1}, stats)
+
+    def test_a_session_is_not_withheld_when_only_its_post_keeps_the_listing_alive(self):
+        updates, registry, merged = self.session_post(supported=lambda own, organizer: [*own[:2], organizer])
+        del registry[updates[0]["source_key"]]
+        published, _ = self.withheld_sessions(updates[1:], registry)
+        self.assertIn(merged["id"], published[updates[1]["source_key"]])
+        # A locked listing is never retired, so withholding is safe again.
+        published, _ = self.withheld_sessions(updates[1:], registry,
+                                              live={self.organizer["id"]: self.organizer | {"is_locked": True}})
+        self.assertNotIn(merged["id"], published[updates[1]["source_key"]])
+
+    def test_sessions_of_one_post_never_merge_even_at_the_same_start(self):
+        updates, _, merged = self.session_post(supported=lambda own, organizer: own)
+        sibling = copy.deepcopy(merged) | {"id": merged["id"] + "-a1b2c3", "title": "Joel Mejia Smith: Encore"}
+        self.assertFalse(same_event(merged, sibling))
+        # The same session published by the post's owner and coauthor is one event.
+        self.assertTrue(same_event(merged, merged | {"id": merged["id"].replace("kucr883fm", "ucrarts")}))
+        self.assertTrue(same_event(merged, self.organizer))
+
+    def test_publication_reads_listings_a_session_post_only_knows(self):
+        media = "3992123687598225649"
+        sessions = [f"ig_kucr883fm_p{media}-20261001T0200Z", f"ig_kucr883fm_p{media}-20260926T0700Z"]
+        registry = {f"instagram:post:{media}": {
+            "assessment": {"result": {"occurrences": [{}, {}], "schedule": None}},
+            "event_ids": sessions[:1], "known_event_ids": [*sessions, self.organizer["id"]]}}
+        with patch("db.get_event_rows_by_ids", return_value=[self.organizer]) as fetch:
+            publication._canonical_listings([({"media_id": media}, {})], registry)
+        fetch.assert_called_once_with([self.organizer["id"]])
 
     def test_publication_reads_only_listings_that_posts_were_remapped_onto(self):
         processed = [({"media_id": "3992123687598225649"}, {}), ({"media_id": "3981934097668906335"}, {})]

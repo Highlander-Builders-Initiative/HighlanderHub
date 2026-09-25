@@ -320,6 +320,11 @@ def time_range(ocr_text: str) -> tuple[tuple[int, int], tuple[int, int]] | None:
         match = compact_matches[0]
         start = _parse_ampm_time(match.group(1), match.group(2), match.group(5))
         end = _parse_ampm_time(match.group(3), match.group(4), match.group(5))
+        # The printed meridiem belongs to the end. A start that would come
+        # after it crosses noon or midnight: "11-3PM" starts at 11 AM, "10-12PM"
+        # at 10 AM, and "11-1AM" at 11 PM.
+        if start is not None and end is not None and start > end:
+            start = ((start[0] + 12) % 24, start[1])
     if start is None or end is None:
         return None
     return start, end

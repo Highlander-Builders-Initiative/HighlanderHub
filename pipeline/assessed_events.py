@@ -18,13 +18,15 @@ from typing import NamedTuple
 import content_assessment as semantic
 from config import DATA_DIR, load_account_meta
 from event_identity import dedupe_event_rows
-from instagram_rows import build_instagram_row, instagram_event_id
+from instagram_rows import POST_EVENT_ID, build_instagram_row, instagram_event_id
 
 log = logging.getLogger("pipeline.assessed_events")
 CACHE_DIR = DATA_DIR / "assessments"
 # A failed call is retried next run and assessment moves on; this many in a row
 # means the model is down or the quota is spent, so stop spending calls.
 MAX_CONSECUTIVE_FAILURES = 3
+# More sessions than this in one post is a season schedule, not a week's plans.
+MAX_SESSIONS = 5
 
 
 class AssessmentResult(NamedTuple):
@@ -210,13 +212,39 @@ def _evidence_slides(result: dict, occurrence: dict) -> list[int]:
     return sorted(found)
 
 
-def post_rows(record: dict, cached: dict, payload: dict, meta: dict, now: str) -> tuple[list[dict], set[str]]:
-    """Map one assessed post to at most one published event row.
+def _session_keys(occurrences: list[dict]) -> list[str | None]:
+    """ID suffixes for the sessions of a post that lists several.
 
-    Posts carry a single announcement by design: a club posting a whole term's
-    schedule as one carousel cannot be turned into one listing without choosing
-    a session for the reader. Those are skipped with a reason rather than
-    guessed at.
+    A session is keyed by its UTC start minute, like legacy Instagram IDs. Two
+    sessions starting together (an org fair and an open house at 4 PM) also
+    carry their title. A post announcing one event keeps the post's own ID.
+    """
+    from event_dates import normalize_timestamptz
+
+    if len(occurrences) < 2:
+        return [None] * len(occurrences)
+    stamps = []
+    for occurrence in occurrences:
+        starts_at = normalize_timestamptz(occurrence.get("starts_at"))
+        stamps.append(datetime.fromisoformat(starts_at).astimezone(timezone.utc).strftime("%Y%m%dT%H%MZ")
+                      if starts_at else None)
+    keys = []
+    for stamp, occurrence in zip(stamps, occurrences):
+        if stamp is None or stamps.count(stamp) == 1:
+            keys.append(stamp)
+            continue
+        title = re.sub(r"\s+", " ", str(occurrence.get("title") or "").casefold()).strip()
+        keys.append(f"{stamp}-{hashlib.sha256(title.encode()).hexdigest()[:6]}")
+    return keys
+
+
+def post_rows(record: dict, cached: dict, payload: dict, meta: dict, now: str) -> tuple[list[dict], set[str]]:
+    """Map one assessed post to its published event rows, one per session.
+
+    A welcome-week carousel lists several sessions in one post; each becomes its
+    own listing under the post's ID plus a session key, so the site's day and
+    week views show every one of them. A post listing more than MAX_SESSIONS is
+    a season schedule (every game, every info session) and publishes nothing.
     """
     import extract_posts as posts
     from event_dates import normalize_timestamptz
@@ -228,40 +256,42 @@ def post_rows(record: dict, cached: dict, payload: dict, meta: dict, now: str) -
     occurrences = assessment_occurrences(result, payload["source"])
     if not occurrences:
         return [], known
-    if len(occurrences) > 1:
-        log.info("post %s: skipping %d occurrences; a post publishes exactly one event",
-                 record.get("media_id"), len(occurrences))
+    if len(occurrences) > MAX_SESSIONS:
+        log.info("post %s: skipping %d sessions; a post listing more than %d is a season schedule",
+                 record.get("media_id"), len(occurrences), MAX_SESSIONS)
         return [], known
 
-    occurrence = occurrences[0]
-    owner = str(record.get("owner_username") or record.get("handle") or "").strip().lower()
-    starts_at = normalize_timestamptz(occurrence.get("starts_at"))
-    title = str(occurrence.get("title") or "").strip()
-    if not starts_at or not title:
-        return [], known
-
+    owner =str(record.get("owner_username") or record.get("handle") or "").strip().lower()
     slides = posts.ordered_slides(cached)
     by_index = {int(slide.get("index", position)): slide
                 for position, slide in enumerate(slides)}
     ocr_text = "\n".join(str(slide.get("ocr_text") or "") for slide in slides)
     caption = str(record.get("caption") or "")
 
-    event_id = instagram_event_id(owner, record.get("media_id"))
-    if event_id:
-        known.add(event_id)
-    # The flyer is the first slide whose text was actually cited. A caption-only
-    # event has no cited slide, so the post's lead image represents it.
-    cited = [index for index in _evidence_slides(result, occurrence) if index in by_index]
-    flyer = by_index.get(cited[0]) if cited else (slides[0] if slides else {})
+    rows = []
+    for occurrence, session in zip(occurrences, _session_keys(occurrences)):
+        starts_at = normalize_timestamptz(occurrence.get("starts_at"))
+        title = str(occurrence.get("title") or "").strip()
+        if not starts_at or not title:
+            continue
+        event_id = instagram_event_id(owner, record.get("media_id"), session)
+        if event_id:
+            known.add(event_id)
+        # The flyer is the first slide whose text was actually cited. A caption-only
+        # event has no cited slide, so the post's lead image represents it.
+        cited = [index for index in _evidence_slides(result, occurrence) if index in by_index]
+        flyer = by_index.get(cited[0]) if cited else (slides[0] if slides else {})
 
-    row = build_instagram_row(
-        record, {**occurrence, "description": caption}, identity_handle=owner, host_handle=owner,
-        account_meta=meta.get(owner) or meta.get(record.get("handle")) or {},
-        text=f"{caption}\n{ocr_text}", image_url=(flyer or {}).get("image_url"),
-        qr_urls=[url for slide in slides for url in slide.get("qr_urls") or []],
-        scraped_at=now, assessed_kind=result["kind"],
-    )
-    return ([row] if row and row["content_kind"] in {"student_event", "student_deadline"} else []), known
+        row = build_instagram_row(
+            record, {**occurrence, "description": caption}, identity_handle=owner, host_handle=owner,
+            account_meta=meta.get(owner) or meta.get(record.get("handle")) or {},
+            text=f"{caption}\n{ocr_text}", image_url=(flyer or {}).get("image_url"),
+            qr_urls=[url for slide in slides for url in slide.get("qr_urls") or []],
+            scraped_at=now, assessed_kind=result["kind"], session=session,
+        )
+        if row and row["content_kind"] in {"student_event", "student_deadline"}:
+            rows.append(row)
+    return rows, known
 
 
 def make_update(source: dict, raw: dict, cached: dict | None, prior: dict | None, meta: dict,
@@ -441,26 +471,50 @@ def _withhold_reconciled(updates: list[dict], registry: dict, canonical: dict[st
     its decision is unchanged, its canonical listing is live, and its row still
     matches that listing directly or through another withheld repeat. A changed
     decision, a missing listing, or a row that no longer matches publishes.
+
+    A post listing several sessions withholds only the merged session and keeps
+    publishing the rest, which ends its support for the merged listing. That is
+    safe only while the listing survives without it: another post supports it,
+    or it is locked. Otherwise the session republishes as before.
     """
     from reconcile_events import merge_duplicates, same_event
+    supporters: dict[str, set[str]] = {}
+    for key, record in registry.items():
+        for event_id in record.get("event_ids") or []:
+            supporters.setdefault(event_id, set()).add(key)
     pending: dict[str, list[dict]] = {}
     for update in updates:
         prior = registry.get(update["source_key"]) or {}
+        if update["assessment"] != prior.get("assessment"):
+            continue
         rows, supported = update.get("rows") or [], prior.get("event_ids") or []
-        if (len(rows) == 1 and len(supported) == 1 and supported[0] in canonical
-                and rows[0]["id"] != supported[0]
-                and rows[0]["id"] in (prior.get("known_event_ids") or [])
-                and update["assessment"] == prior.get("assessment")):
-            pending.setdefault(supported[0], []).append(update)
+        known = prior.get("known_event_ids") or []
+        if len(rows) == 1:
+            if (len(supported) == 1 and supported[0] in canonical
+                    and rows[0]["id"] != supported[0] and rows[0]["id"] in known):
+                pending.setdefault(supported[0], []).append(rows[0])
+            continue
+        media = update["source_key"].rsplit(":", 1)[-1]
+        listings = [event_id for event_id in dict.fromkeys([*supported, *known])
+                    if event_id in canonical and not _own_listing(event_id, media)
+                    and (canonical[event_id].get("is_locked")
+                         or supporters.get(event_id, set()) - {update["source_key"]})]
+        for row in rows:
+            if row["id"] in known and row["id"] not in supported:
+                for event_id in listings:
+                    pending.setdefault(event_id, []).append(row)
     withheld: dict[str, list[dict]] = {}
+    skipped: set[str] = set()
     for canonical_id, candidates in pending.items():
         group = [canonical[canonical_id]]
-        while joined := [item for item in candidates
-                         if any(same_event(item["rows"][0], member) for member in group)]:
-            group.extend(item["rows"][0] for item in joined)
-            candidates = [item for item in candidates if item not in joined]
+        # A session that could belong to several listings joins the first.
+        candidates = [row for row in candidates if row["id"] not in skipped]
+        while joined := [row for row in candidates
+                         if any(same_event(row, member) for member in group)]:
+            group.extend(joined)
+            candidates = [row for row in candidates if row not in joined]
         withheld[canonical_id] = group[1:]
-    skipped = {row["id"] for rows in withheld.values() for row in rows}
+        skipped.update(row["id"] for row in group[1:])
     if stats is not None and skipped:
         stats["reconciled_duplicates_skipped"] = len(skipped)
     kept = []
@@ -475,9 +529,20 @@ def _withhold_reconciled(updates: list[dict], registry: dict, canonical: dict[st
         update["rows"] = [
             {key: value for key, value in merge_duplicates(row, [row, *withheld[row["id"]]]).items()
              if key != "hosts"} if withheld.get(row["id"]) else row
-            for row in rows]
+            for row in rows if row["id"] not in skipped]
         kept.append(update)
     return kept
+
+
+def _own_listing(event_id: str, media_id) -> bool:
+    """Whether a listing is this post's own: its single event or one of its sessions."""
+    match = POST_EVENT_ID.fullmatch(str(event_id))
+    return bool(match) and match.group(2) == str(media_id)
+
+
+def _lists_sessions(prior: dict) -> bool:
+    result = (prior.get("assessment") or {}).get("result") or {}
+    return len(result.get("occurrences") or []) > 1 or bool(result.get("schedule"))
 
 
 def _canonical_listings(processed: list[tuple[dict, dict]], registry: dict) -> dict[str, dict]:
@@ -485,8 +550,13 @@ def _canonical_listings(processed: list[tuple[dict, dict]], registry: dict) -> d
     wanted = set()
     for record, _ in processed:
         prior = registry.get(f"instagram:post:{record.get('media_id')}") or {}
-        own = f"_p{record.get('media_id')}"
-        wanted.update(event_id for event_id in prior.get("event_ids") or [] if not event_id.endswith(own))
+        event_ids = prior.get("event_ids") or []
+        if _lists_sessions(prior):
+            # Once a merged session is withheld, the listing it was merged into
+            # leaves this post's support but stays among its known IDs.
+            event_ids = [*event_ids, *(prior.get("known_event_ids") or [])]
+        wanted.update(event_id for event_id in event_ids
+                      if not _own_listing(event_id, record.get("media_id")))
     if not wanted:
         return {}
     from db import get_event_rows_by_ids
