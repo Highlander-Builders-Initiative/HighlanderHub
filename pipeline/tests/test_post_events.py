@@ -641,12 +641,12 @@ class PostPublicationTests(unittest.TestCase):
         result["occurrences"].reverse()
         self.assertEqual({row["id"] for row in rows}, {row["id"] for row in self.rows(result)[0]})
 
-    def test_a_post_listing_more_than_five_sessions_is_a_season_schedule(self):
+    def test_a_post_listing_more_than_ten_sessions_is_a_season_schedule(self):
         result = post_decision(self.source, field="slide_2_ocr")
-        result["occurrences"].extend(self.session(f"Game {n}", f"2026-10-0{n}T19:00:00-07:00")
-                                     for n in range(1, 5))
-        self.assertEqual(5, len(self.rows(result)[0]))
-        result["occurrences"].append(self.session("Game 5", "2026-10-05T19:00:00-07:00"))
+        result["occurrences"].extend(self.session(f"Game {n}", f"2026-10-{n:02d}T19:00:00-07:00")
+                                     for n in range(1, 10))
+        self.assertEqual(10, len(self.rows(result)[0]))
+        result["occurrences"].append(self.session("Game 10", "2026-10-10T19:00:00-07:00"))
         with self.assertLogs("pipeline.assessed_events", level="INFO") as logged:
             rows, known = self.rows(result)
         self.assertEqual(([], set()), (rows, known))

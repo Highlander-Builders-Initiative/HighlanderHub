@@ -26,7 +26,7 @@ CACHE_DIR = DATA_DIR / "assessments"
 # means the model is down or the quota is spent, so stop spending calls.
 MAX_CONSECUTIVE_FAILURES = 3
 # More sessions than this in one post is a season schedule, not a week's plans.
-MAX_SESSIONS = 5
+MAX_SESSIONS = 10
 
 
 class AssessmentResult(NamedTuple):
