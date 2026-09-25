@@ -1,4 +1,4 @@
-"""Post extraction caching and the single-event publication boundary."""
+"""Post extraction caching and the per-session publication boundary."""
 from __future__ import annotations
 
 import copy
@@ -615,17 +615,49 @@ class PostPublicationTests(unittest.TestCase):
         rows, _ = publication.post_rows(item, cached, payload, self.meta, "2026-09-11T12:00:00+00:00")
         self.assertEqual("https://storage.example/slide0.jpg", rows[0]["image_url"])
 
-    def test_multiple_occurrences_are_skipped_with_a_reason(self):
-        second = {"title": "Study Jam II", "starts_at": "2026-09-16T15:00:00-07:00",
-                  "ends_at": None, "all_day": False, "location": "",
-                  "activity_evidence": evidence("slide_2_ocr", self.source["texts"]["slide_2_ocr"]),
-                  "date_evidence": evidence("slide_2_ocr", self.source["texts"]["slide_2_ocr"])}
+    def session(self, title, starts_at):
+        cited = evidence("slide_2_ocr", self.source["texts"]["slide_2_ocr"])
+        return {"title": title, "starts_at": starts_at, "ends_at": None, "all_day": False,
+                "location": "", "activity_evidence": cited, "date_evidence": cited}
+
+    def test_each_session_of_a_multi_event_post_is_its_own_listing(self):
         result = post_decision(self.source, field="slide_2_ocr")
-        result["occurrences"].append(second)
+        result["occurrences"].append(self.session("Board Game Night", "2026-09-16T19:00:00-07:00"))
+        rows, known = self.rows(result)
+        self.assertEqual([("ig_acm.ucr_p700-20260915T2200Z", "Study Jam"),
+                          ("ig_acm.ucr_p700-20260917T0200Z", "Board Game Night")],
+                         [(row["id"], row["title"]) for row in rows])
+        self.assertEqual({row["id"] for row in rows}, known)
+        self.assertEqual({"https://www.instagram.com/p/CStudy/"}, {row["source_url"] for row in rows})
+
+    def test_sessions_starting_together_keep_separate_identities(self):
+        result = post_decision(self.source, field="slide_2_ocr")
+        result["occurrences"].append(self.session("MESA Open House", "2026-09-15T15:00:00-07:00"))
+        rows, _ = self.rows(result)
+        self.assertEqual(2, len({row["id"] for row in rows}))
+        for row in rows:
+            self.assertRegex(row["id"], r"^ig_acm\.ucr_p700-20260915T2200Z-[0-9a-f]{6}$")
+        # Keys depend on the session, not on its position in the post.
+        result["occurrences"].reverse()
+        self.assertEqual({row["id"] for row in rows}, {row["id"] for row in self.rows(result)[0]})
+
+    def test_a_post_listing_more_than_five_sessions_is_a_season_schedule(self):
+        result = post_decision(self.source, field="slide_2_ocr")
+        result["occurrences"].extend(self.session(f"Game {n}", f"2026-10-0{n}T19:00:00-07:00")
+                                     for n in range(1, 5))
+        self.assertEqual(5, len(self.rows(result)[0]))
+        result["occurrences"].append(self.session("Game 5", "2026-10-05T19:00:00-07:00"))
         with self.assertLogs("pipeline.assessed_events", level="INFO") as logged:
             rows, known = self.rows(result)
-        self.assertEqual([], rows)
-        self.assertIn("a post publishes exactly one event", "\n".join(logged.output))
+        self.assertEqual(([], set()), (rows, known))
+        self.assertIn("season schedule", "\n".join(logged.output))
+
+    def test_a_session_over_before_the_post_is_claimed_but_not_listed(self):
+        result = post_decision(self.source, field="slide_2_ocr")
+        result["occurrences"].append(self.session("Move-In Day", "2026-09-01T09:00:00-07:00"))
+        rows, known = self.rows(result)
+        self.assertEqual(["Study Jam"], [row["title"] for row in rows])
+        self.assertEqual({"ig_acm.ucr_p700-20260915T2200Z", "ig_acm.ucr_p700-20260901T1600Z"}, known)
 
     def test_an_announcement_publishes_nothing_but_withdraws_its_support(self):
         result = post_decision(self.source, field="slide_2_ocr", kind="announcement")

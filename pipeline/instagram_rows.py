@@ -55,17 +55,28 @@ def _bool_or_default(value: Any, default: bool) -> bool:
     return default
 
 
-def instagram_event_id(handle: str, media_id: str) -> str | None:
-    """Identify the post's single announcement independently of its event date.
+# A post's own listings: its single announcement, or each session of a post
+# that lists several. Session suffixes never contain "_", so the owner prefix
+# is still everything before the final "_" (see event_identity.event_key).
+POST_EVENT_ID = re.compile(r"ig_(.+)_p(\d+)((?:-[0-9A-Za-z]+)*)")
 
+
+def instagram_event_id(handle: str, media_id: str, session: str | None = None) -> str | None:
+    """Identify a post's announcement independently of its event date.
+
+    A post announcing one event is identified by the post alone. Each session of
+    a post that lists several adds its own `session` key, so correcting, locking
+    or deleting one session leaves its siblings' identities alone.
     Keep the owner prefix for repeat-ad reconciliation, including private hosts.
     Semantic duplicates are reconciled after publication, never by primary key.
     """
     if not media_id or not re.fullmatch(r"[0-9]+", str(media_id)):
         raise ValueError("Instagram publication requires a numeric post media_id")
+    if session is not None and not re.fullmatch(r"[0-9A-Za-z]+(?:-[0-9A-Za-z]+)*", session):
+        raise ValueError(f"Invalid session key: {session!r}")
     if not handle:
         return None
-    return f"ig_{handle}_p{media_id}"
+    return f"ig_{handle}_p{media_id}" + (f"-{session}" if session else "")
 
 
 def _requires_signup(text: str) -> bool:
@@ -89,7 +100,7 @@ def _caption_rsvp_url(caption: str) -> str | None:
 def build_instagram_row(
     raw: dict, occurrence: dict, *, identity_handle: str, host_handle: str,
     account_meta: dict, text: str, image_url: str | None, qr_urls: Iterable,
-    scraped_at: str, assessed_kind: str | None,
+    scraped_at: str, assessed_kind: str | None, session: str | None = None,
 ) -> dict | None:
     """Apply date, host privacy, classification and RSVP rules to an assessed post."""
     title = str(occurrence.get("title") or "").strip()
@@ -111,7 +122,7 @@ def build_instagram_row(
                  raw.get("media_id") or raw.get("id"), starts_at)
         return None
 
-    event_id = instagram_event_id(identity_handle, raw.get("media_id"))
+    event_id = instagram_event_id(identity_handle, raw.get("media_id"), session)
     if not event_id:
         return None
     description = str(occurrence.get("description") or "")

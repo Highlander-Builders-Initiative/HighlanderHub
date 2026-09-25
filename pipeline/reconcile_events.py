@@ -13,6 +13,7 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from event_identity import _parse_instant, _row_score, event_key, imported_row_kind
 from event_dates import PACIFIC_TZ
+from instagram_rows import POST_EVENT_ID
 
 log = logging.getLogger("pipeline.reconcile_events")
 _GENERIC_WORDS = frozenset("first second third general body meeting club weekly monthly annual fall winter spring summer welcome back workshop session orientation open house social event ucr uc riverside university california of at the and for to a an".split())
@@ -24,9 +25,10 @@ _EVENT_NOUNS = frozenset("conference fair celebration party reception".split())
 _PRESENTATION_WORDS = frozenset("performance performances screening film live concert recital".split())
 _SHORTCODE_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
 _FEED_PERMALINK = re.compile(r"https?://(?:www\.)?instagram\.com/(?:p|reel|tv)/([A-Za-z0-9_-]{1,11})/?(?:[?#]|$)")
-# Current rows end in _p<media_id>; retired story reshares were keyed on the
-# original post as ig_post_<media_id>_<minute>.
-_MEDIA_ID = re.compile(r"ig_post_(\d+)_\d{8}T\d{4}Z|ig_.+_p(\d+)")
+# Current rows end in _p<media_id>, plus a session key when the post lists
+# several; retired story reshares were keyed on the original post as
+# ig_post_<media_id>_<minute>.
+_MEDIA_ID = re.compile(r"ig_post_(\d+)_\d{8}T\d{4}Z|ig_.+_p(\d+)(?:-[0-9A-Za-z]+)*")
 _MENTION = re.compile(r"@([a-z0-9._]+)")
 
 
@@ -41,6 +43,20 @@ def _source_media(row: dict) -> set[str]:
             value = value * 64 + _SHORTCODE_ALPHABET.index(char)
         media.add(str(value))
     return media
+
+
+def _sibling_sessions(left: dict, right: dict) -> bool:
+    """Two sessions one post lists separately, as its assessment split them."""
+    ids = [str(row.get("id") or "") for row in (left, right)]
+    matches = [POST_EVENT_ID.fullmatch(event_id) for event_id in ids]
+    return (ids[0] != ids[1] and all(matches)
+            and matches[0].group(1, 2) == matches[1].group(1, 2))
+
+
+def _session_row(row: dict) -> bool:
+    """One session of a post that lists several."""
+    match = POST_EVENT_ID.fullmatch(str(row.get("id") or ""))
+    return bool(match and match.group(3))
 
 
 def _credits(row: dict, other: dict) -> bool:
@@ -230,6 +246,10 @@ def same_event(left: dict, right: dict) -> bool:
     start, other_start = (_parse_instant(r.get('starts_at')) for r in (left, right))
     if start is None or other_start is None or left.get('content_kind') != right.get('content_kind'):
         return False
+    # Sessions of one post share its caption, link and flyer, and can share a
+    # start. They are still different events.
+    if _sibling_sessions(left, right):
+        return False
     # A feed row and a retired story reshare are one post. The two parses may
     # disagree on room or end time.
     if start == other_start and (_source_media(left) & _source_media(right)):
@@ -362,9 +382,11 @@ def plan(rows: list[dict], tombstones: list[dict] = (), *, now: datetime | None 
             continue
         if now and all((_parse_instant(r.get('ends_at') or r.get('starts_at')) or now) < now for r in live):
             continue
+        # A post about one event names and pictures it better than a line in a
+        # schedule post, whose caption is longer but covers every session.
         winner = max(live, key=lambda r: (bool(r.get('is_locked')), not _date_only(r),
                      kinds[r['id']] == 'instagram',
-                     _named_organizer(r, live), _row_score(r)))
+                     _named_organizer(r, live), not _session_row(r), _row_score(r)))
         duplicates = {r['id'] for r in live if r['id'] != winner['id'] and not r.get('is_locked')
                       and (kinds[r['id']] == 'instagram' or kinds[winner['id']] == 'instagram')}
         if not duplicates:
