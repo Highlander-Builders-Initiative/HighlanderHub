@@ -1,13 +1,20 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { logoutAdmin, updateEvent, deleteEvent } from "../actions";
+import {
+  logoutAdmin,
+  updateEvent,
+  deleteEvent,
+  mergeDuplicateEvents,
+  markEventsDifferent,
+} from "../actions";
 import { useRouter } from "next/navigation";
 import { IoLogOut, IoOpenOutline, IoSearch } from "react-icons/io5";
 import Link from "next/link";
 import { formatDayShort, formatTimeParts } from "@/lib/dates";
 import { AdminLiveEventRow } from "../AdminLiveEventRow";
 import { AdminEventEditDrawer } from "../AdminEventEditDrawer";
+import { AdminDuplicateReview } from "../AdminDuplicateReview";
 import { useAdminEventEdit } from "../useAdminEventEdit";
 import { useAdminActions } from "../useAdminActions";
 import {
@@ -16,12 +23,15 @@ import {
 } from "../pending-action";
 import {
   type AdminEventRow,
+  type DuplicateReviewPair,
   sortEventsByFeedOrder,
   matchesAdminSearch,
 } from "../types";
 
 interface AdminDashboardClientProps {
   initialEvents: AdminEventRow[];
+  duplicatePairs: DuplicateReviewPair[];
+  duplicateQueueError: string | null;
 }
 
 function formatAdminEventDate(isoStr: string) {
@@ -35,6 +45,8 @@ function formatAdminEventDate(isoStr: string) {
 
 export default function AdminDashboardClient({
   initialEvents,
+  duplicatePairs,
+  duplicateQueueError,
 }: AdminDashboardClientProps) {
   const router = useRouter();
   const [search, setSearch] = useState("");
@@ -95,6 +107,35 @@ export default function AdminDashboardClient({
         router.refresh();
       } else {
         setActionError(res.error || "Failed to delete event.");
+      }
+    });
+  };
+
+  const handleMerge = (
+    pairKey: string,
+    kept: AdminEventRow,
+    removed: AdminEventRow
+  ) => {
+    void runAction({ type: "merge", id: pairKey }, async () => {
+      const res = await mergeDuplicateEvents(kept.id, removed.id, {
+        kept: kept.updated_at,
+        removed: removed.updated_at,
+      });
+      if (res.success) {
+        router.refresh();
+      } else {
+        setActionError(res.error || "Failed to merge events.");
+      }
+    });
+  };
+
+  const handleDistinct = (pairKey: string, pair: DuplicateReviewPair) => {
+    void runAction({ type: "distinct", id: pairKey }, async () => {
+      const res = await markEventsDifferent(pair.first.id, pair.second.id);
+      if (res.success) {
+        router.refresh();
+      } else {
+        setActionError(res.error || "Failed to save the decision.");
       }
     });
   };
@@ -166,7 +207,16 @@ export default function AdminDashboardClient({
           </div>
         )}
 
-        <div className="space-y-3 border-b border-ink/10 pb-3">
+        <AdminDuplicateReview
+          pairs={duplicatePairs}
+          queueError={duplicateQueueError}
+          feedPositionById={feedPositionById}
+          pendingAction={pendingAction}
+          onMerge={handleMerge}
+          onDistinct={handleDistinct}
+        />
+
+        <div className="space-y-3 border-b border-ink/10 pb-3 pt-4">
           <div className="flex items-baseline justify-between gap-4">
             <h2 className="font-display text-base font-semibold text-ink">
               Live events

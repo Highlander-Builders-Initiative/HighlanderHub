@@ -6,7 +6,8 @@ import { EVENTS_CACHE_TAG } from "@/lib/events";
 import { signSession, verifySession, getAdminSupabase, getAdminPassword, verifyPassword } from "@/lib/admin";
 import { ADMIN_LOGIN_RATE_LIMIT, clientIp, rateLimit } from "@/lib/rate-limit";
 import { parseAdminEventUpdate } from "./validate-event-update";
-import type { AdminEventUpdatePayload } from "./types";
+import { duplicateMergeChanges } from "./duplicate-merge";
+import type { AdminEventRow, AdminEventUpdatePayload } from "./types";
 
 /**
  * Verifies if the current requester is authorized as an admin.
@@ -156,5 +157,114 @@ export async function deleteEvent(eventId: string) {
   revalidatePath("/events");
   revalidatePath("/admin");
 
+  return { success: true };
+}
+
+function isEventId(value: unknown): value is string {
+  return typeof value === "string" && value.length > 0 && value.length <= 200;
+}
+
+/** Both listings of a reviewed pair, as they are now. */
+async function loadDuplicatePair(firstId: unknown, secondId: unknown) {
+  if (!isEventId(firstId) || !isEventId(secondId) || firstId === secondId) {
+    return { ok: false as const, error: "Choose two different events." };
+  }
+  const { data, error } = await getAdminSupabase()
+    .from("events")
+    .select("*")
+    .in("id", [firstId, secondId])
+    .overrideTypes<AdminEventRow[], { merge: false }>();
+  if (error) {
+    return { ok: false as const, error: `Failed to load events: ${error.message}` };
+  }
+  const first = data?.find((row) => row.id === firstId);
+  const second = data?.find((row) => row.id === secondId);
+  if (!first || !second) {
+    return {
+      ok: false as const,
+      error: "One of these listings is already gone. Refresh to see the current queue.",
+    };
+  }
+  return { ok: true as const, first, second };
+}
+
+function revalidateEvents() {
+  revalidateTag(EVENTS_CACHE_TAG, "max");
+  revalidatePath("/events");
+  revalidatePath("/admin");
+}
+
+/**
+ * Keeps one listing of a duplicate pair and removes the other. The kept
+ * listing takes whatever details it lacks, the removed listing's sources are
+ * pointed at it so a later scrape does not recreate the duplicate, and the
+ * decision is saved for the pipeline. `seen` holds each listing's updated_at
+ * as the admin reviewed it; a listing changed since then aborts the merge.
+ */
+export async function mergeDuplicateEvents(
+  keptId: string,
+  removedId: string,
+  seen: { kept: string; removed: string }
+) {
+  await requireAdmin();
+
+  const pair = await loadDuplicatePair(keptId, removedId);
+  if (!pair.ok) return { success: false, error: pair.error };
+  const { first: kept, second: removed } = pair;
+  if (kept.updated_at !== seen?.kept || removed.updated_at !== seen?.removed) {
+    return {
+      success: false,
+      error: "One of these listings changed since this page loaded. Refresh and review it again.",
+    };
+  }
+
+  const { changes } = duplicateMergeChanges(kept, removed);
+  const { error } = await getAdminSupabase().rpc("merge_duplicate_events", {
+    kept_id: kept.id,
+    removed_id: removed.id,
+    changes,
+    kept_updated_at: kept.updated_at,
+    removed_updated_at: removed.updated_at,
+  });
+  if (error) {
+    return { success: false, error: `Failed to merge events: ${error.message}` };
+  }
+
+  revalidateEvents();
+  return { success: true };
+}
+
+/**
+ * Records that a flagged pair are different events. Both listings stay, and
+ * reconciliation will neither merge them nor flag them again.
+ */
+export async function markEventsDifferent(firstId: string, secondId: string) {
+  await requireAdmin();
+
+  const pair = await loadDuplicatePair(firstId, secondId);
+  if (!pair.ok) return { success: false, error: pair.error };
+  // The queue orders each pair by code point, as the pipeline does.
+  const [a, b] =
+    pair.first.id < pair.second.id ? [pair.first, pair.second] : [pair.second, pair.first];
+
+  const { error } = await getAdminSupabase()
+    .from("event_duplicate_reviews")
+    .upsert(
+      {
+        event_id: a.id,
+        other_event_id: b.id,
+        status: "different",
+        kept_event_id: null,
+        event_snapshot: a,
+        other_snapshot: b,
+        decided_at: new Date().toISOString(),
+      },
+      { onConflict: "event_id,other_event_id" }
+    );
+  if (error) {
+    return { success: false, error: `Failed to save the decision: ${error.message}` };
+  }
+
+  revalidatePath("/admin");
   return { success: true };
 }
