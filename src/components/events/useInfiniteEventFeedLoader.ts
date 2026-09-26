@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, type MutableRefObject, type RefObject } from "react";
-
-const LOAD_ROOT_MARGIN_PX = 640;
+import { FEED_LOOKAHEAD_VIEWPORTS } from "./useNearViewport";
 
 type UseInfiniteEventFeedLoaderArgs = {
   loadMoreRef: RefObject<HTMLDivElement | null>;
@@ -33,12 +32,12 @@ export function useInfiniteEventFeedLoader({
     const observedTarget: HTMLDivElement = target;
     let retryTimeoutId: number | null = null;
 
+    // The next page lands while the feed's end is still screens away, so its
+    // cards, and their flyers, are ready before the reader reaches them.
     function isWithinLoadMargin() {
+      const margin = window.innerHeight * FEED_LOOKAHEAD_VIEWPORTS;
       const rect = observedTarget.getBoundingClientRect();
-      return (
-        rect.top <= window.innerHeight + LOAD_ROOT_MARGIN_PX &&
-        rect.bottom >= -LOAD_ROOT_MARGIN_PX
-      );
+      return rect.top <= window.innerHeight + margin && rect.bottom >= -margin;
     }
 
     function clearRetry() {
@@ -80,7 +79,7 @@ export function useInfiniteEventFeedLoader({
           tryLoadOrDefer();
         }
       },
-      { rootMargin: `${LOAD_ROOT_MARGIN_PX}px 0px` }
+      { rootMargin: `${FEED_LOOKAHEAD_VIEWPORTS * 100}% 0px` }
     );
 
     observer.observe(observedTarget);

@@ -16,6 +16,7 @@ type FlyerPosterProps = {
    *  on the slot around it. */
   className?: string;
   priority?: boolean;
+  loading?: "eager" | "lazy";
   /** When the flyer's shape only arrives after first paint, keep the
    *  placeholder's space and center the flyer in it, so content below never
    *  jumps. For heroes that sit above the text. */
@@ -43,6 +44,7 @@ export function FlyerPoster({
   width,
   className = "",
   priority,
+  loading,
   reserveSpace = false,
   onError,
 }: FlyerPosterProps) {
@@ -81,6 +83,7 @@ export function FlyerPoster({
         width={width ?? 1000}
         height={Math.round((width ?? 1000) * 1.25)}
         priority={priority}
+        loading={loading}
         onLoad={(img) => {
           const next =
             img.naturalWidth && img.naturalHeight

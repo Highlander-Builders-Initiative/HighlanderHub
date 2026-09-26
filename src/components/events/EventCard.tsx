@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { memo, type MouseEvent, useState } from "react";
+import { memo, type MouseEvent, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { CampusEvent } from "@/types/event";
 import { FlyerPoster } from "@/components/events/FlyerPoster";
 import { HostAvatars, eventHosts } from "@/components/events/HostAvatars";
+import { useNearViewport } from "@/components/events/useNearViewport";
 import { eventFlyerAlt, eventListLinkLabel } from "@/lib/events/a11y";
 import { isDeadlineKind } from "@/lib/events/content-kind";
 import { isOnlineLocation } from "@/lib/events/location";
@@ -76,7 +77,8 @@ function LocationIcon({ online }: { online: boolean }) {
 
 /**
  * What both feed shapes do on open: hand the event to the detail view,
- * remember where the reader was in the feed, and prefetch on intent.
+ * remember where the reader was in the feed, and prefetch on intent. Also
+ * starts the flyer once the card comes near (see useNearViewport).
  */
 function useEventLink(
   event: CampusEvent,
@@ -84,6 +86,8 @@ function useEventLink(
   surface: "list_card" | "list_row"
 ) {
   const router = useRouter();
+  const ref = useRef<HTMLAnchorElement>(null);
+  const flyerLoading: "eager" | "lazy" = useNearViewport(ref) ? "eager" : "lazy";
   const href = `/events/${event.id}`;
   const prefetch = () => router.prefetch(href);
   const onOpen = (clickEvent: MouseEvent<HTMLAnchorElement>) => {
@@ -95,7 +99,7 @@ function useEventLink(
     });
     track("event_open", { id: event.id, category: event.category, surface });
   };
-  return { href, onOpen, prefetch };
+  return { ref, href, onOpen, prefetch, flyerLoading };
 }
 
 /**
@@ -103,7 +107,7 @@ function useEventLink(
  * and a row of tags, with the flyer pinned at the right edge.
  */
 function EventCardComponent({ event, loadedCount }: EventCardProps) {
-  const { href, onOpen, prefetch } = useEventLink(event, loadedCount, "list_card");
+  const { ref, href, onOpen, prefetch, flyerLoading } = useEventLink(event, loadedCount, "list_card");
   const [imageBroken, setImageBroken] = useState(false);
   const showImage = !!event.imageUrl && !imageBroken;
   const isDeadline = isDeadlineKind(event.contentKind);
@@ -118,6 +122,7 @@ function EventCardComponent({ event, loadedCount }: EventCardProps) {
   // (DESIGN.md, Event Card). Phones keep the resting lift.
   return (
     <Link
+      ref={ref}
       href={href}
       // Opens as an overlay (@modal intercepted route); the list keeps its place.
       scroll={false}
@@ -182,6 +187,7 @@ function EventCardComponent({ event, loadedCount }: EventCardProps) {
             src={event.imageUrl!}
             alt={eventFlyerAlt(event)}
             width={120}
+            loading={flyerLoading}
             className="rounded-lg bg-ink/[0.05] ring-1 ring-ink/10"
             onError={() => setImageBroken(true)}
           />
@@ -206,7 +212,7 @@ EventCard.displayName = "EventCard";
  * their children take the phone grid's areas directly.
  */
 function EventCompactRowComponent({ event, loadedCount }: EventCardProps) {
-  const { href, onOpen, prefetch } = useEventLink(event, loadedCount, "list_row");
+  const { ref, href, onOpen, prefetch, flyerLoading } = useEventLink(event, loadedCount, "list_row");
   const [imageBroken, setImageBroken] = useState(false);
   const showImage = !!event.imageUrl && !imageBroken;
   const isDeadline = isDeadlineKind(event.contentKind);
@@ -221,6 +227,7 @@ function EventCompactRowComponent({ event, loadedCount }: EventCardProps) {
   // the hover wash and the ring follow its corners.
   return (
     <Link
+      ref={ref}
       href={href}
       // Opens as an overlay (@modal intercepted route); the list keeps its place.
       scroll={false}
@@ -237,6 +244,7 @@ function EventCompactRowComponent({ event, loadedCount }: EventCardProps) {
             src={event.imageUrl!}
             alt={eventFlyerAlt(event)}
             width={40}
+            loading={flyerLoading}
             className="rounded-md bg-ink/[0.05] ring-1 ring-ink/10"
             onError={() => setImageBroken(true)}
           />
