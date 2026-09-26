@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { mkdirSync, readFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, extname, join, relative } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -8,7 +8,11 @@ import ts from "typescript";
 const projectRoot = new URL("../../", import.meta.url);
 const projectRootPath = fileURLToPath(projectRoot);
 const sourceRoot = new URL("src/", projectRoot);
-const outRoot = join(tmpdir(), "highlanderhub-ts-test");
+// Test files run in separate processes. Sharing output paths lets one worker
+// truncate a module while another imports it, intermittently losing exports.
+const outRoot = mkdtempSync(join(tmpdir(), "highlanderhub-ts-test-"));
+process.once("exit", () => rmSync(outRoot, { recursive: true, force: true }));
+symlinkSync(join(projectRootPath, "node_modules"), join(outRoot, "node_modules"), "junction");
 const moduleCache = new Map();
 
 function sourceUrlFor(specifier, fromUrl = projectRoot) {

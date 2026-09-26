@@ -1,22 +1,11 @@
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync, readFileSync, symlinkSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { fileURLToPath } from "node:url";
-import { join } from "node:path";
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { importTsModule } from "./helpers/import-ts-module.mjs";
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
-
-function ensureTempNodeModules() {
-  const outRoot = join(tmpdir(), "highlanderhub-ts-test");
-  const target = join(outRoot, "node_modules");
-  if (existsSync(target)) return;
-  mkdirSync(outRoot, { recursive: true });
-  symlinkSync(fileURLToPath(new URL("../node_modules", import.meta.url)), target);
-}
 
 function makeEvent(id, category, overrides = {}) {
   return {
@@ -36,7 +25,6 @@ function makeEvent(id, category, overrides = {}) {
 }
 
 test("event category badge counts come from the full count source, not the loaded page", async () => {
-  ensureTempNodeModules();
   const { useEventFeedFilters } = await importTsModule(
     "src/components/events/useEventFeedFilters.ts"
   );
@@ -70,7 +58,6 @@ test("event category badge counts come from the full count source, not the loade
 });
 
 test("event filter summary omits the total when every event is loaded", async () => {
-  ensureTempNodeModules();
   const { useEventFeedFilters } = await importTsModule(
     "src/components/events/useEventFeedFilters.ts"
   );
