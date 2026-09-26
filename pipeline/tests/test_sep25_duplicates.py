@@ -60,8 +60,9 @@ class SameSlotTests(unittest.TestCase):
 
     def test_the_whole_day_reconciles_to_one_listing_per_event(self):
         _, removed, _ = plan(list(copy.deepcopy(ROWS).values()))
+        # SSA's repost of USM's conference merged after the 9/26 admin review.
         self.assertEqual({d for _, *duplicates in GROUPS for d in duplicates} | {
-            'ig_swe.ucr_p3992713400886284255-20260929T0000Z'}, removed)
+            'ig_swe.ucr_p3992713400886284255-20260929T0000Z', 'ig_ssa_ucr_p3992176458381655610'}, removed)
 
     def test_a_placeholder_room_takes_the_announced_one(self):
         schedule, announced = rows('ig_swe.ucr_p3992713400886284255-20260929T0000Z',
@@ -80,8 +81,13 @@ class SameSlotTests(unittest.TestCase):
                         dict(starts_at='2026-09-24T01:30:00+00:00'), dict(title='GSBA Mixer 2027'),
                         dict(title='GSBA Mixer Session 2'), dict(content_kind='student_deadline')]:
             self.assertFalse(same_event(a, b | changes), changes)
+        # Two posts of the account's own naming different rooms stay apart. A
+        # schedule entry's room is superseded by the later post (BSIB's HUB 269
+        # and HUB 260, merged in the 9/26 admin review).
         rooms = [{'location': 'Costo Hall 111'}, {'location': 'Costo Hall 112'}]
-        self.assertFalse(same_event(a | rooms[0], b | rooms[1]))
+        dedicated = b | {'id': 'ig_ucr_gsba_p3990595040556201590'}
+        self.assertFalse(same_event(a | rooms[0], dedicated | rooms[1]))
+        self.assertTrue(same_event(a | rooms[0], b | rooms[1]))
 
     def test_sessions_of_one_post_never_merge_even_at_one_slot(self):
         movie, painting = rows('ig_swe.ucr_p3992713400886284255-20260926T0100Z',
@@ -107,9 +113,11 @@ class SameSlotTests(unittest.TestCase):
         # A club's table at the fair is its own listing, not a repost.
         fair, kdsap = rows('ig_ucrstudentlife_p3992616370000457243', 'ig_ucrkdsap_p3992840778807560105')
         self.assertFalse(same_event(fair, kdsap))
-        # A region is not a venue; USM's two posts need review, not a title match.
+        # A region is not a venue, but the conference's identical three-day span
+        # and title identify it (merged in the 9/26 admin review).
         usm, ssa = rows('ig_unitedsikhmovement_p3984337006174941028', 'ig_ssa_ucr_p3992176458381655610')
-        self.assertFalse(same_event(usm, ssa))
+        self.assertTrue(same_event(usm, ssa))
+        self.assertFalse(same_event(usm, ssa | {'ends_at': '2026-11-08T08:00:00+00:00'}))
 
     def test_a_deadline_correction_needs_the_same_application(self):
         old, new = rows('ig_projectluxucr_p3991650789138547733', 'ig_projectluxucr_p3993699260234309260')
@@ -156,7 +164,7 @@ class ReviewCandidateTests(unittest.TestCase):
         # The Kappa Theta repost merges, so it is not left for review.
         self.assertEqual(set(), self.pairs(fair, kappa))
         usm = ('ig_unitedsikhmovement_p3984337006174941028', 'ig_ssa_ucr_p3992176458381655610')
-        self.assertEqual({tuple(sorted(usm))}, self.pairs(*usm))
+        self.assertEqual(set(), self.pairs(*usm))
 
     def test_boilerplate_deadlines_past_events_and_other_days_are_not_listed(self):
         self.assertEqual(set(), self.pairs('ig_acm_ucr_p3981465870551773335', 'ig_acm_ucr_p3980467437204327812'))

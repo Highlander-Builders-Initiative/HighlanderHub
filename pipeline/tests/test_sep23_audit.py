@@ -238,9 +238,11 @@ class DuplicateTests(unittest.TestCase):
         self.assertFalse(same_event(ROWS[second], ROWS[organizer]))
         self.assertTrue(same_event(ROWS[first], ROWS[second]))
 
-    def test_the_legacy_midnight_story_is_left_for_source_review(self):
+    def test_the_legacy_midnight_story_joins_the_post_quoting_it(self):
+        # Left for source review until the 9/26 admin review merged it.
         rows = [copy.deepcopy(row) for row in ROWS.values() if 'joel' in row['title'].casefold()]
-        self.assertNotIn('ig_bluejadeandjoel_20260926T0700Z', plan(rows)[1])
+        self.assertEqual('ig_bluejadeandjoel_p3981934097668906335',
+                         plan(rows)[2].get('ig_bluejadeandjoel_20260926T0700Z'))
 
     def test_an_unquoted_or_relocated_teaser_stays_separate(self):
         organizer = ROWS['ig_bluejadeandjoel_p3981934097668906335']

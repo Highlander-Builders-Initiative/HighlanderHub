@@ -1,0 +1,447 @@
+{
+ "ema": {
+  "source": {
+   "texts": {
+    "caption": "Hey everyone!! Starting this Tuesday, Sept. 29th we will have our Fall quarter meetings for EMA from 2-3pm on Tuesdays in HMNSS 2211! \n\nWe hope everyone had a great summer and we’re so excited to be back!",
+    "slide_1_ocr": "Ema Fall\nEVERY TUESDAY\n2-3 PM\nHMNSS 2211\nStarting Sept. 29th"
+   },
+   "origin": "instagram",
+   "posted_at": "2026-09-26T15:58:53+00:00",
+   "source_key": "instagram:post:3994807273716605662",
+   "source_occurrences": []
+  },
+  "refused": [
+   {
+    "kind": "activity",
+    "reason": "The source advertises recurring weekly meetings for the EMA student group with a specific start date, time, and location.",
+    "schedule": {
+     "title": "EMA Fall Quarter Meetings",
+     "windows": [
+      {
+       "end": "15:00",
+       "start": "14:00"
+      }
+     ],
+     "last_day": "2026-12-11",
+     "location": "HMNSS 2211",
+     "weekdays": [
+      1
+     ],
+     "first_day": "2026-09-29",
+     "location_evidence": [
+      {
+       "field": "caption"
+      },
+      {
+       "field": "slide_1_ocr"
+      }
+     ]
+    },
+    "date_role": "occurrence",
+    "occurrences": [],
+    "date_evidence": [
+     {
+      "field": "caption"
+     },
+     {
+      "field": "slide_1_ocr"
+     }
+    ],
+    "activity_evidence": [
+     {
+      "field": "caption"
+     },
+     {
+      "field": "slide_1_ocr"
+     }
+    ],
+    "use_source_occurrences": false
+   },
+   {
+    "kind": "activity",
+    "reason": "The source advertises recurring weekly meetings for the EMA student group with a specific start date, time, and location, but does not provide a bounded end date for the quarter.",
+    "schedule": null,
+    "date_role": "occurrence",
+    "occurrences": [],
+    "date_evidence": [
+     {
+      "field": "caption"
+     },
+     {
+      "field": "slide_1_ocr"
+     }
+    ],
+    "activity_evidence": [
+     {
+      "field": "caption"
+     },
+     {
+      "field": "slide_1_ocr"
+     }
+    ],
+    "use_source_occurrences": false
+   }
+  ],
+  "post": {
+   "media_id": "3994807273716605662",
+   "handle": "emaatucr",
+   "owner_username": "emaatucr",
+   "shortcode": "DdwaAzQBmLe",
+   "permalink": "https://www.instagram.com/p/DdwaAzQBmLe/",
+   "posted_at": "2026-09-26T15:58:53+00:00",
+   "typename": "GraphImage"
+  },
+  "images": [
+   {
+    "index": 0,
+    "ocr_text": "Ema Fall\nEVERY TUESDAY\n2-3 PM\nHMNSS 2211\nStarting Sept. 29th",
+    "qr_urls": []
+   }
+  ]
+ },
+ "festival": {
+  "source": {
+   "texts": {
+    "caption": "The @riversideartandmusicfestival is a free, family-friendly celebration of arts, culture, and community. This annual event features live music, art installations, workshops, local artist vendors, and performances that showcase the creativity and talent of Riverside. \n\nUse your FREE @riversidetransit U-PASS to get there!🚍✨\n\nFollow  @riversideartscouncil & @riversideartandmusicfestival to learn more! \n\nVisit transportation.ucr.edu/campus-bus-routes for the RTA Route 1 bus map and schedule. \n\nUse the @transit.app mobile app to follow bus arrival times in real time. \n\n#ucr #riverisdeartandmusicfestival #ucrarts",
+    "slide_1_ocr": "HOW TO GET TO\nTHE RIVERSIDE\nUC\nRIVERSIDE\nTransportation Services\nART & MUSIC FESTIVAL\nFROM CAMPUS\nSATURDAY\n•\nSEPTEMBER 26TH\n2 PM TO 9 PM\n1. TAKE THE RTA ROUTE 1 BUS FROM\nBANNOCKBURN VILLAGE. VISIT OUR WEBSITE\nFOR THE RTA ROUTE 1 BUS SCHEDULE.\n2. GO TO THE MARKET + UNIVERSITY BUS STOP\nIN DOWNTOWN RIVERSIDE.\n3. WALK ONE BLOCK OVER TO WHITE PARK.\nSCAN THE QR CODE FOR THE GOOGLE MAP\nLOCATION FOR DIRECTIONS TO WHITE PARK\nFROM THE BUS STOP."
+   },
+   "origin": "instagram",
+   "posted_at": "2026-09-21T17:00:25+00:00",
+   "source_key": "instagram:post:3991215763134136362",
+   "source_occurrences": []
+  },
+  "result": {
+   "kind": "activity",
+   "reason": "The source advertises a specific festival event with a date, time, and location.",
+   "schedule": null,
+   "date_role": "occurrence",
+   "occurrences": [
+    {
+     "title": "Riverside Art & Music Festival",
+     "all_day": false,
+     "ends_at": "2026-09-26T21:00:00-07:00",
+     "location": "White Park, Downtown Riverside",
+     "starts_at": "2026-09-26T14:00:00-07:00",
+     "date_evidence": [
+      {
+       "field": "slide_1_ocr"
+      }
+     ],
+     "activity_evidence": [
+      {
+       "field": "caption"
+      },
+      {
+       "field": "slide_1_ocr"
+      }
+     ],
+     "location_evidence": [
+      {
+       "field": "slide_1_ocr"
+      }
+     ]
+    }
+   ],
+   "date_evidence": [
+    {
+     "field": "slide_1_ocr"
+    }
+   ],
+   "activity_evidence": [
+    {
+     "field": "caption"
+    },
+    {
+     "field": "slide_1_ocr"
+    }
+   ],
+   "use_source_occurrences": false
+  },
+  "post": {
+   "media_id": "3991215763134136362",
+   "handle": "ucrtaps",
+   "owner_username": "ucrtaps",
+   "shortcode": "DdjpZcXjMAq",
+   "permalink": "https://www.instagram.com/p/DdjpZcXjMAq/",
+   "posted_at": "2026-09-21T17:00:25+00:00",
+   "typename": "GraphImage"
+  },
+  "images": [
+   {
+    "index": 0,
+    "ocr_text": "HOW TO GET TO\nTHE RIVERSIDE\nUC\nRIVERSIDE\nTransportation Services\nART & MUSIC FESTIVAL\nFROM CAMPUS\nSATURDAY\n•\nSEPTEMBER 26TH\n2 PM TO 9 PM\n1. TAKE THE RTA ROUTE 1 BUS FROM\nBANNOCKBURN VILLAGE. VISIT OUR WEBSITE\nFOR THE RTA ROUTE 1 BUS SCHEDULE.\n2. GO TO THE MARKET + UNIVERSITY BUS STOP\nIN DOWNTOWN RIVERSIDE.\n3. WALK ONE BLOCK OVER TO WHITE PARK.\nSCAN THE QR CODE FOR THE GOOGLE MAP\nLOCATION FOR DIRECTIONS TO WHITE PARK\nFROM THE BUS STOP.",
+    "qr_urls": [
+     "https://maps.app.goo.gl/KpfeSoemNXCk5Wwg8"
+    ]
+   }
+  ]
+ },
+ "college_night": {
+  "source": {
+   "texts": {
+    "caption": "What happens when you embrace the unexpected?\n\nInspired by Dispatches: The Photography of Douglas McCulloh, 1990–2025, join us for Chance Encounters: College Night—an evening of art, music, making, and creative experimentation for all college students (UCR and other colleges!).\n\nExplore the galleries, groove to music by DJ Devyn Dezray, grab some matcha and snacks in the college lounge (with college ID), and get hands-on with creative activities including surrealist zine-making, button making, bedazzling everyday objects, and a whimsy maxxing station for maximum chaotic joy\n\nCome curious. Make something weird. See where chance takes you.\n\nDJ Devyn Dezray\nArt-making + creative activities\nOpen galleries\nMatcha + snacks (until supplies run out!)\n\n🗓️ October 1, 2026\n⏰ 6-9 p.m.\n🆓 Free event for all college students!\n🔗 Learn more by visiting the link in bio!",
+    "slide_1_ocr": ""
+   },
+   "origin": "instagram",
+   "posted_at": "2026-09-24T02:00:21+00:00",
+   "source_key": "instagram:post:3992937072452983510",
+   "source_occurrences": []
+  },
+  "result": {
+   "kind": "activity",
+   "reason": "The source advertises a specific college night event with art, music, and creative activities, including a date, time, and location.",
+   "schedule": null,
+   "date_role": "occurrence",
+   "occurrences": [
+    {
+     "title": "Chance Encounters: College Night",
+     "all_day": false,
+     "ends_at": "2026-10-01T21:00:00-07:00",
+     "location": "UCR (implied by college lounge/UCR mention)",
+     "starts_at": "2026-10-01T18:00:00-07:00",
+     "date_evidence": [
+      {
+       "field": "caption"
+      }
+     ],
+     "activity_evidence": [
+      {
+       "field": "caption"
+      }
+     ],
+     "location_evidence": [
+      {
+       "field": "caption"
+      }
+     ]
+    }
+   ],
+   "date_evidence": [
+    {
+     "field": "caption"
+    }
+   ],
+   "activity_evidence": [
+    {
+     "field": "caption"
+    }
+   ],
+   "use_source_occurrences": false
+  },
+  "post": {
+   "media_id": "3992937072452983510",
+   "handle": "ucrarts",
+   "owner_username": "ucrarts",
+   "shortcode": "DdpwxymDFrW",
+   "permalink": "https://www.instagram.com/p/DdpwxymDFrW/",
+   "posted_at": "2026-09-24T02:00:21+00:00",
+   "typename": "GraphImage"
+  },
+  "images": [
+   {
+    "index": 0,
+    "ocr_text": "",
+    "qr_urls": []
+   }
+  ]
+ },
+ "college_night_reminder": {
+  "source": {
+   "texts": {
+    "caption": "Let’s play This or That with Emily (College Night’s biggest fan)!\n\nJoin us for College Night at The Culver Center next Thursday, October 1 at 6!",
+    "slide_1_ocr": "M\nM\nAM STREET"
+   },
+   "origin": "instagram",
+   "posted_at": "2026-09-26T18:00:07+00:00",
+   "source_key": "instagram:post:3994869751280487508",
+   "source_occurrences": []
+  },
+  "refused": [
+   {
+    "kind": "activity",
+    "reason": "The post advertises a specific event called College Night at The Culver Center, inviting students to join.",
+    "schedule": null,
+    "date_role": "occurrence",
+    "occurrences": [
+     {
+      "title": "College Night",
+      "all_day": false,
+      "ends_at": null,
+      "location": "The Culver Center",
+      "starts_at": "2026-10-01T18:00:00-07:00",
+      "date_evidence": [
+       {
+        "field": "caption"
+       }
+      ],
+      "activity_evidence": [
+       {
+        "field": "caption"
+       }
+      ],
+      "location_evidence": [
+       {
+        "field": "caption"
+       }
+      ]
+     }
+    ],
+    "date_evidence": [
+     {
+      "field": "caption"
+     }
+    ],
+    "activity_evidence": [
+     {
+      "field": "caption"
+     }
+    ],
+    "use_source_occurrences": false
+   },
+   {
+    "kind": "activity",
+    "reason": "The post advertises a specific event called College Night at The Culver Center, inviting students to join.",
+    "schedule": null,
+    "date_role": "occurrence",
+    "occurrences": [
+     {
+      "title": "College Night",
+      "all_day": false,
+      "ends_at": null,
+      "location": "The Culver Center",
+      "starts_at": "2026-10-01T18:00:00-07:00",
+      "date_evidence": [
+       {
+        "field": "caption"
+       }
+      ],
+      "activity_evidence": [
+       {
+        "field": "caption"
+       }
+      ],
+      "location_evidence": [
+       {
+        "field": "caption"
+       }
+      ]
+     }
+    ],
+    "date_evidence": [
+     {
+      "field": "caption"
+     }
+    ],
+    "activity_evidence": [
+     {
+      "field": "caption"
+     }
+    ],
+    "use_source_occurrences": false
+   }
+  ],
+  "post": {
+   "media_id": "3994869751280487508",
+   "handle": "ucrarts",
+   "owner_username": "ucrarts",
+   "shortcode": "DdwoN-BBsxU",
+   "permalink": "https://www.instagram.com/p/DdwoN-BBsxU/",
+   "posted_at": "2026-09-26T18:00:07+00:00",
+   "typename": "GraphVideo"
+  },
+  "images": [
+   {
+    "index": 0,
+    "ocr_text": "M\nM\nAM STREET",
+    "qr_urls": []
+   }
+  ]
+ },
+ "dunk_a_dove": {
+  "source": {
+   "texts": {
+    "caption": "READY TO MAKE A SPLASH?🪣 The Exceptional Epsilon Sigma Chapter of Zeta Phi Beta Sorority, Incorporated and the Smooth Gamma Rho Nu Chapter of Phi Beta Sigma Fraternity, Incorporated are bringing you DUNK A DOVE 🕊️! \n\nCome out, bring your friends, and get your chance to DUNK A DOVE 💙🤍, all while supporting a good cause 😁. \n\n📆Thursday, Oct 1st\n📍 Front of ASP @ UCR 🐻\n⏰12:45-2:00\n\n#DunkADove #zphib #phibetasigma #epsilonsigma #gammarhonu",
+    "slide_1_ocr": "ORORITY INC. po\nFood\nFiner Woman\n***\nи и\nPHI BETA SIGMA FRATERNITY, INC\nBROTHERHOOD SCHOLARSUID SERVICE\nB\nPhi Beta Sigma Fraternity, Incorporated\nThe \"Smooth\" Gamma Rho Nu Chapter\nX\nZeta Phi Beta Sorority, Incorporated\nThe \"Exceptional\" Epsilon Sigma Chapter\nPresents\nETA PHI B\nBETA\nSince\n1920\nDUNK A\nDOVE\nSplash for Good Cause\nL\nThursday\nOctober 1st\nFront of ASP\nUCR\n12:45pm-2pm\nFOR MORE INFORMATION:\nucrsigmas O epsilonsigmazetas",
+    "slide_2_ocr": "BUCKET\nPRICES\nWATER\nBALLOON $1.50\nBUCKET $3\nSOAK A\nDOVE\nBUCKET + BALLOON\nCOMBO\n$6"
+   },
+   "origin": "instagram",
+   "posted_at": "2026-09-26T18:01:52+00:00",
+   "source_key": "instagram:post:3994870641338253639",
+   "source_occurrences": []
+  },
+  "result": {
+   "kind": "activity",
+   "reason": "The post advertises a specific fundraising event called 'Dunk a Dove' with a clear date, time, and location.",
+   "schedule": null,
+   "date_role": "occurrence",
+   "occurrences": [
+    {
+     "title": "Dunk a Dove",
+     "all_day": false,
+     "ends_at": "2026-10-01T14:00:00-07:00",
+     "location": "Front of ASP, UCR",
+     "starts_at": "2026-10-01T12:45:00-07:00",
+     "date_evidence": [
+      {
+       "field": "caption"
+      },
+      {
+       "field": "slide_1_ocr"
+      }
+     ],
+     "activity_evidence": [
+      {
+       "field": "caption"
+      }
+     ],
+     "location_evidence": [
+      {
+       "field": "caption"
+      },
+      {
+       "field": "slide_1_ocr"
+      }
+     ]
+    }
+   ],
+   "date_evidence": [
+    {
+     "field": "caption"
+    },
+    {
+     "field": "slide_1_ocr"
+    }
+   ],
+   "activity_evidence": [
+    {
+     "field": "caption"
+    },
+    {
+     "field": "slide_1_ocr"
+    }
+   ],
+   "use_source_occurrences": false
+  },
+  "post": {
+   "media_id": "3994870641338253639",
+   "handle": "epsilonsigmazetas",
+   "owner_username": "epsilonsigmazetas",
+   "shortcode": "Ddwoa68moFH",
+   "permalink": "https://www.instagram.com/p/Ddwoa68moFH/",
+   "posted_at": "2026-09-26T18:01:52+00:00",
+   "typename": "GraphSidecar"
+  },
+  "images": [
+   {
+    "index": 0,
+    "ocr_text": "ORORITY INC. po\nFood\nFiner Woman\n***\nи и\nPHI BETA SIGMA FRATERNITY, INC\nBROTHERHOOD SCHOLARSUID SERVICE\nB\nPhi Beta Sigma Fraternity, Incorporated\nThe \"Smooth\" Gamma Rho Nu Chapter\nX\nZeta Phi Beta Sorority, Incorporated\nThe \"Exceptional\" Epsilon Sigma Chapter\nPresents\nETA PHI B\nBETA\nSince\n1920\nDUNK A\nDOVE\nSplash for Good Cause\nL\nThursday\nOctober 1st\nFront of ASP\nUCR\n12:45pm-2pm\nFOR MORE INFORMATION:\nucrsigmas O epsilonsigmazetas",
+    "qr_urls": []
+   },
+   {
+    "index": 1,
+    "ocr_text": "BUCKET\nPRICES\nWATER\nBALLOON $1.50\nBUCKET $3\nSOAK A\nDOVE\nBUCKET + BALLOON\nCOMBO\n$6",
+    "qr_urls": []
+   }
+  ]
+ }
+}

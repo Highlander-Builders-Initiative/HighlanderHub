@@ -61,4 +61,20 @@ def normalize_rsvp_url(value: Any, ocr_text: str = "") -> str | None:
     # A shortener's homepage cannot identify the registration form.
     if host.removeprefix("www.") in {"bit.ly", "tinyurl.com", "forms.gle"} and not parsed.path.strip("/"):
         return None
+    # Directions to the venue ("scan for the Google Map location") are not a
+    # signup, however prominently the flyer prints their QR code.
+    if _is_map_url(host.removeprefix("www."), parsed.path):
+        return None
     return normalized
+
+
+_MAP_HOSTS = frozenset({"maps.app.goo.gl", "maps.google.com", "maps.apple.com", "maps.apple",
+                        "waze.com", "ul.waze.com"})
+
+
+def _is_map_url(host: str, path: str) -> bool:
+    if host in _MAP_HOSTS or host.startswith("maps.google."):
+        return True
+    first = path.strip("/").split("/", 1)[0].lower()
+    return ((host == "goo.gl" and first == "maps")
+            or (re.fullmatch(r"google\.[a-z.]+", host) is not None and first == "maps"))
