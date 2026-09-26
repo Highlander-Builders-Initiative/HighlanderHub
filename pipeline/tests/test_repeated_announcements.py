@@ -188,6 +188,7 @@ class RepeatedAnnouncementsTests(unittest.TestCase):
              patch.object(reconcile, 'plan', return_value=planned), \
              patch.object(reconcile, 'same_event', side_effect=AssertionError('Do not rematch')), \
              patch.object(db, 'get_deleted_event_ids', return_value={tombstone['id']}), \
+             patch.object(db, 'get_duplicate_reviews', return_value=[]), \
              patch.object(db, 'client', return_value=database):
             reconcile.main(notify=False)
         expected = [{'id': row['id'], 'replacement_id': None if row is suppressed else partner['id'],

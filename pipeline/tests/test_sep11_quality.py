@@ -137,6 +137,7 @@ class CrossSourceReconciliationTests(unittest.TestCase):
         database.table.return_value.update.return_value.eq.return_value.eq.return_value.execute.side_effect = RuntimeError('write failed')
         with patch.object(db,'get_event_rows',return_value=rows), \
              patch.object(db,'get_deleted_event_ids',return_value=set()), \
+             patch.object(db,'get_duplicate_reviews',return_value=[]), \
              patch.object(db,'client',return_value=database):
             with self.assertRaisesRegex(RuntimeError,'write failed'):
                 reconcile.main(notify=False)
@@ -152,6 +153,7 @@ class CrossSourceReconciliationTests(unittest.TestCase):
         query.execute.return_value.data = []
         with patch.object(db,'get_event_rows',return_value=rows), \
              patch.object(db,'get_deleted_event_ids',return_value=set()), \
+             patch.object(db,'get_duplicate_reviews',return_value=[]), \
              patch.object(db,'client',return_value=database):
             with self.assertRaisesRegex(RuntimeError,'changed during reconciliation'):
                 reconcile.main(notify=False)

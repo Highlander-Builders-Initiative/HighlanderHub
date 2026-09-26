@@ -9,6 +9,7 @@ from __future__ import annotations
 import logging
 import re
 from datetime import datetime, timezone
+from typing import NamedTuple
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from event_identity import _parse_instant, _row_score, event_key, imported_row_kind
@@ -496,17 +497,58 @@ def _ambiguous_summaries(rows: list[dict]) -> set[str]:
             and _summary_group_conflict([row, *(other for other in detailed if same_event(row, other))])}
 
 
+class Reviews(NamedTuple):
+    """Admin decisions from the duplicate review queue, which override the rules.
+
+    merged maps each listing an admin merged away to the listing kept; distinct
+    holds the pairs an admin judged to be different events.
+    """
+    merged: dict[str, str] = {}
+    distinct: frozenset[frozenset[str]] = frozenset()
+
+    @classmethod
+    def from_queue(cls, queue: list[dict]) -> Reviews:
+        merged, distinct = {}, set()
+        for review in queue:
+            pair = {review['event_id'], review['other_event_id']}
+            if review['status'] == 'duplicate':
+                merged[(pair - {review['kept_event_id']}).pop()] = review['kept_event_id']
+            elif review['status'] == 'different':
+                distinct.add(frozenset(pair))
+        return cls(merged, frozenset(distinct))
+
+    def kept(self, event_id: str) -> str | None:
+        """The listing an admin merged event_id into, following later merges."""
+        seen = {event_id}
+        while (following := self.merged.get(event_id)) and following not in seen:
+            seen.add(event_id := following)
+        return event_id if len(seen) > 1 else None
+
+    def judged_distinct(self, rows: list[dict]) -> bool:
+        ids = [row['id'] for row in rows]
+        return any(frozenset((a, b)) in self.distinct for i, a in enumerate(ids) for b in ids[i + 1:])
+
+
+def load_reviews() -> tuple[Reviews, list[dict]]:
+    """Admin decisions, and the queue they were read from."""
+    from db import get_duplicate_reviews
+    queue = get_duplicate_reviews()
+    return Reviews.from_queue(queue), queue
+
+
 # Words every application or signup deadline shares; they name no program.
 _DEADLINE_BOILERPLATE = frozenset('application applications deadline registration recruitment program due'.split())
 
 
-def review_candidates(rows: list[dict], *, now: datetime | None = None) -> list[tuple[dict, dict]]:
+def review_candidates(rows: list[dict], *, now: datetime | None = None,
+                      reviews: Reviews = Reviews()) -> list[tuple[dict, dict]]:
     """Upcoming pairs that look alike but no rule merged, for human review.
 
     The rules merge only corroborated repeats; a new kind of repost (another
     wording, venue or account) first appears here instead of silently on the
     site. Pairs overlap on one day and either come from one account at one
-    start, or share two distinctive title words.
+    start, or share two distinctive title words. A pair an admin already
+    judged different is not asked about again.
     """
     def span(row):
         start = _parse_instant(row.get('starts_at'))
@@ -522,7 +564,8 @@ def review_candidates(rows: list[dict], *, now: datetime | None = None) -> list[
             if other_start.astimezone(PACIFIC_TZ).date() != start.astimezone(PACIFIC_TZ).date():
                 break
             if (other_start > end or left.get('content_kind') != right.get('content_kind')
-                    or _sibling_sessions(left, right) or same_event(left, right)):
+                    or _sibling_sessions(left, right) or reviews.judged_distinct([left, right])
+                    or same_event(left, right)):
                 continue
             shared = (_slot_title_words(left) & _slot_title_words(right)) - _DEADLINE_BOILERPLATE
             if (_same_account(left, right) and start == other_start and _specific_slot(left)
@@ -536,19 +579,25 @@ def _reconciliation_rows() -> list[dict]:
     return [row for row in get_event_rows() if imported_row_kind(row) != 'other']
 
 
-def plan(rows: list[dict], tombstones: list[dict] = (), *, now: datetime | None = None
-         ) -> tuple[list[dict], set[str], dict[str, str]]:
+def plan(rows: list[dict], tombstones: list[dict] = (), *, now: datetime | None = None,
+         reviews: Reviews = Reviews()) -> tuple[list[dict], set[str], dict[str, str]]:
     """Return canonical updates, removed IDs and duplicate-to-canonical mappings.
 
     Removed IDs absent from replacements are exclusively tombstone suppression.
     Retired campus rows may only be removed in favor of an Instagram import.
+    Admin reviews override the rules: a listing merged away that its source
+    recreated joins the listing kept, and a pair judged different never merges.
     """
     kinds = {row['id']: imported_row_kind(row) for row in rows}
     rows = [row for row in rows if kinds[row['id']] != 'other']
     groups: list[list[dict]] = []
     blocked = {r["id"] for r in tombstones}
     by_id = {r["id"]: r for r in rows}
-    candidates = [*rows, *(r for r in tombstones if r['id'] not in by_id)]
+    forced = {event_id: kept for event_id in by_id if (kept := reviews.kept(event_id)) in by_id}
+    # Decisions that loop back on themselves name no listing to keep.
+    forced = {event_id: kept for event_id, kept in forced.items() if kept not in forced}
+    candidates = [*(r for r in rows if r['id'] not in forced),
+                  *(r for r in tombstones if r['id'] not in by_id)]
     # A teaser for two different timed sessions does not identify either one.
     ambiguous = {row['id'] for row in candidates if _date_only(row) and len({
         _parse_instant(other.get('starts_at')) for other in candidates
@@ -571,7 +620,7 @@ def plan(rows: list[dict], tombstones: list[dict] = (), *, now: datetime | None 
                         or (vague_venue and _same_place(left, right) == 'conflicting')):
                     ambiguous_details.add(row['id'])
     def matches_pair(left, right):
-        if {left['id'], right['id']} & ambiguous_details:
+        if {left['id'], right['id']} & ambiguous_details or reviews.judged_distinct([left, right]):
             return False
         if ({left['id'], right['id']} & ambiguous
                 and _parse_instant(left.get('starts_at')) != _parse_instant(right.get('starts_at'))):
@@ -579,7 +628,9 @@ def plan(rows: list[dict], tombstones: list[dict] = (), *, now: datetime | None 
         return same_event(left, right)
     for row in sorted(candidates, key=lambda r:r['id']):
         matches = [g for g in groups if any(matches_pair(row, other) for other in g)]
-        if _summary_group_conflict([row, *(other for group in matches for other in group)]):
+        # Nor may a third listing bridge a pair judged different.
+        joined = [row, *(other for group in matches for other in group)]
+        if _summary_group_conflict(joined) or reviews.judged_distinct(joined):
             matches = []
         # Two related date-only teasers must not bridge incompatible sessions.
         # A corrected deadline replaces its old date rather than bridging it.
@@ -596,6 +647,8 @@ def plan(rows: list[dict], tombstones: list[dict] = (), *, now: datetime | None 
                 groups.remove(group)
         else:
             groups.append([row])
+    for event_id, kept in forced.items():
+        next(group for group in groups if any(r['id'] == kept for r in group)).append(by_id[event_id])
     updates, tombstoned, replacements = [], set(), {}
     for group in groups:
         live = [r for r in group if r['id'] in by_id]
@@ -612,7 +665,7 @@ def plan(rows: list[dict], tombstones: list[dict] = (), *, now: datetime | None 
         # Rows on different days are a corrected deadline: the newest post's
         # date is the current one.
         revised = len({_parse_instant(r['starts_at']).astimezone(PACIFIC_TZ).date() for r in live}) > 1
-        winner = max(live, key=lambda r: (bool(r.get('is_locked')), not _date_only(r),
+        winner = max(live, key=lambda r: (r['id'] not in forced, bool(r.get('is_locked')), not _date_only(r),
                      kinds[r['id']] == 'instagram',
                      _named_organizer(r, live), not _session_row(r),
                      max(map(int, _source_media(r)), default=0) if revised else 0, _row_score(r)))
@@ -744,10 +797,12 @@ def _inherit_notifications(rows: list[dict], updates: list[dict], canonical_ids:
 
 
 def main(*, notify: bool = True) -> None:
-    from db import client, get_deleted_event_ids
+    from db import client, get_deleted_event_ids, queue_duplicate_reviews
     from discord_notify import notify_free_food_events
     rows = _reconciliation_rows()
-    updates, removed, replacements = plan(rows, _tombstoned_candidates(get_deleted_event_ids()), now=datetime.now(timezone.utc))
+    reviews, queue = load_reviews()
+    updates, removed, replacements = plan(rows, _tombstoned_candidates(get_deleted_event_ids()),
+                                          now=datetime.now(timezone.utc), reviews=reviews)
     original = {row['id']: row for row in rows}
     for row in updates:
         before = original[row['id']]
@@ -769,12 +824,13 @@ def main(*, notify: bool = True) -> None:
     log.info('Reconciled %d canonical updates and %d duplicate/deleted rows', len(updates), deleted)
     canonical = {r['id']:r for r in rows if r['id'] not in removed}
     canonical.update({r['id']:r for r in updates})
-    suspects = review_candidates(list(canonical.values()), now=datetime.now(timezone.utc))
+    suspects = review_candidates(list(canonical.values()), now=datetime.now(timezone.utc), reviews=reviews)
     for left, right in suspects:
         log.warning('Possible duplicate for review: %s %r (@%s) and %s %r (@%s)',
                     left['id'], left.get('title'), left.get('host_handle'),
                     right['id'], right.get('title'), right.get('host_handle'))
-    log.info('%d possible duplicates left for review', len(suspects))
+    queue_duplicate_reviews([(left['id'], right['id']) for left, right in suspects], queue)
+    log.info('%d possible duplicates queued for admin review', len(suspects))
     if notify:
         sent = notify_free_food_events(canonical.values())
         log.info('Sent %d free food Discord notifications', sent)

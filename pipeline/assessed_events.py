@@ -13,12 +13,15 @@ import logging
 import re
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import NamedTuple
+from typing import TYPE_CHECKING, NamedTuple
 
 import content_assessment as semantic
 from config import DATA_DIR, load_account_meta
 from event_identity import dedupe_event_rows
 from instagram_rows import POST_EVENT_ID, build_instagram_row, instagram_event_id
+
+if TYPE_CHECKING:
+    from reconcile_events import Reviews
 
 log = logging.getLogger("pipeline.assessed_events")
 CACHE_DIR = DATA_DIR / "assessments"
@@ -386,7 +389,7 @@ def _complete(updates: list[dict], *, notify: bool) -> None:
 def post_updates(processed: list[tuple[dict, dict]], meta: dict, now: str,
                  registry: dict | None = None, stats: dict | None = None,
                  *, stop_on_error: bool = False,
-                 canonical: dict[str, dict] | None = None) -> list[dict]:
+                 canonical: dict[str, dict] | None = None, reviews: Reviews | None = None) -> list[dict]:
     """Build publication updates for collected posts.
 
     A usable extraction (`ok`) and a retryable failure (`error`) produce an
@@ -458,12 +461,12 @@ def post_updates(processed: list[tuple[dict, dict]], meta: dict, now: str,
                     break
                 log.warning("Assessment failed for %s; continuing: %s", source["source_key"], failure.get("error"))
     if canonical is not None:
-        updates = _withhold_reconciled(updates, registry, canonical, stats)
+        updates = _withhold_reconciled(updates, registry, canonical, stats, reviews)
     return updates
 
 
 def _withhold_reconciled(updates: list[dict], registry: dict, canonical: dict[str, dict],
-                         stats: dict | None = None) -> list[dict]:
+                         stats: dict | None = None, reviews: Reviews | None = None) -> list[dict]:
     """Stop recreating repeat advertisements that reconciliation already merged.
 
     Reconciliation removes a duplicate and remaps its source onto the listing
@@ -477,8 +480,11 @@ def _withhold_reconciled(updates: list[dict], registry: dict, canonical: dict[st
     publishing the rest, which ends its support for the merged listing. That is
     safe only while the listing survives without it: another post supports it,
     or it is locked. Otherwise the session republishes as before.
+
+    A row an admin merged into the listing matches it whatever the rules say.
     """
-    from reconcile_events import _ambiguous_summaries, _summary_group_conflict, merge_duplicates, same_event
+    from reconcile_events import Reviews, _ambiguous_summaries, _summary_group_conflict, merge_duplicates, same_event
+    reviews = reviews or Reviews()
     # Current decisions supersede saved rows when checking whether a summary
     # still identifies only one event. A newly collected competing event must
     # be considered even before its first publication.
@@ -516,8 +522,9 @@ def _withhold_reconciled(updates: list[dict], registry: dict, canonical: dict[st
         # A session that could belong to several listings joins the first.
         candidates = [row for row in candidates if row["id"] not in skipped | ambiguous]
         while joined := [row for row in candidates
-                         if any(same_event(row, member) for member in group)
-                         and not _summary_group_conflict([*group, row])]:
+                         if reviews.kept(row["id"]) in {member["id"] for member in group}
+                         or (any(same_event(row, member) for member in group)
+                             and not _summary_group_conflict([*group, row]))]:
             group.extend(joined)
             candidates = [row for row in candidates if row not in joined]
         withheld[canonical_id] = group[1:]
@@ -587,9 +594,15 @@ def publish_posts(processed: list[tuple[dict, dict]], now: str, *, notify: bool,
                   meta: dict | None = None) -> None:
     stats: dict[str, int] = {}
     registry = load_registry()
+    canonical = _canonical_listings(processed, registry)
+    # Only a source remapped onto another listing can be withheld.
+    reviews = None
+    if canonical:
+        from reconcile_events import load_reviews
+        reviews, _ = load_reviews()
     updates = post_updates(processed, meta if meta is not None else load_account_meta(), now,
                            registry=registry, stats=stats, stop_on_error=True,
-                           canonical=_canonical_listings(processed, registry))
+                           canonical=canonical, reviews=reviews)
     log.info("Instagram publication: %d post source(s); %s",
              len(processed), dict(sorted(stats.items())) or "fully cached")
     _complete(updates, notify=notify)

@@ -1,6 +1,8 @@
 export type AdminPendingAction =
   | { type: "update"; id: string }
   | { type: "delete"; id: string }
+  | { type: "merge"; id: string }
+  | { type: "distinct"; id: string }
   | { type: "logout" };
 
 export function isEventActionPending(

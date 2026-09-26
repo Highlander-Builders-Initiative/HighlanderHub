@@ -11,6 +11,16 @@ export type AdminEventRow = EventRow & {
   updated_at: string;
 };
 
+/** A pending pair from the duplicate review queue; both listings are live. */
+export type DuplicateReviewPair = {
+  first: AdminEventRow;
+  second: AdminEventRow;
+};
+
+export function duplicatePairKey(pair: DuplicateReviewPair): string {
+  return `${pair.first.id}|${pair.second.id}`;
+}
+
 /** Writable event fields for admin edit (server allowlist). */
 export const ADMIN_EVENT_UPDATE_KEYS = [
   "title",

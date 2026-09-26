@@ -75,6 +75,39 @@ def get_deleted_event_ids() -> set[str]:
     raise RuntimeError("Deleted event pagination exceeded its safety limit")
 
 
+def get_duplicate_reviews() -> list[dict[str, Any]]:
+    """Read the duplicate review queue: pending pairs and admin decisions."""
+    found = []
+    for offset in range(0, 1_000_000, 1000):
+        batch = (
+            client().table("event_duplicate_reviews")
+            .select("event_id,other_event_id,status,kept_event_id")
+            .order("event_id").order("other_event_id").range(offset, offset + 999).execute().data or []
+        )
+        found.extend(batch)
+        if len(batch) < 1000:
+            return found
+    raise RuntimeError("Duplicate review pagination exceeded its safety limit")
+
+
+def queue_duplicate_reviews(pairs: Iterable[tuple[str, str]], reviews: list[dict[str, Any]]) -> None:
+    """Make the pending queue exactly these pairs, leaving admin decisions alone.
+
+    `reviews` is the queue as last read; a pair ordered by code point matches
+    the table's byte-ordered key.
+    """
+    wanted = {tuple(sorted(pair)) for pair in pairs}
+    queued = {(r["event_id"], r["other_event_id"]): r["status"] for r in reviews}
+    new = [{"event_id": a, "other_event_id": b} for a, b in sorted(wanted - queued.keys())]
+    if new:
+        # An admin may decide a pair between the read and this write.
+        client().table("event_duplicate_reviews").upsert(
+            new, on_conflict="event_id,other_event_id", ignore_duplicates=True).execute()
+    for a, b in sorted(pair for pair, status in queued.items() if status == "pending" and pair not in wanted):
+        (client().table("event_duplicate_reviews").delete()
+         .eq("event_id", a).eq("other_event_id", b).eq("status", "pending").execute())
+
+
 def get_event_rows() -> list[dict[str, Any]]:
     """Read event rows with stable pagination, including admin locks."""
     rows = []
