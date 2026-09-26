@@ -1,0 +1,51 @@
+[
+  {
+    "id": "ig_aspb_ucr_p3987699302558500071",
+    "title": "Block Party 2026",
+    "description": "Your Attractions and Food options just dropped for Block Party 2026 ⚽️⚽️\n\n🎨ATTRACTIONS: 🎨\nRock Walll\nFace painting\nPhoto booth\nVR Booth\nCarnival Games\n\n😋FOOD OPTIONS:😋\nThe Big Easy Sandwich* 🌱\nQ’s Tacos** 🍀 🌾\nURBN Market Fusion\nEl Reaper\nFuego Me Up*🍀\nLevelz Ice \nMama L’s\n\n...& more options available 🍀\n(including churros, acai, smoothies, hotdogs, michelaguas, and Pupusas)\n\n*\n🍀 = Vegan Options Available\n🌱 = Vegetarian Options Available\n🌾 = Gluten Free Options Available\n\nCASHLESS PAYMENTS ONLY!!!!\n\nDon’t miss out on Block Party 2026 happening on September 26th, 4-9pm, at Hub Lawn! Check out our website for more info regarding wristbanding at aspb.ucr.edu/bp26 \n\n*WRISTBANDS ARE FREE FOR UCR UNDERGRADUATE STUDENTS*\n*UCR extension, graduate, and RCCD students living on campus can purchase a wristband*",
+    "starts_at": "2026-09-26T23:00:00+00:00",
+    "ends_at": "2026-09-27T04:00:00+00:00",
+    "all_day": false,
+    "location": "Hub Lawn",
+    "host": "Associated Students Program Board (ASPB) at UCR",
+    "host_handle": "aspb_ucr",
+    "hosts": [
+      {
+        "host": "Associated Students Program Board (ASPB) at UCR",
+        "host_handle": "aspb_ucr"
+      },
+      {
+        "host": "UCR GradSuccess",
+        "host_handle": "ucrgradsuccess"
+      }
+    ],
+    "source": "instagram",
+    "source_url": "https://www.instagram.com/p/DdXJ2NQEoTn/",
+    "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/aspb_ucr/posts/3987699302558500071/813059889_18627668389063894_559958346117762171_n.jpg",
+    "rsvp_required": false,
+    "rsvp_url": null,
+    "content_kind": "student_event",
+    "has_free_food": false,
+    "is_locked": false
+  },
+  {
+    "id": "ig_ucriversideofficial_p3986151799102313494-20260926T0700Z",
+    "title": "Block Party",
+    "description": "Your home is waiting for you, Highlanders! 🏡🐻🥰 We can’t wait to see you all!\n\nSome Important Dates to Know:\n📦 Res Hall Move-In: Sat., Sept. 19-Sun., Sept. 20\n📚 First Day of Classes: Thurs., Sept. 24\n💰 Financial Aid Disbursements: Thurs., Sept. 24\n👋 Welcome Week: Sat., Sept. 19-Sun., Oct. 4\n🎉 Block Party: Sat., Sept. 26\n🐻 Homecoming 2026: Sat., Nov. 7\n👪 Family Weekend: Fri., Nov. 6-Sun., Nov. 8\n\nTo find out what’s happening around campus, check out the full events calendar: events.ucr.edu! \n\n#ucr #UCRiverside #UCREvents",
+    "starts_at": "2026-09-26T07:00:00+00:00",
+    "ends_at": "2026-09-27T07:00:00+00:00",
+    "all_day": true,
+    "location": "",
+    "host": "UCR",
+    "host_handle": "ucriversideofficial",
+    "hosts": [],
+    "source": "instagram",
+    "source_url": "https://www.instagram.com/p/DdRp_EWRxQW/",
+    "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/ucralumni/posts/3986151799102313494/810962196_18628963327000591_1949105027445635628_n.jpg",
+    "rsvp_required": false,
+    "rsvp_url": null,
+    "content_kind": "student_event",
+    "has_free_food": false,
+    "is_locked": false
+  }
+]

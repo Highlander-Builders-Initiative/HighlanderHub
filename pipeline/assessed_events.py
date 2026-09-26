@@ -478,7 +478,12 @@ def _withhold_reconciled(updates: list[dict], registry: dict, canonical: dict[st
     safe only while the listing survives without it: another post supports it,
     or it is locked. Otherwise the session republishes as before.
     """
-    from reconcile_events import merge_duplicates, same_event
+    from reconcile_events import _ambiguous_summaries, _summary_group_conflict, merge_duplicates, same_event
+    # Current decisions supersede saved rows when checking whether a summary
+    # still identifies only one event. A newly collected competing event must
+    # be considered even before its first publication.
+    context = {**canonical, **{row['id']: row for update in updates for row in update.get('rows') or []}}
+    ambiguous = _ambiguous_summaries(list(context.values()))
     supporters: dict[str, set[str]] = {}
     for key, record in registry.items():
         for event_id in record.get("event_ids") or []:
@@ -509,9 +514,10 @@ def _withhold_reconciled(updates: list[dict], registry: dict, canonical: dict[st
     for canonical_id, candidates in pending.items():
         group = [canonical[canonical_id]]
         # A session that could belong to several listings joins the first.
-        candidates = [row for row in candidates if row["id"] not in skipped]
+        candidates = [row for row in candidates if row["id"] not in skipped | ambiguous]
         while joined := [row for row in candidates
-                         if any(same_event(row, member) for member in group)]:
+                         if any(same_event(row, member) for member in group)
+                         and not _summary_group_conflict([*group, row])]:
             group.extend(joined)
             candidates = [row for row in candidates if row not in joined]
         withheld[canonical_id] = group[1:]
@@ -547,8 +553,9 @@ def _lists_sessions(prior: dict) -> bool:
 
 
 def _canonical_listings(processed: list[tuple[dict, dict]], registry: dict) -> dict[str, dict]:
-    """Live listings that collected posts were remapped onto by reconciliation."""
+    """Saved replacements, plus competing listings for incomplete schedules."""
     wanted = set()
+    incomplete_sessions = False
     for record, _ in processed:
         prior = registry.get(f"instagram:post:{record.get('media_id')}") or {}
         event_ids = prior.get("event_ids") or []
@@ -556,10 +563,22 @@ def _canonical_listings(processed: list[tuple[dict, dict]], registry: dict) -> d
             # Once a merged session is withheld, the listing it was merged into
             # leaves this post's support but stays among its known IDs.
             event_ids = [*event_ids, *(prior.get("known_event_ids") or [])]
-        wanted.update(event_id for event_id in event_ids
-                      if not _own_listing(event_id, record.get("media_id")))
+        replacements = {event_id for event_id in event_ids
+                        if not _own_listing(event_id, record.get("media_id"))}
+        wanted.update(replacements)
+        if replacements and _lists_sessions(prior):
+            from reconcile_events import _place_words
+            result = (prior.get('assessment') or {}).get('result') or {}
+            occurrences = [*(result.get('occurrences') or []), *([result['schedule']] if result.get('schedule') else [])]
+            incomplete_sessions |= any(row.get('all_day') is True or not _place_words(row)
+                                       for row in occurrences)
     if not wanted:
         return {}
+    if incomplete_sessions:
+        # A formerly unique match can become ambiguous as other accounts are
+        # collected. Reading only old replacements would hide that competitor.
+        from db import get_imported_events
+        return {row['id']: row for row in get_imported_events()}
     from db import get_event_rows_by_ids
     return {row["id"]: row for row in get_event_rows_by_ids(sorted(wanted))}
 

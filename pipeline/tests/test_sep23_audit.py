@@ -401,9 +401,9 @@ class ReconciledRepublicationTests(unittest.TestCase):
         registry = {f"instagram:post:{media}": {
             "assessment": {"result": {"occurrences": [{}, {}], "schedule": None}},
             "event_ids": sessions[:1], "known_event_ids": [*sessions, self.organizer["id"]]}}
-        with patch("db.get_event_rows_by_ids", return_value=[self.organizer]) as fetch:
+        with patch("db.get_imported_events", return_value=[self.organizer]) as fetch:
             publication._canonical_listings([({"media_id": media}, {})], registry)
-        fetch.assert_called_once_with([self.organizer["id"]])
+        fetch.assert_called_once_with()
 
     def test_publication_reads_only_listings_that_posts_were_remapped_onto(self):
         processed = [({"media_id": "3992123687598225649"}, {}), ({"media_id": "3981934097668906335"}, {})]
