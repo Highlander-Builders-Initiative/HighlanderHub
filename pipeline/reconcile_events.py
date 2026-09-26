@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import logging
 import re
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import NamedTuple
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
@@ -330,6 +330,82 @@ def _same_slot_event(left: dict, right: dict, place: str) -> bool:
     return bool(words and words <= other and not ((other - words) & _own_name_words(long)))
 
 
+def _schedule_superseded(left: dict, right: dict) -> bool:
+    """A schedule post's entry and the account's later post for that occasion.
+
+    A quarter schedule is published weeks ahead; the club's own post for one
+    entry, at the same start, is the current word on it even when its title
+    ("First General Meeting" and "Trivia Night"), room (HUB 269 and HUB 260,
+    one building) or end differs. The end may differ only while the schedule
+    names no venue to corroborate the occasion; a post that omits its end
+    does not contradict one. Two dedicated posts in
+    different rooms, or any two different buildings, stay apart.
+    """
+    if not _same_account(left, right) or left.get('starts_at') is None:
+        return False
+    entry, post = (left, right) if _session_row(left) else (right, left)
+    if (not _session_row(entry) or _session_row(post) or not _specific_slot(entry) or not _specific_slot(post)
+            or _parse_instant(entry['starts_at']) != _parse_instant(post.get('starts_at'))
+            or _contradicting_titles(entry, post)):
+        return False
+    older, newer = (max(map(int, _source_media(row)), default=0) for row in (entry, post))
+    if not older or newer <= older:
+        return False
+    if not _place_words(entry):
+        return True
+    ends = {_parse_instant(row.get('ends_at')) for row in (entry, post)} - {None}
+    return len(ends) <= 1 and (_same_place(entry, post) != 'conflicting' or any(
+        not word.isdigit() and word not in _VENUE_FILLER
+        for word in _place_words(entry) & _place_words(post)))
+
+
+def _same_multiday_span(left: dict, right: dict, place: str) -> bool:
+    """One conference or weekend relayed by several accounts.
+
+    Identical whole-day spans of several days, where one title names the
+    other's occasion ("Family Weekend" in "Highlander Family Weekend 2026",
+    "USM's 13th Annual Conference" with its theme appended). A title that
+    only adds the poster's own name stays a separate listing.
+    """
+    start, end = _parse_instant(left.get('starts_at')), _parse_instant(left.get('ends_at'))
+    if (place == 'conflicting' or not (left.get('all_day') and right.get('all_day'))
+            or not start or not end or end - start <= timedelta(days=1)
+            or start != _parse_instant(right.get('starts_at')) or end != _parse_instant(right.get('ends_at'))
+            or _contradicting_titles(left, right)):
+        return False
+    short, long = sorted((left, right), key=lambda row: len(_slot_title_words(row)))
+    words, other = _slot_title_words(short), _slot_title_words(long)
+    return bool(len(words) >= 2 and words <= other and not ((other - words) & _own_name_words(long)))
+
+
+def _legacy_story(row: dict) -> bool:
+    """A story listing whose precision was never recorded: all_day null,
+    starting at local midnight. Its clock is unknown, not midnight."""
+    start = _parse_instant(row.get('starts_at'))
+    return bool(start and row.get('all_day') is None and '/stories/' in str(row.get('source_url') or '')
+                and start.astimezone(PACIFIC_TZ).time().isoformat() == '00:00:00')
+
+
+def _untimed(row: dict) -> bool:
+    return _date_only(row) or _legacy_story(row)
+
+
+def _quoted_story(left: dict, right: dict, place: str) -> bool:
+    """An account's legacy story and its own timed post that day quoting it.
+
+    The story "Joel Mejia Smith: it's been a while..." recorded no clock; the
+    post "Film Screening and Live Performance by Joel Mejia Smith" prints the
+    story's title in its caption. Date-only teasers keep the stricter
+    corroboration in same_event; this covers only stories of unknown precision.
+    """
+    story, post = (left, right) if _legacy_story(left) else (right, left)
+    if (place == 'conflicting' or not _legacy_story(story) or _untimed(post)
+            or not _same_account(story, post) or _contradicting_titles(story, post)):
+        return False
+    days = [_parse_instant(row.get('starts_at')).astimezone(PACIFIC_TZ).date() for row in (story, post)]
+    return days[0] == days[1] and _title_phrase_in_description(story, post)
+
+
 _SEQUENCE = re.compile(r'\b(?:session|part|day|round|week|vol|no)\.?\s*#?\s*(\d+)\b|#\s*(\d+)')
 _EDITION = re.compile(r'\b(\d+)(?:st|nd|rd|th)\s+annual\b')
 
@@ -424,6 +500,10 @@ def same_event(left: dict, right: dict) -> bool:
         return True
     place = _same_place(left, right)
     if _same_slot_event(left, right, place) or (start != other_start and _corrected_deadline(left, right)):
+        return True
+    # Patterns from the admin's September 26 review decisions.
+    if (_schedule_superseded(left, right) or _same_multiday_span(left, right, place)
+            or _quoted_story(left, right, place)):
         return True
     if place == 'conflicting':
         return False
@@ -536,6 +616,58 @@ def load_reviews() -> tuple[Reviews, list[dict]]:
     return Reviews.from_queue(queue), queue
 
 
+def prefer_repost_source(winner: dict, rows: list[dict], *, reviews: Reviews = Reviews(),
+                         preserve_identity: bool = True) -> dict:
+    """Prefer corrected reposts; retain the listing identity during republication.
+
+    Caption length is not freshness. Compare feed permalink media IDs (not the
+    listing ID, which may already retain an older identity after a repair).
+    This only uses collected evidence; it does not check Instagram availability.
+    """
+    if (winner.get('is_locked') or reviews.kept(winner['id'])
+            or any(reviews.kept(event_id) == winner['id'] for event_id in reviews.merged)):
+        return winner
+
+    def media(row):
+        return max(map(int, _source_media({'source_url': row.get('source_url')})), default=0)
+
+    current = media(winner)
+    if not current or imported_row_kind(winner) != 'instagram':
+        return winner
+    candidates = []
+    for row in rows:
+        if (media(row) <= current or imported_row_kind(row) != 'instagram'
+                or not _same_account(winner, row)
+                or _parse_instant(winner.get('starts_at')) != _parse_instant(row.get('starts_at'))
+                or _date_only(winner) != _date_only(row)
+                or bool(winner.get('all_day')) != bool(row.get('all_day'))
+                or _session_row(winner) != _session_row(row)
+                or reviews.kept(row['id']) or reviews.judged_distinct([winner, row])
+                or not same_event(winner, row)):
+            continue
+        # A newer teaser must not replace the useful announcement. Length is
+        # deliberately absent: removing obsolete TBA boilerplate is an upgrade.
+        if (not str(row.get('description') or '').strip()
+                or any(winner.get(key) and not row.get(key) for key in
+                       ('ends_at', 'image_url', 'rsvp_url', 'rsvp_required', 'has_free_food'))
+                or (_place_words(winner) and not _host_venue(winner)
+                    and (not _place_words(row) or _host_venue(row)))):
+            continue
+        candidates.append(row)
+    # A vague original cannot choose between conflicting corrected listings.
+    if not candidates or any(not same_event(a, b) for i, a in enumerate(candidates)
+                             for b in candidates[i + 1:]):
+        return winner
+    source = max(candidates, key=lambda row: (media(row), row['id']))
+    if not preserve_identity:
+        return source
+    merged = merge_duplicates(winner, [winner, source])
+    for key in ('source_url', 'description', 'image_url'):
+        if key in source:
+            merged[key] = source[key]
+    return merged
+
+
 # Words every application or signup deadline shares; they name no program.
 _DEADLINE_BOILERPLATE = frozenset('application applications deadline registration recruitment program due'.split())
 
@@ -579,6 +711,40 @@ def _reconciliation_rows() -> list[dict]:
     return [row for row in get_event_rows() if imported_row_kind(row) != 'other']
 
 
+class _CandidateIndex:
+    """Necessary matching conditions only; same_event remains the policy.
+
+    Cross-date matches are exclusively corrected deadlines by the same owner.
+    Include historical rows and tombstones so old identities still constrain
+    current publications. Cache dates once per invocation.
+    """
+    def __init__(self, rows: list[dict]):
+        self.days = {}
+        self.by_day = {}
+        self.deadlines = {}
+        for row in rows:
+            start = _parse_instant(row.get('starts_at'))
+            day = start.astimezone(PACIFIC_TZ).date() if start else None
+            self.days[row['id']] = day
+            if day is None:
+                continue
+            self.by_day.setdefault((row.get('content_kind'), day), []).append(row)
+            if row.get('content_kind') == 'student_deadline' and _account(row):
+                self.deadlines.setdefault((_account(row), day), []).append(row)
+
+    def peers(self, row: dict) -> list[dict]:
+        day = self.days[row['id']]
+        if day is None:
+            return []
+        peers = list(self.by_day.get((row.get('content_kind'), day), ()))
+        if row.get('content_kind') == 'student_deadline' and _account(row):
+            # timedelta.days in the matcher and DST can cross a date boundary.
+            for delta in range(-32, 33):
+                if delta:
+                    peers.extend(self.deadlines.get((_account(row), day + timedelta(days=delta)), ()))
+        return peers
+
+
 def plan(rows: list[dict], tombstones: list[dict] = (), *, now: datetime | None = None,
          reviews: Reviews = Reviews()) -> tuple[list[dict], set[str], dict[str, str]]:
     """Return canonical updates, removed IDs and duplicate-to-canonical mappings.
@@ -598,21 +764,24 @@ def plan(rows: list[dict], tombstones: list[dict] = (), *, now: datetime | None 
     forced = {event_id: kept for event_id, kept in forced.items() if kept not in forced}
     candidates = [*(r for r in rows if r['id'] not in forced),
                   *(r for r in tombstones if r['id'] not in by_id)]
+    index = _CandidateIndex(candidates)
     # A teaser for two different timed sessions does not identify either one.
-    ambiguous = {row['id'] for row in candidates if _date_only(row) and len({
-        _parse_instant(other.get('starts_at')) for other in candidates
-        if not _date_only(other) and same_event(row, other)
+    ambiguous = {row['id'] for row in candidates if _untimed(row) and len({
+        _parse_instant(other.get('starts_at')) for other in index.peers(row)
+        if not _untimed(other) and same_event(row, other)
     }) > 1}
     # An abbreviated conference title or an organizer-only venue must not
     # bridge two separately specified events. Include tombstones in this check.
-    ambiguous_details = _ambiguous_summaries(candidates)
+    ambiguous_details = {row['id'] for row in candidates if _incomplete_session(row)
+                         and _summary_group_conflict([row, *(other for other in index.peers(row)
+                             if _specific_slot(other) and _place_words(other) and same_event(row, other))])}
     for row in candidates:
         title, alias = _title_form(row, row)
         vague_title = alias and bool(title) and title <= _EVENT_NOUNS
         vague_venue = _host_venue(row)
         if not (vague_title or vague_venue):
             continue
-        peers = [other for other in candidates if other['id'] != row['id'] and same_event(row, other)]
+        peers = [other for other in index.peers(row) if other['id'] != row['id'] and same_event(row, other)]
         for i, left in enumerate(peers):
             for right in peers[i + 1:]:
                 a, b = _title_form(left, right)[0], _title_form(right, left)[0]
@@ -626,15 +795,20 @@ def plan(rows: list[dict], tombstones: list[dict] = (), *, now: datetime | None 
                 and _parse_instant(left.get('starts_at')) != _parse_instant(right.get('starts_at'))):
             return False
         return same_event(left, right)
-    for row in sorted(candidates, key=lambda r:r['id']):
-        matches = [g for g in groups if any(matches_pair(row, other) for other in g)]
+    group_for = {}
+    group_order = {}
+    for position, row in enumerate(sorted(candidates, key=lambda r:r['id'])):
+        plausible = {id(group_for[other['id']]): group_for[other['id']]
+                     for other in index.peers(row) if other['id'] in group_for}
+        matches = [g for g in sorted(plausible.values(), key=lambda g: group_order[id(g)])
+                   if any(matches_pair(row, other) for other in g)]
         # Nor may a third listing bridge a pair judged different.
         joined = [row, *(other for group in matches for other in group)]
         if _summary_group_conflict(joined) or reviews.judged_distinct(joined):
             matches = []
         # Two related date-only teasers must not bridge incompatible sessions.
         # A corrected deadline replaces its old date rather than bridging it.
-        timed = [r for r in [row, *(r for group in matches for r in group)] if not _date_only(r)]
+        timed = [r for r in [row, *(r for group in matches for r in group)] if not _untimed(r)]
         if len({_parse_instant(r.get('starts_at')) for r in timed}) > 1 and not all(
                 _corrected_deadline(a, b) for i, a in enumerate(timed) for b in timed[i + 1:]
                 if a.get('starts_at') != b.get('starts_at')):
@@ -645,8 +819,13 @@ def plan(rows: list[dict], tombstones: list[dict] = (), *, now: datetime | None 
             for group in matches[1:]:
                 first.extend(group)
                 groups.remove(group)
+            for member in first:
+                group_for[member['id']] = first
         else:
-            groups.append([row])
+            group = [row]
+            group_order[id(group)] = position
+            groups.append(group)
+            group_for[row['id']] = group
     for event_id, kept in forced.items():
         next(group for group in groups if any(r['id'] == kept for r in group)).append(by_id[event_id])
     updates, tombstoned, replacements = [], set(), {}
@@ -669,6 +848,7 @@ def plan(rows: list[dict], tombstones: list[dict] = (), *, now: datetime | None 
                      kinds[r['id']] == 'instagram',
                      _named_organizer(r, live), not _session_row(r),
                      max(map(int, _source_media(r)), default=0) if revised else 0, _row_score(r)))
+        winner = prefer_repost_source(winner, live, reviews=reviews, preserve_identity=False)
         duplicates = {r['id'] for r in live if r['id'] != winner['id'] and not r.get('is_locked')
                       and (kinds[r['id']] == 'instagram' or kinds[winner['id']] == 'instagram')}
         if not duplicates:

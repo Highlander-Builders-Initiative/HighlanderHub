@@ -483,12 +483,15 @@ def _withhold_reconciled(updates: list[dict], registry: dict, canonical: dict[st
 
     A row an admin merged into the listing matches it whatever the rules say.
     """
-    from reconcile_events import Reviews, _ambiguous_summaries, _summary_group_conflict, merge_duplicates, same_event
+    from reconcile_events import (Reviews, _CandidateIndex, _ambiguous_summaries,
+                                  _summary_group_conflict, merge_duplicates,
+                                  prefer_repost_source, same_event)
     reviews = reviews or Reviews()
     # Current decisions supersede saved rows when checking whether a summary
     # still identifies only one event. A newly collected competing event must
     # be considered even before its first publication.
     context = {**canonical, **{row['id']: row for update in updates for row in update.get('rows') or []}}
+    source_index = _CandidateIndex(list(context.values()))
     ambiguous = _ambiguous_summaries(list(context.values()))
     supporters: dict[str, set[str]] = {}
     for key, record in registry.items():
@@ -544,6 +547,13 @@ def _withhold_reconciled(updates: list[dict], registry: dict, canonical: dict[st
             {key: value for key, value in merge_duplicates(row, [row, *withheld[row["id"]]]).items()
              if key != "hosts"} if withheld.get(row["id"]) else row
             for row in rows if row["id"] not in skipped]
+        # Reapply source corrections from the saved announcements even when a
+        # repeat was withheld, or past sessions no longer enter reconciliation.
+        update['rows'] = [
+            {key: value for key, value in prefer_repost_source(
+                row, source_index.peers(row), reviews=reviews).items() if key != 'hosts'}
+            if not canonical.get(row['id'], {}).get('is_locked') else row
+            for row in update['rows']]
         kept.append(update)
     return kept
 
@@ -595,9 +605,10 @@ def publish_posts(processed: list[tuple[dict, dict]], now: str, *, notify: bool,
     stats: dict[str, int] = {}
     registry = load_registry()
     canonical = _canonical_listings(processed, registry)
-    # Only a source remapped onto another listing can be withheld.
+    # Source corrections also need admin decisions before choosing between
+    # independently collected posts that have not yet been reconciled.
     reviews = None
-    if canonical:
+    if canonical or len(processed) > 1:
         from reconcile_events import load_reviews
         reviews, _ = load_reviews()
     updates = post_updates(processed, meta if meta is not None else load_account_meta(), now,

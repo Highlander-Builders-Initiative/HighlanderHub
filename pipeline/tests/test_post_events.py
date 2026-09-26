@@ -279,6 +279,29 @@ class PostExtractionTests(unittest.TestCase):
         self.assertEqual(2, stats["expired_media"])
         self.assertEqual("4", stats["stopped_at"]["media_id"])
 
+    def test_cached_successes_do_not_reset_live_ocr_failures(self):
+        records = [record(media_id=str(n), slides=1) for n in range(8)]
+        with self.ocr("Study Jam"):
+            for item in records[1::2]:
+                posts.process_post(item)
+        with patch.object(posts, "ensure_post_dirs"), patch.object(posts, "hydrate_local_posts"), \
+             patch.object(posts, "iter_local_posts", return_value=iter(records)), \
+             patch.object(posts, "_vision_ocr", side_effect=RuntimeError("outage")) as vision:
+            processed, stats = posts.extract_all({"acm.ucr"}, archive=posts.ArchiveIndex())
+        self.assertEqual(3, vision.call_count)
+        self.assertEqual(5, len(processed))
+        self.assertEqual("4", stats["stopped_at"]["media_id"])
+
+    def test_live_ocr_recovery_resets_only_ocr_streak(self):
+        records = [record(media_id=str(n), slides=1) for n in range(6)]
+        with patch.object(posts, "ensure_post_dirs"), patch.object(posts, "hydrate_local_posts"), \
+             patch.object(posts, "iter_local_posts", return_value=iter(records)), \
+             patch.object(posts, "_vision_ocr", side_effect=[RuntimeError("outage"), RuntimeError("outage"),
+                 "recovered", RuntimeError("outage"), RuntimeError("outage"), RuntimeError("outage")]) as vision:
+            _, stats = posts.extract_all({"acm.ucr"}, archive=posts.ArchiveIndex())
+        self.assertEqual(6, vision.call_count)
+        self.assertEqual("5", stats["stopped_at"]["media_id"])
+
     def test_a_refreshed_cdn_url_alone_reuses_every_cache(self):
         item = record()
         with self.ocr("", "Study Jam September 15") as vision:
@@ -1053,6 +1076,7 @@ class PostUpdateBatchTests(unittest.TestCase):
                         registry[source["source_key"]] = {"assessment": payload,
                                                           "event_ids": [], "known_event_ids": []}
                 with patch.object(publication, "load_registry", return_value=registry), \
+                     patch('reconcile_events.load_reviews', return_value=(None, [])), \
                      patch.object(semantic, "assess", side_effect=RuntimeError("quota exhausted")) as model, \
                      patch.object(publication, "publish", return_value={}) as publish:
                     with self.assertRaisesRegex(RuntimeError, "3 source assessment.*quota exhausted"):
@@ -1083,6 +1107,7 @@ class PostUpdateBatchTests(unittest.TestCase):
         processed = [(record(media_id=str(n)), {"status": "ok", "images": []}) for n in range(3)]
         updates = [self.update(0), self.update(1, "error"), self.update(2)]
         with patch.object(publication, "load_registry", return_value={}), \
+             patch('reconcile_events.load_reviews', return_value=(None, [])), \
              patch.object(publication, "make_update", side_effect=[publication.UpdateResult(u, True) for u in updates]) as assess, \
              patch.object(publication, "publish", return_value={}) as publish:
             with self.assertRaisesRegex(RuntimeError, "1 source assessment.*Gemini 503"):
@@ -1095,6 +1120,7 @@ class PostUpdateBatchTests(unittest.TestCase):
         processed = [(record(media_id=str(n)), {"status": "ok", "images": []}) for n in range(limit + 2)]
         updates = [self.update(0)] + [self.update(n, "error") for n in range(1, limit + 1)]
         with patch.object(publication, "load_registry", return_value={}), \
+             patch('reconcile_events.load_reviews', return_value=(None, [])), \
              patch.object(publication, "make_update", side_effect=[publication.UpdateResult(u, True) for u in updates]) as assess, \
              patch.object(publication, "publish", return_value={}) as publish:
             with self.assertRaisesRegex(RuntimeError, "Gemini 503"):
