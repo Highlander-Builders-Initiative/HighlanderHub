@@ -600,8 +600,11 @@ test("site exposes crawler and social preview metadata", () => {
   assert.match(layout, /openGraph:/);
   assert.match(layout, /twitter:/);
   assert.match(layout, /manifest:/);
-  assert.match(layout, /SITE_PREVIEW_IMAGE/);
-  assert.match(seo, /\/logo_icon\.png/);
+  assert.match(layout, /\/favicon\.ico/);
+  assert.match(layout, /apple: "\/apple-touch-icon\.png"/);
+  for (const icon of ["favicon.ico", "icon-192.png", "icon-512.png", "apple-touch-icon.png"]) {
+    assert.equal(existsSync(sourceFile(`public/${icon}`)), true, icon);
+  }
   assert.match(seo, /\/og-card\.jpg/);
   assert.match(layout, /images: \[SITE_SOCIAL_CARD\]/);
   assert.match(layout, /card: "summary_large_image"/);
@@ -641,7 +644,8 @@ test("site exposes crawler and social preview metadata", () => {
   assert.match(robots, /sitemap:/);
 
   assert.match(manifest, /Highlander Hub/);
-  assert.match(manifest, /\/logo_icon\.png/);
+  assert.match(manifest, /\/icon-192\.png/);
+  assert.match(manifest, /\/icon-512\.png/);
   assert.match(manifest, /"start_url": "\/"/);
 });
 

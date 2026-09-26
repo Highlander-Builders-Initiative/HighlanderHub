@@ -6,7 +6,6 @@ export const SITE_NAME = "Highlander Hub";
 export const SITE_TITLE = "Highlander Hub · UCR Campus & Club Events";
 export const SITE_DESCRIPTION =
   "Campus and club events at UC Riverside, pulled from club Instagram posts onto one page.";
-export const SITE_PREVIEW_IMAGE = "/logo_icon.png";
 /** The 1200x630 link-preview card (scripts/render-og-card.mjs). */
 export const SITE_SOCIAL_CARD = {
   url: "/og-card.jpg",
