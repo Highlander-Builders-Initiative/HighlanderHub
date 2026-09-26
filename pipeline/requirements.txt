@@ -1,5 +1,5 @@
 requests>=2.34.2
-supabase>=2.0
+supabase>=2.31.0
 python-dotenv>=1.2.3
 tzdata>=2024.1
 google-genai>=2.0
