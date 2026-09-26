@@ -16,7 +16,7 @@ import {
   startOfPacificMonthKey,
 } from "@/lib/dates";
 import { track } from "@/lib/analytics";
-import { fetchEventsPage } from "@/lib/events/api";
+import { fetchEventsPage, type EventsApiPage } from "@/lib/events/api";
 import { calendarJumpEndsAtLoadedBoundary } from "@/lib/events/calendar-feed-pagination";
 import { mergeUniqueEventsByStart } from "@/lib/events/merge";
 import { SCROLL_SPY_OFFSET_PX } from "@/lib/events/observed-day-key";
@@ -27,6 +27,9 @@ import {
 } from "./events-filters";
 import { useInfiniteEventFeedLoader } from "./useInfiniteEventFeedLoader";
 import { useObservedDayKey } from "./useObservedDayKey";
+
+const pageKey = (offset: number, filters: EventFeedQuery) =>
+  JSON.stringify([offset, filters.category, filters.dayWindow, filters.query]);
 
 type UseEventFeedNavigationArgs = {
   active: boolean;
@@ -273,6 +276,22 @@ export function useEventFeedNavigation({
   }, [pageFilters]);
   const filtersReady = eventFeedQueriesEqual(feedFilters, pageFilters);
 
+  // The next page is fetched as soon as the current one lands, so reaching
+  // the end appends it without waiting on the network. It is used only for
+  // the cursor and query it was fetched with.
+  const prefetchedPageRef = useRef<{
+    key: string;
+    page: Promise<EventsApiPage>;
+  } | null>(null);
+  useEffect(() => {
+    if (!active || isRestoring || !hasMore || !filtersReady) return;
+    const key = pageKey(nextOffset, pageFilters);
+    if (prefetchedPageRef.current?.key === key) return;
+    const page = fetchEventsPage(nextOffset, undefined, pageFilters);
+    page.catch(() => {}); // loadMore fetches again
+    prefetchedPageRef.current = { key, page };
+  }, [active, isRestoring, hasMore, filtersReady, nextOffset, pageFilters]);
+
   const loadMore = useCallback(async () => {
     if (!active || isRestoring || isLoadingMore || !hasMore || !filtersReady) {
       return;
@@ -288,8 +307,13 @@ export function useEventFeedNavigation({
     setLoadError("");
 
     const requested = pageFilters;
+    const prefetched = prefetchedPageRef.current;
+    prefetchedPageRef.current = null;
     try {
-      const page = await fetchEventsPage(nextOffset, undefined, requested);
+      const fetchPage = () => fetchEventsPage(nextOffset, undefined, requested);
+      const page = await (prefetched?.key === pageKey(nextOffset, requested)
+        ? prefetched.page.catch(fetchPage)
+        : fetchPage());
       if (!eventFeedQueriesEqual(pageFiltersRef.current, requested)) return;
       const anchorEl = dayHeaderRefs.current.get(observedDayKey);
       if (anchorEl) {

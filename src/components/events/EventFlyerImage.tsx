@@ -15,6 +15,8 @@ type EventFlyerImageProps = {
   className?: string;
   style?: CSSProperties;
   priority?: boolean;
+  /** Lazy by default: the browser decides when to fetch. Eager fetches now. */
+  loading?: "eager" | "lazy";
   onLoad?: (img: HTMLImageElement) => void;
   onError?: () => void;
 };
@@ -63,6 +65,7 @@ export function EventFlyerImage({
   className,
   style,
   priority,
+  loading: loadingAttr,
   onLoad,
   onError,
 }: EventFlyerImageProps) {
@@ -107,6 +110,7 @@ export function EventFlyerImage({
         className={`${className ?? ""} ${fadeClassName}`.trim()}
         style={imageStyle}
         priority={priority}
+        loading={loadingAttr}
         onLoad={(event) => handleLoad(event.currentTarget)}
         onError={onError}
       />
@@ -141,7 +145,7 @@ export function EventFlyerImage({
       height={fill ? undefined : height}
       className={imgClassName}
       style={imageStyle}
-      loading={priority ? "eager" : "lazy"}
+      loading={priority ? "eager" : loadingAttr ?? "lazy"}
       decoding="async"
       onLoad={(event) => reportLoad(event.currentTarget)}
       onError={onError}

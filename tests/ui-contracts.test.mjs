@@ -24,7 +24,11 @@ test("event browser paginates the list instead of rendering every event at once"
   assert.match(loader, /scheduleRetry/);
   assert.match(loader, /setTimeout/);
   assert.match(loader, /isWithinLoadMargin/);
-  assert.match(loader, /LOAD_ROOT_MARGIN_PX/);
+  // Pages land, and flyers start, screens ahead of the reader; the next page
+  // is already fetched by the time it is appended.
+  assert.match(loader, /FEED_LOOKAHEAD_VIEWPORTS/);
+  assert.match(read("src/components/events/EventCard.tsx"), /loading=\{flyerLoading\}/);
+  assert.match(navigation, /prefetchedPageRef/);
   const observedDayHook = read("src/components/events/useObservedDayKey.ts");
   assert.match(observedDayHook, /addEventListener\("scroll"/);
   assert.doesNotMatch(observedDayHook, /IntersectionObserver/);

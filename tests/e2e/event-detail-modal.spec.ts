@@ -122,6 +122,8 @@ for (const mode of ["", " after refresh", " after viewport resize"]) {
     await expect.poll(async () => Math.abs((await link.boundingBox())!.y - saved.eventTop)).toBeLessThanOrEqual(8);
     await page.locator('[data-event-id]').last().scrollIntoViewIfNeeded();
     await expect.poll(() => offsets).toContain("32");
+    // The next page is prefetched, so a lost cursor would show up as another offset.
+    expect(offsets.every((offset) => offset === "32")).toBe(true);
   });
 }
 
