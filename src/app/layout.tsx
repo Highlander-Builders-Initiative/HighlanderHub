@@ -4,7 +4,6 @@ import { Bricolage_Grotesque } from "next/font/google";
 import {
   SITE_DESCRIPTION,
   SITE_NAME,
-  SITE_PREVIEW_IMAGE,
   SITE_SOCIAL_CARD,
   SITE_TITLE,
   SITE_URL,
@@ -27,9 +26,13 @@ export const metadata: Metadata = {
   description: SITE_DESCRIPTION,
   applicationName: SITE_NAME,
   manifest: "/manifest.json",
+  // Sized cuts of public/logo_icon.png (1250px) so tabs don't pull the full PNG.
   icons: {
-    icon: SITE_PREVIEW_IMAGE,
-    apple: SITE_PREVIEW_IMAGE,
+    icon: [
+      { url: "/favicon.ico", sizes: "48x48" },
+      { url: "/icon-192.png", type: "image/png", sizes: "192x192" },
+    ],
+    apple: "/apple-touch-icon.png",
   },
   openGraph: {
     type: "website",
