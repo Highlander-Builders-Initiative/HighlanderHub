@@ -31,7 +31,7 @@ jobs:
 
       - name: Restore pipeline caches and pending Apify run
         id: data
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: pipeline/data
           key: pipeline-apify-v1-${{ github.run_id }}-${{ github.run_attempt }}
@@ -133,7 +133,7 @@ jobs:
       # action's success-only save would lose paid work and pending run IDs.
       - name: Save pipeline state
         if: always() && steps.data.outcome == 'success'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: pipeline/data
           key: pipeline-apify-v1-${{ github.run_id }}-${{ github.run_attempt }}
