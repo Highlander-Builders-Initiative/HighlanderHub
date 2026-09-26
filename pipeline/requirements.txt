@@ -4,4 +4,4 @@ python-dotenv>=1.2.3
 tzdata>=2024.1
 google-genai>=2.25.0
 Pillow>=11,<13
-zxing-cpp>=2.3,<3  # decode flyer QR codes without another API call
+zxing-cpp>=3.1.1,<4  # decode flyer QR codes without another API call
