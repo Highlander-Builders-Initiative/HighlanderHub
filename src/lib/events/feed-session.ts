@@ -42,6 +42,37 @@ export type SavedScrollPosition = {
 };
 
 let memorySnapshot: SavedEventFeedSnapshot | null = null;
+let snapshotTimer: ReturnType<typeof setTimeout> | undefined;
+const fallbackStorage = new Map<string, string>();
+const failedWrites = new Set<string>();
+
+function readStorage(key: string) {
+  if (failedWrites.has(key)) return fallbackStorage.get(key) ?? null;
+  try {
+    return window.sessionStorage.getItem(key);
+  } catch {
+    return fallbackStorage.get(key) ?? null;
+  }
+}
+
+function writeStorage(key: string, value: string | null) {
+  if (value === null) fallbackStorage.delete(key);
+  else fallbackStorage.set(key, value);
+  try {
+    if (value === null) window.sessionStorage.removeItem(key);
+    else window.sessionStorage.setItem(key, value);
+    failedWrites.delete(key);
+  } catch {
+    failedWrites.add(key);
+  }
+}
+
+function persistSnapshot() {
+  clearTimeout(snapshotTimer);
+  if (memorySnapshot) {
+    writeStorage(FEED_SESSION_KEY, JSON.stringify(memorySnapshot));
+  }
+}
 
 function currentPath() {
   return `${window.location.pathname}${window.location.search}`;
@@ -56,7 +87,7 @@ function isSavedScrollPosition(value: unknown): value is SavedScrollPosition {
 }
 
 function readSavedScrollPositionRaw() {
-  const raw = window.sessionStorage.getItem(RETURN_SCROLL_KEY);
+  const raw = readStorage(RETURN_SCROLL_KEY);
   if (!raw) return null;
 
   try {
@@ -71,7 +102,7 @@ function writeSavedScrollPosition(
   detailPath: string,
   target?: SavedScrollPositionInput
 ) {
-  window.sessionStorage.setItem(
+  writeStorage(
     RETURN_SCROLL_KEY,
     JSON.stringify({
       path: currentPath(),
@@ -83,7 +114,7 @@ function writeSavedScrollPosition(
 }
 
 function clearSavedScrollPosition() {
-  window.sessionStorage.removeItem(RETURN_SCROLL_KEY);
+  writeStorage(RETURN_SCROLL_KEY, null);
 }
 
 function isExpired(savedAt: number) {
@@ -101,7 +132,7 @@ function isSavedCategory(value: unknown): value is EventCategory | "all" {
 }
 
 function readSessionSnapshot() {
-  const raw = window.sessionStorage.getItem(FEED_SESSION_KEY);
+  const raw = readStorage(FEED_SESSION_KEY);
   if (!raw) return null;
 
   try {
@@ -126,7 +157,7 @@ function readSessionSnapshot() {
     }
 
     if (isExpired(parsed.savedAt)) {
-      window.sessionStorage.removeItem(FEED_SESSION_KEY);
+      writeStorage(FEED_SESSION_KEY, null);
       if (memorySnapshot?.savedAt === parsed.savedAt) {
         memorySnapshot = null;
       }
@@ -154,7 +185,7 @@ function readSnapshot() {
   return saved.path === currentPath() ? saved : null;
 }
 
-export function saveEventFeedSnapshot(snapshot: SavedEventFeedSnapshotInput) {
+export function saveEventFeedSnapshot(snapshot: SavedEventFeedSnapshotInput, debounce = false) {
   if (typeof window === "undefined") return;
 
   memorySnapshot = {
@@ -162,7 +193,9 @@ export function saveEventFeedSnapshot(snapshot: SavedEventFeedSnapshotInput) {
     savedAt: Date.now(),
   };
 
-  window.sessionStorage.setItem(FEED_SESSION_KEY, JSON.stringify(memorySnapshot));
+  clearTimeout(snapshotTimer);
+  if (debounce) snapshotTimer = setTimeout(persistSnapshot, 600);
+  else persistSnapshot();
 }
 
 export type GetSavedEventFeedSnapshotOptions = {
@@ -250,7 +283,7 @@ export function syncEventFeedReturnHistory() {
 
   const previous: unknown = window.history.state?.[RETURN_HISTORY_KEY];
   if (isSavedScrollPosition(previous) && previous.detailPath === currentPath()) {
-    window.sessionStorage.setItem(RETURN_SCROLL_KEY, JSON.stringify(previous));
+    writeStorage(RETURN_SCROLL_KEY, JSON.stringify(previous));
   }
 }
 

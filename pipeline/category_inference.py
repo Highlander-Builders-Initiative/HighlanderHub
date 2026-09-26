@@ -82,6 +82,17 @@ _INCIDENTAL_CONCEPTS: dict[str, tuple[tuple[str, ...], ...]] = {
     ),
 }
 
+# Named in the title, art and music describe the activity ("Riverside Art &
+# Music Festival"); in a caption they are usually one attraction among several
+# ("music, food and games"), so they count only there. Hyphenated forms such as
+# "state-of-the-art" never match (see _concept_pattern).
+_TITLE_CONCEPTS: dict[str, tuple[tuple[str, ...], ...]] = {
+    "arts": (
+        ("art", "arts", "artwork", "artworks", "artist", "artists"),
+        ("music", "musical", "musician", "musicians"),
+    ),
+}
+
 # Keyword tie-break when scores are equal (independent of source-table order).
 _CATEGORY_PRIORITY: tuple[str, ...] = (
     "sports",
@@ -129,6 +140,10 @@ _INCIDENTAL_PATTERNS = {
     category: tuple(_concept_pattern(aliases) for aliases in concepts)
     for category, concepts in _INCIDENTAL_CONCEPTS.items()
 }
+_TITLE_PATTERNS = {
+    category: tuple(_concept_pattern(aliases) for aliases in concepts)
+    for category, concepts in _TITLE_CONCEPTS.items()
+}
 
 
 def _score(patterns: tuple[re.Pattern[str], ...],
@@ -158,7 +173,8 @@ def infer_category_from_text(
     scores: dict[str, int] = {}
     for category, patterns in _CATEGORY_PATTERNS.items():
         score = (_score(patterns, fields)
-                 + _score(_INCIDENTAL_PATTERNS.get(category, ()), incidental))
+                 + _score(_INCIDENTAL_PATTERNS.get(category, ()), incidental)
+                 + _score(_TITLE_PATTERNS.get(category, ()), fields[:1]))
         if score:
             scores[category] = score
     if not scores:

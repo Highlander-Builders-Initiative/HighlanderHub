@@ -18,7 +18,8 @@ const migrationNames = ['20260513073310_init_schema.sql', '20260527000000_add_ev
   '20260913000000_instagram_posts.sql', '20260916000000_instagram_only_publication.sql',
   '20260919000000_drop_event_is_free.sql', '20260922000000_event_duplicate_hosts.sql',
   '20260922010000_reconcile_legacy_duplicates.sql',
-  '20260925010000_drop_highlander_link_reconcile.sql'];
+  '20260925010000_drop_highlander_link_reconcile.sql',
+  '20260926010000_publication_noop_writes.sql'];
 for (const name of migrationNames) {
   await db.exec(await readFile(new URL(name, migrations), 'utf8'));
 }
@@ -464,5 +465,29 @@ test('time precision backfill uses the originating assessment and preserves lock
     assert.ok(rows.every(r => r.hosts.length === 0));
   } finally {
     await legacy.close();
+  }
+});
+
+test('identical publication performs no physical updates but repairs a missing row', async () => {
+  await reset();
+  await db.exec(`create temp table write_audit (table_name text);
+    create function pg_temp.record_write() returns trigger language plpgsql as $$
+    begin insert into write_audit values (TG_TABLE_NAME); return new; end; $$;
+    create trigger audit_event_write after update on events for each row execute function pg_temp.record_write();
+    create trigger audit_source_write after update on source_assessments for each row execute function pg_temp.record_write();`);
+  try {
+    const first = update('noop', [row('ig_noop')]);
+    await publish([first]);
+    const replay = update('noop', [row('ig_noop', { scraped_at: '2026-09-20T19:00:00Z' })]);
+    assert.equal((await publish([replay])).written, 0);
+    assert.deepEqual((await db.query('select * from write_audit')).rows, []);
+    await db.exec("delete from events where id='ig_noop'");
+    assert.equal((await publish([replay])).written, 1);
+    assert.deepEqual((await db.query('select * from write_audit')).rows, []);
+    replay.rows[0].title = 'Changed workshop';
+    assert.equal((await publish([replay])).written, 1);
+    assert.deepEqual((await db.query('select * from write_audit')).rows, [{ table_name: 'events' }]);
+  } finally {
+    await db.exec('drop trigger audit_event_write on events; drop trigger audit_source_write on source_assessments; drop table write_audit');
   }
 });

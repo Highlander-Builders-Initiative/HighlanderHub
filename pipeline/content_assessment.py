@@ -193,7 +193,9 @@ only clearly associated activities; if none are clear, return uncertain.
 Activity evidence must describe the actual activity/action/service, not just a
 date. Date evidence must connect that activity/action to its dates. Never cite
 metadata (posted_at, audiences, origin) as activity evidence. Do not invent
-locations or clock times; use an empty location when absent. For each occurrence
+locations or clock times; use an empty location when absent. A location is the
+venue the source prints, never a guess from the audience, host or campus named
+elsewhere, and never annotated with reasoning such as '(implied by ...)'. For each occurrence
 or schedule, cite the location's source field in location_evidence;
 use [] when location is empty. Cite the slide that prints the location even when
 activity and date evidence come from the caption or another slide. Respect explicit
@@ -229,9 +231,11 @@ timestamps. Schedule windows must be clocks only, like '10:00'. An ongoing
 attendable activity such as an exhibition can also use a schedule for its
 published daily visiting hours; it remains kind=activity, date_role=occurrence.
 Cite fields with the date range, weekday pattern, and times in date_evidence. If any part
-is missing/ambiguous leave schedule null and occurrences empty; do not guess.
-Never turn a seasonal schedule into one continuous event. Prefer a clearly
-supported single session if recurrence cannot be fully established.
+is missing/ambiguous leave schedule null; never guess a last day or term end.
+Never turn a seasonal schedule into one continuous event. When recurrence
+cannot be fully established but a session's date and time are explicitly
+printed ('Starting Sept. 29th ... 2-3 PM'), return that session as the only
+occurrence. Otherwise return occurrences=[].
 
 Announcements, uncertain content and applications have no public occurrences:
 return occurrences=[], schedule=null, use_source_occurrences=false. Their dates
@@ -451,6 +455,24 @@ def _clock_supported(clock: time, text: str) -> bool:
     return (clock.hour, clock.minute) in clocks and not clock.second and not clock.microsecond
 
 
+# The model's own inference written into a venue ("UCR (implied by college
+# lounge/UCR mention)"). A citation proves that the field exists, not that it
+# names this venue, and a model legitimately repairs OCR spelling, so the
+# location's words are not all required to appear; words of reasoning are.
+_LOCATION_INFERENCE = re.compile(
+    r"\b(?:impl(?:ied|ies|y)|infer(?:red|s)?|presum(?:ed|ably)|assum(?:ed|ing)|likely|probabl[ey]"
+    r"|possibl[ey]|perhaps|maybe|unspecified|not\s+(?:specified|stated|mentioned|given|listed)"
+    r"|mention(?:ed|s)?|based\s+on|guess(?:ed)?)\b", re.I)
+
+
+def _check_location(location: str, cited: str) -> None:
+    for match in _LOCATION_INFERENCE.finditer(_plain(location)):
+        if not re.search(rf"\b{re.escape(match.group())}\b", cited, re.I):
+            raise ValueError(f"Location {location!r} contains reasoning ({match.group()!r}), not a printed "
+                             "venue; use the venue exactly as the cited field names it, or an empty "
+                             "location with location_evidence=[] when the source names none")
+
+
 def _next_midnight(value: datetime) -> datetime:
     """Midnight after `value`'s date, carrying that date's own UTC offset."""
     following = datetime.combine(value.date() + timedelta(days=1), time(0))
@@ -463,7 +485,8 @@ def validate_occurrence(item: dict, source: dict) -> None:
         raise ValueError("Occurrence requires a title")
     if not isinstance(item.get("all_day"), bool) or not isinstance(item.get("location"), str):
         raise ValueError("Invalid occurrence fields")
-    evidence_text(item.get("location_evidence", []), source, required=bool(item["location"].strip()))
+    _check_location(item["location"], evidence_text(
+        item.get("location_evidence", []), source, required=bool(item["location"].strip())))
     evidence_text(item.get("activity_evidence"), source, activity=True)
     text = evidence_text(item.get("date_evidence"), source)
     start = _instant(item.get("starts_at"))
@@ -538,8 +561,10 @@ def expand_schedule(schedule: dict, source: dict, assessment: dict) -> list[dict
     text = evidence_text(assessment["date_evidence"], source)
     if not 0 <= (last - first).days <= 120 or not all(_day_supported(day, text, source) for day in (first, last)):
         raise ValueError("Recurring schedule needs a supported bounded date range; "
-                         "do not infer term boundaries. If first/last dates are absent, "
-                         "return schedule=null and occurrences=[] with service_schedule or uncertain")
+                         "do not infer term boundaries. If the last day is absent but the first "
+                         "session's date and time are printed, return schedule=null and that "
+                         "session as the only occurrence; otherwise return schedule=null and "
+                         "occurrences=[] with service_schedule or uncertain")
     weekdays = schedule["weekdays"]
     if not isinstance(weekdays, list) or not weekdays or any(type(d) is not int or d not in range(7) for d in weekdays):
         raise ValueError("Invalid recurrence weekdays")
@@ -605,7 +630,8 @@ def validate(result: Any, source: dict) -> dict:
                          "With a schedule, set occurrences=[] and use_source_occurrences=false. "
                          "For nonpublic content, set occurrences=[], schedule=null and use_source_occurrences=false")
     if kind in {"activity", "deadline"} and not choices:
-        raise ValueError("Activity or deadline requires a supported occurrence")
+        raise ValueError("Activity or deadline requires a supported occurrence; for an open-ended "
+                         "recurring activity, return its explicitly dated first session")
     # Recurring availability is a bounded pattern, never loose sessions: the
     # schedule is what stops it from collapsing back into one span. Publishing
     # nothing stays a valid outcome when the pattern cannot be established.
@@ -629,7 +655,8 @@ def validate(result: Any, source: dict) -> dict:
         schedule = result["schedule"]
         if not isinstance(schedule.get("location"), str):
             raise ValueError("Invalid schedule location")
-        evidence_text(schedule.get("location_evidence", []), source, required=bool(schedule["location"].strip()))
+        _check_location(schedule["location"], evidence_text(
+            schedule.get("location_evidence", []), source, required=bool(schedule["location"].strip())))
         expand_schedule(result["schedule"], source, result)
     return result
 

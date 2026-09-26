@@ -1,85 +1,55 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { CampusEvent } from "@/types/event";
 import { fetchCalendarEvents } from "@/lib/events/api";
 
-type CalendarRange = {
-  start: string;
-  end: string;
-};
-
+type CalendarRange = { start: string; end: string };
 type UseCalendarMonthEventsArgs = {
   initialCalendarEvents: CampusEvent[];
   calendarRange: CalendarRange;
 };
+const EMPTY_EVENTS: CampusEvent[] = [];
 
-function calendarRangeKey(range: CalendarRange) {
-  return `${range.start}:${range.end}`;
-}
+type MonthState = {
+  key: string;
+  status: "loading" | "success" | "error";
+  events: CampusEvent[];
+};
 
 export function useCalendarMonthEvents({
   initialCalendarEvents,
   calendarRange,
 }: UseCalendarMonthEventsArgs) {
-  const initialKey = calendarRangeKey(calendarRange);
-  const initialCalendarRangeKey = useRef(initialKey);
-  const [calendarEvents, setCalendarEvents] = useState(initialCalendarEvents);
-  const [isCalendarLoading, setIsCalendarLoading] = useState(false);
-  const [loadedCalendarRangeKey, setLoadedCalendarRangeKey] = useState(initialKey);
-  const [attemptedCalendarRangeKey, setAttemptedCalendarRangeKey] =
-    useState(initialKey);
-  const currentCalendarRangeKey = calendarRangeKey(calendarRange);
+  const key = `${calendarRange.start}:${calendarRange.end}`;
+  const [initialKey] = useState(key);
+  const serverEvents = key === initialKey ? initialCalendarEvents : null;
+  const [attempt, setAttempt] = useState(0);
+  const [state, setState] = useState<MonthState>({
+    key, status: "success", events: initialCalendarEvents,
+  });
+  const retryCalendar = useCallback(() => setAttempt((value) => value + 1), []);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- server calendar payload is an external input
-    setCalendarEvents(initialCalendarEvents);
-    setLoadedCalendarRangeKey(initialCalendarRangeKey.current);
-    setAttemptedCalendarRangeKey(initialCalendarRangeKey.current);
-    setIsCalendarLoading(false);
-  }, [initialCalendarEvents]);
-
-  useEffect(() => {
-    const key = currentCalendarRangeKey;
-    if (key === loadedCalendarRangeKey) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- already-loaded month: drop the in-flight spinner
-      setIsCalendarLoading(false);
-      return;
-    }
-
     let cancelled = false;
-    setAttemptedCalendarRangeKey(key);
-    setIsCalendarLoading(true);
-
+    if (serverEvents) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- starting an external range request
+    setState({ key, status: "loading", events: [] });
     fetchCalendarEvents(calendarRange.start, calendarRange.end)
-      .then((nextEvents) => {
-        if (cancelled) return;
-        setLoadedCalendarRangeKey(key);
-        setCalendarEvents(nextEvents);
+      .then((events) => {
+        if (!cancelled) setState({ key, status: "success", events });
       })
       .catch(() => {
-        if (cancelled) return;
-      })
-      .finally(() => {
-        if (cancelled) return;
-        setIsCalendarLoading(false);
+        if (!cancelled) setState({ key, status: "error", events: [] });
       });
+    return () => { cancelled = true; };
+  }, [key, calendarRange.start, calendarRange.end, serverEvents, attempt]);
 
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    calendarRange.end,
-    calendarRange.start,
-    currentCalendarRangeKey,
-    loadedCalendarRangeKey,
-  ]);
-
+  const current = state.key === key;
   return {
-    calendarEvents,
-    isCalendarLoading:
-      isCalendarLoading ||
-      (currentCalendarRangeKey !== loadedCalendarRangeKey &&
-        currentCalendarRangeKey !== attemptedCalendarRangeKey),
+    calendarEvents: serverEvents ?? (current && state.status === "success" ? state.events : EMPTY_EVENTS),
+    isCalendarLoading: !serverEvents && (!current || state.status === "loading"),
+    calendarError: !serverEvents && current && state.status === "error",
+    retryCalendar,
   };
 }

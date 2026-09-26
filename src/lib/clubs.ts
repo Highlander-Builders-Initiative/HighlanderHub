@@ -1,5 +1,4 @@
-import accountsData from "../../pipeline/accounts.json";
-import accountActivity from "../../pipeline/data/account_activity.json";
+import accountsData from "./public-clubs.json";
 import { isAnonymizedHostHandle } from "@/lib/events/anonymized-hosts";
 
 export type Club = {
@@ -13,7 +12,7 @@ type ClubHost = { host: string; hostHandle?: string; category: string;
 
 export function getClubs(hosts: readonly ClubHost[] = []): Club[] {
   const clubs = new Map<string, Club>();
-  for (const handle of Object.keys(accountActivity)) {
+  for (const handle of accountsData.activityHandles) {
     clubs.set(handle, { handle, label: handle, category: "club" });
   }
   for (const { handle, label, category } of accountsData.accounts) {

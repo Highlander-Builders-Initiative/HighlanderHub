@@ -1,4 +1,5 @@
 """Real September 22 duplicate rows, plus near matches that must stay separate."""
+from datetime import datetime, timedelta, timezone
 import copy
 import itertools
 import json
@@ -19,6 +20,18 @@ def group(term):
 
 
 class RepeatedAnnouncementsTests(unittest.TestCase):
+    def test_unrelated_history_does_not_generate_all_pairs(self):
+        base = group('block party')[0]
+        rows = []
+        for i in range(3000):
+            start = datetime(2010, 1, 1, 18, tzinfo=timezone.utc) + timedelta(days=i)
+            rows.append(base | {'id': f'ig_club_p{100000 + i}',
+                                'starts_at': start.isoformat(),
+                                'ends_at': (start + timedelta(hours=2)).isoformat()})
+        with patch('reconcile_events.same_event', wraps=same_event) as matcher:
+            self.assertEqual(([], set(), {}), plan(rows, now=datetime(2026, 1, 1, tzinfo=timezone.utc)))
+        self.assertLess(matcher.call_count, 3000)
+
     def test_named_live_duplicates_merge_in_every_input_order(self):
         for term, count in [('block party', 3), ('silent disglo', 3), ('rush', 2),
                             ('recruitment', 2), ('sdrc', 2)]:

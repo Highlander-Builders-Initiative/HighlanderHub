@@ -121,7 +121,7 @@ export function EventsBrowser({
     }
   }, []);
 
-  const { calendarEvents, isCalendarLoading } = useCalendarMonthEvents({
+  const { calendarEvents, isCalendarLoading, calendarError, retryCalendar } = useCalendarMonthEvents({
     initialCalendarEvents,
     calendarRange,
   });
@@ -148,7 +148,7 @@ export function EventsBrowser({
       query,
       dayWindow,
       loadedCount: loadedEvents.length,
-    });
+    }, true);
   }, [loadedEvents, hasMore, nextOffset, category, query, dayWindow, isRestoring, pathname]);
 
   const {
@@ -373,6 +373,8 @@ export function EventsBrowser({
             onSelect={handleCalendarSelect}
             countsByDay={countsByDay}
             isLoading={isCalendarLoading}
+            error={calendarError}
+            onRetry={retryCalendar}
             dayWindow={dayWindow}
             onDayWindowChange={handleDayWindow}
           />
@@ -397,6 +399,8 @@ export function EventsBrowser({
         }}
         countsByDay={countsByDay}
         isLoading={isCalendarLoading}
+        error={calendarError}
+        onRetry={retryCalendar}
         onClear={clearFilters}
         hasActiveFilters={hasActiveFilters}
         resultCount={matchingTotal}
