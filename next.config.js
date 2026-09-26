@@ -3,9 +3,12 @@ const isDev = process.env.NODE_ENV !== "production";
 // Supabase origin drives connect-src (storage reads) and
 // the storage remotePattern. Derived from the same env the client uses so a
 // staging/preview project can't make CSP lie while the client talks elsewhere.
-const supabaseUrl = new URL(
-  process.env.NEXT_PUBLIC_SUPABASE_URL ?? "https://qyxlojftdtjasxhzyqil.supabase.co"
-);
+if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+  throw new Error(
+    "Missing NEXT_PUBLIC_SUPABASE_URL. Add it to .env.local or your hosting environment."
+  );
+}
+const supabaseUrl = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL);
 const SUPABASE_ORIGIN = supabaseUrl.origin;
 
 // next/image optimizer allowlist. Kept tight on purpose: the optimizer fetches
