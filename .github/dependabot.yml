@@ -22,6 +22,9 @@ updates:
       # tailwind 4: new config/PostCSS plugin model; build fails as-is.
       - dependency-name: "tailwindcss"
         update-types: ["version-update:semver-major"]
+      # typescript 7: typescript-eslint refuses to run ("does not support TS 7.0").
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: pip
     directory: /pipeline
