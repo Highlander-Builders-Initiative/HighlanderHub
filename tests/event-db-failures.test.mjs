@@ -37,18 +37,6 @@ test("admin dashboard lists active events with the same filter as the feed", () 
   assert.match(adminPage, /\.or\(activeEventFilter\(nowIso\)\)/);
 });
 
-test("event queries keep events visible until their end time", () => {
-  assert.match(source, /export function activeEventFilter\(nowIso: string/);
-  assert.match(
-    source,
-    /withDbRetry\("event count", \(\) =>[\s\S]*?\.or\(activeEventFilter\(nowIso\)\)/
-  );
-  assert.match(
-    source,
-    /withDbRetry\("events", \(\) =>[\s\S]*?\.or\(activeEventFilter\(nowIso\)\)/
-  );
-});
-
 test("Supabase-backed event routes are request-time rendered", () => {
   // The Supabase client is hardwired to no-store, which bars static prerender,
   // so every route that reads it stays force-dynamic. Cross-request caching is

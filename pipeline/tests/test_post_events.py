@@ -279,6 +279,29 @@ class PostExtractionTests(unittest.TestCase):
         self.assertEqual(2, stats["expired_media"])
         self.assertEqual("4", stats["stopped_at"]["media_id"])
 
+    def test_cached_successes_do_not_reset_live_ocr_failures(self):
+        records = [record(media_id=str(n), slides=1) for n in range(8)]
+        with self.ocr("Study Jam"):
+            for item in records[1::2]:
+                posts.process_post(item)
+        with patch.object(posts, "ensure_post_dirs"), patch.object(posts, "hydrate_local_posts"), \
+             patch.object(posts, "iter_local_posts", return_value=iter(records)), \
+             patch.object(posts, "_vision_ocr", side_effect=RuntimeError("outage")) as vision:
+            processed, stats = posts.extract_all({"acm.ucr"}, archive=posts.ArchiveIndex())
+        self.assertEqual(3, vision.call_count)
+        self.assertEqual(5, len(processed))
+        self.assertEqual("4", stats["stopped_at"]["media_id"])
+
+    def test_live_ocr_recovery_resets_only_ocr_streak(self):
+        records = [record(media_id=str(n), slides=1) for n in range(6)]
+        with patch.object(posts, "ensure_post_dirs"), patch.object(posts, "hydrate_local_posts"), \
+             patch.object(posts, "iter_local_posts", return_value=iter(records)), \
+             patch.object(posts, "_vision_ocr", side_effect=[RuntimeError("outage"), RuntimeError("outage"),
+                 "recovered", RuntimeError("outage"), RuntimeError("outage"), RuntimeError("outage")]) as vision:
+            _, stats = posts.extract_all({"acm.ucr"}, archive=posts.ArchiveIndex())
+        self.assertEqual(6, vision.call_count)
+        self.assertEqual("5", stats["stopped_at"]["media_id"])
+
     def test_a_refreshed_cdn_url_alone_reuses_every_cache(self):
         item = record()
         with self.ocr("", "Study Jam September 15") as vision:
