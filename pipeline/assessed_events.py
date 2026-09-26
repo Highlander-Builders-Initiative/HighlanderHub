@@ -398,8 +398,9 @@ def post_updates(processed: list[tuple[dict, dict]], meta: dict, now: str,
 
     A post this version could not read emits nothing, and an earlier listing
     keeps its support: `unsupported_media` is a limit of this reader (an
-    over-long carousel) and `no_media` a defect in the archived record — a post
-    always has at least one slide — so neither says anything about the event.
+    over-long carousel), `no_media` a defect in the archived record — a post
+    always has at least one slide — and `expired_media` a saved image URL that
+    expired before it was read, so none says anything about the event.
     """
     registry = load_registry() if registry is None else registry
     updates = []

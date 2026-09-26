@@ -38,8 +38,10 @@ EXTRACTION_VERSION = 3
 # carousel length no longer prevents reading every slide.
 # A failed post stays retryable and extraction moves on. Stop after this many
 # service failures in a row; expired image URLs do not establish an outage.
+# expired_media sets aside a post whose saved image URL has expired until that
+# URL is refreshed: saved posts are never re-requested, so a retry cannot succeed.
 MAX_CONSECUTIVE_FAILURES = 3
-TERMINAL_STATUSES = {"ok", "no_text", "unsupported_media", "no_media"}
+TERMINAL_STATUSES = {"ok", "no_text", "unsupported_media", "no_media", "expired_media"}
 
 
 class Stats(dict):
@@ -212,14 +214,26 @@ def _readable_slides(record: dict[str, Any]) -> list[dict[str, Any]]:
     return [entry for entry in (record.get("media") or []) if isinstance(entry, dict)]
 
 
+def _url_attempt(url: str) -> str:
+    """Identify one signed URL, so an expired one is not requested again."""
+    return hashlib.sha256(url.encode()).hexdigest()[:16]
+
+
 def _cached_decision_still_applies(record: dict[str, Any], payload: Any) -> bool:
     """True when a terminal cache is still the decision for this record.
 
     Legacy video and long-carousel skips are reopened under all-slide reading.
+    An expiry holds only while the slide keeps the URL that expired; the
+    fingerprint excludes signatures, so a refreshed URL must reopen it here.
     """
     if not (isinstance(payload, dict) and payload.get("status") in TERMINAL_STATUSES
             and payload.get("fingerprint") == fingerprint(record)):
         return False
+    if payload.get("status") == "expired_media":
+        result = payload.get("result") or {}
+        return any(slide.get("media_key") == result.get("media_key")
+                   and _url_attempt(slide.get("image_url") or "") == result.get("expired_url")
+                   for slide in _readable_slides(record))
     return payload.get("status") != "unsupported_media"
 
 
@@ -236,7 +250,7 @@ def _ensure_durable_flyer(record: dict[str, Any], slide: dict[str, Any],
             return entry
         # A signed CDN URL that has expired stays expired. Remember it so each
         # run does not request it again; a refreshed saved URL is tried anew.
-        attempt = hashlib.sha256(slide["image_url"].encode()).hexdigest()[:16]
+        attempt = _url_attempt(slide["image_url"])
         if entry.get("flyer_expired_url") == attempt:
             return entry
         try:
@@ -336,12 +350,14 @@ def process_post(record: dict[str, Any], stats: Stats | None = None, *,
         try:
             image = _download_image(slide.get("image_url"))
         except ImageExpired as exc:
-            # A saved URL needs explicit maintenance once it expires. Keep the
-            # failure retryable without treating it as a shared service outage.
-            stats.bump("failed")
+            # A saved URL needs explicit maintenance once it expires, so retrying
+            # it every run only fails every publication. Set the post aside, like
+            # a post this version cannot read: its earlier listing keeps support.
+            stats.bump("expired_media")
             log.warning("extract %s: slide %s URL expired: %s", label, key, exc)
             return _persist_error(record, digest, "download", exc, images + list(reusable.values()),
-                                  counts_toward_streak=False)
+                                  status="expired_media",
+                                  detail={"media_key": key, "expired_url": _url_attempt(slide["image_url"])})
         except Exception as exc:  # noqa: BLE001 - per-post isolation.
             stats.bump("failed")
             log.warning("extract %s: slide %s download failed: %s", label, key, exc)
@@ -403,13 +419,15 @@ def _persist_error(
     stage: str,
     exc: Exception,
     images: list[dict[str, Any]],
-    *, counts_toward_streak: bool = True,
+    *, status: str = "error",
+    detail: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Keep a retryable failure inspectable without discarding paid work.
+    """Keep a failure inspectable without discarding paid work.
 
     The slides that succeeded are stored inside the error payload and match by
     media key on the next run, so a partial media failure costs only the slides
-    that actually failed.
+    that actually failed. An expired_media payload keeps them the same way, for
+    when its URL is refreshed.
     """
     keep: dict[str, dict[str, Any]] = {}
     for entry in images:
@@ -417,12 +435,11 @@ def _persist_error(
         if isinstance(key, str) and key:
             keep.setdefault(key, entry)
     return _persist(str(record["media_id"]), {
-        "status": "error", "media_id": str(record["media_id"]),
+        "status": status, "media_id": str(record["media_id"]),
         "handle": record.get("handle"), "fingerprint": digest,
         "extraction_version": EXTRACTION_VERSION, "caption": record.get("caption"),
         "images": list(keep.values()),
-        "result": {"stage": stage, "counts_toward_streak": counts_toward_streak,
-                   "error": f"{type(exc).__name__}: {exc}"},
+        "result": {"stage": stage, "error": f"{type(exc).__name__}: {exc}", **(detail or {})},
         "extracted_at": _utc_now(),
     })
 
@@ -473,6 +490,10 @@ def extract_all(handles: Iterable[str] | None = None, *,
             cached = {"status": "error", "media_id": record["media_id"],
                       "result": {"error": f"{type(exc).__name__}: {exc}"}}
         processed.append((record, cached))
+        if cached.get("status") == "expired_media":
+            # Expiry belongs to this saved image, not the OCR/download service.
+            # It neither advances nor clears a streak of actual service failures.
+            continue
         if cached.get("status") != "error":
             streak = 0
             continue
@@ -480,10 +501,7 @@ def extract_all(handles: Iterable[str] | None = None, *,
                   "detail": cached.get("result") or cached.get("error")}
         stats.bump("errors")
         stats.setdefault("first_error", failed)
-        # Expiry belongs to this saved image, not the OCR/download service.
-        # It neither advances nor clears a streak of actual service failures.
-        if (cached.get("result") or {}).get("counts_toward_streak") is not False:
-            streak += 1
+        streak += 1
         if streak >= MAX_CONSECUTIVE_FAILURES:
             stats["stopped_at"] = failed
             log.error("Extraction stopped after %d failures in a row: %s", streak, failed)
