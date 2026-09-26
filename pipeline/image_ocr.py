@@ -88,23 +88,46 @@ def _vision_ocr(image_bytes: bytes) -> str:
     if GOOGLE_VISION_API_KEY_SECONDARY or GOOGLE_VISION_API_KEY_TERTIARY:
         options = {"p_secondary_enabled": bool(GOOGLE_VISION_API_KEY_SECONDARY),
                    "p_tertiary_enabled": bool(GOOGLE_VISION_API_KEY_TERTIARY)}
-    reservation = client().rpc("reserve_vision_ocr_request", options).execute().data
-    if not isinstance(reservation, dict) or not keys.get(reservation.get("slot")):
-        raise RuntimeError("Invalid Vision usage reservation; no OCR request sent")
-    slot = reservation["slot"]
-    api_key = keys[slot]
-    log.info("Vision OCR: %s key, month %s, attempt %s", slot,
-             reservation.get("month"), reservation.get("used"))
-    resp = requests.post(
-        VISION_URL,
-        # Keep credentials out of request URLs and HTTP exception logs.
-        headers={"X-Goog-Api-Key": api_key},
-        json=payload,
-        timeout=20,
-    )
-    resp.raise_for_status()
-    data = resp.json()
-    first = (data.get("responses") or [{}])[0]
-    if first.get("error"):
-        raise RuntimeError(first["error"].get("message") or "Vision OCR failed")
-    return ((first.get("fullTextAnnotation") or {}).get("text") or "").strip()
+    for attempt in range(3):
+        # Retries consume a fresh reservation too. Accounting errors must escape
+        # the retry handler without sending another unaccounted request.
+        reservation = client().rpc("reserve_vision_ocr_request", options).execute().data
+        if not isinstance(reservation, dict) or not keys.get(reservation.get("slot")):
+            raise RuntimeError("Invalid Vision usage reservation; no OCR request sent")
+        slot = reservation["slot"]
+        log.info("Vision OCR: %s key, month %s, usage %s, image attempt %d/3", slot,
+                 reservation.get("month"), reservation.get("used"), attempt + 1)
+        try:
+            resp = requests.post(
+                VISION_URL,
+                # Keep credentials out of request URLs and HTTP exception logs.
+                headers={"X-Goog-Api-Key": keys[slot]},
+                json=payload,
+                timeout=20,
+            )
+            resp.raise_for_status()
+        except requests.HTTPError as exc:
+            status = exc.response.status_code if exc.response is not None else None
+            if status not in {408, 429, 500, 502, 503, 504} or attempt == 2:
+                raise
+            reason = f"HTTP {status}"
+        except (requests.ConnectionError, requests.Timeout) as exc:
+            if attempt == 2:
+                raise
+            reason = type(exc).__name__
+        else:
+            data = resp.json()
+            first = (data.get("responses") or [{}])[0]
+            error = first.get("error")
+            if not error:
+                return ((first.get("fullTextAnnotation") or {}).get("text") or "").strip()
+            code = error.get("code")
+            message = error.get("message") or "Vision OCR failed"
+            reason = f"Vision OCR failed (HTTP {resp.status_code}, code {code}): {message}"
+            # Per-image errors can arrive in HTTP 200 responses. google.rpc.Code:
+            # DEADLINE_EXCEEDED, RESOURCE_EXHAUSTED, INTERNAL, UNAVAILABLE.
+            if code not in {4, 8, 13, 14} or attempt == 2:
+                raise RuntimeError(reason)
+        delay = 2 ** attempt
+        log.warning("Vision OCR retry after %s; waiting %ss", reason, delay)
+        time.sleep(delay)
