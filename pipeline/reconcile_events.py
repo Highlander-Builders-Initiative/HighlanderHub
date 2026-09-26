@@ -82,11 +82,48 @@ def _same_host(left: dict, right: dict) -> bool:
 
 
 def _place_words(row: dict) -> set[str]:
-    # City and state suffixes: "Culver Center of the Arts, Riverside, CA" and
-    # "..., Downtown Riverside" name the same venue.
-    noise = {'the', 'and', 'at', 'of', 'ucr', 'uc', 'riverside', 'university', 'california', 'campus',
-             'ca', 'downtown', 'usa'}
-    return set(re.findall(r'[a-z]+|[0-9]+', str(row.get('location') or '').casefold())) - noise
+    """Venue words, spelled one way. Empty when the location names no venue."""
+    location = str(row.get('location') or '').casefold()
+    for pattern, replacement in _VENUE_SPELLINGS:
+        location = re.sub(pattern, replacement, location)
+    words = set(re.findall(r'[a-z]+|[0-9]+', location))
+    if words & _VIRTUAL_WORDS:
+        words = (words - _VIRTUAL_WORDS - {'via', 'link', 'in', 'bio'}) | {'virtual'}
+    return words - _PLACE_NOISE
+
+
+# City and state suffixes: "Culver Center of the Arts, Riverside, CA" and
+# "..., Downtown Riverside" name the same venue. Placeholders (TBA, Room TBD,
+# Invite Only) and a bare region (SoCal) name no venue at all.
+_PLACE_NOISE = frozenset('the and at of ucr uc riverside university california campus ca downtown usa '
+                         'tba tbd announced determined room rm by near invite only socal'.split())
+_VIRTUAL_WORDS = frozenset('zoom online virtual remote webinar discord'.split())
+# One campus venue written several ways: "SSC 114", "SSC114", "Student
+# Success Center 114"; "Pentland Bear Cave" and "Pentland Bearcave".
+_VENUE_SPELLINGS = (
+    (r'https?://\S+', lambda m: ' zoom ' if 'zoom.' in m.group(0) else ' '),
+    (r'\bstudent success center\b', 'ssc'),
+    (r'\bwinston chung(?: hall)?\b', 'wch'),
+    (r'\bhighlander union(?: building)?\b', 'hub'),
+    (r'\bbell\s*tower\b', 'belltower'),
+    (r'\bbear\s*cave\b', 'bearcave'),
+    (r'\ba-i\b', 'ai'),
+    (r'\b([a-z]+)(\d+)\b', r'\1 \2'),
+)
+# Words shared by unrelated venues, and bare room numbers without a building.
+_VENUE_FILLER = frozenset('hall building center lawn lobby park plaza patio courtyard field fields '
+                          'street st ave avenue drive dr way north south east west upper lower mpr'.split())
+
+
+def _shared_venue(left: dict, right: dict) -> bool:
+    """Whether two locations share a naming word (Lake Alice Bar & Grill and
+    Lake Alice Trading Co.) without naming different rooms (Costo Hall 111
+    and Costo Hall 112)."""
+    a, b = _place_words(left), _place_words(right)
+    rooms = [{word for word in words if word.isdigit()} for words in (a, b)]
+    if rooms[0] and rooms[1] and not rooms[0] & rooms[1]:
+        return False
+    return any(not word.isdigit() and word not in _VENUE_FILLER for word in a & b)
 
 
 def _same_place(left: dict, right: dict) -> str:
@@ -241,6 +278,103 @@ def _named_organizer(row: dict, group: list[dict]) -> bool:
     return False
 
 
+def _specific_slot(row: dict) -> bool:
+    """A start and end that pin down an occasion: a time of day, or several
+    whole days. A single bare date (deadlines, undated teasers) does not."""
+    start, end = _parse_instant(row.get('starts_at')), _parse_instant(row.get('ends_at'))
+    if start is None or _date_only(row) or row.get('content_kind') == 'student_deadline':
+        return False
+    if start.astimezone(PACIFIC_TZ).time().isoformat() != '00:00:00':
+        return True
+    return bool(end and (end - start).total_seconds() > 86400)
+
+
+def _same_slot(left: dict, right: dict) -> bool:
+    return (_specific_slot(left) and _specific_slot(right)
+            and all(_parse_instant(left.get(key)) == _parse_instant(right.get(key))
+                    for key in ('starts_at', 'ends_at')))
+
+
+def _slot_title_words(row: dict) -> set[str]:
+    words = re.findall(r'[a-z0-9]+', str(row.get('title') or '').casefold())
+    return {word for word in words if len(word) > 1} - _GENERIC_WORDS - _TITLE_NOISE
+
+
+def _own_name_words(row: dict) -> set[str]:
+    return {word for alias in _host_aliases(row) for word in alias} | {_account(row)}
+
+
+def _same_slot_event(left: dict, right: dict, place: str) -> bool:
+    """One occasion posted twice, identified by its exact start and end.
+
+    An account does not hold two different events with the same start and end;
+    across 725 production rows every such pair was a repeat (a schedule post
+    and the event's own post, a renamed or corrected flyer). The title may
+    change completely ("Boba Social" and "Designing Dreams Social"). A room
+    that the account writes differently still counts; two disjoint venues do
+    not. Titles naming different occurrences (another year or session) never
+    match. Another account at the same slot must name the occasion in the same
+    place: one title contains the other's distinctive words. "KDSAP at
+    Involvement Fair" is KDSAP's table at the fair, not a repost of it, so a
+    title that only adds its own club's name stays.
+    """
+    if not _same_slot(left, right) or _contradicting_titles(left, right):
+        return False
+    if _same_account(left, right):
+        return place != 'conflicting' or _shared_venue(left, right)
+    if place != 'same':
+        return False
+    short, long = sorted((left, right), key=lambda row: len(_slot_title_words(row)))
+    words, other = _slot_title_words(short), _slot_title_words(long)
+    return bool(words and words <= other and not ((other - words) & _own_name_words(long)))
+
+
+_SEQUENCE = re.compile(r'\b(?:session|part|day|round|week|vol|no)\.?\s*#?\s*(\d+)\b|#\s*(\d+)')
+_EDITION = re.compile(r'\b(\d+)(?:st|nd|rd|th)\s+annual\b')
+
+
+def _contradicting_titles(left: dict, right: dict) -> bool:
+    """Titles that name different occurrences: another year ("Silent Disglo
+    2027"), session ("Session 2", "GM #4") or edition ("13th Annual")."""
+    titles = [str(row.get('title') or '').casefold() for row in (left, right)]
+    start = _parse_instant(left.get('starts_at'))
+    year = str(start.astimezone(PACIFIC_TZ).year) if start else ''
+    if any(y != year for title in titles for y in re.findall(r'\b20\d\d\b', title)):
+        return True
+    sequences = [{a or b for a, b in _SEQUENCE.findall(title)} for title in titles]
+    editions = [set(_EDITION.findall(title)) for title in titles]
+    return sequences[0] != sequences[1] or bool(editions[0] and editions[1] and editions[0] != editions[1])
+
+
+def _corrected_deadline(left: dict, right: dict) -> bool:
+    """A reposted deadline for one application whose date was corrected.
+
+    One application closes once. The same account repeating the same deadline
+    title for the same form (or the same caption with only its date changed)
+    within a month is a correction, not a second cutoff.
+    """
+    if left.get('content_kind') != 'student_deadline' or not _same_account(left, right):
+        return False
+    if _source_media(left) & _source_media(right) or not _source_media(left) or not _source_media(right):
+        return False
+    starts = [_parse_instant(row.get('starts_at')) for row in (left, right)]
+    if abs((starts[0] - starts[1]).days) > 31:
+        return False
+    titles = [set(re.findall(r'[a-z0-9]+', str(row.get('title') or '').casefold())) for row in (left, right)]
+    rsvp = _rsvp_identity(left.get('rsvp_url'))
+    shared_rsvp = bool(rsvp and rsvp == _rsvp_identity(right.get('rsvp_url')))
+    return bool(titles[0]) and titles[0] == titles[1] and (shared_rsvp or _same_caption_template(left, right))
+
+
+def _same_caption_template(left: dict, right: dict) -> bool:
+    captions = [re.sub(r'\d+(?:st|nd|rd|th)?|\b(?:' + _DATE_WORDS + r')\w*', '#',
+                       str(row.get('description') or '').casefold()) for row in (left, right)]
+    return len(captions[0]) >= 80 and captions[0] == captions[1]
+
+
+_DATE_WORDS = 'jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|mon|tue|wed|thu|fri|sat|sun'
+
+
 def same_event(left: dict, right: dict) -> bool:
     """Match corroborated announcements using shared title, owner and place rules."""
     start, other_start = (_parse_instant(r.get('starts_at')) for r in (left, right))
@@ -255,6 +389,8 @@ def same_event(left: dict, right: dict) -> bool:
     if start == other_start and (_source_media(left) & _source_media(right)):
         return True
     place = _same_place(left, right)
+    if _same_slot_event(left, right, place) or (start != other_start and _corrected_deadline(left, right)):
+        return True
     if place == 'conflicting':
         return False
     left_title, right_title = _title_form(left, right), _title_form(right, left)
@@ -309,6 +445,41 @@ def same_event(left: dict, right: dict) -> bool:
                 or (len(distinctive) >= 2 and (credited or ((place == 'same' or same_host) and qualified_variant))))
 
 
+# Words every application or signup deadline shares; they name no program.
+_DEADLINE_BOILERPLATE = frozenset('application applications deadline registration recruitment program due'.split())
+
+
+def review_candidates(rows: list[dict], *, now: datetime | None = None) -> list[tuple[dict, dict]]:
+    """Upcoming pairs that look alike but no rule merged, for human review.
+
+    The rules merge only corroborated repeats; a new kind of repost (another
+    wording, venue or account) first appears here instead of silently on the
+    site. Pairs overlap on one day and either come from one account at one
+    start, or share two distinctive title words.
+    """
+    def span(row):
+        start = _parse_instant(row.get('starts_at'))
+        return start, _parse_instant(row.get('ends_at')) or start
+
+    live = sorted((row for row in rows if span(row)[0] and not (now and span(row)[1] < now)),
+                  key=lambda row: (span(row)[0], row['id']))
+    pairs = []
+    for i, left in enumerate(live):
+        start, end = span(left)
+        for right in live[i + 1:]:
+            other_start = span(right)[0]
+            if other_start.astimezone(PACIFIC_TZ).date() != start.astimezone(PACIFIC_TZ).date():
+                break
+            if (other_start > end or left.get('content_kind') != right.get('content_kind')
+                    or _sibling_sessions(left, right) or same_event(left, right)):
+                continue
+            shared = (_slot_title_words(left) & _slot_title_words(right)) - _DEADLINE_BOILERPLATE
+            if (_same_account(left, right) and start == other_start and _specific_slot(left)
+                    and _specific_slot(right)) or len(shared) >= 2:
+                pairs.append((left, right))
+    return pairs
+
+
 def _reconciliation_rows() -> list[dict]:
     from db import get_event_rows
     return [row for row in get_event_rows() if imported_row_kind(row) != 'other']
@@ -358,10 +529,11 @@ def plan(rows: list[dict], tombstones: list[dict] = (), *, now: datetime | None 
     for row in sorted(candidates, key=lambda r:r['id']):
         matches = [g for g in groups if any(matches_pair(row, other) for other in g)]
         # Two related date-only teasers must not bridge incompatible sessions.
-        timed_starts = {_parse_instant(r.get('starts_at'))
-                        for r in [row, *(r for group in matches for r in group)]
-                        if not _date_only(r)}
-        if len(timed_starts) > 1:
+        # A corrected deadline replaces its old date rather than bridging it.
+        timed = [r for r in [row, *(r for group in matches for r in group)] if not _date_only(r)]
+        if len({_parse_instant(r.get('starts_at')) for r in timed}) > 1 and not all(
+                _corrected_deadline(a, b) for i, a in enumerate(timed) for b in timed[i + 1:]
+                if a.get('starts_at') != b.get('starts_at')):
             matches = []
         if matches:
             first = matches[0]
@@ -384,9 +556,13 @@ def plan(rows: list[dict], tombstones: list[dict] = (), *, now: datetime | None 
             continue
         # A post about one event names and pictures it better than a line in a
         # schedule post, whose caption is longer but covers every session.
+        # Rows on different days are a corrected deadline: the newest post's
+        # date is the current one.
+        revised = len({_parse_instant(r['starts_at']).astimezone(PACIFIC_TZ).date() for r in live}) > 1
         winner = max(live, key=lambda r: (bool(r.get('is_locked')), not _date_only(r),
                      kinds[r['id']] == 'instagram',
-                     _named_organizer(r, live), not _session_row(r), _row_score(r)))
+                     _named_organizer(r, live), not _session_row(r),
+                     max(map(int, _source_media(r)), default=0) if revised else 0, _row_score(r)))
         duplicates = {r['id'] for r in live if r['id'] != winner['id'] and not r.get('is_locked')
                       and (kinds[r['id']] == 'instagram' or kinds[winner['id']] == 'instagram')}
         if not duplicates:
@@ -413,18 +589,24 @@ def merge_duplicates(winner: dict, live: list[dict]) -> dict:
     hosts = _merged_hosts(winner, live)
     if len(hosts) > 1 or winner.get('hosts'):
         merged['hosts'] = hosts
+    # A corrected deadline's superseded date must not stretch its end.
+    start = _parse_instant(winner.get('starts_at'))
+    same_day = [r for r in live if start and (_parse_instant(r.get('starts_at')) or start)
+                .astimezone(PACIFIC_TZ).date() == start.astimezone(PACIFIC_TZ).date()]
     for key in ('ends_at', 'rsvp_url', 'image_url', 'location'):
-        if not merged.get(key) or (key == 'location' and _host_venue(winner)):
-            options = {r[key] for r in (signup_rows if key == 'rsvp_url' else live) if r.get(key)
-                       and not (key == 'location' and _host_venue(r))
+        # A placeholder (TBA, Room TBD) or bare campus location names no venue.
+        vague = key == 'location' and (_host_venue(winner) or not _place_words(winner))
+        if not merged.get(key) or vague:
+            pool = signup_rows if key == 'rsvp_url' else same_day if key == 'ends_at' else live
+            options = {r[key] for r in pool if r.get(key)
+                       and not (key == 'location' and (_host_venue(r) or not _place_words(r)))
                        and not (key == 'ends_at' and _date_only(r) and not _date_only(winner))}
             if len(options) == 1:
                 merged[key] = options.pop()
     # Date-only weekend announcements often omit the end on the campus
     # listing. The corrected flyers supply the complete final day.
-    start = _parse_instant(winner.get('starts_at'))
     if start and start.astimezone(PACIFIC_TZ).time().isoformat() == '00:00:00':
-        ends = [_parse_instant(r.get('ends_at')) for r in live]
+        ends = [_parse_instant(r.get('ends_at')) for r in same_day]
         ends = [e for e in ends if e and e > start and e.astimezone(PACIFIC_TZ).time().isoformat() in {'00:00:00', '23:59:59'}]
         if ends:
             merged['ends_at'] = max(ends).isoformat()
@@ -532,9 +714,15 @@ def main(*, notify: bool = True) -> None:
         })
     deleted = client().rpc('remap_assessed_event_sources', {'removals': removals}).execute().data if removals else 0
     log.info('Reconciled %d canonical updates and %d duplicate/deleted rows', len(updates), deleted)
+    canonical = {r['id']:r for r in rows if r['id'] not in removed}
+    canonical.update({r['id']:r for r in updates})
+    suspects = review_candidates(list(canonical.values()), now=datetime.now(timezone.utc))
+    for left, right in suspects:
+        log.warning('Possible duplicate for review: %s %r (@%s) and %s %r (@%s)',
+                    left['id'], left.get('title'), left.get('host_handle'),
+                    right['id'], right.get('title'), right.get('host_handle'))
+    log.info('%d possible duplicates left for review', len(suspects))
     if notify:
-        canonical = {r['id']:r for r in rows if r['id'] not in removed}
-        canonical.update({r['id']:r for r in updates})
         sent = notify_free_food_events(canonical.values())
         log.info('Sent %d free food Discord notifications', sent)
 
