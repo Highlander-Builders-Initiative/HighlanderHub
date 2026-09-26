@@ -375,6 +375,39 @@ def _same_caption_template(left: dict, right: dict) -> bool:
 _DATE_WORDS = 'jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|mon|tue|wed|thu|fri|sat|sun'
 
 
+def _incomplete_session(row: dict) -> bool:
+    """A multi-event post's entry that omits a time or a specific venue."""
+    return (_session_row(row) and row.get('content_kind') == 'student_event'
+            and (_date_only(row) or not _place_words(row)))
+
+
+def _summary_detail_match(summary: dict, detailed: dict) -> bool:
+    """Resolve an incomplete schedule entry to a named, timed announcement.
+
+    The session suffix records that assessment split this post into multiple
+    occurrences. Such entries commonly omit time/place and their publisher
+    need not be the organizer. Omitted fields can be supplied by a detailed
+    announcement; explicit conflicting fields and different activities cannot.
+    Group planning and republication must also check competing announcements.
+    """
+    if (not _incomplete_session(summary) or detailed.get('content_kind') != 'student_event'
+            or not _specific_slot(detailed) or not _place_words(detailed)
+            or _sibling_sessions(summary, detailed) or _contradicting_titles(summary, detailed)
+            or _same_place(summary, detailed) == 'conflicting'):
+        return False
+    start, other_start = (_parse_instant(row.get('starts_at')) for row in (summary, detailed))
+    if not start or start.astimezone(PACIFIC_TZ).date() != other_start.astimezone(PACIFIC_TZ).date():
+        return False
+    if not _date_only(summary):
+        ends = {_parse_instant(row.get('ends_at')) for row in (summary, detailed)} - {None}
+        if start != other_start or len(ends) > 1:
+            return False
+    a, b = _title_form(summary, detailed)[0], _title_form(detailed, summary)[0]
+    distinctive = a - _GENERIC_WORDS - {'celebration', 'anniversary', 'signup'}
+    return (a == b and len(a) >= 2
+            and len(distinctive) >= (1 if _same_account(summary, detailed) else 2))
+
+
 def same_event(left: dict, right: dict) -> bool:
     """Match corroborated announcements using shared title, owner and place rules."""
     start, other_start = (_parse_instant(r.get('starts_at')) for r in (left, right))
@@ -393,6 +426,8 @@ def same_event(left: dict, right: dict) -> bool:
         return True
     if place == 'conflicting':
         return False
+    if _summary_detail_match(left, right) or _summary_detail_match(right, left):
+        return True
     left_title, right_title = _title_form(left, right), _title_form(right, left)
     a, b = left_title[0], right_title[0]
     common = a & b
@@ -443,6 +478,22 @@ def same_event(left: dict, right: dict) -> bool:
     qualified_variant = (a <= b or b <= a) and (a ^ b) <= _TITLE_QUALIFIERS | _PRESENTATION_WORDS
     return bool(repeat or (shared_rsvp and len(common) >= 2)
                 or (len(distinctive) >= 2 and (credited or ((place == 'same' or same_host) and qualified_variant))))
+
+
+def _summary_group_conflict(rows: list[dict]) -> bool:
+    """A vague schedule entry cannot join incompatible detailed announcements."""
+    if not any(_incomplete_session(row) for row in rows):
+        return False
+    detailed = [row for row in rows if _specific_slot(row) and _place_words(row)]
+    return any(not same_event(left, right)
+               for i, left in enumerate(detailed) for right in detailed[i + 1:])
+
+
+def _ambiguous_summaries(rows: list[dict]) -> set[str]:
+    """Reject competing events, including different venues at the same time."""
+    detailed = [row for row in rows if _specific_slot(row) and _place_words(row)]
+    return {row['id'] for row in rows if _incomplete_session(row)
+            and _summary_group_conflict([row, *(other for other in detailed if same_event(row, other))])}
 
 
 # Words every application or signup deadline shares; they name no program.
@@ -505,7 +556,7 @@ def plan(rows: list[dict], tombstones: list[dict] = (), *, now: datetime | None 
     }) > 1}
     # An abbreviated conference title or an organizer-only venue must not
     # bridge two separately specified events. Include tombstones in this check.
-    ambiguous_details = set()
+    ambiguous_details = _ambiguous_summaries(candidates)
     for row in candidates:
         title, alias = _title_form(row, row)
         vague_title = alias and bool(title) and title <= _EVENT_NOUNS
@@ -528,6 +579,8 @@ def plan(rows: list[dict], tombstones: list[dict] = (), *, now: datetime | None 
         return same_event(left, right)
     for row in sorted(candidates, key=lambda r:r['id']):
         matches = [g for g in groups if any(matches_pair(row, other) for other in g)]
+        if _summary_group_conflict([row, *(other for group in matches for other in group)]):
+            matches = []
         # Two related date-only teasers must not bridge incompatible sessions.
         # A corrected deadline replaces its old date rather than bridging it.
         timed = [r for r in [row, *(r for group in matches for r in group)] if not _date_only(r)]
