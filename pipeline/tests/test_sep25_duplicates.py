@@ -26,8 +26,9 @@ GROUPS = [
     # The schedule listed the room as TBA.
     ('ig_swe.ucr_p3993556542925612148', 'ig_swe.ucr_p3992713400886284255-20260926T0100Z'),
     ('ig_aspucr_p3993570775620427084', 'ig_aspucr_p3993566247290638031-20261001T0030Z'),
-    ('ig_ucr_school_of_medicine_p3966694133183853797-20261002T1600Z',
-     'ig_ucr_school_of_medicine_p3983998816458656668-20261002T1600Z'),
+    # The newer same-account announcement has current registration details.
+    ('ig_ucr_school_of_medicine_p3983998816458656668-20261002T1600Z',
+     'ig_ucr_school_of_medicine_p3966694133183853797-20261002T1600Z'),
     # SSC 114 and Student Success Center 114.
     ('ig_ttsmatucr_p3991297852231143490', 'ig_ttsmatucr_p3986870303358473874-20261007T2200Z'),
     ('ig_thewellucr_p3993330773350533488', 'ig_thewellucr_p3981794780021667232'),
@@ -60,14 +61,18 @@ class SameSlotTests(unittest.TestCase):
     def test_the_whole_day_reconciles_to_one_listing_per_event(self):
         _, removed, _ = plan(list(copy.deepcopy(ROWS).values()))
         self.assertEqual({d for _, *duplicates in GROUPS for d in duplicates} | {
-            'ig_swe.ucr_p3992822134405002764-20260929T0000Z'}, removed)
+            'ig_swe.ucr_p3992713400886284255-20260929T0000Z'}, removed)
 
     def test_a_placeholder_room_takes_the_announced_one(self):
         schedule, announced = rows('ig_swe.ucr_p3992713400886284255-20260929T0000Z',
                                    'ig_swe.ucr_p3992822134405002764-20260929T0000Z')
-        updates, removed, _ = plan([schedule, announced])
-        self.assertEqual(1, len(removed))
-        self.assertEqual('BOURNS A265', updates[0]['location'])
+        updates, removed, replacements = plan([schedule, announced])
+        self.assertEqual({schedule['id']: announced['id']}, replacements)
+        self.assertEqual({schedule['id']}, removed)
+        survivor = updates[0] if updates else announced
+        self.assertEqual('BOURNS A265', survivor['location'])
+        self.assertEqual(announced['source_url'], survivor['source_url'])
+        self.assertEqual(announced['description'], survivor['description'])
 
     def test_one_account_at_one_slot_still_respects_explicit_conflicts(self):
         a, b = rows('ig_ucr_gsba_p3992149601996509848', 'ig_ucr_gsba_p3990595040556201590-20260924T0100Z')

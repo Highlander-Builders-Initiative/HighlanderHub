@@ -1076,6 +1076,7 @@ class PostUpdateBatchTests(unittest.TestCase):
                         registry[source["source_key"]] = {"assessment": payload,
                                                           "event_ids": [], "known_event_ids": []}
                 with patch.object(publication, "load_registry", return_value=registry), \
+                     patch('reconcile_events.load_reviews', return_value=(None, [])), \
                      patch.object(semantic, "assess", side_effect=RuntimeError("quota exhausted")) as model, \
                      patch.object(publication, "publish", return_value={}) as publish:
                     with self.assertRaisesRegex(RuntimeError, "3 source assessment.*quota exhausted"):
@@ -1106,6 +1107,7 @@ class PostUpdateBatchTests(unittest.TestCase):
         processed = [(record(media_id=str(n)), {"status": "ok", "images": []}) for n in range(3)]
         updates = [self.update(0), self.update(1, "error"), self.update(2)]
         with patch.object(publication, "load_registry", return_value={}), \
+             patch('reconcile_events.load_reviews', return_value=(None, [])), \
              patch.object(publication, "make_update", side_effect=[publication.UpdateResult(u, True) for u in updates]) as assess, \
              patch.object(publication, "publish", return_value={}) as publish:
             with self.assertRaisesRegex(RuntimeError, "1 source assessment.*Gemini 503"):
@@ -1118,6 +1120,7 @@ class PostUpdateBatchTests(unittest.TestCase):
         processed = [(record(media_id=str(n)), {"status": "ok", "images": []}) for n in range(limit + 2)]
         updates = [self.update(0)] + [self.update(n, "error") for n in range(1, limit + 1)]
         with patch.object(publication, "load_registry", return_value={}), \
+             patch('reconcile_events.load_reviews', return_value=(None, [])), \
              patch.object(publication, "make_update", side_effect=[publication.UpdateResult(u, True) for u in updates]) as assess, \
              patch.object(publication, "publish", return_value={}) as publish:
             with self.assertRaisesRegex(RuntimeError, "Gemini 503"):

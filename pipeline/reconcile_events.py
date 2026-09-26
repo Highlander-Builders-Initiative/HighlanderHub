@@ -536,6 +536,58 @@ def load_reviews() -> tuple[Reviews, list[dict]]:
     return Reviews.from_queue(queue), queue
 
 
+def prefer_repost_source(winner: dict, rows: list[dict], *, reviews: Reviews = Reviews(),
+                         preserve_identity: bool = True) -> dict:
+    """Prefer corrected reposts; retain the listing identity during republication.
+
+    Caption length is not freshness. Compare feed permalink media IDs (not the
+    listing ID, which may already retain an older identity after a repair).
+    This only uses collected evidence; it does not check Instagram availability.
+    """
+    if (winner.get('is_locked') or reviews.kept(winner['id'])
+            or any(reviews.kept(event_id) == winner['id'] for event_id in reviews.merged)):
+        return winner
+
+    def media(row):
+        return max(map(int, _source_media({'source_url': row.get('source_url')})), default=0)
+
+    current = media(winner)
+    if not current or imported_row_kind(winner) != 'instagram':
+        return winner
+    candidates = []
+    for row in rows:
+        if (media(row) <= current or imported_row_kind(row) != 'instagram'
+                or not _same_account(winner, row)
+                or _parse_instant(winner.get('starts_at')) != _parse_instant(row.get('starts_at'))
+                or _date_only(winner) != _date_only(row)
+                or bool(winner.get('all_day')) != bool(row.get('all_day'))
+                or _session_row(winner) != _session_row(row)
+                or reviews.kept(row['id']) or reviews.judged_distinct([winner, row])
+                or not same_event(winner, row)):
+            continue
+        # A newer teaser must not replace the useful announcement. Length is
+        # deliberately absent: removing obsolete TBA boilerplate is an upgrade.
+        if (not str(row.get('description') or '').strip()
+                or any(winner.get(key) and not row.get(key) for key in
+                       ('ends_at', 'image_url', 'rsvp_url', 'rsvp_required', 'has_free_food'))
+                or (_place_words(winner) and not _host_venue(winner)
+                    and (not _place_words(row) or _host_venue(row)))):
+            continue
+        candidates.append(row)
+    # A vague original cannot choose between conflicting corrected listings.
+    if not candidates or any(not same_event(a, b) for i, a in enumerate(candidates)
+                             for b in candidates[i + 1:]):
+        return winner
+    source = max(candidates, key=lambda row: (media(row), row['id']))
+    if not preserve_identity:
+        return source
+    merged = merge_duplicates(winner, [winner, source])
+    for key in ('source_url', 'description', 'image_url'):
+        if key in source:
+            merged[key] = source[key]
+    return merged
+
+
 # Words every application or signup deadline shares; they name no program.
 _DEADLINE_BOILERPLATE = frozenset('application applications deadline registration recruitment program due'.split())
 
@@ -716,6 +768,7 @@ def plan(rows: list[dict], tombstones: list[dict] = (), *, now: datetime | None 
                      kinds[r['id']] == 'instagram',
                      _named_organizer(r, live), not _session_row(r),
                      max(map(int, _source_media(r)), default=0) if revised else 0, _row_score(r)))
+        winner = prefer_repost_source(winner, live, reviews=reviews, preserve_identity=False)
         duplicates = {r['id'] for r in live if r['id'] != winner['id'] and not r.get('is_locked')
                       and (kinds[r['id']] == 'instagram' or kinds[winner['id']] == 'instagram')}
         if not duplicates:
