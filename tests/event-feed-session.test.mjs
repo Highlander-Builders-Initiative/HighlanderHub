@@ -280,3 +280,31 @@ test("detail history restores its origin after close, forward, and refresh", asy
     env.restore();
   }
 });
+
+test("denied storage and quota exhaustion preserve in-memory navigation", async () => {
+  const env = installBrowserEnv();
+  try {
+    const session = await importTsModule("src/lib/events/feed-session.ts");
+    Object.defineProperty(window, "sessionStorage", { get() { throw new Error("denied"); } });
+    assert.doesNotThrow(() => session.readEventFeedRestoreState());
+    session.saveEventFeedSnapshot({ path: "/events", scrollY: 420, events: [],
+      hasMore: false, nextOffset: 0, category: "all", query: "test", dayWindow: "all", loadedCount: 0 });
+    session.saveEventFeedReturn("/events/event-1");
+    assert.equal(session.readEventFeedRestoreState().snapshot.query, "test");
+    session.clearEventFeedReturnState();
+    assert.equal(session.readEventFeedRestoreState().returnScroll, null);
+  } finally { env.restore(); }
+});
+
+test("a failed write cannot expose an older persisted return marker", async () => {
+  const env = installBrowserEnv();
+  try {
+    const session = await importTsModule("src/lib/events/feed-session.ts");
+    window.sessionStorage.setItem = () => { throw new Error("quota"); };
+    window.sessionStorage.removeItem = () => { throw new Error("denied"); };
+    session.saveEventFeedReturn("/events/new");
+    assert.equal(session.getSavedScrollPosition().detailPath, "/events/new");
+    session.clearEventFeedReturnState();
+    assert.equal(session.getSavedScrollPosition(), null);
+  } finally { env.restore(); }
+});

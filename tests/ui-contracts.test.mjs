@@ -48,11 +48,9 @@ test("events page header uses full upcoming event totals", () => {
   assert.match(data, /getEventsSummary/);
   assert.match(data, /head: true/);
   assert.match(data, /count:/);
-  assert.match(page, /getEventsSummary/);
-  assert.match(page, /summary=\{summary\}/);
-  // The header dateline surfaces upcomingThisWeek; total + freeFood remain
-  // available on the summary prop but are no longer in the page header copy
-  // (the stat-block prose was retired during the editorial pass).
+  assert.match(page, /getEventsUpcomingThisWeek/);
+  assert.match(page, /summary=\{\{ upcomingThisWeek \}\}/);
+  // The events header requests only the count it displays.
   assert.match(feedColumn, /summary\.upcomingThisWeek/);
   assert.doesNotMatch(page, /events\.length/);
   // "This week" counts what the Week filter lists, not a rolling 7 days.
@@ -133,12 +131,11 @@ test("calendar loads its own month-range events outside feed pagination", () => 
   assert.match(calendar, /aria-busy=\{isLoading\}/);
   assert.match(calendar, /heatClass/);
   assert.match(calendar, /countsByDay\.get\(key\)/);
-  assert.match(calendar, /!isLoading && inMonth \? heatClass\(count\) : ""/);
+  assert.match(calendar, /!isLoading && !error && inMonth \? heatClass\(count\) : ""/);
   // Empty days fade once the month's counts are in.
-  assert.match(calendar, /!isLoading && count === 0 \? "text-faint" : "text-ink"/);
+  assert.match(calendar, /!isLoading && !error && count === 0 \? "text-faint" : "text-ink"/);
   assert.match(calendarHook, /fetchCalendarEvents\(calendarRange\.start, calendarRange\.end\)/);
   assert.match(calendarHook, /isCalendarLoading/);
-  assert.match(calendarHook, /finally/);
   assert.match(calendarHook, /useEffect/);
   assert.match(restoreHook, /restoreSavedEventFeedSpot/);
   assert.match(restoreHook, /useLayoutEffect/);

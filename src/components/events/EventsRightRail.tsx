@@ -12,6 +12,8 @@ type Props = {
   onSelect: (dayKey: string) => void;
   countsByDay: Map<string, number>;
   isLoading: boolean;
+  error?: boolean;
+  onRetry?: () => void;
   dayWindow: DayWindow;
   onDayWindowChange: (next: DayWindow) => void;
 };
@@ -24,6 +26,8 @@ export function EventsRightRail({
   onSelect,
   countsByDay,
   isLoading,
+  error,
+  onRetry,
   dayWindow,
   onDayWindowChange,
 }: Props) {
@@ -37,6 +41,8 @@ export function EventsRightRail({
         onSelect={onSelect}
         countsByDay={countsByDay}
         isLoading={isLoading}
+        error={error}
+        onRetry={onRetry}
       />
 
       <div className="my-5 border-t border-ink/10" />

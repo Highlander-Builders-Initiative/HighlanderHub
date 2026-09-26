@@ -349,6 +349,7 @@ def process_post(record: dict[str, Any], stats: Stats | None = None, *,
             continue
         try:
             image = _download_image(slide.get("image_url"))
+            stats.bump("download_successes")
         except ImageExpired as exc:
             # A saved URL needs explicit maintenance once it expires, so retrying
             # it every run only fails every publication. Set the post aside, like
@@ -482,26 +483,37 @@ def extract_all(handles: Iterable[str] | None = None, *,
     stats = Stats()
     roster = set(handles) if handles is not None else _known_handles()
     processed: list[tuple[dict[str, Any], dict[str, Any]]] = []
-    streak = 0
+    streaks: dict[str, int] = {}
     for record in iter_local_posts(roster):
+        before = {stage: stats.get(counter, 0) for stage, counter in
+                  (("download", "download_successes"), ("ocr", "ocr_calls"))}
         try:
             cached = process_post(record, stats, cached_only=cached_only)
         except (Exception, SystemExit) as exc:
             cached = {"status": "error", "media_id": record["media_id"],
                       "result": {"error": f"{type(exc).__name__}: {exc}"}}
         processed.append((record, cached))
+        live = False
+        for stage, counter in (("download", "download_successes"), ("ocr", "ocr_calls")):
+            if stats.get(counter, 0) > before[stage]:
+                streaks[stage] = 0
+                live = True
+        if live and cached.get("status") != "error":
+            # A post finished with live work: the unattributed path works too.
+            streaks["unknown"] = 0
         if cached.get("status") == "expired_media":
             # Expiry belongs to this saved image, not the OCR/download service.
             # It neither advances nor clears a streak of actual service failures.
             continue
         if cached.get("status") != "error":
-            streak = 0
             continue
         failed = {"handle": record.get("handle"), "media_id": record["media_id"],
                   "detail": cached.get("result") or cached.get("error")}
         stats.bump("errors")
         stats.setdefault("first_error", failed)
-        streak += 1
+        stage = (cached.get("result") or {}).get("stage", "unknown")
+        streaks[stage] = streaks.get(stage, 0) + 1
+        streak = streaks[stage]
         if streak >= MAX_CONSECUTIVE_FAILURES:
             stats["stopped_at"] = failed
             log.error("Extraction stopped after %d failures in a row: %s", streak, failed)

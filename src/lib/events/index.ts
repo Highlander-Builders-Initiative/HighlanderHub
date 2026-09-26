@@ -31,7 +31,7 @@ import {
 
 const DB_RETRY_ATTEMPTS = 2;
 export const EVENTS_PAGE_SIZE = 24;
-export const EVENTS_CALENDAR_RANGE_LIMIT = 500;
+const EVENTS_READ_BATCH_SIZE = 500;
 const EVENTS_SITEMAP_LIMIT = 500;
 
 // Cross-request caching for the public read path. The Supabase client is
@@ -58,7 +58,6 @@ type EventsPageOptions = {
 type CalendarEventsOptions = {
   startDayKey: string;
   endDayKey: string;
-  limit?: number;
 };
 
 type EventFilterCountRow = Pick<
@@ -208,16 +207,11 @@ function cachePublicRead<Args extends unknown[], Result>(
     e2eFixturesEnabled() ? operation(...args) : cached(...args);
 }
 
-async function getEventsSummaryUncached(): Promise<EventsSummary> {
+async function getEventsUpcomingThisWeekUncached(): Promise<number> {
   return withE2eFixture(
-    () => ({
-      total: E2E_PUBLIC_FIXTURE_EVENTS.length,
-      upcomingThisWeek: E2E_PUBLIC_FIXTURE_EVENTS.length,
-      freeFood: 0,
-    }),
+    () => E2E_PUBLIC_FIXTURE_EVENTS.length,
     async () => {
       const nowIso = new Date().toISOString();
-      const todayIso = startOfPacificToday().toISOString();
       // "This week" counts exactly what the feed's Week filter shows (today
       // through Saturday), so the number matches the list it links to.
       const week = dayWindowRange("week")!;
@@ -229,6 +223,30 @@ async function getEventsSummaryUncached(): Promise<EventsSummary> {
         throw new Error("Unable to load event counts. Invalid week range.");
       }
 
+      const result = await withDbRetry("this-week event count", () =>
+        supabase
+          .from("events")
+          .select("id", { count: "exact", head: true })
+          .in("content_kind", PUBLIC_CONTENT_KINDS)
+          .gte("starts_at", weekStartIso)
+          .lt("starts_at", weekEndIso)
+          .or(activeEventFilter(nowIso))
+      );
+      return result.count ?? 0;
+    }
+  );
+}
+
+async function getEventsSummaryUncached(): Promise<EventsSummary> {
+  return withE2eFixture(
+    () => ({
+      total: E2E_PUBLIC_FIXTURE_EVENTS.length,
+      upcomingThisWeek: E2E_PUBLIC_FIXTURE_EVENTS.length,
+      freeFood: 0,
+    }),
+    async () => {
+      const nowIso = new Date().toISOString();
+      const todayIso = startOfPacificToday().toISOString();
       const [totalResult, upcomingThisWeekResult, freeFoodResult] =
         await Promise.all([
           withDbRetry("event count", () =>
@@ -238,15 +256,7 @@ async function getEventsSummaryUncached(): Promise<EventsSummary> {
               .in("content_kind", PUBLIC_CONTENT_KINDS)
               .or(activeEventFilter(nowIso))
           ),
-          withDbRetry("this-week event count", () =>
-            supabase
-              .from("events")
-              .select("id", { count: "exact", head: true })
-              .in("content_kind", PUBLIC_CONTENT_KINDS)
-              .gte("starts_at", weekStartIso)
-              .lt("starts_at", weekEndIso)
-              .or(activeEventFilter(nowIso))
-          ),
+          getEventsUpcomingThisWeek(),
           withDbRetry("free-food event count", () =>
             supabase
               .from("events")
@@ -259,7 +269,7 @@ async function getEventsSummaryUncached(): Promise<EventsSummary> {
 
       return {
         total: totalResult.count ?? 0,
-        upcomingThisWeek: upcomingThisWeekResult.count ?? 0,
+        upcomingThisWeek: upcomingThisWeekResult,
         freeFood: freeFoodResult.count ?? 0,
       };
     }
@@ -304,41 +314,43 @@ async function getEventsPageUncached({
     async () => {
       const nowIso = new Date().toISOString();
 
-      if (hasFilters) {
-        const { data } = await withDbRetry("filtered events", () =>
-          supabase
-            .from("events")
-            .select("*")
+      // Search uses the same sanitized public-host semantics as the browser.
+      // Share a complete, narrow source across offsets; hydrate only this page.
+      if (normalizedQuery) {
+        const matches = filterEventSource(await getEventFilterCountSource(), filters);
+        const ids = matches.slice(from, from + pageSize + 1).map((event) => event.id);
+        if (!ids.length) return { events: [], hasMore: false, nextOffset: from };
+        const rows = await readEventRows("filtered events", (offset, end) =>
+          supabase.from("events").select("*")
             .in("content_kind", PUBLIC_CONTENT_KINDS)
-            .or(activeEventFilter(nowIso))
-            .order("starts_at", { ascending: true })
-            .order("id", { ascending: true })
-            .overrideTypes<EventRow[], { merge: false }>()
-        );
-
-        const filtered = filterEventSource(
-          (data ?? []).map(eventRowToCampusEvent),
-          filters
-        );
-        return paginateEvents(filtered, pageSize, from);
+            .or(activeEventFilter(nowIso)).in("id", ids)
+            .order("starts_at", { ascending: true }).order("id", { ascending: true })
+            .range(offset, end).overrideTypes<EventRow[], { merge: false }>(), ids.length);
+        return {
+          events: rows.slice(0, pageSize).map(eventRowToCampusEvent),
+          hasMore: matches.length > from + pageSize,
+          nextOffset: from + Math.min(pageSize, ids.length),
+        };
       }
 
-      const to = from + pageSize;
+      const range = dayWindowRange(filters.dayWindow, todayKey);
+      const rows = await readEventRows("events", (offset, end) => {
+        let request = supabase.from("events").select("*")
+          .in("content_kind", PUBLIC_CONTENT_KINDS).or(activeEventFilter(nowIso));
+        if (filters.category === "free_food") {
+          request = request.or("has_free_food.eq.true,category.eq.free_food");
+        } else if (filters.category !== "all") {
+          request = request.eq("category", filters.category);
+        }
+        if (range) {
+          request = request.gte("starts_at", parsePacificDateTimeInput(`${range.start}T00:00`)!)
+            .lt("starts_at", parsePacificDateTimeInput(`${addPacificDays(range.end, 1)}T00:00`)!);
+        }
+        return request.order("starts_at", { ascending: true })
+          .order("id", { ascending: true }).range(from + offset, from + end)
+          .overrideTypes<EventRow[], { merge: false }>();
+      }, pageSize + 1);
 
-      const { data } = await withDbRetry("events", () =>
-        supabase
-          .from("events")
-          .select("*")
-          .in("content_kind", PUBLIC_CONTENT_KINDS)
-          .or(activeEventFilter(nowIso))
-          // starts_at is not unique; id keeps offset pages from overlapping.
-          .order("starts_at", { ascending: true })
-          .order("id", { ascending: true })
-          .range(from, to)
-          .overrideTypes<EventRow[], { merge: false }>()
-      );
-
-      const rows = data ?? [];
       const events = rows.slice(0, pageSize).map(eventRowToCampusEvent);
 
       return {
@@ -357,6 +369,21 @@ export async function getEvents(
   return page.events;
 }
 
+async function readEventRows<T>(
+  operation: string,
+  query: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>,
+  maximum = Infinity,
+): Promise<T[]> {
+  const rows: T[] = [];
+  while (rows.length < maximum) {
+    const end = Math.min(rows.length + EVENTS_READ_BATCH_SIZE, maximum) - 1;
+    const { data } = await withDbRetry(operation, () => query(rows.length, end));
+    if (!data?.length) break;
+    rows.push(...data);
+  }
+  return rows;
+}
+
 async function getEventFilterCountSourceUncached(): Promise<
   EventFilterCountSource[]
 > {
@@ -365,7 +392,7 @@ async function getEventFilterCountSourceUncached(): Promise<
     async () => {
       const nowIso = new Date().toISOString();
 
-      const { data } = await withDbRetry("event filter counts", () =>
+      const rows = await readEventRows("event filter counts", (from, to) =>
         supabase
           .from("events")
           .select("id,title,description,starts_at,location,host,host_handle,hosts,category,tags,has_free_food")
@@ -373,10 +400,11 @@ async function getEventFilterCountSourceUncached(): Promise<
           .or(activeEventFilter(nowIso))
           .order("starts_at", { ascending: true })
           .order("id", { ascending: true })
+          .range(from, to)
           .overrideTypes<EventFilterCountRow[], { merge: false }>()
       );
 
-      return (data ?? []).map(toEventFilterCountSource);
+      return rows.map(toEventFilterCountSource);
     }
   );
 }
@@ -414,7 +442,6 @@ async function getSitemapEventsUncached(): Promise<EventSitemapEntry[]> {
 async function getCalendarEventsUncached({
   startDayKey,
   endDayKey,
-  limit = EVENTS_CALENDAR_RANGE_LIMIT,
 }: CalendarEventsOptions): Promise<CampusEvent[]> {
   return withE2eFixture(
     () =>
@@ -431,7 +458,7 @@ async function getCalendarEventsUncached({
         throw new Error("Unable to load calendar events. Invalid date range.");
       }
 
-      const { data } = await withDbRetry("calendar events", () =>
+      const rows = await readEventRows("calendar events", (from, to) =>
         supabase
           .from("events")
           .select("*")
@@ -440,11 +467,11 @@ async function getCalendarEventsUncached({
           .lt("starts_at", endIso)
           .order("starts_at", { ascending: true })
           .order("id", { ascending: true })
-          .limit(Math.max(1, Math.min(limit, EVENTS_CALENDAR_RANGE_LIMIT)))
+          .range(from, to)
           .overrideTypes<EventRow[], { merge: false }>()
       );
 
-      return (data ?? []).map(eventRowToCampusEvent);
+      return rows.map(eventRowToCampusEvent);
     }
   );
 }
@@ -481,6 +508,10 @@ const getEventByIdUncached = cache(async function getEventById(
 // function's signature (args are folded into the cache key); a successful
 // result is cached for EVENTS_CACHE_TTL_SECONDS and busted by
 // revalidateTag(EVENTS_CACHE_TAG). Thrown errors are not cached.
+export const getEventsUpcomingThisWeek = cachePublicRead(
+  getEventsUpcomingThisWeekUncached,
+  ["events-upcoming-this-week"]
+);
 export const getEventsSummary = cachePublicRead(
   getEventsSummaryUncached,
   ["events-summary"]
