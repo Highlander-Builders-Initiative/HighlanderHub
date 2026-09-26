@@ -219,10 +219,36 @@ class PostExtractionTests(unittest.TestCase):
             for _ in range(2):
                 processed, stats = posts.extract_all({"acm.ucr"}, archive=posts.ArchiveIndex())
                 self.assertEqual(["0", "1", "2", "3"], [raw["media_id"] for raw, _ in processed])
-                self.assertEqual(["error", "error", "error", "ok"], [cached["status"] for _, cached in processed])
-                self.assertEqual(3, stats["errors"])
+                self.assertEqual(["expired_media"] * 3 + ["ok"], [cached["status"] for _, cached in processed])
+                self.assertNotIn("errors", stats)
                 self.assertNotIn("stopped_at", stats)
             self.assertEqual(1, vision.call_count)
+
+    def test_an_expired_slide_is_set_aside_until_its_url_is_refreshed(self):
+        item = record(slides=2)
+
+        def download_first_slide_only(url):
+            if url == item["media"][0]["image_url"]:
+                return b"image"
+            raise posts.ImageExpired("HTTP 403")
+
+        with patch.object(posts, "_download_image", side_effect=download_first_slide_only) as download, \
+             self.ocr("Study Jam", "unused") as vision:
+            expired = posts.process_post(item)
+            self.assertEqual(expired, posts.process_post(item))
+        self.assertEqual("expired_media", expired["status"])
+        self.assertEqual("700_1_n", expired["result"]["media_key"])
+        self.assertEqual(2, download.call_count)
+        self.assertEqual(1, vision.call_count)
+        # The first slide's OCR was paid for and is kept for the refreshed read.
+        self.assertEqual(["Study Jam"], [entry["ocr_text"] for entry in expired["images"]])
+        item["media"][1]["image_url"] = "https://cdn.example/v/t51/700_1_n.jpg?oh=fresh"
+        with patch.object(posts, "_download_image", return_value=b"image") as download, \
+             self.ocr("September 15, 3-5 PM") as vision:
+            repaired = posts.process_post(item)
+        self.assertEqual("ok", repaired["status"])
+        download.assert_called_once_with(item["media"][1]["image_url"])
+        vision.assert_called_once()
 
     def test_expiry_subclasses_persist_the_same_streak_policy(self):
         class ExpiredSignedUrl(posts.ImageExpired):
@@ -236,7 +262,7 @@ class PostExtractionTests(unittest.TestCase):
         self.assertEqual(4, len(processed))
         self.assertNotIn("stopped_at", stats)
         for raw, cached in processed:
-            self.assertIs(False, cached["result"]["counts_toward_streak"])
+            self.assertEqual("expired_media", cached["status"])
             self.assertEqual(cached, posts._read_json(posts._cache_path(raw["media_id"])))
 
     def test_expired_images_do_not_reset_service_failure_streak(self):
@@ -249,7 +275,8 @@ class PostExtractionTests(unittest.TestCase):
                  RuntimeError("network unavailable"), AssertionError("Must stop")]) as download:
             processed, stats = posts.extract_all({"acm.ucr"}, archive=posts.ArchiveIndex())
         self.assertEqual(5, download.call_count)
-        self.assertEqual(5, stats["errors"])
+        self.assertEqual(3, stats["errors"])
+        self.assertEqual(2, stats["expired_media"])
         self.assertEqual("4", stats["stopped_at"]["media_id"])
 
     def test_a_refreshed_cdn_url_alone_reuses_every_cache(self):
@@ -1123,9 +1150,9 @@ class PostUpdateBatchTests(unittest.TestCase):
                     processed, {}, "2026-09-11T12:00:00+00:00", registry=registry))
 
     def test_a_post_this_version_cannot_read_keeps_the_listing_it_published(self):
-        # An over-long carousel and a record without slides are limits of the
-        # reader and of the archive, not the club withdrawing the announcement.
-        for status in ("unsupported_media", "no_media"):
+        # An over-long carousel, a record without slides and an expired image are
+        # limits of the reader and of the archive, not the club withdrawing it.
+        for status in ("unsupported_media", "no_media", "expired_media"):
             with self.subTest(status=status):
                 self.assertEqual([], publication.post_updates(
                     [(record(), {"status": status, "images": []})], {},

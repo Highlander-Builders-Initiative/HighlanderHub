@@ -52,6 +52,13 @@ project; changing base64 formatting or rerunning the job will not resolve it.
 OCR and QR scanning read every carousel image in order, including video cover
 images. Each slide retains its own evidence field and durable flyer. A failure
 on any slide keeps the post retryable; completed image work is reused on retry.
+An expired image URL is the exception: saved posts are never re-requested, so
+the post is recorded as `expired_media` and skipped rather than failing every
+run. It publishes nothing new, its earlier listing (if any) keeps its support,
+and it is read again only if its saved URL is refreshed. Apply
+`supabase/migrations/20260926000000_post_extractions_expired_media.sql` so the
+durable extraction cache accepts this status; until then only the local cache
+records it.
 Version 3 reopens saved first-slide extractions on the next normal extraction run,
 reuses their OCR, and reads the remaining saved images. This can increase OCR
 usage and reassess saved posts; it does not refresh their Instagram snapshots.
@@ -191,8 +198,8 @@ There is no live-event refresh queue, daily post recheck, or separate request to
 renew an expired image URL. New posts still receive all-slide OCR, assessment
 and publication. Cached results and unfinished processing can be retried from
 saved data; that does not request another scrape of the post. If an image expires
-before initial extraction succeeds, this policy can leave that post unprocessed
-until explicit maintenance. Missing posts do not imply cancellation.
+before initial extraction succeeds, this policy leaves that post as
+`expired_media` until explicit maintenance. Missing posts do not imply cancellation.
 
 The event detail flyer already links to the original Instagram post. Visitors
 can use that link to check for edits or cancellations. Opening an event does not
