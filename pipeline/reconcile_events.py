@@ -330,6 +330,82 @@ def _same_slot_event(left: dict, right: dict, place: str) -> bool:
     return bool(words and words <= other and not ((other - words) & _own_name_words(long)))
 
 
+def _schedule_superseded(left: dict, right: dict) -> bool:
+    """A schedule post's entry and the account's later post for that occasion.
+
+    A quarter schedule is published weeks ahead; the club's own post for one
+    entry, at the same start, is the current word on it even when its title
+    ("First General Meeting" and "Trivia Night"), room (HUB 269 and HUB 260,
+    one building) or end differs. The end may differ only while the schedule
+    names no venue to corroborate the occasion; a post that omits its end
+    does not contradict one. Two dedicated posts in
+    different rooms, or any two different buildings, stay apart.
+    """
+    if not _same_account(left, right) or left.get('starts_at') is None:
+        return False
+    entry, post = (left, right) if _session_row(left) else (right, left)
+    if (not _session_row(entry) or _session_row(post) or not _specific_slot(entry) or not _specific_slot(post)
+            or _parse_instant(entry['starts_at']) != _parse_instant(post.get('starts_at'))
+            or _contradicting_titles(entry, post)):
+        return False
+    older, newer = (max(map(int, _source_media(row)), default=0) for row in (entry, post))
+    if not older or newer <= older:
+        return False
+    if not _place_words(entry):
+        return True
+    ends = {_parse_instant(row.get('ends_at')) for row in (entry, post)} - {None}
+    return len(ends) <= 1 and (_same_place(entry, post) != 'conflicting' or any(
+        not word.isdigit() and word not in _VENUE_FILLER
+        for word in _place_words(entry) & _place_words(post)))
+
+
+def _same_multiday_span(left: dict, right: dict, place: str) -> bool:
+    """One conference or weekend relayed by several accounts.
+
+    Identical whole-day spans of several days, where one title names the
+    other's occasion ("Family Weekend" in "Highlander Family Weekend 2026",
+    "USM's 13th Annual Conference" with its theme appended). A title that
+    only adds the poster's own name stays a separate listing.
+    """
+    start, end = _parse_instant(left.get('starts_at')), _parse_instant(left.get('ends_at'))
+    if (place == 'conflicting' or not (left.get('all_day') and right.get('all_day'))
+            or not start or not end or end - start <= timedelta(days=1)
+            or start != _parse_instant(right.get('starts_at')) or end != _parse_instant(right.get('ends_at'))
+            or _contradicting_titles(left, right)):
+        return False
+    short, long = sorted((left, right), key=lambda row: len(_slot_title_words(row)))
+    words, other = _slot_title_words(short), _slot_title_words(long)
+    return bool(len(words) >= 2 and words <= other and not ((other - words) & _own_name_words(long)))
+
+
+def _legacy_story(row: dict) -> bool:
+    """A story listing whose precision was never recorded: all_day null,
+    starting at local midnight. Its clock is unknown, not midnight."""
+    start = _parse_instant(row.get('starts_at'))
+    return bool(start and row.get('all_day') is None and '/stories/' in str(row.get('source_url') or '')
+                and start.astimezone(PACIFIC_TZ).time().isoformat() == '00:00:00')
+
+
+def _untimed(row: dict) -> bool:
+    return _date_only(row) or _legacy_story(row)
+
+
+def _quoted_story(left: dict, right: dict, place: str) -> bool:
+    """An account's legacy story and its own timed post that day quoting it.
+
+    The story "Joel Mejia Smith: it's been a while..." recorded no clock; the
+    post "Film Screening and Live Performance by Joel Mejia Smith" prints the
+    story's title in its caption. Date-only teasers keep the stricter
+    corroboration in same_event; this covers only stories of unknown precision.
+    """
+    story, post = (left, right) if _legacy_story(left) else (right, left)
+    if (place == 'conflicting' or not _legacy_story(story) or _untimed(post)
+            or not _same_account(story, post) or _contradicting_titles(story, post)):
+        return False
+    days = [_parse_instant(row.get('starts_at')).astimezone(PACIFIC_TZ).date() for row in (story, post)]
+    return days[0] == days[1] and _title_phrase_in_description(story, post)
+
+
 _SEQUENCE = re.compile(r'\b(?:session|part|day|round|week|vol|no)\.?\s*#?\s*(\d+)\b|#\s*(\d+)')
 _EDITION = re.compile(r'\b(\d+)(?:st|nd|rd|th)\s+annual\b')
 
@@ -424,6 +500,10 @@ def same_event(left: dict, right: dict) -> bool:
         return True
     place = _same_place(left, right)
     if _same_slot_event(left, right, place) or (start != other_start and _corrected_deadline(left, right)):
+        return True
+    # Patterns from the admin's September 26 review decisions.
+    if (_schedule_superseded(left, right) or _same_multiday_span(left, right, place)
+            or _quoted_story(left, right, place)):
         return True
     if place == 'conflicting':
         return False
@@ -686,9 +766,9 @@ def plan(rows: list[dict], tombstones: list[dict] = (), *, now: datetime | None 
                   *(r for r in tombstones if r['id'] not in by_id)]
     index = _CandidateIndex(candidates)
     # A teaser for two different timed sessions does not identify either one.
-    ambiguous = {row['id'] for row in candidates if _date_only(row) and len({
+    ambiguous = {row['id'] for row in candidates if _untimed(row) and len({
         _parse_instant(other.get('starts_at')) for other in index.peers(row)
-        if not _date_only(other) and same_event(row, other)
+        if not _untimed(other) and same_event(row, other)
     }) > 1}
     # An abbreviated conference title or an organizer-only venue must not
     # bridge two separately specified events. Include tombstones in this check.
@@ -728,7 +808,7 @@ def plan(rows: list[dict], tombstones: list[dict] = (), *, now: datetime | None 
             matches = []
         # Two related date-only teasers must not bridge incompatible sessions.
         # A corrected deadline replaces its old date rather than bridging it.
-        timed = [r for r in [row, *(r for group in matches for r in group)] if not _date_only(r)]
+        timed = [r for r in [row, *(r for group in matches for r in group)] if not _untimed(r)]
         if len({_parse_instant(r.get('starts_at')) for r in timed}) > 1 and not all(
                 _corrected_deadline(a, b) for i, a in enumerate(timed) for b in timed[i + 1:]
                 if a.get('starts_at') != b.get('starts_at')):

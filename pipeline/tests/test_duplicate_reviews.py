@@ -13,11 +13,15 @@ import assessed_events as publication  # noqa: E402
 import db  # noqa: E402
 from reconcile_events import Reviews, plan, review_candidates, same_event  # noqa: E402
 
-ROWS = {row['id']: row for row in json.loads(
-    (Path(__file__).parent / 'fixtures/sep25-duplicates.json').read_text())}
-# SSA reposted USM's conference; the venues read "SoCal" and "University of
-# Southern California", so no rule merges them.
-USM, SSA = 'ig_unitedsikhmovement_p3984337006174941028', 'ig_ssa_ucr_p3992176458381655610'
+FIXTURES = Path(__file__).parent / 'fixtures'
+ROWS = {row['id']: row for row in [
+    *json.loads((FIXTURES / 'sep25-duplicates.json').read_text()),
+    *json.loads((FIXTURES / 'sep26-duplicates.json').read_text())['rows']]}
+# The Chamber's all-day notice of the Crosstown Showdown and the team's own
+# 1 PM post: an admin merged them, but only two title words are shared across
+# two accounts, so no rule does. (USM and SSA played this part until an admin
+# merge taught the rules that conference span.)
+TEAM, NOTICE = 'ig_ucrwsoc_p3989236626873105735', 'ig_rivchamber_p3983234145506086926'
 # A schedule line and the event's own post, which the rules merge.
 SOCIAL, SCHEDULE = ('ig_designingdreamsucr_p3991578622329622598',
                     'ig_designingdreamsucr_p3991225804188653761-20260925T2300Z')
@@ -47,29 +51,29 @@ class ReviewsTests(unittest.TestCase):
         self.assertIsNone(reviews.kept('ig_f'))
 
     def test_a_loop_of_merges_names_no_listing_to_keep(self):
-        reviews = Reviews({SSA: USM, USM: SSA})
-        self.assertEqual(USM, reviews.kept(SSA))
-        self.assertEqual(([], set(), {}), plan(rows(USM, SSA), reviews=reviews))
+        reviews = Reviews({NOTICE: TEAM, TEAM: NOTICE})
+        self.assertEqual(TEAM, reviews.kept(NOTICE))
+        self.assertEqual(([], set(), {}), plan(rows(TEAM, NOTICE), reviews=reviews))
 
 
 class ReviewCandidateTests(unittest.TestCase):
     def test_a_pair_judged_different_is_not_asked_about_again(self):
-        self.assertEqual([pair(USM, SSA)], [pair(a['id'], b['id']) for a, b in review_candidates(rows(USM, SSA))])
-        reviews = Reviews(distinct=frozenset({frozenset({USM, SSA})}))
-        self.assertEqual([], review_candidates(rows(USM, SSA), reviews=reviews))
+        self.assertEqual([pair(TEAM, NOTICE)], [pair(a['id'], b['id']) for a, b in review_candidates(rows(TEAM, NOTICE))])
+        reviews = Reviews(distinct=frozenset({frozenset({TEAM, NOTICE})}))
+        self.assertEqual([], review_candidates(rows(TEAM, NOTICE), reviews=reviews))
 
 
 class PlanTests(unittest.TestCase):
     def test_a_recreated_listing_rejoins_the_one_an_admin_kept(self):
-        self.assertFalse(same_event(*rows(USM, SSA)))
-        reviews = Reviews({SSA: USM})
-        expected = plan(rows(USM, SSA), reviews=reviews)
+        self.assertFalse(same_event(*rows(TEAM, NOTICE)))
+        reviews = Reviews({NOTICE: TEAM})
+        expected = plan(rows(TEAM, NOTICE), reviews=reviews)
         updates, removed, replacements = expected
-        self.assertEqual({SSA: USM}, replacements)
-        self.assertEqual({SSA}, removed)
-        for ordered in itertools.permutations(rows(USM, SSA)):
+        self.assertEqual({NOTICE: TEAM}, replacements)
+        self.assertEqual({NOTICE}, removed)
+        for ordered in itertools.permutations(rows(TEAM, NOTICE)):
             self.assertEqual(expected, plan(list(ordered), reviews=reviews))
-        survivors = {r['id']: r for r in rows(USM, SSA) if r['id'] not in removed}
+        survivors = {r['id']: r for r in rows(TEAM, NOTICE) if r['id'] not in removed}
         survivors.update({r['id']: r for r in updates})
         self.assertEqual(([], set(), {}), plan(list(survivors.values()), reviews=reviews))
 
@@ -78,7 +82,7 @@ class PlanTests(unittest.TestCase):
         self.assertEqual({SOCIAL: SCHEDULE}, plan(rows(SOCIAL, SCHEDULE), reviews=Reviews({SOCIAL: SCHEDULE}))[2])
 
     def test_a_merge_waits_while_the_kept_listing_is_gone(self):
-        self.assertEqual(([], set(), {}), plan(rows(SSA), reviews=Reviews({SSA: USM})))
+        self.assertEqual(([], set(), {}), plan(rows(NOTICE), reviews=Reviews({NOTICE: TEAM})))
 
     def test_a_pair_judged_different_never_merges(self):
         reviews = Reviews(distinct=frozenset({frozenset({SOCIAL, SCHEDULE})}))
@@ -101,21 +105,21 @@ class RepublicationTests(unittest.TestCase):
                 'known_event_ids': []}
 
     def withheld(self, reviews):
-        usm, ssa = rows(USM, SSA)
-        updates = [self.update(usm), self.update(ssa)]
+        team, notice = rows(TEAM, NOTICE)
+        updates = [self.update(team), self.update(notice)]
         registry = {
             updates[0]['source_key']: {'assessment': updates[0]['assessment'],
-                                       'event_ids': [USM], 'known_event_ids': [USM]},
-            # merge_duplicate_events moved SSA's support onto USM's listing.
+                                       'event_ids': [TEAM], 'known_event_ids': [TEAM]},
+            # merge_duplicate_events moved NOTICE's support onto TEAM's listing.
             updates[1]['source_key']: {'assessment': updates[1]['assessment'],
-                                       'event_ids': [USM], 'known_event_ids': [SSA, USM]},
+                                       'event_ids': [TEAM], 'known_event_ids': [NOTICE, TEAM]},
         }
-        kept = publication._withhold_reconciled(updates, registry, {USM: usm}, {}, reviews)
+        kept = publication._withhold_reconciled(updates, registry, {TEAM: team}, {}, reviews)
         return [row['id'] for update in kept for row in update['rows']]
 
     def test_an_admin_merge_withholds_the_repost_the_rules_would_publish(self):
-        self.assertEqual([USM, SSA], self.withheld(None))
-        self.assertEqual([USM], self.withheld(Reviews({SSA: USM})))
+        self.assertEqual([TEAM, NOTICE], self.withheld(None))
+        self.assertEqual([TEAM], self.withheld(Reviews({NOTICE: TEAM})))
 
     def test_publication_reads_decisions_only_when_a_source_was_remapped(self):
         with patch.object(publication, 'load_registry', return_value={}), \

@@ -2,8 +2,8 @@
 
 Only title/description text establishes fundraising or student eligibility.
 Audience cohorts are evaluated separately; deadlines match the title only.
-Program applications are recognized last, so a dated cutoff still wins, and
-they are the one check that also reads a flyer's OCR text.
+Program applications are recognized last, so a dated cutoff still wins. OCR
+text is read only by that check and to find the price behind a "good cause".
 """
 from __future__ import annotations
 
@@ -44,9 +44,24 @@ _FUNDRAISING_ROLE_PATTERN = re.compile(
 )
 
 
-def _mentions_fundraising(text: str) -> bool:
+# "All while supporting a good cause" names a beneficiary without the word
+# "fundraiser". Volunteering serves a cause too, so the phrase alone is not
+# enough: it becomes a fundraiser once participation is also priced
+# ("Water balloon $1.50"), a price the flyer may print instead of the caption.
+_CAUSE_PATTERN = re.compile(
+    r"\b(?:for|support(?:s|ing)?|benefit(?:s|ing)?)\s+(?:a\s+|the\s+)?(?:good\s+)?cause\b"
+    r"|\bfor\s+charity\b",
+    re.IGNORECASE,
+)
+_PRICE_PATTERN = re.compile(r"\$\s?\d")
+
+
+def _mentions_fundraising(text: str, ocr_text: str = "") -> bool:
     text = _FUNDRAISING_ROLE_PATTERN.sub(" ", text.casefold())
-    return any(term in text for term in _FUNDRAISER_TERMS)
+    if any(term in text for term in _FUNDRAISER_TERMS):
+        return True
+    return bool(_CAUSE_PATTERN.search(text)
+                and _PRICE_PATTERN.search(f"{text}\n{ocr_text or ''}"))
 
 
 _DEADLINE_TITLE_TERMS = (
@@ -264,10 +279,11 @@ def classify_content_kind(
     """Classify with fundraiser precedence, then eligibility, then title cutoff.
 
     Tags remain accepted for existing callers but never feed text matching.
-    `ocr_text` is read by the program-application check alone: a flyer prints
-    the sign-up mechanics ("select a slot", "limited slots") that the caption
-    leaves out, but reading it for fundraising or eligibility would promote
-    every donation line and audience note in a flyer's fine print.
+    `ocr_text` is read by the program-application check: a flyer prints the
+    sign-up mechanics ("select a slot", "limited slots") that the caption
+    leaves out. Reading it for fundraising terms or eligibility would promote
+    every donation line and audience note in a flyer's fine print, so it only
+    supplies the price for a cause the title or description already names.
     """
     title = (title or "").casefold()
     text = f"{title} {description or ''}".casefold()
@@ -275,7 +291,7 @@ def classify_content_kind(
         return "other"
     if assessed_kind is None and is_informational_notice(title, description, ocr_text):
         return "other"
-    if _mentions_fundraising(text):
+    if _mentions_fundraising(text, ocr_text):
         return "fundraiser"
 
     # Student/club origins bypass audience and text eligibility checks.
