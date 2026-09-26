@@ -5,6 +5,23 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 10
+    groups:
+      # react, react-dom and their @types must move together: bumping one
+      # alone breaks npm ci on peer-dependency conflicts.
+      react:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "@types/react"
+          - "@types/react-dom"
+    ignore:
+      # Majors that need a migration, not a bump. Security updates still open.
+      # eslint 10: eslint-config-next's plugins crash (scopeManager.addGlobals).
+      - dependency-name: "eslint"
+        update-types: ["version-update:semver-major"]
+      # tailwind 4: new config/PostCSS plugin model; build fails as-is.
+      - dependency-name: "tailwindcss"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: pip
     directory: /pipeline
