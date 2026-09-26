@@ -5,7 +5,7 @@ import { useEffect, type MutableRefObject, type RefObject } from "react";
 const LOAD_ROOT_MARGIN_PX = 640;
 
 type UseInfiniteEventFeedLoaderArgs = {
-  loadMoreRef: RefObject<HTMLDivElement>;
+  loadMoreRef: RefObject<HTMLDivElement | null>;
   hasMore: boolean;
   loadError: string;
   isLoadingMore: boolean;

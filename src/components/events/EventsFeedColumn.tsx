@@ -45,7 +45,7 @@ type Props = {
   dayKeys: string[];
   grouped: Map<string, CampusEvent[]>;
   loadedCount: number;
-  loadMoreRef: RefObject<HTMLDivElement>;
+  loadMoreRef: RefObject<HTMLDivElement | null>;
   hasMore: boolean;
   hideLoadMoreHint?: boolean;
   loadError: string;
