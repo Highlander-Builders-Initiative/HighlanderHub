@@ -13,7 +13,7 @@ import {
   getCalendarEvents,
   getEventFilterCountSource,
   getEventsPage,
-  getEventsSummary,
+  getEventsUpcomingThisWeek,
 } from "@/lib/events";
 import { shareCalendarEvents } from "@/lib/events/share-calendar-events";
 import {
@@ -50,14 +50,14 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
   const calendarRange = pacificCalendarGridRange(
     startOfPacificMonthKey(pacificTodayKey())
   );
-  const [initialPage, calendarEvents, summary, countSource] =
+  const [initialPage, calendarEvents, upcomingThisWeek, countSource] =
     await Promise.all([
       getEventsPage(initialFilters),
       getCalendarEvents({
         startDayKey: calendarRange.start,
         endDayKey: calendarRange.end,
       }),
-      getEventsSummary(),
+      getEventsUpcomingThisWeek(),
       getEventFilterCountSource(),
     ]);
   const { events, filterCountSource } = shareCalendarEvents(calendarEvents, {
@@ -72,7 +72,7 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
       <EventsBrowser
         events={events}
         calendarEvents={calendarEvents}
-        summary={summary}
+        summary={{ upcomingThisWeek }}
         filterCountSource={filterCountSource}
         initialHasMore={initialPage.hasMore}
         initialNextOffset={initialPage.nextOffset}

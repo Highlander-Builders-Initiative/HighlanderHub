@@ -11,7 +11,10 @@
     "test": "npm run test:unit",
     "generate:rows": "node scripts/generate-row-types.mjs",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "predev": "node scripts/generate-public-clubs.mjs",
+    "prebuild": "node scripts/generate-public-clubs.mjs",
+    "pretest:unit": "node scripts/generate-public-clubs.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.0",

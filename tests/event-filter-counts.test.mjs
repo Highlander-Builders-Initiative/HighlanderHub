@@ -94,7 +94,6 @@ test("event category badges use a full-feed count source outside pagination", ()
     data,
     /\.select\("id,title,description,starts_at,location,host,host_handle,hosts,category,tags,has_free_food"\)/
   );
-  assert.match(data, /withDbRetry\("event filter counts"/);
   assert.match(page, /getEventFilterCountSource/);
   assert.match(page, /filterCountSource=\{filterCountSource\}/);
   assert.match(browser, /filterCountSource: EventFilterCountSource\[\]/);

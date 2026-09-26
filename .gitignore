@@ -33,5 +33,5 @@ supabase/.temp/
 
 # Pipeline runtime data (scraping state, repair reports, logs)
 pipeline/data/*
-# Build input: src/lib/clubs.ts imports it, so the app can't build without it
+# Build input: generate-public-clubs.mjs projects the public club directory
 !pipeline/data/account_activity.json
