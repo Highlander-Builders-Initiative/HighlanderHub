@@ -22,3 +22,14 @@ playwright-report/
 .jules/
 .antigravitycli/
 .worktrees/
+.gemini/
+
+# Python bytecode
+__pycache__/
+*.pyc
+
+# Supabase local state (contains project ref / org IDs)
+supabase/.temp/
+
+# Pipeline runtime data (scraping state, repair reports, activity logs)
+pipeline/data/

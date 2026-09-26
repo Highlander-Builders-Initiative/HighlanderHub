@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  actions: read    # cache restore/save
 
 concurrency:
   group: instagram-event-pipeline
