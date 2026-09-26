@@ -31,5 +31,7 @@ __pycache__/
 # Supabase local state (contains project ref / org IDs)
 supabase/.temp/
 
-# Pipeline runtime data (scraping state, repair reports, activity logs)
-pipeline/data/
+# Pipeline runtime data (scraping state, repair reports, logs)
+pipeline/data/*
+# Build input: src/lib/clubs.ts imports it, so the app can't build without it
+!pipeline/data/account_activity.json
