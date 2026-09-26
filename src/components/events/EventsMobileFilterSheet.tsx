@@ -22,6 +22,8 @@ type Props = {
   onSelect: (dayKey: string) => void;
   countsByDay: Map<string, number>;
   isLoading: boolean;
+  error?: boolean;
+  onRetry?: () => void;
   onClear: () => void;
   hasActiveFilters: boolean;
   resultCount: number;
@@ -42,6 +44,8 @@ export function EventsMobileFilterSheet({
   onSelect,
   countsByDay,
   isLoading,
+  error,
+  onRetry,
   onClear,
   hasActiveFilters,
   resultCount,
@@ -132,6 +136,8 @@ export function EventsMobileFilterSheet({
               onSelect={onSelect}
               countsByDay={countsByDay}
               isLoading={isLoading}
+              error={error}
+              onRetry={onRetry}
             />
           </div>
         </div>

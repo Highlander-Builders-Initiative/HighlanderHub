@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import logging
 import re
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import NamedTuple
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
@@ -579,6 +579,40 @@ def _reconciliation_rows() -> list[dict]:
     return [row for row in get_event_rows() if imported_row_kind(row) != 'other']
 
 
+class _CandidateIndex:
+    """Necessary matching conditions only; same_event remains the policy.
+
+    Cross-date matches are exclusively corrected deadlines by the same owner.
+    Include historical rows and tombstones so old identities still constrain
+    current publications. Cache dates once per invocation.
+    """
+    def __init__(self, rows: list[dict]):
+        self.days = {}
+        self.by_day = {}
+        self.deadlines = {}
+        for row in rows:
+            start = _parse_instant(row.get('starts_at'))
+            day = start.astimezone(PACIFIC_TZ).date() if start else None
+            self.days[row['id']] = day
+            if day is None:
+                continue
+            self.by_day.setdefault((row.get('content_kind'), day), []).append(row)
+            if row.get('content_kind') == 'student_deadline' and _account(row):
+                self.deadlines.setdefault((_account(row), day), []).append(row)
+
+    def peers(self, row: dict) -> list[dict]:
+        day = self.days[row['id']]
+        if day is None:
+            return []
+        peers = list(self.by_day.get((row.get('content_kind'), day), ()))
+        if row.get('content_kind') == 'student_deadline' and _account(row):
+            # timedelta.days in the matcher and DST can cross a date boundary.
+            for delta in range(-32, 33):
+                if delta:
+                    peers.extend(self.deadlines.get((_account(row), day + timedelta(days=delta)), ()))
+        return peers
+
+
 def plan(rows: list[dict], tombstones: list[dict] = (), *, now: datetime | None = None,
          reviews: Reviews = Reviews()) -> tuple[list[dict], set[str], dict[str, str]]:
     """Return canonical updates, removed IDs and duplicate-to-canonical mappings.
@@ -598,21 +632,24 @@ def plan(rows: list[dict], tombstones: list[dict] = (), *, now: datetime | None 
     forced = {event_id: kept for event_id, kept in forced.items() if kept not in forced}
     candidates = [*(r for r in rows if r['id'] not in forced),
                   *(r for r in tombstones if r['id'] not in by_id)]
+    index = _CandidateIndex(candidates)
     # A teaser for two different timed sessions does not identify either one.
     ambiguous = {row['id'] for row in candidates if _date_only(row) and len({
-        _parse_instant(other.get('starts_at')) for other in candidates
+        _parse_instant(other.get('starts_at')) for other in index.peers(row)
         if not _date_only(other) and same_event(row, other)
     }) > 1}
     # An abbreviated conference title or an organizer-only venue must not
     # bridge two separately specified events. Include tombstones in this check.
-    ambiguous_details = _ambiguous_summaries(candidates)
+    ambiguous_details = {row['id'] for row in candidates if _incomplete_session(row)
+                         and _summary_group_conflict([row, *(other for other in index.peers(row)
+                             if _specific_slot(other) and _place_words(other) and same_event(row, other))])}
     for row in candidates:
         title, alias = _title_form(row, row)
         vague_title = alias and bool(title) and title <= _EVENT_NOUNS
         vague_venue = _host_venue(row)
         if not (vague_title or vague_venue):
             continue
-        peers = [other for other in candidates if other['id'] != row['id'] and same_event(row, other)]
+        peers = [other for other in index.peers(row) if other['id'] != row['id'] and same_event(row, other)]
         for i, left in enumerate(peers):
             for right in peers[i + 1:]:
                 a, b = _title_form(left, right)[0], _title_form(right, left)[0]
@@ -626,8 +663,13 @@ def plan(rows: list[dict], tombstones: list[dict] = (), *, now: datetime | None 
                 and _parse_instant(left.get('starts_at')) != _parse_instant(right.get('starts_at'))):
             return False
         return same_event(left, right)
-    for row in sorted(candidates, key=lambda r:r['id']):
-        matches = [g for g in groups if any(matches_pair(row, other) for other in g)]
+    group_for = {}
+    group_order = {}
+    for position, row in enumerate(sorted(candidates, key=lambda r:r['id'])):
+        plausible = {id(group_for[other['id']]): group_for[other['id']]
+                     for other in index.peers(row) if other['id'] in group_for}
+        matches = [g for g in sorted(plausible.values(), key=lambda g: group_order[id(g)])
+                   if any(matches_pair(row, other) for other in g)]
         # Nor may a third listing bridge a pair judged different.
         joined = [row, *(other for group in matches for other in group)]
         if _summary_group_conflict(joined) or reviews.judged_distinct(joined):
@@ -645,8 +687,13 @@ def plan(rows: list[dict], tombstones: list[dict] = (), *, now: datetime | None 
             for group in matches[1:]:
                 first.extend(group)
                 groups.remove(group)
+            for member in first:
+                group_for[member['id']] = first
         else:
-            groups.append([row])
+            group = [row]
+            group_order[id(group)] = position
+            groups.append(group)
+            group_for[row['id']] = group
     for event_id, kept in forced.items():
         next(group for group in groups if any(r['id'] == kept for r in group)).append(by_id[event_id])
     updates, tombstoned, replacements = [], set(), {}

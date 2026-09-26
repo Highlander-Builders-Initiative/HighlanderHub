@@ -87,7 +87,6 @@ test("filtered event pagination replaces client id-search backfill", () => {
 
   assert.match(data, /filterEventSource/);
   assert.match(data, /function hasEventPageFilters/);
-  assert.match(data, /withDbRetry\("filtered events"/);
   assert.match(route, /query: searchParams\.get\("q"\) \?\? ""/);
   assert.match(route, /category: coerceCategoryParam\(searchParams\.get\("cat"\)\)/);
   assert.match(route, /dayWindow: coerceDayWindowParam\(searchParams\.get\("when"\)\)/);

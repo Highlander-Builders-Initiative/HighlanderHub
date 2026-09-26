@@ -32,6 +32,8 @@ type Props = {
   onSelect: (dayKey: string) => void;
   countsByDay: Map<string, number>;
   isLoading: boolean;
+  error?: boolean;
+  onRetry?: () => void;
 };
 
 export function EventsMiniCalendar({
@@ -42,6 +44,8 @@ export function EventsMiniCalendar({
   onSelect,
   countsByDay,
   isLoading,
+  error,
+  onRetry,
 }: Props) {
   const monthKey = cursor.slice(0, 7);
 
@@ -105,6 +109,14 @@ export function EventsMiniCalendar({
         </div>
       </div>
 
+      {error && (
+        <p role="alert" className="mb-3 text-sm text-muted">
+          Couldn’t load this month.{' '}
+          <button type="button" onClick={onRetry} className="interactive-focus underline">
+            Retry calendar
+          </button>
+        </p>
+      )}
       <div
         aria-busy={isLoading}
         className={`transition-opacity duration-[250ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${
@@ -132,8 +144,8 @@ export function EventsMiniCalendar({
             // Heat only paints the focused month; adjacent-month days stay
             // quiet so the eye holds on the current grid. While the month
             // loads its counts are unknown, so its days sit neutral.
-            const heat = !isLoading && inMonth ? heatClass(count) : "";
-            const dayText = !isLoading && count === 0 ? "text-faint" : "text-ink";
+            const heat = !isLoading && !error && inMonth ? heatClass(count) : "";
+            const dayText = !isLoading && !error && count === 0 ? "text-faint" : "text-ink";
 
             return (
               <button
@@ -141,7 +153,7 @@ export function EventsMiniCalendar({
                 key={key}
                 onClick={() => onSelect(key)}
                 aria-label={`Jump to ${key}, ${
-                  count === 0 ? "no events" : `${count} ${count === 1 ? "event" : "events"}`
+                  isLoading || error ? "event count unavailable" : count === 0 ? "no events" : `${count} ${count === 1 ? "event" : "events"}`
                 }`}
                 aria-pressed={isSelected}
                 className={[
