@@ -52,6 +52,11 @@ project; changing base64 formatting or rerunning the job will not resolve it.
 OCR and QR scanning read every carousel image in order, including video cover
 images. Each slide retains its own evidence field and durable flyer. A failure
 on any slide keeps the post retryable; completed image work is reused on retry.
+Temporary Vision service, rate-limit, and network failures get up to three
+attempts per image, waiting 1 then 2 seconds. This includes per-image errors
+inside HTTP 200 responses. Every attempt reserves usage; permanent API errors
+(including permission denials) fail immediately. Exhausted retries still leave
+the post failed and its completed slides saved for the next run.
 An expired image URL is the exception: saved posts are never re-requested, so
 the post is recorded as `expired_media` and skipped rather than failing every
 run. It publishes nothing new, its earlier listing (if any) keeps its support,

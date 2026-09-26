@@ -98,6 +98,98 @@ class ImageOcrTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "OCR unavailable"):
                 image_ocr._vision_ocr(b"flyer")
 
+    def test_transient_vision_response_errors_retry_with_fresh_reservations(self):
+        for code in (4, 8, 13, 14):
+            with self.subTest(code=code):
+                self.db.reset_mock()
+                self.db.rpc.return_value.execute.side_effect = [
+                    Mock(data={"slot": "primary", "used": 1000}),
+                    Mock(data={"slot": "overflow", "used": 1}),
+                ]
+                failed = Mock(status_code=200)
+                failed.json.return_value = {"responses": [{"error": {
+                    "code": code, "message": "The service is currently unavailable.",
+                }}]}
+                success = Mock(status_code=200)
+                success.json.return_value = {"responses": [{"fullTextAnnotation": {"text": " Workshop "}}]}
+
+                def respond(*args, **kwargs):
+                    # Every outgoing request must already have its own reservation.
+                    self.assertEqual(request.call_count, self.db.rpc.return_value.execute.call_count)
+                    return [failed, success][request.call_count - 1]
+
+                with patch("requests.post", side_effect=respond) as request, \
+                     patch.object(image_ocr.time, "sleep") as sleep:
+                    self.assertEqual("Workshop", image_ocr._vision_ocr(b"flyer"))
+                    self.assertEqual(2, request.call_count)
+                    self.assertEqual(["new-test-key", "old-test-key"], [
+                        call.kwargs["headers"]["X-Goog-Api-Key"] for call in request.call_args_list
+                    ])
+                    self.assertEqual(request.call_args_list[0].kwargs["json"],
+                                     request.call_args_list[1].kwargs["json"])
+                    sleep.assert_called_once_with(1)
+
+    def test_vision_response_retries_are_bounded_and_keep_error_codes(self):
+        response = Mock(status_code=200)
+        response.json.return_value = {"responses": [{"error": {
+            "code": 14, "message": "The service is currently unavailable.",
+        }}]}
+        with patch("requests.post", return_value=response) as request, \
+             patch.object(image_ocr.time, "sleep") as sleep:
+            with self.assertRaisesRegex(RuntimeError, r"HTTP 200, code 14.*service is currently unavailable"):
+                image_ocr._vision_ocr(b"flyer")
+            self.assertEqual(3, request.call_count)
+            self.assertEqual(3, self.db.rpc.return_value.execute.call_count)
+            self.assertEqual([1, 2], [call.args[0] for call in sleep.call_args_list])
+
+    def test_permanent_or_unknown_vision_response_errors_are_not_retried(self):
+        for code in (3, 5, 7, 16, 999, None):
+            with self.subTest(code=code):
+                self.db.reset_mock()
+                response = Mock(status_code=200)
+                response.json.return_value = {"responses": [{"error": {
+                    "code": code, "message": "Cannot process this image",
+                }}]}
+                with patch("requests.post", return_value=response) as request, \
+                     patch.object(image_ocr.time, "sleep") as sleep:
+                    with self.assertRaisesRegex(RuntimeError, "Cannot process this image"):
+                        image_ocr._vision_ocr(b"flyer")
+                    request.assert_called_once()
+                    self.db.rpc.assert_called_once()
+                    sleep.assert_not_called()
+
+    def test_vision_retries_only_transient_http_errors(self):
+        import requests
+
+        for status in (408, 429, 500, 502, 503, 504, 400, 401, 403, 404, 501):
+            with self.subTest(status=status):
+                self.db.reset_mock()
+                response = Mock(status_code=status)
+                response.raise_for_status.side_effect = requests.HTTPError(f"HTTP {status}", response=response)
+                with patch("requests.post", return_value=response) as request, \
+                     patch.object(image_ocr.time, "sleep") as sleep:
+                    with self.assertRaises(requests.HTTPError):
+                        image_ocr._vision_ocr(b"flyer")
+                    attempts = 3 if status in (408, 429, 500, 502, 503, 504) else 1
+                    self.assertEqual(attempts, request.call_count)
+                    self.assertEqual(attempts, self.db.rpc.return_value.execute.call_count)
+                    self.assertEqual(attempts - 1, sleep.call_count)
+
+    def test_accounting_failure_during_retry_stops_before_another_ocr_request(self):
+        import requests
+
+        response = Mock(status_code=503)
+        failure = requests.HTTPError("accounting unavailable", response=response)
+        self.db.rpc.return_value.execute.side_effect = [
+            Mock(data={"slot": "primary", "used": 1}), failure,
+        ]
+        with patch("requests.post", side_effect=requests.Timeout("uncertain delivery")) as request, \
+             patch.object(image_ocr.time, "sleep"):
+            with self.assertRaisesRegex(requests.HTTPError, "accounting unavailable"):
+                image_ocr._vision_ocr(b"flyer")
+            request.assert_called_once()
+            self.assertEqual(2, self.db.rpc.return_value.execute.call_count)
+
     def test_missing_image_or_credentials_never_make_a_request(self):
         with patch("requests.get") as download, patch("requests.post") as request, \
              patch.object(image_ocr, "GOOGLE_VISION_API_KEY", None):
@@ -182,18 +274,24 @@ class ImageOcrTests(unittest.TestCase):
                 self.db.rpc.assert_not_called()
                 request.assert_not_called()
 
-    def test_timeout_keeps_reservation_and_does_not_retry_another_key(self):
+    def test_transport_retries_are_bounded_and_keep_every_reservation(self):
         import requests
 
-        def timeout(*args, **kwargs):
-            self.db.rpc.return_value.execute.assert_called_once()
-            raise requests.Timeout("uncertain delivery")
+        for error in (requests.Timeout, requests.ConnectionError):
+            with self.subTest(error=error):
+                self.db.reset_mock()
 
-        with patch("requests.post", side_effect=timeout) as request:
-            with self.assertRaises(requests.Timeout):
-                image_ocr._vision_ocr(b"flyer")
-            request.assert_called_once()
-        self.db.rpc.assert_called_once_with("reserve_vision_ocr_request", {})
+                def fail(*args, **kwargs):
+                    self.assertEqual(request.call_count, self.db.rpc.return_value.execute.call_count)
+                    raise error("uncertain delivery")
+
+                with patch("requests.post", side_effect=fail) as request, \
+                     patch.object(image_ocr.time, "sleep") as sleep:
+                    with self.assertRaises(error):
+                        image_ocr._vision_ocr(b"flyer")
+                    self.assertEqual(3, request.call_count)
+                    self.assertEqual(3, self.db.rpc.return_value.execute.call_count)
+                    self.assertEqual([1, 2], [call.args[0] for call in sleep.call_args_list])
 
     def test_missing_overflow_or_duplicate_keys_do_not_consume_usage(self):
         with patch("requests.post") as request:
