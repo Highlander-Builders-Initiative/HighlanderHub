@@ -8,6 +8,8 @@ process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test';
 delete process.env.HIGHLANDERHUB_E2E_FIXTURES;
 const hook = registerHooks({ resolve(specifier, context, next) {
   if (specifier === 'next/cache') return { url: 'data:text/javascript,export const unstable_cache = (fn) => fn;', shortCircuit: true };
+  // The installed react (18) only exports cache() under Next's vendored React 19.
+  if (specifier === 'react') return { url: 'data:text/javascript,export const cache = (fn) => fn;', shortCircuit: true };
   return next(specifier, context);
 } });
 const events = await importTsModule('src/lib/events/index.ts');
