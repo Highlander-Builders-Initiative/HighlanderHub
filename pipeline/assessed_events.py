@@ -30,6 +30,8 @@ CACHE_DIR = DATA_DIR / "assessments"
 MAX_CONSECUTIVE_FAILURES = 3
 # More sessions than this in one post is a season schedule, not a week's plans.
 MAX_SESSIONS = 10
+# Saved as the assessment of a post whose extraction failed: no model ran.
+EXTRACTION_FAILED = {"status": "error", "error": "Post extraction failed"}
 
 
 class AssessmentResult(NamedTuple):
@@ -380,10 +382,19 @@ def _complete(updates: list[dict], *, notify: bool) -> None:
         log.info("%d source(s) stay refused and publish nothing: %s", len(refused), ", ".join(refused))
     unresolved = [item for item in updates if item["assessment"]["status"] == "error"
                   and item["assessment"].get("retryable") is not False]
+    # Report each failure under the stage that failed: extraction or assessment.
+    unextracted = [item["source_key"] for item in unresolved if item["assessment"] == EXTRACTION_FAILED]
+    unresolved = [item for item in unresolved if item["assessment"] != EXTRACTION_FAILED]
+    problems = []
     if unresolved:
         failed = [item["source_key"] for item in unresolved]
-        raise RuntimeError(f"{len(failed)} source assessment(s) failed; existing listings, if any, retained: {', '.join(failed)}; "
-                           f"first failure: {unresolved[0]['assessment'].get('error')}")
+        problems.append(f"{len(failed)} source assessment(s) failed; existing listings, if any, retained: {', '.join(failed)}; "
+                        f"first failure: {unresolved[0]['assessment'].get('error')}")
+    if unextracted:
+        problems.append(f"{len(unextracted)} post(s) could not be extracted, so were not assessed; "
+                        f"existing listings, if any, retained: {', '.join(unextracted)}")
+    if problems:
+        raise RuntimeError("; ".join(problems))
 
 
 def post_updates(processed: list[tuple[dict, dict]], meta: dict, now: str,
@@ -429,7 +440,7 @@ def post_updates(processed: list[tuple[dict, dict]], meta: dict, now: str,
                             "rows": [], "known_event_ids": supported})
         elif status == "error":
             updates.append({"source_key": source["source_key"], "origin": "instagram",
-                            "assessment": {"status": "error", "error": "Post extraction failed"},
+                            "assessment": dict(EXTRACTION_FAILED),
                             "rows": [], "known_event_ids": []})
         elif any(source["texts"].values()):
             produced_live = False

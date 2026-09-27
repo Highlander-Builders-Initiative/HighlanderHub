@@ -26,7 +26,7 @@ function sourceUrlFor(specifier, fromUrl = projectRoot) {
 }
 
 function resolveSourceUrl(url) {
-  const candidates = [url, ".ts", ".tsx", ".js", ".mjs"].map((candidate) =>
+  const candidates = [url, ".ts", ".tsx", ".js", ".mjs", "/index.ts"].map((candidate) =>
     typeof candidate === "string" ? new URL(`${url.href}${candidate}`) : candidate
   );
 

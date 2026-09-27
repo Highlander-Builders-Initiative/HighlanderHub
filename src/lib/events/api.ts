@@ -1,5 +1,6 @@
 import type { CampusEvent } from "@/types/event";
 import type { EventFeedQuery } from "@/components/events/events-filters";
+import { CALENDAR_GRID_DAYS, addPacificDays } from "@/lib/dates";
 
 export type EventsApiPage = {
   events: CampusEvent[];
@@ -38,4 +39,21 @@ export async function fetchCalendarEvents(
   if (!response.ok) throw new Error("Unable to load calendar events.");
   const payload = (await response.json()) as { events: CampusEvent[] };
   return payload.events;
+}
+
+/** Any range of days, one grid per request (the calendar route's limit). */
+export async function fetchCalendarRange(
+  startDayKey: string,
+  endDayKey: string
+): Promise<CampusEvent[]> {
+  const requests: Promise<CampusEvent[]>[] = [];
+  for (
+    let from = startDayKey;
+    from <= endDayKey;
+    from = addPacificDays(from, CALENDAR_GRID_DAYS)
+  ) {
+    const to = addPacificDays(from, CALENDAR_GRID_DAYS - 1);
+    requests.push(fetchCalendarEvents(from, to < endDayKey ? to : endDayKey));
+  }
+  return (await Promise.all(requests)).flat();
 }

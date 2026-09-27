@@ -115,12 +115,15 @@ export function pacificDayOfMonth(dayKey: string): number {
   return parseDayKey(dayKey).day;
 }
 
+/** Days in a month's calendar grid: six weeks. */
+export const CALENDAR_GRID_DAYS = 42;
+
 export function pacificCalendarGridRange(monthKey: string): {
   start: string;
   end: string;
 } {
   const start = addPacificDays(monthKey, -pacificWeekdayIndex(monthKey));
-  return { start, end: addPacificDays(start, 41) };
+  return { start, end: addPacificDays(start, CALENDAR_GRID_DAYS - 1) };
 }
 
 export function formatPacificDayKey(dayKey: string): string {

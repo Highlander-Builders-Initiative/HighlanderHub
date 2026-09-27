@@ -284,6 +284,7 @@ export function EventsBrowser({
     loadedEvents,
     setLoadedEvents,
     calendarEvents,
+    calendarStart: calendarRange.start,
     dayKeys,
     todayKey,
     hasMore,

@@ -508,6 +508,9 @@ class AssessmentRequestTests(unittest.TestCase):
         patcher = patch("config.GEMINI_API_KEY", None)
         patcher.start()
         self.addCleanup(patcher.stop)
+        # The client is reused per process; each test patches its own.
+        assess._client.cache_clear()
+        self.addCleanup(assess._client.cache_clear)
 
     def field_decision(self, src):
         result = decision(src)
@@ -587,6 +590,17 @@ class AssessmentRequestTests(unittest.TestCase):
         self.assertEqual("test-key", client.call_args.kwargs["api_key"])
         self.assertNotIn("vertexai", client.call_args.kwargs)
         sleep.assert_called_once_with(60 / assess.FREE_TIER_RPM - 1)
+
+    def test_one_client_serves_every_request(self):
+        # Each new Vertex client loads credentials and fetches its own token.
+        src = source()
+        response = SimpleNamespace(parsed=decision(src), text="")
+        with patch.object(assess, "FLEX", False), patch("google.genai.Client") as client:
+            client.return_value.models.generate_content.return_value = response
+            assess.assess(src)
+            assess.assess(src)
+        client.assert_called_once()
+        self.assertEqual(2, client.return_value.models.generate_content.call_count)
 
     def test_a_spent_daily_quota_stops_without_switching_to_vertex(self):
         from google.genai import errors

@@ -318,7 +318,7 @@ async function getEventsPageUncached({
       // Share a complete, narrow source across offsets; hydrate only this page.
       if (normalizedQuery) {
         const matches = filterEventSource(await getEventFilterCountSource(), filters);
-        const ids = matches.slice(from, from + pageSize + 1).map((event) => event.id);
+        const ids = matches.slice(from, from + pageSize).map((event) => event.id);
         if (!ids.length) return { events: [], hasMore: false, nextOffset: from };
         const rows = await readEventRows("filtered events", (offset, end) =>
           supabase.from("events").select("*")
@@ -327,9 +327,9 @@ async function getEventsPageUncached({
             .order("starts_at", { ascending: true }).order("id", { ascending: true })
             .range(offset, end).overrideTypes<EventRow[], { merge: false }>(), ids.length);
         return {
-          events: rows.slice(0, pageSize).map(eventRowToCampusEvent),
+          events: rows.map(eventRowToCampusEvent),
           hasMore: matches.length > from + pageSize,
-          nextOffset: from + Math.min(pageSize, ids.length),
+          nextOffset: from + ids.length,
         };
       }
 

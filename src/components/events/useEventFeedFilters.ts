@@ -9,6 +9,7 @@ import {
   buildEventSearchText,
   countEventsByCategory,
   filterEventSource,
+  matchesCategory,
   normalizeEventQuery,
   type CategoryValue,
   type DayWindow,
@@ -102,9 +103,10 @@ export function useEventFeedFilters({
     });
   }, [calendarSourceEvents, filters, calendarSearchText]);
 
+  // Query and day window already applied; only the category remains.
   const filtered = useMemo(() => {
-    return filterEventSource(filteredExceptCategory, filters);
-  }, [filteredExceptCategory, filters]);
+    return filteredExceptCategory.filter((event) => matchesCategory(event, category));
+  }, [filteredExceptCategory, category]);
 
   const counts = useMemo(() => {
     return countEventsByCategory(countSourceExceptCategory);

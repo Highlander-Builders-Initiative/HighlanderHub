@@ -15,6 +15,7 @@ import logging
 import re
 import unicodedata
 from datetime import date, datetime, time, timedelta
+from functools import cache
 from time import monotonic, sleep
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -693,7 +694,10 @@ def _attach_source_quotes(result: dict, source: dict) -> dict:
     return result
 
 
+@cache
 def _client(gemini_api: bool):
+    # One client per process: each new Vertex client loads credentials and
+    # fetches its own access token before its first request.
     from google import genai
     from config import GEMINI_API_KEY, GOOGLE_CLOUD_PROJECT, GOOGLE_CLOUD_LOCATION
 
@@ -723,7 +727,7 @@ def _generate(prompt: str):
     request = {"model": MODEL, "contents": prompt, "config": {
         "response_mime_type": "application/json", "response_schema": SCHEMA, "temperature": TEMPERATURE}}
     # The client must outlive the call: dropping the last reference closes its
-    # underlying HTTP session, and a temporary is collected mid-request.
+    # underlying HTTP session. The cache in _client holds it for the process.
     client = _client(gemini_api=bool(GEMINI_API_KEY))
     if GEMINI_API_KEY:
         _pace()

@@ -8,11 +8,14 @@ process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test';
 delete process.env.HIGHLANDERHUB_E2E_FIXTURES;
 const hook = registerHooks({ resolve(specifier, context, next) {
   if (specifier === 'next/cache') return { url: 'data:text/javascript,export const unstable_cache = (fn) => fn;', shortCircuit: true };
+  if (specifier === 'next/server') return { url: 'data:text/javascript,export const NextResponse = { json: (body) => Response.json(body) };', shortCircuit: true };
   // The installed react (18) only exports cache() under Next's vendored React 19.
   if (specifier === 'react') return { url: 'data:text/javascript,export const cache = (fn) => fn;', shortCircuit: true };
   return next(specifier, context);
 } });
 const events = await importTsModule('src/lib/events/index.ts');
+const calendarRoute = await importTsModule('src/app/api/events/calendar/route.ts');
+const eventsApi = await importTsModule('src/lib/events/api.ts');
 hook.deregister();
 
 const source = Array.from({ length: 1101 }, (_, i) => ({
@@ -62,6 +65,57 @@ test('search finds a row beyond the response cap and hydrates only its page', as
   assert.equal(page.hasMore, false);
   assert.equal(requests.filter(r => r.params.get('select') === '*').reduce((n, r) => n + r.rows, 0), 1);
   assert.equal(requests.filter(r => r.params.get('select') !== '*').reduce((n, r) => n + r.rows, 0), 1101);
+});
+
+test('search pages stay disjoint when a matched row ends before hydration', async t => {
+  const requests = installApi(t);
+  const fetch = globalThis.fetch;
+  t.mock.method(globalThis, 'fetch', async (...args) => {
+    const response = await fetch(...args);
+    const url = new URL(args[0] instanceof Request ? args[0].url : args[0]);
+    if (!url.searchParams.has('id')) return response;
+    // The cached count source still lists ig_0003; the live read no longer does.
+    const rows = (await response.json()).filter(row => row.id !== 'ig_0003');
+    return new Response(JSON.stringify(rows), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  });
+  const first = await events.getEventsPage({ query: 'event', limit: 24 });
+  const second = await events.getEventsPage({ query: 'event', offset: first.nextOffset, limit: 24 });
+  const firstIds = first.events.map(row => row.id);
+  assert.deepEqual(firstIds.filter(id => second.events.some(row => row.id === id)), []);
+  assert.equal(first.nextOffset, 24);
+  assert.equal(second.events[0].id, 'ig_0024');
+  // Each page hydrates exactly its own ids, never the next page's first row.
+  const hydrated = requests.filter(r => r.params.has('id')).map(r => r.params.get('id').slice(4, -1).split(','));
+  assert.ok(hydrated.every(ids => ids.length === 24));
+  assert.ok(!hydrated[0].includes('ig_0024'));
+});
+
+test('the calendar API reads at most one six-week grid', async t => {
+  const requests = installApi(t);
+  const huge = await calendarRoute.GET(new Request('https://hub.test/api/events/calendar?start=2000-01-01&end=2100-12-31'));
+  assert.equal(huge.status, 200);
+  const [gte, lt] = requests[0].params.getAll('starts_at');
+  assert.match(gte, /^gte\.2000-01-01T/);
+  assert.match(lt, /^lt\.2000-02-12T/);
+  // A well-formed but impossible date falls back like any other unusable value.
+  const invalid = await calendarRoute.GET(new Request('https://hub.test/api/events/calendar?start=2026-99-99&end=2026-10-01'));
+  assert.equal(invalid.status, 200);
+});
+
+test('a calendar range longer than a grid is fetched in contiguous grid-sized requests', async t => {
+  const ranges = [];
+  t.mock.method(globalThis, 'fetch', async (input) => {
+    const url = new URL(input, 'https://hub.test');
+    ranges.push([url.searchParams.get('start'), url.searchParams.get('end')]);
+    return new Response(JSON.stringify({ events: [{ id: url.searchParams.get('start') }] }), { status: 200 });
+  });
+  const events = await eventsApi.fetchCalendarRange('2026-09-28', '2026-12-31');
+  assert.deepEqual(ranges, [
+    ['2026-09-28', '2026-11-08'],
+    ['2026-11-09', '2026-12-20'],
+    ['2026-12-21', '2026-12-31'],
+  ]);
+  assert.deepEqual(events.map(event => event.id), ['2026-09-28', '2026-11-09', '2026-12-21']);
 });
 
 test('category and date filters precede page ranges, including free food', async t => {
