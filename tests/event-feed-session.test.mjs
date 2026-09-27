@@ -80,7 +80,7 @@ test("event feed session keeps the list snapshot and return metadata together", 
       dayWindow: "all",
       events,
       hasMore: true,
-      nextOffset: 24,
+      cursor: null,
       loadedCount: 1,
     });
 
@@ -127,7 +127,7 @@ test("event feed session ignores stale snapshots on a fresh events visit", async
       dayWindow: "weekend",
       events: [],
       hasMore: true,
-      nextOffset: 24,
+      cursor: null,
       loadedCount: 24,
     });
 
@@ -172,7 +172,7 @@ test("event feed session entries expire after ten minutes", async () => {
       dayWindow: "today",
       events: [],
       hasMore: false,
-      nextOffset: 0,
+      cursor: null,
       loadedCount: 0,
     });
 
@@ -198,7 +198,7 @@ test("event feed session rejects stale calendar snapshots as invalid", async () 
         scrollY: 420,
         events: [],
         hasMore: false,
-        nextOffset: 0,
+        cursor: null,
         view: "calendar",
         category: "all",
         query: "",
@@ -234,7 +234,7 @@ test("event feed session accepts every generated category value", async () => {
           scrollY: 420,
           events: [],
           hasMore: false,
-          nextOffset: 0,
+          cursor: null,
           category,
           query: "",
           dayWindow: "all",
@@ -288,7 +288,7 @@ test("denied storage and quota exhaustion preserve in-memory navigation", async 
     Object.defineProperty(window, "sessionStorage", { get() { throw new Error("denied"); } });
     assert.doesNotThrow(() => session.readEventFeedRestoreState());
     session.saveEventFeedSnapshot({ path: "/events", scrollY: 420, events: [],
-      hasMore: false, nextOffset: 0, category: "all", query: "test", dayWindow: "all", loadedCount: 0 });
+      hasMore: false, cursor: null, category: "all", query: "test", dayWindow: "all", loadedCount: 0 });
     session.saveEventFeedReturn("/events/event-1");
     assert.equal(session.readEventFeedRestoreState().snapshot.query, "test");
     session.clearEventFeedReturnState();

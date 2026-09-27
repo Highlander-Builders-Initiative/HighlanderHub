@@ -125,7 +125,7 @@ test("public event reads are Data-Cached and busted on admin writes", () => {
   assert.match(data, /unstable_cache\(operation, keyParts, eventsCacheOptions\)/);
   assert.match(data, /e2eFixturesEnabled\(\) \? operation\(\.\.\.args\) : cached\(\.\.\.args\)/);
   for (const name of [
-    "getEventsSummary",
+    "getEventsUpcomingThisWeek",
     "getEventsPage",
     "getEventFilterCountSource",
     "getSitemapEvents",

@@ -9,11 +9,12 @@ import {
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import type { CampusEvent } from "@/types/event";
-import type { EventFilterCountSource } from "@/types/events-feed";
+import type { EventFeedCursor } from "@/types/events-feed";
 import { EventsLeftRail } from "./EventsLeftRail";
 import { EventsRightRail } from "./EventsRightRail";
 import { EventsMobileFilterSheet } from "./EventsMobileFilterSheet";
 import { EventsFeedColumn } from "./EventsFeedColumn";
+import { useEventsFeedData } from "./EventsFeedData";
 import {
   pacificCalendarGridRange,
   pacificTodayKey,
@@ -45,11 +46,8 @@ const DEFAULT_INITIAL_FILTERS: EventsBrowserInitialFilters = {
 
 type EventsBrowserProps = {
   events: CampusEvent[];
-  calendarEvents: CampusEvent[];
-  filterCountSource: EventFilterCountSource[];
-  summary: { upcomingThisWeek: number };
   initialHasMore?: boolean;
-  initialNextOffset?: number;
+  initialCursor?: EventFeedCursor | null;
   initialFilters?: EventsBrowserInitialFilters;
   /** The reader's saved feed view, from the feed-view cookie. */
   initialView?: FeedView;
@@ -57,16 +55,18 @@ type EventsBrowserProps = {
 
 export function EventsBrowser({
   events,
-  calendarEvents: initialCalendarEvents,
-  filterCountSource,
-  summary,
   initialHasMore = false,
-  initialNextOffset = events.length,
+  initialCursor = null,
   initialFilters = DEFAULT_INITIAL_FILTERS,
   initialView = "cards",
 }: EventsBrowserProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const {
+    calendarEvents: initialCalendarEvents,
+    filterCountSource,
+    summary,
+  } = useEventsFeedData();
 
   const [category, setCategory] = useState<CategoryValue>(
     initialFilters.category
@@ -77,7 +77,7 @@ export function EventsBrowser({
   );
   const [loadedEvents, setLoadedEvents] = useState(events);
   const [hasMore, setHasMore] = useState(initialHasMore);
-  const [nextOffset, setNextOffset] = useState(initialNextOffset);
+  const [cursor, setCursor] = useState(initialCursor);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [loadError, setLoadError] = useState("");
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
@@ -97,8 +97,8 @@ export function EventsBrowser({
     // eslint-disable-next-line react-hooks/set-state-in-effect -- page data is an external input into local feed state
     setLoadedEvents(events);
     setHasMore(initialHasMore);
-    setNextOffset(initialNextOffset);
-  }, [events, initialHasMore, initialNextOffset]);
+    setCursor(initialCursor);
+  }, [events, initialHasMore, initialCursor]);
 
   const applyRestore = useCallback((patch: EventFeedRestorePatch) => {
     if (patch.category !== undefined) {
@@ -116,8 +116,8 @@ export function EventsBrowser({
     if (patch.hasMore !== undefined) {
       setHasMore(patch.hasMore);
     }
-    if (patch.nextOffset !== undefined) {
-      setNextOffset(patch.nextOffset);
+    if (patch.cursor !== undefined) {
+      setCursor(patch.cursor);
     }
   }, []);
 
@@ -129,7 +129,7 @@ export function EventsBrowser({
   const isRestoring = useEventFeedRestore({
     events,
     initialHasMore,
-    initialNextOffset,
+    initialCursor,
     pageFilters: initialFilters,
     applyRestore,
   });
@@ -143,13 +143,13 @@ export function EventsBrowser({
       scrollY: window.scrollY,
       events: loadedEvents,
       hasMore,
-      nextOffset,
+      cursor,
       category,
       query,
       dayWindow,
       loadedCount: loadedEvents.length,
     }, true);
-  }, [loadedEvents, hasMore, nextOffset, category, query, dayWindow, isRestoring, pathname]);
+  }, [loadedEvents, hasMore, cursor, category, query, dayWindow, isRestoring, pathname]);
 
   const {
     trimmedQuery,
@@ -289,8 +289,8 @@ export function EventsBrowser({
     todayKey,
     hasMore,
     setHasMore,
-    nextOffset,
-    setNextOffset,
+    cursor,
+    setCursor,
     isLoadingMore,
     setIsLoadingMore,
     loadError,

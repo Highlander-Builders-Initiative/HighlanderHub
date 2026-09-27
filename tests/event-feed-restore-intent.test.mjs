@@ -10,6 +10,9 @@ function event(id) {
   return { id };
 }
 
+// A feed resumes after its last loaded event.
+const after = (id) => ({ startsAt: "2026-05-20T18:30:00.000-07:00", id });
+
 function snapshot(overrides = {}) {
   return {
     path: "/events",
@@ -18,7 +21,7 @@ function snapshot(overrides = {}) {
     dayWindow: "all",
     events: [event("event-1")],
     hasMore: true,
-    nextOffset: 12,
+    cursor: after("event-1"),
     loadedCount: 1,
     ...overrides,
   };
@@ -39,7 +42,7 @@ test("snapshot eventId wins and pulls eventTop/loadedCount from a matching retur
     returnScroll({ eventId: "a", eventTop: 99, loadedCount: 7 }),
     [],
     false,
-    0
+    null
   );
 
   assert.equal(intent.kind, "card");
@@ -51,7 +54,7 @@ test("snapshot eventId wins and pulls eventTop/loadedCount from a matching retur
     ["event-1"]
   );
   assert.equal(intent.hasMore, true);
-  assert.equal(intent.nextOffset, 12);
+  assert.deepEqual(intent.cursor, after("event-1"));
 });
 
 test("snapshot eventId falls back to its own eventTop/loadedCount when the return target is for a different card", () => {
@@ -60,7 +63,7 @@ test("snapshot eventId falls back to its own eventTop/loadedCount when the retur
     returnScroll({ eventId: "b", eventTop: 99, loadedCount: 7 }),
     [],
     false,
-    0
+    null
   );
 
   assert.equal(intent.kind, "card");
@@ -71,11 +74,11 @@ test("snapshot eventId falls back to its own eventTop/loadedCount when the retur
 
 test("return target eventId is used when the snapshot has no eventId, with pagination from the snapshot", () => {
   const intent = deriveRestoreIntent(
-    snapshot({ events: [event("event-1")], hasMore: false, nextOffset: 30 }),
+    snapshot({ events: [event("event-1")], hasMore: false, cursor: after("event-30") }),
     returnScroll({ eventId: "target", eventTop: 20, loadedCount: 3 }),
     [event("current")],
     true,
-    8
+    after("current")
   );
 
   assert.equal(intent.kind, "card");
@@ -87,7 +90,7 @@ test("return target eventId is used when the snapshot has no eventId, with pagin
     ["event-1"]
   );
   assert.equal(intent.hasMore, false);
-  assert.equal(intent.nextOffset, 30);
+  assert.deepEqual(intent.cursor, after("event-30"));
 });
 
 test("return target eventId falls back to current pagination when there is no snapshot", () => {
@@ -96,7 +99,7 @@ test("return target eventId falls back to current pagination when there is no sn
     returnScroll({ eventId: "target", eventTop: 20, loadedCount: 3 }),
     [event("current")],
     true,
-    8
+    after("current")
   );
 
   assert.equal(intent.kind, "card");
@@ -106,7 +109,7 @@ test("return target eventId falls back to current pagination when there is no sn
     ["current"]
   );
   assert.equal(intent.hasMore, true);
-  assert.equal(intent.nextOffset, 8);
+  assert.deepEqual(intent.cursor, after("current"));
 });
 
 test("a return scroll with no eventId yields a plain scrollY intent", () => {
@@ -115,14 +118,14 @@ test("a return scroll with no eventId yields a plain scrollY intent", () => {
     returnScroll({ scrollY: 333 }),
     [],
     false,
-    0
+    null
   );
 
   assert.deepEqual(intent, { kind: "scrollY", scrollY: 333 });
 });
 
 test("no snapshot and no return scroll yields a none intent", () => {
-  const intent = deriveRestoreIntent(null, null, [], false, 0);
+  const intent = deriveRestoreIntent(null, null, [], false, null);
 
   assert.deepEqual(intent, { kind: "none" });
 });

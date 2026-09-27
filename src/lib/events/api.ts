@@ -1,19 +1,24 @@
 import type { CampusEvent } from "@/types/event";
+import type { EventFeedCursor } from "@/types/events-feed";
 import type { EventFeedQuery } from "@/components/events/events-filters";
 import { CALENDAR_GRID_DAYS, addPacificDays } from "@/lib/dates";
 
 export type EventsApiPage = {
   events: CampusEvent[];
   hasMore: boolean;
-  nextOffset: number;
+  cursor: EventFeedCursor | null;
 };
 
 export async function fetchEventsPage(
-  offset: number,
+  after: EventFeedCursor | null,
   limit: number | undefined,
   filters: EventFeedQuery
 ): Promise<EventsApiPage> {
-  const params = new URLSearchParams({ offset: String(offset) });
+  const params = new URLSearchParams();
+  if (after) {
+    params.set("after", after.startsAt);
+    params.set("afterId", after.id);
+  }
   if (typeof limit === "number") {
     params.set("limit", String(limit));
   }

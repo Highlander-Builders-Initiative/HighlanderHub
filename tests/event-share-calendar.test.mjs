@@ -33,33 +33,28 @@ function countEntry(event) {
   return { id, title, description, startsAt, location, host, hostHandle, hosts, category, tags, hasFreeFood };
 }
 
-test("feed and count entries reuse the calendar's object for the same event", async () => {
+test("count entries reuse the calendar's object for the same event", async () => {
   const { shareCalendarEvents } = await importTsModule("src/lib/events/share-calendar-events.ts");
   const calendar = [campusEvent("a"), campusEvent("b")];
 
-  const shared = shareCalendarEvents(calendar, {
-    events: [campusEvent("a"), campusEvent("outside-month")],
-    filterCountSource: [countEntry(campusEvent("b")), countEntry(campusEvent("later"))],
-  });
+  const shared = shareCalendarEvents(calendar, [
+    countEntry(campusEvent("b")),
+    countEntry(campusEvent("later")),
+  ]);
 
-  assert.equal(shared.events[0], calendar[0]);
-  assert.equal(shared.events[1].id, "outside-month");
-  assert.equal(shared.filterCountSource[0], calendar[1]);
-  assert.equal(shared.filterCountSource[1].id, "later");
+  assert.equal(shared[0], calendar[1]);
+  assert.equal(shared[1].id, "later");
 });
 
 test("entries that disagree with the calendar keep their own data", async () => {
   const { shareCalendarEvents } = await importTsModule("src/lib/events/share-calendar-events.ts");
   const calendar = [campusEvent("a"), campusEvent("b", { hostHandle: undefined, hosts: [{ host: "QA Club" }] })];
   // Cached separately, so one list can hold an edit the other has not seen.
-  const editedPageEvent = campusEvent("a", { title: "Renamed" });
+  const renamed = countEntry(campusEvent("a", { title: "Renamed" }));
   const editedCount = countEntry(campusEvent("b"));
 
-  const shared = shareCalendarEvents(calendar, {
-    events: [editedPageEvent],
-    filterCountSource: [editedCount],
-  });
+  const shared = shareCalendarEvents(calendar, [renamed, editedCount]);
 
-  assert.equal(shared.events[0], editedPageEvent);
-  assert.equal(shared.filterCountSource[0], editedCount);
+  assert.equal(shared[0], renamed);
+  assert.equal(shared[1], editedCount);
 });

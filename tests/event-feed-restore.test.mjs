@@ -8,6 +8,9 @@ function event(id) {
 
 const ALL_FILTERS = { category: "all", query: "", dayWindow: "all" };
 
+// A feed resumes after its last loaded event.
+const after = (id, startsAt = "2026-05-20T18:30:00.000-07:00") => ({ startsAt, id });
+
 function richEvent(id, startsAt) {
   return {
     id,
@@ -104,23 +107,23 @@ test("restoreEventsUntilTarget batches to the saved loaded count, then falls bac
     {
       events: [event("event-3"), event("event-4")],
       hasMore: true,
-      nextOffset: 4,
+      cursor: after("event-4"),
     },
     {
       events: [event("event-4"), event("target")],
       hasMore: false,
-      nextOffset: 6,
+      cursor: after("target"),
     },
   ];
 
   const restored = await restoreEventsUntilTarget(
     [event("event-1"), event("event-2")],
-    2,
+    after("event-2"),
     true,
     { eventId: "target", loadedCount: 4 },
     ALL_FILTERS,
-    async (offset, limit, filters) => {
-      calls.push({ offset, limit, filters });
+    async (cursor, limit, filters) => {
+      calls.push({ cursor, limit, filters });
       const page = pages.shift();
       assert.ok(page);
       return page;
@@ -128,14 +131,14 @@ test("restoreEventsUntilTarget batches to the saved loaded count, then falls bac
   );
 
   assert.deepEqual(calls, [
-    { offset: 2, limit: 2, filters: ALL_FILTERS },
-    { offset: 4, limit: undefined, filters: ALL_FILTERS },
+    { cursor: after("event-2"), limit: 2, filters: ALL_FILTERS },
+    { cursor: after("event-4"), limit: undefined, filters: ALL_FILTERS },
   ]);
   assert.deepEqual(
     restored.current.map((ev) => ev.id),
     ["event-1", "event-2", "event-3", "event-4", "target"]
   );
-  assert.equal(restored.next, 6);
+  assert.deepEqual(restored.next, after("target"));
   assert.equal(restored.more, false);
 });
 
@@ -158,7 +161,7 @@ test("restoreSavedEventFeedSpot handles card and scroll restores from a derived 
       dayWindow: "all",
       events,
       hasMore: true,
-      nextOffset: 24,
+      cursor: after("event-1"),
       loadedCount: 1,
     });
     session.saveEventFeedReturn("/events/target", {
@@ -178,7 +181,7 @@ test("restoreSavedEventFeedSpot handles card and scroll restores from a derived 
             richEvent("target", "2026-05-20T20:30:00.000-07:00"),
           ],
           hasMore: false,
-          nextOffset: 26,
+          cursor: after("target", "2026-05-20T20:30:00.000-07:00"),
         }),
       };
     };
@@ -189,7 +192,7 @@ test("restoreSavedEventFeedSpot handles card and scroll restores from a derived 
       path: "/events",
       currentEvents: events,
       currentHasMore: true,
-      currentNextOffset: 24,
+      currentCursor: after("event-1"),
       pageFilters: ALL_FILTERS,
       applyRestore(patch) {
         if (patch.loadedEvents !== undefined) {
@@ -198,8 +201,8 @@ test("restoreSavedEventFeedSpot handles card and scroll restores from a derived 
         if (patch.hasMore !== undefined) {
           root.hasMore = patch.hasMore;
         }
-        if (patch.nextOffset !== undefined) {
-          root.nextOffset = patch.nextOffset;
+        if (patch.cursor !== undefined) {
+          root.cursor = patch.cursor;
         }
       },
     });
@@ -207,7 +210,7 @@ test("restoreSavedEventFeedSpot handles card and scroll restores from a derived 
     assert.equal(didRestore, true);
     assert.equal(root.scrollTop, 156);
     assert.equal(calls.length, 1);
-    assert.match(calls[0], /offset=24/);
+    assert.match(calls[0], /afterId=event-1/);
     assert.match(calls[0], /limit=2/);
     assert.deepEqual(
       root.events.map((ev) => ev.id),
@@ -224,7 +227,7 @@ test("restoreSavedEventFeedSpot handles card and scroll restores from a derived 
       dayWindow: "all",
       events: [],
       hasMore: false,
-      nextOffset: 0,
+      cursor: null,
       loadedCount: 0,
     });
 
@@ -238,7 +241,7 @@ test("restoreSavedEventFeedSpot handles card and scroll restores from a derived 
       path: "/events",
       currentEvents: [],
       currentHasMore: false,
-      currentNextOffset: 0,
+      currentCursor: null,
       pageFilters: ALL_FILTERS,
       applyRestore() {},
     });
@@ -271,7 +274,7 @@ test("restoreSavedEventFeedSpot uses snapshot pagination when return scroll has 
       dayWindow: "all",
       events: snapshotEvents,
       hasMore: true,
-      nextOffset: 24,
+      cursor: after("event-2", "2026-05-20T19:30:00.000-07:00"),
       loadedCount: 2,
     });
     sessionStorage.setItem(
@@ -294,7 +297,7 @@ test("restoreSavedEventFeedSpot uses snapshot pagination when return scroll has 
         json: async () => ({
           events: [richEvent("target", "2026-05-20T20:30:00.000-07:00")],
           hasMore: false,
-          nextOffset: 26,
+          cursor: after("target", "2026-05-20T20:30:00.000-07:00"),
         }),
       };
     };
@@ -305,7 +308,7 @@ test("restoreSavedEventFeedSpot uses snapshot pagination when return scroll has 
       path: "/events",
       currentEvents: staleMountEvents,
       currentHasMore: false,
-      currentNextOffset: 0,
+      currentCursor: after("stale-only", "2026-05-19T12:00:00.000-07:00"),
       pageFilters: ALL_FILTERS,
       applyRestore(patch) {
         if (patch.loadedEvents !== undefined) {
@@ -316,8 +319,8 @@ test("restoreSavedEventFeedSpot uses snapshot pagination when return scroll has 
 
     assert.equal(didRestore, true);
     assert.equal(calls.length, 1);
-    assert.match(calls[0], /offset=24/);
-    assert.doesNotMatch(calls[0], /offset=0/);
+    assert.match(calls[0], /afterId=event-2/);
+    assert.doesNotMatch(calls[0], /afterId=stale-only/);
     assert.deepEqual(
       root.events.map((ev) => ev.id),
       ["event-1", "event-2", "target"]
@@ -331,7 +334,7 @@ test("restoreSavedEventFeedSpot uses snapshot pagination when return scroll has 
   }
 });
 
-test("restoreSavedEventFeedSpot pages with the snapshot filters that own the offset", async () => {
+test("restoreSavedEventFeedSpot pages with the snapshot filters that own the cursor", async () => {
   const session = await importTsModule("src/lib/events/feed-session.ts");
   const restore = await importTsModule("src/lib/events/feed-restore.ts");
   const harness = installRestoreDomHarness({ cardTop: 40 });
@@ -350,7 +353,7 @@ test("restoreSavedEventFeedSpot pages with the snapshot filters that own the off
       dayWindow: "all",
       events,
       hasMore: true,
-      nextOffset: 24,
+      cursor: after("event-1"),
       loadedCount: 1,
     });
     session.saveEventFeedReturn("/events/target", {
@@ -367,7 +370,7 @@ test("restoreSavedEventFeedSpot pages with the snapshot filters that own the off
         json: async () => ({
           events: [richEvent("target", "2026-05-20T20:30:00.000-07:00")],
           hasMore: false,
-          nextOffset: 26,
+          cursor: after("target", "2026-05-20T20:30:00.000-07:00"),
         }),
       };
     };
@@ -378,7 +381,7 @@ test("restoreSavedEventFeedSpot pages with the snapshot filters that own the off
       path: "/events",
       currentEvents: events,
       currentHasMore: true,
-      currentNextOffset: 24,
+      currentCursor: after("event-1"),
       pageFilters: ALL_FILTERS,
       applyRestore(patch) {
         if (patch.loadedEvents !== undefined) {
@@ -389,7 +392,7 @@ test("restoreSavedEventFeedSpot pages with the snapshot filters that own the off
 
     assert.equal(didRestore, true);
     assert.equal(calls.length, 1);
-    assert.match(calls[0], /offset=24/);
+    assert.match(calls[0], /afterId=event-1/);
     assert.match(calls[0], /cat=sports/);
     assert.doesNotMatch(calls[0], /q=/);
   } finally {

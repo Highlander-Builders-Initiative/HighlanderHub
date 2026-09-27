@@ -25,7 +25,8 @@ async function openFeed(page: Page, mobile: boolean, view: "cards" | "compact") 
   await page.addInitScript(({ initial }) => {
     sessionStorage.setItem("highlanderhub.eventFeed", JSON.stringify({
       path: "/events", scrollY: 0, events: initial, hasMore: true,
-      nextOffset: 24, category: "all", query: "", dayWindow: "all",
+      cursor: { startsAt: initial[initial.length - 1].startsAt, id: initial[initial.length - 1].id },
+      category: "all", query: "", dayWindow: "all",
       loadedCount: 24, eventId: initial[0].id, eventTop: 300, savedAt: Date.now(),
     }));
     sessionStorage.setItem("highlanderhub.returnScroll", JSON.stringify({
@@ -37,7 +38,8 @@ async function openFeed(page: Page, mobile: boolean, view: "cards" | "compact") 
     route.fulfill({ json: { events: calendarEvents } })
   );
   await page.route(/\/api\/events\?/, (route) =>
-    route.fulfill({ json: { events: [...missing, ...target], hasMore: false, nextOffset: 56 } })
+    route.fulfill({ json: { events: [...missing, ...target], hasMore: false,
+      cursor: { startsAt: target.at(-1)!.startsAt, id: target.at(-1)!.id } } })
   );
   await page.goto("/events");
   await expect(page.locator("[data-event-id]")).toHaveCount(24);
@@ -92,7 +94,7 @@ test("calendar jump completes the partially loaded boundary day", async ({ page 
   await expect(page.locator("[data-event-id]")).toHaveCount(56);
   const saved = await page.evaluate(() => JSON.parse(sessionStorage.getItem("highlanderhub.eventFeed")!));
   // Calendar merges are not sequential API pages; the pagination cursor stays put.
-  expect(saved.nextOffset).toBe(24);
+  expect(saved.cursor).toEqual({ startsAt: initial[23].startsAt, id: initial[23].id });
 });
 
 test("manual scrolling cancels the calendar landing correction", async ({ page }) => {

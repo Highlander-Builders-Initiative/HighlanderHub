@@ -364,13 +364,17 @@ def process_post(record: dict[str, Any], stats: Stats | None = None, *,
             log.warning("extract %s: slide %s download failed: %s", label, key, exc)
             return _persist_error(record, digest, "download", exc, images + list(reusable.values()))
 
-        try:
-            ocr_text = _vision_ocr(image)
-        except Exception as exc:  # noqa: BLE001 - per-post isolation.
-            stats.bump("failed")
-            log.warning("extract %s: slide %s Vision OCR failed: %s", label, key, exc)
-            return _persist_error(record, digest, "ocr", exc, images + list(reusable.values()))
-        stats.bump("ocr_calls")
+        if prior is not None:
+            # Only the QR scanner changed; its OCR text is still paid for.
+            ocr_text = prior["ocr_text"]
+        else:
+            try:
+                ocr_text = _vision_ocr(image)
+            except Exception as exc:  # noqa: BLE001 - per-post isolation.
+                stats.bump("failed")
+                log.warning("extract %s: slide %s Vision OCR failed: %s", label, key, exc)
+                return _persist_error(record, digest, "ocr", exc, images + list(reusable.values()))
+            stats.bump("ocr_calls")
 
         try:
             qr_urls = qr_rsvp_urls(image)
@@ -384,6 +388,8 @@ def process_post(record: dict[str, Any], stats: Stats | None = None, *,
             "qr_urls": qr_urls,
             "qr_scan_version": QR_SCAN_VERSION,
         }
+        if prior is not None and prior.get("image_url"):
+            entry["image_url"] = prior["image_url"]  # Stored already; not uploaded again.
         # Any slide can supply the cited evidence and become the event's flyer.
         entry = _ensure_durable_flyer(record, slide, entry, stats,
                                       cached_only=cached_only, image=image)

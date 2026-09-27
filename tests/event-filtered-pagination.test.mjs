@@ -94,7 +94,7 @@ test("filtered event pagination replaces client id-search backfill", () => {
   assert.match(api, /params\.set\("cat", filters\.category\)/);
   assert.match(api, /params\.set\("when", filters\.dayWindow\)/);
   assert.match(browser, /const feedFilters = useMemo/);
-  assert.match(navigation, /fetchEventsPage\(nextOffset, undefined, requested\)/);
+  assert.match(navigation, /fetchEventsPage\(cursor, undefined, requested\)/);
   assert.match(
     filtersHook,
     /useMemo\(\(\) => Array.from\(grouped\.keys\(\)\), \[grouped\]\)/

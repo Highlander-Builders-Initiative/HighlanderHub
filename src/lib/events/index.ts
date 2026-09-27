@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { unstable_cache } from "next/cache";
 import type { CampusEvent } from "@/types/event";
-import type { EventFilterCountSource } from "@/types/events-feed";
+import type { EventFeedCursor, EventFilterCountSource } from "@/types/events-feed";
 import type { EventRow } from "@/lib/supabase-rows";
 import { publicEventHosts } from "@/lib/events/anonymized-hosts";
 import { eventRowToCampusEvent } from "@/lib/events/map-event-row";
@@ -11,7 +11,6 @@ import {
   pacificDayKey,
   pacificTodayKey,
   parsePacificDateTimeInput,
-  startOfPacificToday,
 } from "@/lib/dates";
 import {
   coerceCategoryParam,
@@ -48,7 +47,8 @@ const eventsCacheOptions = {
 
 type EventsPageOptions = {
   limit?: number;
-  offset?: number;
+  /** The last event already loaded; the page starts after it. */
+  after?: EventFeedCursor | null;
   query?: string;
   category?: CategoryValue;
   dayWindow?: DayWindow;
@@ -80,18 +80,13 @@ type EventSitemapRow = Pick<EventRow, "id" | "scraped_at">;
 export type EventsPageResult = {
   events: CampusEvent[];
   hasMore: boolean;
-  nextOffset: number;
+  /** Pass as `after` for the next page. */
+  cursor: EventFeedCursor | null;
 };
 
 export type EventSitemapEntry = {
   id: string;
   lastModified: string;
-};
-
-export type EventsSummary = {
-  total: number;
-  upcomingThisWeek: number;
-  freeFood: number;
 };
 
 function toEventFilterCountSource(
@@ -133,18 +128,50 @@ function hasEventPageFilters({
   );
 }
 
+function toCursor(
+  event: { startsAt: string; id: string } | undefined,
+  fallback: EventFeedCursor | null
+): EventFeedCursor | null {
+  return event ? { startsAt: event.startsAt, id: event.id } : fallback;
+}
+
+/** Index of the first event after `after` in a list in feed order. */
+function indexAfter(
+  events: { startsAt: string; id: string }[],
+  after: EventFeedCursor | null
+): number {
+  if (!after) return 0;
+  const instant = Date.parse(after.startsAt);
+  const start = events.findIndex((event) => Date.parse(event.startsAt) >= instant);
+  if (start < 0) return events.length;
+  // Resume after the cursor's own row. If it is gone, repeat its instant:
+  // the client drops the events it already has.
+  for (let i = start; i < events.length && Date.parse(events[i].startsAt) === instant; i += 1) {
+    if (events[i].id === after.id) return i + 1;
+  }
+  return start;
+}
+
 function paginateEvents(
   events: CampusEvent[],
   pageSize: number,
-  offset: number
+  after: EventFeedCursor | null
 ): EventsPageResult {
-  const rows = events.slice(offset, offset + pageSize + 1);
-  const pageEvents = rows.slice(0, pageSize);
+  const from = indexAfter(events, after);
+  const pageEvents = events.slice(from, from + pageSize);
   return {
     events: pageEvents,
-    hasMore: rows.length > pageSize,
-    nextOffset: offset + pageEvents.length,
+    hasMore: events.length > from + pageSize,
+    cursor: toCursor(pageEvents.at(-1), after),
   };
+}
+
+// Quoted, so an id's dots or a timestamp's colons stay part of the value.
+const postgrestValue = (value: string) => `"${value.replace(/[\\"]/g, "\\$&")}"`;
+
+function afterCursorFilter({ startsAt, id }: EventFeedCursor): string {
+  const start = postgrestValue(startsAt);
+  return `starts_at.gt.${start},and(starts_at.eq.${start},id.gt.${postgrestValue(id)})`;
 }
 
 export function activeEventFilter(nowIso: string): string {
@@ -237,45 +264,6 @@ async function getEventsUpcomingThisWeekUncached(): Promise<number> {
   );
 }
 
-async function getEventsSummaryUncached(): Promise<EventsSummary> {
-  return withE2eFixture(
-    () => ({
-      total: E2E_PUBLIC_FIXTURE_EVENTS.length,
-      upcomingThisWeek: E2E_PUBLIC_FIXTURE_EVENTS.length,
-      freeFood: 0,
-    }),
-    async () => {
-      const nowIso = new Date().toISOString();
-      const todayIso = startOfPacificToday().toISOString();
-      const [totalResult, upcomingThisWeekResult, freeFoodResult] =
-        await Promise.all([
-          withDbRetry("event count", () =>
-            supabase
-              .from("events")
-              .select("id", { count: "exact", head: true })
-              .in("content_kind", PUBLIC_CONTENT_KINDS)
-              .or(activeEventFilter(nowIso))
-          ),
-          getEventsUpcomingThisWeek(),
-          withDbRetry("free-food event count", () =>
-            supabase
-              .from("events")
-              .select("id", { count: "exact", head: true })
-              .in("content_kind", PUBLIC_CONTENT_KINDS)
-              .gte("starts_at", todayIso)
-              .or("has_free_food.eq.true,category.eq.free_food")
-          ),
-        ]);
-
-      return {
-        total: totalResult.count ?? 0,
-        upcomingThisWeek: upcomingThisWeekResult,
-        freeFood: freeFoodResult.count ?? 0,
-      };
-    }
-  );
-}
-
 /**
  * Reads visible events from Supabase, sorted by start time ascending.
  * Events stay visible until their `ends_at` time; if they have no end time,
@@ -283,14 +271,13 @@ async function getEventsSummaryUncached(): Promise<EventsSummary> {
  */
 async function getEventsPageUncached({
   limit = EVENTS_PAGE_SIZE,
-  offset = 0,
+  after = null,
   query = "",
   category = "all",
   dayWindow = "all",
   todayKey = pacificTodayKey(),
 }: EventsPageOptions = {}): Promise<EventsPageResult> {
   const pageSize = Math.max(1, Math.min(limit, 60));
-  const from = Math.max(0, offset);
   const normalizedQuery = normalizeEventQuery(query);
   const filters = {
     category: coerceCategoryParam(category),
@@ -309,17 +296,19 @@ async function getEventsPageUncached({
       const source = hasFilters
         ? filterEventSource(E2E_PUBLIC_FIXTURE_EVENTS, filters)
         : E2E_PUBLIC_FIXTURE_EVENTS;
-      return paginateEvents(source, pageSize, from);
+      return paginateEvents(source, pageSize, after);
     },
     async () => {
       const nowIso = new Date().toISOString();
 
       // Search uses the same sanitized public-host semantics as the browser.
-      // Share a complete, narrow source across offsets; hydrate only this page.
+      // Share a complete, narrow source across pages; hydrate only this page.
       if (normalizedQuery) {
         const matches = filterEventSource(await getEventFilterCountSource(), filters);
-        const ids = matches.slice(from, from + pageSize).map((event) => event.id);
-        if (!ids.length) return { events: [], hasMore: false, nextOffset: from };
+        const from = indexAfter(matches, after);
+        const slice = matches.slice(from, from + pageSize);
+        if (!slice.length) return { events: [], hasMore: false, cursor: after };
+        const ids = slice.map((event) => event.id);
         const rows = await readEventRows("filtered events", (offset, end) =>
           supabase.from("events").select("*")
             .in("content_kind", PUBLIC_CONTENT_KINDS)
@@ -329,7 +318,9 @@ async function getEventsPageUncached({
         return {
           events: rows.map(eventRowToCampusEvent),
           hasMore: matches.length > from + pageSize,
-          nextOffset: from + ids.length,
+          // The matched slice, not the hydrated rows: an event that ended
+          // since the source was cached must not be requested again.
+          cursor: toCursor(slice.at(-1), after),
         };
       }
 
@@ -346,8 +337,9 @@ async function getEventsPageUncached({
           request = request.gte("starts_at", parsePacificDateTimeInput(`${range.start}T00:00`)!)
             .lt("starts_at", parsePacificDateTimeInput(`${addPacificDays(range.end, 1)}T00:00`)!);
         }
+        if (after) request = request.or(afterCursorFilter(after));
         return request.order("starts_at", { ascending: true })
-          .order("id", { ascending: true }).range(from + offset, from + end)
+          .order("id", { ascending: true }).range(offset, end)
           .overrideTypes<EventRow[], { merge: false }>();
       }, pageSize + 1);
 
@@ -356,7 +348,7 @@ async function getEventsPageUncached({
       return {
         events,
         hasMore: rows.length > pageSize,
-        nextOffset: from + events.length,
+        cursor: toCursor(events.at(-1), after),
       };
     }
   );
@@ -511,10 +503,6 @@ const getEventByIdUncached = cache(async function getEventById(
 export const getEventsUpcomingThisWeek = cachePublicRead(
   getEventsUpcomingThisWeekUncached,
   ["events-upcoming-this-week"]
-);
-export const getEventsSummary = cachePublicRead(
-  getEventsSummaryUncached,
-  ["events-summary"]
 );
 export const getEventsPage = cachePublicRead(
   getEventsPageUncached,
