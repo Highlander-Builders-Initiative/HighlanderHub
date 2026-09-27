@@ -928,10 +928,17 @@ def _tombstoned_candidates(deleted: set[str]) -> list[dict]:
             tombstones.extend(rows)
 
     # Posts have no pre-assessment identity to fall back on, so an unregistered
-    # post simply contributes nothing here.
+    # post simply contributes nothing here. A rebuilt ID embeds its post's media
+    # ID, so only a post a deleted ID names, or whose recorded IDs were deleted,
+    # can match; skip reading and rebuilding every other post.
+    deleted_media = {match.group(2) for event_id in deleted if (match := POST_EVENT_ID.fullmatch(event_id))}
     import extract_posts as igposts
     import post_archive
     for record in post_archive.iter_local_posts():
+        saved = registry.get(f"instagram:post:{record['media_id']}")
+        if saved is None or (str(record['media_id']) not in deleted_media and not deleted & {
+                *(saved.get('event_ids') or []), *(saved.get('known_event_ids') or [])}):
+            continue
         path = igposts._cache_path(str(record.get('media_id')))
         if path.exists():
             assessed_candidates(f"instagram:post:{record['media_id']}", record,

@@ -279,11 +279,22 @@ class SourcePublicationTests(unittest.TestCase):
 
     def test_an_error_without_a_verdict_is_treated_as_retryable(self):
         # Extraction failures and mapping failures carry no `retryable` key.
-        updates = [{"source_key":"instagram:a", "assessment":{"status":"error", "error":"Post extraction failed"},
-                    "rows":[]}]
+        extraction = {"source_key":"instagram:a", "assessment":{"status":"error", "error":"Post extraction failed"},
+                      "rows":[]}
+        mapping = {"source_key":"instagram:b", "assessment":{"status":"error", "error":"Mapping failed: KeyError: 'x'"},
+                   "rows":[]}
         with patch.object(publication, "publish", return_value={"written":0}):
-            with self.assertRaisesRegex(RuntimeError, "1 source assessment"):
-                publication._complete(updates, notify=False)
+            with self.assertRaises(RuntimeError) as raised:
+                publication._complete([extraction], notify=False)
+            # Named for the stage that failed; no assessment ran for it.
+            self.assertIn("1 post(s) could not be extracted", str(raised.exception))
+            self.assertIn("instagram:a", str(raised.exception))
+            self.assertNotIn("source assessment", str(raised.exception))
+            with self.assertRaises(RuntimeError) as raised:
+                publication._complete([extraction, mapping], notify=False)
+            self.assertIn("1 source assessment(s) failed", str(raised.exception))
+            self.assertIn("Mapping failed", str(raised.exception))
+            self.assertIn("1 post(s) could not be extracted", str(raised.exception))
 
     def test_notifications_use_only_rows_that_exist_after_publication(self):
         requested = {"id":"ig_suppressed", "title":"Candidate", "has_free_food":True}

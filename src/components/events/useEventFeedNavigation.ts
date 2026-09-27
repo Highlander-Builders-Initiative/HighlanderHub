@@ -12,11 +12,16 @@ import {
 } from "react";
 import type { CampusEvent } from "@/types/event";
 import {
+  addPacificDays,
   pacificDayKey,
   startOfPacificMonthKey,
 } from "@/lib/dates";
 import { track } from "@/lib/analytics";
-import { fetchEventsPage, type EventsApiPage } from "@/lib/events/api";
+import {
+  fetchCalendarRange,
+  fetchEventsPage,
+  type EventsApiPage,
+} from "@/lib/events/api";
 import { calendarJumpEndsAtLoadedBoundary } from "@/lib/events/calendar-feed-pagination";
 import { mergeUniqueEventsByStart } from "@/lib/events/merge";
 import { SCROLL_SPY_OFFSET_PX } from "@/lib/events/observed-day-key";
@@ -36,6 +41,8 @@ type UseEventFeedNavigationArgs = {
   loadedEvents: CampusEvent[];
   setLoadedEvents: Dispatch<SetStateAction<CampusEvent[]>>;
   calendarEvents: CampusEvent[];
+  /** First day of the grid that calendarEvents covers. */
+  calendarStart: string;
   dayKeys: string[];
   todayKey: string;
   hasMore: boolean;
@@ -59,6 +66,7 @@ export function useEventFeedNavigation({
   loadedEvents,
   setLoadedEvents,
   calendarEvents,
+  calendarStart,
   dayKeys,
   todayKey,
   hasMore,
@@ -88,6 +96,7 @@ export function useEventFeedNavigation({
     dayKey: string;
     top: number;
   } | null>(null);
+  const gapRequestRef = useRef<string | null>(null);
 
   const { observedDayKey, setObservedDayKey, pastFirstDayHeading } = useObservedDayKey({
     dayHeaderRefs,
@@ -126,12 +135,30 @@ export function useEventFeedNavigation({
 
       if (!hasNewEvents) return false;
 
+      // The calendar holds only its grid. If the loaded pages end before the
+      // grid starts, fetch the days between too, or the feed skips them.
+      const gapStart = lastLoadedDay || todayKey;
+      if (hasMore && dayKey > lastLoadedDay && gapStart < calendarStart) {
+        if (gapRequestRef.current === dayKey) return true;
+        gapRequestRef.current = dayKey;
+        void fetchCalendarRange(gapStart, addPacificDays(calendarStart, -1))
+          // Without the gap, jump as before; later pages still fill it.
+          .catch(() => [])
+          .then((gap) => {
+            if (gapRequestRef.current === dayKey) gapRequestRef.current = null;
+            setLoadedEvents((current) =>
+              mergeUniqueEventsByStart(current, [...gap, ...eventsToMerge])
+            );
+          });
+        return true;
+      }
+
       setLoadedEvents((current) =>
         mergeUniqueEventsByStart(current, eventsToMerge)
       );
       return true;
     },
-    [calendarEvents, dayKeys, feedFilters, loadedEvents, setLoadedEvents, todayKey]
+    [calendarEvents, calendarStart, dayKeys, feedFilters, hasMore, loadedEvents, setLoadedEvents, todayKey]
   );
 
   const handleCalendarSelect = useCallback(

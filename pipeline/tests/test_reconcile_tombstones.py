@@ -69,6 +69,33 @@ class AssessedTombstoneTests(unittest.TestCase):
                     self.assertEqual([rows[0]['id']], [row['id'] for row in rebuilt])
             self.assertEqual([], reconcile._tombstoned_candidates({'unrelated'}))
 
+    def test_only_posts_a_deleted_id_can_name_are_rebuilt(self):
+        import extract_posts as posts
+        from test_post_events import record, post_decision
+
+        cached = {"status": "ok", "images": []}
+        cache = self.root / 'post.json'
+        cache.write_text(json.dumps(cached))
+        raws, ids = [], []
+        for media_id in ('700', '701'):
+            raw = record(caption="Study Jam September 15, 2026, 3-5 PM", slides=1, media_id=media_id)
+            source = publication.post_source(raw, cached)
+            payload = {"status": "complete", "source": source,
+                       "result": post_decision(source, field="caption")}
+            rows, _ = publication.post_rows(raw, cached, payload, {}, NOW)
+            raws.append(raw)
+            ids.append(rows[0]['id'])
+            self.registry[source['source_key']] = {
+                'origin': 'instagram', 'assessment': payload, 'event_ids': [], 'known_event_ids': [],
+            }
+        with patch('post_archive.iter_local_posts', return_value=raws), \
+             patch.object(posts, '_cache_path', return_value=cache), \
+             patch.object(publication, 'post_rows', wraps=publication.post_rows) as rebuild:
+            # The deleted ID is only derivable, not recorded: its media ID names the post.
+            rebuilt = reconcile._tombstoned_candidates({ids[0]})
+        self.assertEqual([ids[0]], [row['id'] for row in rebuilt])
+        self.assertEqual(1, rebuild.call_count)
+
 
 if __name__ == '__main__':
     unittest.main()
