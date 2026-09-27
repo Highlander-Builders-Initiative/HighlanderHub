@@ -522,6 +522,30 @@ class PostExtractionTests(unittest.TestCase):
         self.assertEqual(["", "Study Jam September 15"],
                          [entry["ocr_text"] for entry in posts.ordered_slides(result)])
 
+    def test_a_qr_scanner_update_rescans_codes_without_paying_for_ocr_again(self):
+        # OCR text does not depend on the QR scanner: a newer scanner rereads
+        # each image for codes only, keeping the paid text and stored flyer.
+        item = record()
+        posts._write_cache("700", {
+            "status": "ok", "media_id": "700", "handle": "acm.ucr",
+            "fingerprint": "an-older-caption", "extraction_version": posts.EXTRACTION_VERSION,
+            "images": [{"media_key": f"700_{index}_n", "index": index, "ocr_text": text,
+                        "image_url": f"https://storage.example/700_{index}_n.jpg",
+                        "qr_urls": [], "qr_scan_version": posts.QR_SCAN_VERSION - 1}
+                       for index, text in enumerate(["", "Study Jam September 15"])]})
+        with patch.object(posts, "qr_rsvp_urls", return_value=["https://forms.example/rsvp"]), \
+             self.ocr("should not run") as vision:
+            result = posts.process_post(item)
+        vision.assert_not_called()
+        self.upload_flyer.assert_not_called()
+        self.assertEqual("ok", result["status"])
+        self.assertEqual([("", "https://storage.example/700_0_n.jpg"),
+                          ("Study Jam September 15", "https://storage.example/700_1_n.jpg")],
+                         [(entry["ocr_text"], entry["image_url"]) for entry in posts.ordered_slides(result)])
+        self.assertTrue(all(entry["qr_urls"] == ["https://forms.example/rsvp"]
+                            and entry["qr_scan_version"] == posts.QR_SCAN_VERSION
+                            for entry in result["images"]))
+
     def test_a_remote_cache_survives_local_cache_loss(self):
         item = record()
         with self.ocr("", "Study Jam September 15"):

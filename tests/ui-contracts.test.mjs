@@ -39,24 +39,24 @@ test("event browser paginates the list instead of rendering every event at once"
   assert.match(observedDayKey, /resolveObservedDayKey/);
   assert.match(browser, /useEventFeedNavigation/);
   assert.match(navigation, /loadMoreRef/);
-  assert.match(navigation, /fetchEventsPage\(nextOffset, undefined, requested\)/);
+  assert.match(navigation, /fetchEventsPage\(cursor, undefined, requested\)/);
   assert.doesNotMatch(browser, /Load more/);
   assert.match(browser, /hasMore/);
 });
 
 test("events page header uses full upcoming event totals", () => {
-  const page = read("src/app/events/page.tsx");
+  const layout = read("src/app/events/layout.tsx");
   const feedColumn = read("src/components/events/EventsFeedColumn.tsx");
   const data = read("src/lib/events/index.ts");
 
-  assert.match(data, /getEventsSummary/);
+  assert.match(data, /getEventsUpcomingThisWeek/);
   assert.match(data, /head: true/);
   assert.match(data, /count:/);
-  assert.match(page, /getEventsUpcomingThisWeek/);
-  assert.match(page, /summary=\{\{ upcomingThisWeek \}\}/);
+  assert.match(layout, /getEventsUpcomingThisWeek/);
+  assert.match(layout, /summary: \{ upcomingThisWeek \}/);
   // The events header requests only the count it displays.
   assert.match(feedColumn, /summary\.upcomingThisWeek/);
-  assert.doesNotMatch(page, /events\.length/);
+  assert.doesNotMatch(layout, /events\.length/);
   // "This week" counts what the Week filter lists, not a rolling 7 days.
   assert.match(data, /dayWindowRange\("week"\)/);
   assert.doesNotMatch(data, /inSevenDays/);
@@ -76,6 +76,7 @@ test("home page leads from the wall and hero words into the feed", () => {
 
 test("calendar loads its own month-range events outside feed pagination", () => {
   const page = read("src/app/events/page.tsx");
+  const layout = read("src/app/events/layout.tsx");
   const browser = read("src/components/events/EventsBrowser.tsx");
   const navigation = read("src/components/events/useEventFeedNavigation.ts");
   const calendarHook = read("src/components/events/useCalendarMonthEvents.ts");
@@ -95,8 +96,11 @@ test("calendar loads its own month-range events outside feed pagination", () => 
   assert.doesNotMatch(data, /calendar events"[\s\S]*activeEventFilter/);
   assert.match(supabase, /cache: "no-store"/);
   assert.match(supabase, /global: \{ fetch: uncachedFetch \}/);
-  assert.match(page, /getCalendarEvents/);
-  assert.match(page, /calendarEvents=\{calendarEvents\}/);
+  // The layout loads the calendar; a filter change re-renders only the page.
+  assert.match(layout, /getCalendarEvents/);
+  assert.match(layout, /value=\{\{\s+calendarEvents,/);
+  assert.doesNotMatch(page, /getCalendarEvents|getEventFilterCountSource/);
+  assert.match(browser, /useEventsFeedData\(\)/);
   assert.match(calendarApi, /getCalendarEvents/);
   assert.match(calendarApi, /searchParams/);
   assert.match(eventsApi, /fetchCalendarEvents/);

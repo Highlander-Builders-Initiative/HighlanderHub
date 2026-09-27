@@ -11,6 +11,7 @@ import {
   type SetStateAction,
 } from "react";
 import type { CampusEvent } from "@/types/event";
+import type { EventFeedCursor } from "@/types/events-feed";
 import {
   addPacificDays,
   pacificDayKey,
@@ -33,8 +34,8 @@ import {
 import { useInfiniteEventFeedLoader } from "./useInfiniteEventFeedLoader";
 import { useObservedDayKey } from "./useObservedDayKey";
 
-const pageKey = (offset: number, filters: EventFeedQuery) =>
-  JSON.stringify([offset, filters.category, filters.dayWindow, filters.query]);
+const pageKey = (cursor: EventFeedCursor | null, filters: EventFeedQuery) =>
+  JSON.stringify([cursor, filters.category, filters.dayWindow, filters.query]);
 
 type UseEventFeedNavigationArgs = {
   active: boolean;
@@ -47,8 +48,8 @@ type UseEventFeedNavigationArgs = {
   todayKey: string;
   hasMore: boolean;
   setHasMore: Dispatch<SetStateAction<boolean>>;
-  nextOffset: number;
-  setNextOffset: Dispatch<SetStateAction<number>>;
+  cursor: EventFeedCursor | null;
+  setCursor: Dispatch<SetStateAction<EventFeedCursor | null>>;
   isLoadingMore: boolean;
   setIsLoadingMore: Dispatch<SetStateAction<boolean>>;
   loadError: string;
@@ -57,7 +58,7 @@ type UseEventFeedNavigationArgs = {
   isCalendarLoading: boolean;
   setCalendarCursor: Dispatch<SetStateAction<string>>;
   feedFilters: EventFeedQuery;
-  /** Filters the loaded pages were fetched with; offsets belong to them. */
+  /** Filters the loaded pages were fetched with; the cursor belongs to them. */
   pageFilters: EventFeedQuery;
 };
 
@@ -71,8 +72,8 @@ export function useEventFeedNavigation({
   todayKey,
   hasMore,
   setHasMore,
-  nextOffset,
-  setNextOffset,
+  cursor,
+  setCursor,
   isLoadingMore,
   setIsLoadingMore,
   loadError,
@@ -294,7 +295,7 @@ export function useEventFeedNavigation({
     [loadedEvents, calendarEvents, observedDayKey]
   );
 
-  // Offsets belong to the loaded list's query. Wait until the selected
+  // The cursor belongs to the loaded list's query. Wait until the selected
   // filters match that list, fetch with those filters, and drop a response
   // if the list was replaced while the request was in flight.
   const pageFiltersRef = useRef(pageFilters);
@@ -312,12 +313,12 @@ export function useEventFeedNavigation({
   } | null>(null);
   useEffect(() => {
     if (!active || isRestoring || !hasMore || !filtersReady) return;
-    const key = pageKey(nextOffset, pageFilters);
+    const key = pageKey(cursor, pageFilters);
     if (prefetchedPageRef.current?.key === key) return;
-    const page = fetchEventsPage(nextOffset, undefined, pageFilters);
+    const page = fetchEventsPage(cursor, undefined, pageFilters);
     page.catch(() => {}); // loadMore fetches again
     prefetchedPageRef.current = { key, page };
-  }, [active, isRestoring, hasMore, filtersReady, nextOffset, pageFilters]);
+  }, [active, isRestoring, hasMore, filtersReady, cursor, pageFilters]);
 
   const loadMore = useCallback(async () => {
     if (!active || isRestoring || isLoadingMore || !hasMore || !filtersReady) {
@@ -337,8 +338,8 @@ export function useEventFeedNavigation({
     const prefetched = prefetchedPageRef.current;
     prefetchedPageRef.current = null;
     try {
-      const fetchPage = () => fetchEventsPage(nextOffset, undefined, requested);
-      const page = await (prefetched?.key === pageKey(nextOffset, requested)
+      const fetchPage = () => fetchEventsPage(cursor, undefined, requested);
+      const page = await (prefetched?.key === pageKey(cursor, requested)
         ? prefetched.page.catch(fetchPage)
         : fetchPage());
       if (!eventFeedQueriesEqual(pageFiltersRef.current, requested)) return;
@@ -354,7 +355,7 @@ export function useEventFeedNavigation({
         return mergeUniqueEventsByStart(current, page.events);
       });
       setHasMore(page.hasMore);
-      setNextOffset(page.nextOffset);
+      setCursor(page.cursor);
     } catch {
       setLoadError("Could not load more events. Try again.");
     } finally {
@@ -365,7 +366,7 @@ export function useEventFeedNavigation({
     hasMore,
     isLoadingMore,
     isRestoring,
-    nextOffset,
+    cursor,
     observedDayKey,
     pageFilters,
     filtersReady,
@@ -373,7 +374,7 @@ export function useEventFeedNavigation({
     setIsLoadingMore,
     setLoadError,
     setLoadedEvents,
-    setNextOffset,
+    setCursor,
   ]);
 
   useInfiniteEventFeedLoader({

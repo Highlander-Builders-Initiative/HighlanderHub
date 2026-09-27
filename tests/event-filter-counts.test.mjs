@@ -84,7 +84,8 @@ test("event filter summary omits the total when every event is loaded", async ()
 });
 
 test("event category badges use a full-feed count source outside pagination", () => {
-  const page = read("src/app/events/page.tsx");
+  const layout = read("src/app/events/layout.tsx");
+  const feedData = read("src/components/events/EventsFeedData.tsx");
   const browser = read("src/components/events/EventsBrowser.tsx");
   const filters = read("src/components/events/useEventFeedFilters.ts");
   const data = read("src/lib/events/index.ts");
@@ -94,9 +95,9 @@ test("event category badges use a full-feed count source outside pagination", ()
     data,
     /\.select\("id,title,description,starts_at,location,host,host_handle,hosts,category,tags,has_free_food"\)/
   );
-  assert.match(page, /getEventFilterCountSource/);
-  assert.match(page, /filterCountSource=\{filterCountSource\}/);
-  assert.match(browser, /filterCountSource: EventFilterCountSource\[\]/);
+  assert.match(layout, /getEventFilterCountSource/);
+  assert.match(layout, /filterCountSource: shareCalendarEvents\(calendarEvents, countSource\)/);
+  assert.match(feedData, /filterCountSource: EventFilterCountSource\[\]/);
   assert.match(browser, /filterCountSource,/);
   assert.match(filters, /filterCountSource: EventFilterCountSource\[\]/);
   assert.match(filters, /filterEventSource\(filterCountSource, filters/);

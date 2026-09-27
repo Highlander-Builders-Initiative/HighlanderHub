@@ -1,5 +1,5 @@
 import type { EventCategory, CampusEvent } from "@/types/event";
-import type { DayWindow } from "@/types/events-feed";
+import type { DayWindow, EventFeedCursor } from "@/types/events-feed";
 import type { EventFeedQuery } from "@/components/events/events-filters";
 import {
   clearEventFeedReturnState,
@@ -15,11 +15,11 @@ export type EventFeedRestorePatch = {
   dayWindow?: DayWindow;
   loadedEvents?: CampusEvent[];
   hasMore?: boolean;
-  nextOffset?: number;
+  cursor?: EventFeedCursor | null;
 };
 
 type EventPageFetcher = (
-  offset: number,
+  after: EventFeedCursor | null,
   limit: number | undefined,
   filters: EventFeedQuery
 ) => Promise<EventsApiPage>;
@@ -40,9 +40,13 @@ export function restoreToEventCard(eventId: string, eventTop = 0) {
   return true;
 }
 
+function sameCursor(a: EventFeedCursor | null, b: EventFeedCursor | null) {
+  return a?.startsAt === b?.startsAt && a?.id === b?.id;
+}
+
 export async function restoreEventsUntilTarget(
   current: CampusEvent[],
-  next: number,
+  next: EventFeedCursor | null,
   more: boolean,
   target: RestoreTarget,
   filters: EventFeedQuery,
@@ -57,11 +61,11 @@ export async function restoreEventsUntilTarget(
     if (limitToFetch > 0) {
       const page = await fetchPage(next, limitToFetch, filters);
       const nextEvents = mergeUniqueEventsByStart(restored, page.events);
-      if (nextEvents.length === restored.length && page.nextOffset === restoredNext) {
+      if (nextEvents.length === restored.length && sameCursor(page.cursor, restoredNext)) {
         return { current: restored, next: restoredNext, more: restoredMore };
       }
       restored = nextEvents;
-      restoredNext = page.nextOffset;
+      restoredNext = page.cursor;
       restoredMore = page.hasMore;
     }
   }
@@ -72,9 +76,9 @@ export async function restoreEventsUntilTarget(
   ) {
     const page = await fetchPage(restoredNext, undefined, filters);
     const nextEvents = mergeUniqueEventsByStart(restored, page.events);
-    if (nextEvents.length === restored.length && page.nextOffset === restoredNext) break;
+    if (nextEvents.length === restored.length && sameCursor(page.cursor, restoredNext)) break;
     restored = nextEvents;
-    restoredNext = page.nextOffset;
+    restoredNext = page.cursor;
     restoredMore = page.hasMore;
   }
 
@@ -89,7 +93,7 @@ export type RestoreIntent =
       loadedCount?: number;
       events: CampusEvent[];
       hasMore: boolean;
-      nextOffset: number;
+      cursor: EventFeedCursor | null;
     }
   | { kind: "scrollY"; scrollY: number }
   | { kind: "none" };
@@ -99,7 +103,7 @@ export function deriveRestoreIntent(
   returnScroll: SavedScrollPosition | null,
   currentEvents: CampusEvent[],
   currentHasMore: boolean,
-  currentNextOffset: number
+  currentCursor: EventFeedCursor | null
 ): RestoreIntent {
   if (snapshot?.eventId) {
     const matchingReturnTarget =
@@ -114,7 +118,7 @@ export function deriveRestoreIntent(
       loadedCount: matchingReturnTarget?.loadedCount ?? snapshot.loadedCount,
       events: snapshot.events,
       hasMore: snapshot.hasMore,
-      nextOffset: snapshot.nextOffset,
+      cursor: snapshot.cursor,
     };
   }
 
@@ -126,7 +130,7 @@ export function deriveRestoreIntent(
       loadedCount: returnScroll.loadedCount,
       events: snapshot?.events ?? currentEvents,
       hasMore: snapshot?.hasMore ?? currentHasMore,
-      nextOffset: snapshot?.nextOffset ?? currentNextOffset,
+      cursor: snapshot ? snapshot.cursor : currentCursor,
     };
   }
 
@@ -145,7 +149,7 @@ type RestoreSavedEventFeedSpotArgs = {
   path: string;
   currentEvents: CampusEvent[];
   currentHasMore: boolean;
-  currentNextOffset: number;
+  currentCursor: EventFeedCursor | null;
   pageFilters: EventFeedQuery;
   applyRestore: (patch: EventFeedRestorePatch) => void;
 };
@@ -160,7 +164,7 @@ export async function restoreSavedEventFeedSpot({
   path,
   currentEvents,
   currentHasMore,
-  currentNextOffset,
+  currentCursor,
   pageFilters,
   applyRestore,
 }: RestoreSavedEventFeedSpotArgs): Promise<boolean> {
@@ -179,7 +183,7 @@ export async function restoreSavedEventFeedSpot({
         dayWindow: snapshot.dayWindow,
         loadedEvents: snapshot.events,
         hasMore: snapshot.hasMore,
-        nextOffset: snapshot.nextOffset,
+        cursor: snapshot.cursor,
       });
     }
 
@@ -190,7 +194,7 @@ export async function restoreSavedEventFeedSpot({
       returnScroll,
       currentEvents,
       currentHasMore,
-      currentNextOffset
+      currentCursor
     );
     if (intent.kind === "none") return false;
 
@@ -211,7 +215,7 @@ export async function restoreSavedEventFeedSpot({
 
     const restored = await restoreEventsUntilTarget(
       intent.events,
-      intent.nextOffset,
+      intent.cursor,
       intent.hasMore,
       intent,
       listFilters
@@ -220,7 +224,7 @@ export async function restoreSavedEventFeedSpot({
     applyRestore({
       loadedEvents: restored.current,
       hasMore: restored.more,
-      nextOffset: restored.next,
+      cursor: restored.next,
     });
 
     await settleFrame();

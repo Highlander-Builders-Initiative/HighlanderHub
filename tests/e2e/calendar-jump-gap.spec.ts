@@ -25,7 +25,8 @@ test("a calendar jump past the loaded pages also loads the days before the grid"
   await page.addInitScript(({ initial }) => {
     sessionStorage.setItem("highlanderhub.eventFeed", JSON.stringify({
       path: "/events", scrollY: 0, events: initial, hasMore: true,
-      nextOffset: 24, category: "all", query: "", dayWindow: "all",
+      cursor: { startsAt: initial[initial.length - 1].startsAt, id: initial[initial.length - 1].id },
+      category: "all", query: "", dayWindow: "all",
       loadedCount: 24, eventId: initial[0].id, eventTop: 300, savedAt: Date.now(),
     }));
     sessionStorage.setItem("highlanderhub.returnScroll", JSON.stringify({

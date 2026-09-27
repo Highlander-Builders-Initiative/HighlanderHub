@@ -3,7 +3,11 @@ import {
   type CampusEvent,
   type EventCategory,
 } from "@/types/event";
-import { DAY_WINDOWS, type DayWindow } from "@/types/events-feed";
+import {
+  DAY_WINDOWS,
+  type DayWindow,
+  type EventFeedCursor,
+} from "@/types/events-feed";
 
 const FEED_SESSION_KEY = "highlanderhub.eventFeed";
 const RETURN_SCROLL_KEY = "highlanderhub.returnScroll";
@@ -15,7 +19,7 @@ export type SavedEventFeedSnapshot = {
   scrollY: number;
   events: CampusEvent[];
   hasMore: boolean;
-  nextOffset: number;
+  cursor: EventFeedCursor | null;
   category: EventCategory | "all";
   query: string;
   dayWindow: DayWindow;
@@ -125,6 +129,12 @@ function isSavedDayWindow(value: unknown): value is DayWindow {
   return DAY_WINDOWS.some((window) => window.value === value);
 }
 
+function isSavedCursor(value: unknown): value is EventFeedCursor | null {
+  if (value === null) return true;
+  const cursor = value as Partial<EventFeedCursor> | undefined;
+  return typeof cursor?.startsAt === "string" && typeof cursor.id === "string";
+}
+
 function isSavedCategory(value: unknown): value is EventCategory | "all" {
   return (
     value === "all" || EVENT_CATEGORIES.includes(value as EventCategory)
@@ -145,7 +155,7 @@ function readSessionSnapshot() {
       typeof parsed.savedAt !== "number" ||
       !Array.isArray(parsed.events) ||
       typeof parsed.hasMore !== "boolean" ||
-      typeof parsed.nextOffset !== "number" ||
+      !isSavedCursor(parsed.cursor) ||
       (Object.prototype.hasOwnProperty.call(parsed, "view") &&
         parsed.view !== "list") ||
       !isSavedDayWindow(parsed.dayWindow) ||

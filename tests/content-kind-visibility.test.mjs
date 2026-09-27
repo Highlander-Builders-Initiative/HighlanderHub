@@ -10,14 +10,14 @@ test("public event reads filter to PUBLIC_CONTENT_KINDS", () => {
   assert.match(data, /from "@\/lib\/events\/content-kind"/);
   assert.match(data, /PUBLIC_CONTENT_KINDS/);
 
-  // Browse, counts, calendar, and summary all constrain content_kind. Each
-  // public read adds `.in("content_kind", PUBLIC_CONTENT_KINDS)`; there are
-  // eight such reads (3 summary counts, 2 page branches, filter counts,
-  // sitemap, calendar).
+  // Browse, counts, calendar, and the week count all constrain content_kind.
+  // Each public read adds `.in("content_kind", PUBLIC_CONTENT_KINDS)`; there
+  // are six such reads (week count, 2 page branches, filter counts, sitemap,
+  // calendar).
   const filters = data.match(/\.in\("content_kind", PUBLIC_CONTENT_KINDS\)/g) ?? [];
   assert.ok(
-    filters.length >= 8,
-    `expected >= 8 content_kind filters, found ${filters.length}`
+    filters.length >= 6,
+    `expected >= 6 content_kind filters, found ${filters.length}`
   );
 });
 

@@ -9,7 +9,7 @@ import { HeroHighlightCopy } from "@/components/home/hero-highlights";
 import { HbiLink } from "@/components/analytics/HbiLink";
 import { HBI_ABOUT_URL, HBI_INSTAGRAM_URL } from "@/lib/hbi";
 import { TRACKED_ACCOUNT_COUNT } from "@/lib/clubs";
-import { getEvents, getEventsSummary } from "@/lib/events";
+import { getEvents, getEventsUpcomingThisWeek } from "@/lib/events";
 import { campusDaypart } from "@/lib/daylight";
 import {
   formatPacificDayKey,
@@ -25,20 +25,18 @@ export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   // The count is a nice-to-have; never let it fail the page if events loaded.
-  const [events, summary] = await Promise.all([
+  const [events, upcomingThisWeek] = await Promise.all([
     getEvents({ limit: 24 }),
-    getEventsSummary().catch(() => null),
+    getEventsUpcomingThisWeek().catch(() => null),
   ]);
 
   const dateLabel = formatPacificDayKey(pacificTodayKey());
   // Which skyline the hero shows: day, golden hour or night over campus.
   const daypart = campusDaypart();
-  const weekLabel = formatUpcomingWeekLabel(
-    summary?.upcomingThisWeek ?? null
-  );
+  const weekLabel = formatUpcomingWeekLabel(upcomingThisWeek);
   // The wall is a preview; this is the way on to the full week. The count is
   // the Week filter's own, so the number matches the list it opens.
-  const weekCount = summary?.upcomingThisWeek ?? 0;
+  const weekCount = upcomingThisWeek ?? 0;
   const seeAll =
     weekCount > 1
       ? { href: "/events?when=week", label: `See all ${weekCount} this week` }

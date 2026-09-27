@@ -2,6 +2,7 @@
 
 import { useLayoutEffect, useState } from "react";
 import type { CampusEvent } from "@/types/event";
+import type { EventFeedCursor } from "@/types/events-feed";
 import {
   readEventFeedRestoreState,
   type EventFeedRestoreState,
@@ -15,14 +16,14 @@ import type { EventFeedQuery } from "@/components/events/events-filters";
 type RestoreBootstrap = EventFeedRestoreState & {
   currentEvents: CampusEvent[];
   currentHasMore: boolean;
-  currentNextOffset: number;
+  currentCursor: EventFeedCursor | null;
   pageFilters: EventFeedQuery;
 };
 
 type UseEventFeedRestoreArgs = {
   events: CampusEvent[];
   initialHasMore: boolean;
-  initialNextOffset: number;
+  initialCursor: EventFeedCursor | null;
   pageFilters: EventFeedQuery;
   applyRestore: (patch: EventFeedRestorePatch) => void;
 };
@@ -30,7 +31,7 @@ type UseEventFeedRestoreArgs = {
 export function useEventFeedRestore({
   events,
   initialHasMore,
-  initialNextOffset,
+  initialCursor,
   pageFilters,
   applyRestore,
 }: UseEventFeedRestoreArgs) {
@@ -39,7 +40,7 @@ export function useEventFeedRestore({
     ...readEventFeedRestoreState(),
     currentEvents: events,
     currentHasMore: initialHasMore,
-    currentNextOffset: initialNextOffset,
+    currentCursor: initialCursor,
     pageFilters,
   }));
 
@@ -49,7 +50,7 @@ export function useEventFeedRestore({
       returnScroll,
       currentEvents,
       currentHasMore,
-      currentNextOffset,
+      currentCursor,
       pageFilters,
     } = bootstrap;
     if (!snapshot && !returnScroll) return;
@@ -67,7 +68,7 @@ export function useEventFeedRestore({
           path,
           currentEvents,
           currentHasMore,
-          currentNextOffset,
+          currentCursor,
           pageFilters,
           applyRestore,
         });

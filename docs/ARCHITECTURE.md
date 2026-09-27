@@ -54,8 +54,8 @@ flowchart LR
 
 ### Browse `/events`
 
-- Server: `getEventsSummary`, initial calendar range via `src/lib/events/index.ts`.
-- Client: `EventsBrowser` paginates through `/api/events`, keeps filters in URL state, and persists scroll position via `feed-session` + `feed-restore` in `sessionStorage`.
+- Server: `src/app/events/layout.tsx` loads the filter-independent data (week count, filter-count source, initial calendar range) once; `page.tsx` loads only the first page for the URL's filters, so a filter change does not resend the rest.
+- Client: `EventsBrowser` paginates through `/api/events` with a cursor (the last loaded event's start and id), keeps filters in URL state, and persists scroll position via `feed-session` + `feed-restore` in `sessionStorage`.
 
 ### Event detail `/events/[id]`
 

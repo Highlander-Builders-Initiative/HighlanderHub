@@ -11,6 +11,13 @@ export const DAY_WINDOWS = [
 
 export type DayWindow = (typeof DAY_WINDOWS)[number]["value"];
 
+/**
+ * Where a loaded feed ends: its last event, in the feed's (startsAt, id)
+ * order. The next page starts after it. A position count would shift as
+ * earlier events end and leave the upcoming list.
+ */
+export type EventFeedCursor = { startsAt: string; id: string };
+
 export type EventFilterCountSource = Pick<
   CampusEvent,
   | "id"

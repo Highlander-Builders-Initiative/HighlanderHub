@@ -37,7 +37,7 @@ export const CATEGORIES: { value: CategoryValue; label: string }[] = [
 export { DAY_WINDOWS };
 export type { DayWindow };
 
-/** The three fields that identify a paged event list. Offsets belong to them. */
+/** The three fields that identify a paged event list. Its cursor belongs to them. */
 export type EventFeedQuery = {
   query: string;
   category: CategoryValue;

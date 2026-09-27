@@ -9,18 +9,7 @@ import {
   coerceFeedView,
 } from "@/components/events/events-filters";
 import { Footer } from "@/components/layout/Footer";
-import {
-  getCalendarEvents,
-  getEventFilterCountSource,
-  getEventsPage,
-  getEventsUpcomingThisWeek,
-} from "@/lib/events";
-import { shareCalendarEvents } from "@/lib/events/share-calendar-events";
-import {
-  pacificCalendarGridRange,
-  pacificTodayKey,
-  startOfPacificMonthKey,
-} from "@/lib/dates";
+import { getEventsPage } from "@/lib/events";
 
 export const dynamic = "force-dynamic";
 
@@ -47,35 +36,18 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
     query: firstParam(params.q) ?? "",
     dayWindow: coerceDayWindowParam(firstParam(params.when)),
   };
-  const calendarRange = pacificCalendarGridRange(
-    startOfPacificMonthKey(pacificTodayKey())
-  );
-  const [initialPage, calendarEvents, upcomingThisWeek, countSource] =
-    await Promise.all([
-      getEventsPage(initialFilters),
-      getCalendarEvents({
-        startDayKey: calendarRange.start,
-        endDayKey: calendarRange.end,
-      }),
-      getEventsUpcomingThisWeek(),
-      getEventFilterCountSource(),
-    ]);
-  const { events, filterCountSource } = shareCalendarEvents(calendarEvents, {
-    events: initialPage.events,
-    filterCountSource: countSource,
-  });
+  // The calendar and filter counts come from the events layout, which a
+  // filter change does not re-render.
+  const initialPage = await getEventsPage(initialFilters);
 
   return (
     <main className="min-h-screen bg-surface">
       <Masthead position="static" variant="solid" />
 
       <EventsBrowser
-        events={events}
-        calendarEvents={calendarEvents}
-        summary={{ upcomingThisWeek }}
-        filterCountSource={filterCountSource}
+        events={initialPage.events}
         initialHasMore={initialPage.hasMore}
-        initialNextOffset={initialPage.nextOffset}
+        initialCursor={initialPage.cursor}
         initialFilters={initialFilters}
         initialView={initialView}
       />

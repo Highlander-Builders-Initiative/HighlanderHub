@@ -91,7 +91,8 @@ for (const mode of ["", " after refresh", " after viewport resize"]) {
       if (sessionStorage.getItem("modal-test-seeded")) return;
       sessionStorage.setItem("modal-test-seeded", "1");
       sessionStorage.setItem("highlanderhub.eventFeed", JSON.stringify({
-        path: "/events", scrollY: 0, events, hasMore: true, nextOffset: 32,
+        path: "/events", scrollY: 0, events, hasMore: true,
+        cursor: { startsAt: events[31].startsAt, id: events[31].id },
         category: "all", query: "", dayWindow: "all", loadedCount: 32,
         eventId: events[0].id, eventTop: 100, savedAt: Date.now(),
       }));
@@ -100,10 +101,11 @@ for (const mode of ["", " after refresh", " after viewport resize"]) {
         scrollY: 0, eventId: events[0].id, eventTop: 100, loadedCount: 32,
       }));
     }, { events });
-    const offsets: string[] = [];
+    const cursors: string[] = [];
     await page.route(/\/api\/events\?/, async (route) => {
-      offsets.push(new URL(route.request().url()).searchParams.get("offset") ?? "");
-      await route.fulfill({ json: { events: [], hasMore: false, nextOffset: 32 } });
+      cursors.push(new URL(route.request().url()).searchParams.get("afterId") ?? "");
+      await route.fulfill({ json: { events: [], hasMore: false,
+        cursor: { startsAt: events[31].startsAt, id: events[31].id } } });
     });
     await page.goto("/events");
     await expect(page.locator('[data-event-id]')).toHaveCount(32);
@@ -121,9 +123,9 @@ for (const mode of ["", " after refresh", " after viewport resize"]) {
     await expect(page.locator('[data-event-id]')).toHaveCount(32);
     await expect.poll(async () => Math.abs((await link.boundingBox())!.y - saved.eventTop)).toBeLessThanOrEqual(8);
     await page.locator('[data-event-id]').last().scrollIntoViewIfNeeded();
-    await expect.poll(() => offsets).toContain("32");
-    // The next page is prefetched, so a lost cursor would show up as another offset.
-    expect(offsets.every((offset) => offset === "32")).toBe(true);
+    await expect.poll(() => cursors).toContain(events[31].id);
+    // The next page is prefetched, so a lost cursor would show up as another one.
+    expect(cursors.every((cursor) => cursor === events[31].id)).toBe(true);
   });
 }
 
