@@ -205,15 +205,24 @@ _OPEN_AUDIENCE_PHRASES = (
 # Free food is an independent attribute; preserve the existing caller contract.
 _FREE_FOOD_PATTERN = re.compile(
     r"\b(free food|free pizza|pizza provided|free snacks|snacks provided|"
-    r"refreshments|lunch provided|dinner provided|boba|free drinks|"
-    r"free (?:kona ice|shaved ice|ice cream|teas?|treats))\b",
+    r"refreshments|lunch provided|dinner provided|free drinks|"
+    r"free (?:\S+ ){0,2}boba|free (?:kona ice|shaved ice|ice cream|teas?|treats))\b",
     re.IGNORECASE,
 )
+# Boba is a club's usual treat, but "Boba Tea House" is a shop students pay
+# at, and a boba fundraiser ("fundy") sells it. Only a session's own title
+# says what that session offers; a sibling session's boba says nothing.
+_BOBA_TITLE_PATTERN = re.compile(r"\bboba\b(?!\s+(?:tea\s+)?(?:house|shop|fundraiser|fundy)\b)", re.IGNORECASE)
 
 
 def detect_free_food(*texts: str | None) -> bool:
     """True when the supplied text blobs advertise free food."""
     return bool(_FREE_FOOD_PATTERN.search(" ".join(text for text in texts if text)))
+
+
+def title_offers_boba(title: str) -> bool:
+    """A session titled for its boba ("Games & Boba"), not a shop trip or fundraiser."""
+    return bool(_BOBA_TITLE_PATTERN.search(title) and not _mentions_fundraising(title))
 
 
 def is_informational_notice(title: str, description: str = "", ocr_text: str = "") -> bool:
@@ -307,6 +316,10 @@ def classify_content_kind(
     # A source-grounded assessment establishes content type independently of
     # audience and fundraising. The legacy heuristics below only serve old
     # callers; production imports assess the source before publishing.
+    # The kind is assessed per post, so an activity post that also prints a
+    # cutoff ("Applications due 10 PM") titles that session as the deadline.
+    if assessed_kind == "activity" and any(term in title for term in _DEADLINE_TITLE_TERMS):
+        return "student_deadline"
     if assessed_kind is not None:
         return {
             "activity": "student_event", "service_schedule": "student_event",

@@ -405,8 +405,20 @@ def _day_supported(day: date, text: str, source: dict) -> bool:
             return day.year in years
         posted = source.get("posted_at")
         if posted:
-            # Allow year rollover, not arbitrary years in a model response.
-            return abs((day - _instant(posted).astimezone(PACIFIC).date()).days) <= 366
+            # Allow year rollover, not arbitrary years in a model response: a
+            # yearless date is its next occurrence after posting, or the nearest
+            # one (an exhibition that opened before the post). "May 27" posted
+            # May 26, 2026 is never May 27, 2027.
+            reference = _instant(posted).astimezone(PACIFIC).date()
+            candidates = []
+            for year in (reference.year - 1, reference.year, reference.year + 1):
+                try:
+                    candidates.append(date(year, day.month, day.day))
+                except ValueError:
+                    continue
+            upcoming = min((c for c in candidates if c >= reference), default=None)
+            nearest = min(candidates, key=lambda c: abs((c - reference).days))
+            return day in {upcoming, nearest}
         return True
     posted = source.get("posted_at")
     if posted:

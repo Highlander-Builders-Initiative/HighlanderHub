@@ -1,0 +1,1688 @@
+{
+ "pds_cleanup": {
+  "post": {
+   "media_id": "3993126604118164988",
+   "handle": "ucrpds",
+   "owner_username": "ucrpds",
+   "shortcode": "Ddqb31toAX8",
+   "permalink": "https://www.instagram.com/p/Ddqb31toAX8/",
+   "posted_at": "2026-09-24T19:00:04+00:00",
+   "typename": "GraphImage"
+  },
+  "images": [
+   {
+    "index": 0,
+    "ocr_text": "pds\nNO\nPARKING\nENTIRE\nBLOCK\nOUTREACH\nKEEP RIVERSIDE\nCLEAN AND\nBEAUTIFUL\nWHERE: Spruce Street x\nChicago Street\nDATE: 10/1 (Thursday)\nfrom 9:30am-10:30am\nRSVP DUE: 9/30 @6PM\nWear comfortable closed-toed\nshoes and pants! All safety\nequipment and grabbers will be\nprovided\nSHUTTLING IS PROVIDED!",
+    "qr_urls": []
+   }
+  ],
+  "source": {
+   "texts": {
+    "caption": "Hello PDS family! We’re having our first volunteer event of the Fall quarter in collaboration with Keep Riverside Clean and Beautiful (KRCB)! It will take place on Thursday, October 1st from 9:30-10:30am on our adopted street, Spruce Street x Chicago Street.\n\nJoin us and your fellow pre-dents to help restore the streets and parks in our community, continuing the mission of keeping Riverside clean and beautiful! KRCB gives individuals the opportunity to take personal responsibility for city beautification, improving quality of life, and promoting the spirit of volunteerism in Riverside! 🌷\n\n‼️ SIGN-UP FORM IS AVAILABLE IN THE LINKTREE IN OUR BIO! Please sign up by Wednesday, September 30th @ 6:00 PM!\n\nALL CLEANUP SUPPLIES WILL BE PROVIDED! (Gloves, vests, scrapers, graffiti clean-up kits, bags, etc)\nClothing: Must wear closed-toe shoes while participating. No sandals or flip flops.\n\n🗓️October 1st @ 9:30-10:30 AM\n📍1695 Spruce Street, Riverside, CA, 92507\n✏️Sign up via the google form in our link tree or below by September 30th @ 6:00 PM\nWe hope to see you all there! 😁\n\n↳ #ucr #ucrpds #predental #predentalsociety #futuredentists dental dentist volunteering cleanup",
+    "slide_1_ocr": "pds\nNO\nPARKING\nENTIRE\nBLOCK\nOUTREACH\nKEEP RIVERSIDE\nCLEAN AND\nBEAUTIFUL\nWHERE: Spruce Street x\nChicago Street\nDATE: 10/1 (Thursday)\nfrom 9:30am-10:30am\nRSVP DUE: 9/30 @6PM\nWear comfortable closed-toed\nshoes and pants! All safety\nequipment and grabbers will be\nprovided\nSHUTTLING IS PROVIDED!"
+   },
+   "origin": "instagram",
+   "posted_at": "2026-09-24T19:00:04+00:00",
+   "source_key": "instagram:post:3993126604118164988",
+   "source_occurrences": []
+  },
+  "result": {
+   "kind": "activity",
+   "reason": "The post advertises a volunteer cleanup event with a specific date, time, and location.",
+   "schedule": null,
+   "date_role": "occurrence",
+   "occurrences": [
+    {
+     "title": "Volunteer Cleanup Event",
+     "all_day": false,
+     "ends_at": "2026-10-01T10:30:00-07:00",
+     "location": "1695 Spruce Street, Riverside, CA, 92507",
+     "starts_at": "2026-10-01T09:30:00-07:00",
+     "date_evidence": [
+      {
+       "field": "caption",
+       "quote": "Hello PDS family! We’re having our first volunteer event of the Fall quarter in collaboration with Keep Riverside Clean and Beautiful (KRCB)! It will take place on Thursday, October 1st from 9:30-10:30am on our adopted street, Spruce Street x Chicago Street.\n\nJoin us and your fellow pre-dents to help restore the streets and parks in our community, continuing the mission of keeping Riverside clean and beautiful! KRCB gives individuals the opportunity to take personal responsibility for city beautification, improving quality of life, and promoting the spirit of volunteerism in Riverside! 🌷\n\n‼️ SIGN-UP FORM IS AVAILABLE IN THE LINKTREE IN OUR BIO! Please sign up by Wednesday, September 30th @ 6:00 PM!\n\nALL CLEANUP SUPPLIES WILL BE PROVIDED! (Gloves, vests, scrapers, graffiti clean-up kits, bags, etc)\nClothing: Must wear closed-toe shoes while participating. No sandals or flip flops.\n\n🗓️October 1st @ 9:30-10:30 AM\n📍1695 Spruce Street, Riverside, CA, 92507\n✏️Sign up via the google form in our link tree or below by September 30th @ 6:00 PM\nWe hope to see you all there! 😁\n\n↳ #ucr #ucrpds #predental #predentalsociety #futuredentists dental dentist volunteering cleanup"
+      },
+      {
+       "field": "slide_1_ocr",
+       "quote": "pds\nNO\nPARKING\nENTIRE\nBLOCK\nOUTREACH\nKEEP RIVERSIDE\nCLEAN AND\nBEAUTIFUL\nWHERE: Spruce Street x\nChicago Street\nDATE: 10/1 (Thursday)\nfrom 9:30am-10:30am\nRSVP DUE: 9/30 @6PM\nWear comfortable closed-toed\nshoes and pants! All safety\nequipment and grabbers will be\nprovided\nSHUTTLING IS PROVIDED!"
+      }
+     ],
+     "activity_evidence": [
+      {
+       "field": "caption",
+       "quote": "Hello PDS family! We’re having our first volunteer event of the Fall quarter in collaboration with Keep Riverside Clean and Beautiful (KRCB)! It will take place on Thursday, October 1st from 9:30-10:30am on our adopted street, Spruce Street x Chicago Street.\n\nJoin us and your fellow pre-dents to help restore the streets and parks in our community, continuing the mission of keeping Riverside clean and beautiful! KRCB gives individuals the opportunity to take personal responsibility for city beautification, improving quality of life, and promoting the spirit of volunteerism in Riverside! 🌷\n\n‼️ SIGN-UP FORM IS AVAILABLE IN THE LINKTREE IN OUR BIO! Please sign up by Wednesday, September 30th @ 6:00 PM!\n\nALL CLEANUP SUPPLIES WILL BE PROVIDED! (Gloves, vests, scrapers, graffiti clean-up kits, bags, etc)\nClothing: Must wear closed-toe shoes while participating. No sandals or flip flops.\n\n🗓️October 1st @ 9:30-10:30 AM\n📍1695 Spruce Street, Riverside, CA, 92507\n✏️Sign up via the google form in our link tree or below by September 30th @ 6:00 PM\nWe hope to see you all there! 😁\n\n↳ #ucr #ucrpds #predental #predentalsociety #futuredentists dental dentist volunteering cleanup"
+      }
+     ],
+     "location_evidence": [
+      {
+       "field": "caption",
+       "quote": "Hello PDS family! We’re having our first volunteer event of the Fall quarter in collaboration with Keep Riverside Clean and Beautiful (KRCB)! It will take place on Thursday, October 1st from 9:30-10:30am on our adopted street, Spruce Street x Chicago Street.\n\nJoin us and your fellow pre-dents to help restore the streets and parks in our community, continuing the mission of keeping Riverside clean and beautiful! KRCB gives individuals the opportunity to take personal responsibility for city beautification, improving quality of life, and promoting the spirit of volunteerism in Riverside! 🌷\n\n‼️ SIGN-UP FORM IS AVAILABLE IN THE LINKTREE IN OUR BIO! Please sign up by Wednesday, September 30th @ 6:00 PM!\n\nALL CLEANUP SUPPLIES WILL BE PROVIDED! (Gloves, vests, scrapers, graffiti clean-up kits, bags, etc)\nClothing: Must wear closed-toe shoes while participating. No sandals or flip flops.\n\n🗓️October 1st @ 9:30-10:30 AM\n📍1695 Spruce Street, Riverside, CA, 92507\n✏️Sign up via the google form in our link tree or below by September 30th @ 6:00 PM\nWe hope to see you all there! 😁\n\n↳ #ucr #ucrpds #predental #predentalsociety #futuredentists dental dentist volunteering cleanup"
+      },
+      {
+       "field": "slide_1_ocr",
+       "quote": "pds\nNO\nPARKING\nENTIRE\nBLOCK\nOUTREACH\nKEEP RIVERSIDE\nCLEAN AND\nBEAUTIFUL\nWHERE: Spruce Street x\nChicago Street\nDATE: 10/1 (Thursday)\nfrom 9:30am-10:30am\nRSVP DUE: 9/30 @6PM\nWear comfortable closed-toed\nshoes and pants! All safety\nequipment and grabbers will be\nprovided\nSHUTTLING IS PROVIDED!"
+      }
+     ]
+    },
+    {
+     "title": "Volunteer Cleanup Event Sign-up Deadline",
+     "all_day": false,
+     "ends_at": null,
+     "location": "Online",
+     "starts_at": "2026-09-30T18:00:00-07:00",
+     "date_evidence": [
+      {
+       "field": "caption",
+       "quote": "Hello PDS family! We’re having our first volunteer event of the Fall quarter in collaboration with Keep Riverside Clean and Beautiful (KRCB)! It will take place on Thursday, October 1st from 9:30-10:30am on our adopted street, Spruce Street x Chicago Street.\n\nJoin us and your fellow pre-dents to help restore the streets and parks in our community, continuing the mission of keeping Riverside clean and beautiful! KRCB gives individuals the opportunity to take personal responsibility for city beautification, improving quality of life, and promoting the spirit of volunteerism in Riverside! 🌷\n\n‼️ SIGN-UP FORM IS AVAILABLE IN THE LINKTREE IN OUR BIO! Please sign up by Wednesday, September 30th @ 6:00 PM!\n\nALL CLEANUP SUPPLIES WILL BE PROVIDED! (Gloves, vests, scrapers, graffiti clean-up kits, bags, etc)\nClothing: Must wear closed-toe shoes while participating. No sandals or flip flops.\n\n🗓️October 1st @ 9:30-10:30 AM\n📍1695 Spruce Street, Riverside, CA, 92507\n✏️Sign up via the google form in our link tree or below by September 30th @ 6:00 PM\nWe hope to see you all there! 😁\n\n↳ #ucr #ucrpds #predental #predentalsociety #futuredentists dental dentist volunteering cleanup"
+      },
+      {
+       "field": "slide_1_ocr",
+       "quote": "pds\nNO\nPARKING\nENTIRE\nBLOCK\nOUTREACH\nKEEP RIVERSIDE\nCLEAN AND\nBEAUTIFUL\nWHERE: Spruce Street x\nChicago Street\nDATE: 10/1 (Thursday)\nfrom 9:30am-10:30am\nRSVP DUE: 9/30 @6PM\nWear comfortable closed-toed\nshoes and pants! All safety\nequipment and grabbers will be\nprovided\nSHUTTLING IS PROVIDED!"
+      }
+     ],
+     "activity_evidence": [
+      {
+       "field": "caption",
+       "quote": "Hello PDS family! We’re having our first volunteer event of the Fall quarter in collaboration with Keep Riverside Clean and Beautiful (KRCB)! It will take place on Thursday, October 1st from 9:30-10:30am on our adopted street, Spruce Street x Chicago Street.\n\nJoin us and your fellow pre-dents to help restore the streets and parks in our community, continuing the mission of keeping Riverside clean and beautiful! KRCB gives individuals the opportunity to take personal responsibility for city beautification, improving quality of life, and promoting the spirit of volunteerism in Riverside! 🌷\n\n‼️ SIGN-UP FORM IS AVAILABLE IN THE LINKTREE IN OUR BIO! Please sign up by Wednesday, September 30th @ 6:00 PM!\n\nALL CLEANUP SUPPLIES WILL BE PROVIDED! (Gloves, vests, scrapers, graffiti clean-up kits, bags, etc)\nClothing: Must wear closed-toe shoes while participating. No sandals or flip flops.\n\n🗓️October 1st @ 9:30-10:30 AM\n📍1695 Spruce Street, Riverside, CA, 92507\n✏️Sign up via the google form in our link tree or below by September 30th @ 6:00 PM\nWe hope to see you all there! 😁\n\n↳ #ucr #ucrpds #predental #predentalsociety #futuredentists dental dentist volunteering cleanup"
+      }
+     ],
+     "location_evidence": [
+      {
+       "field": "caption",
+       "quote": "Hello PDS family! We’re having our first volunteer event of the Fall quarter in collaboration with Keep Riverside Clean and Beautiful (KRCB)! It will take place on Thursday, October 1st from 9:30-10:30am on our adopted street, Spruce Street x Chicago Street.\n\nJoin us and your fellow pre-dents to help restore the streets and parks in our community, continuing the mission of keeping Riverside clean and beautiful! KRCB gives individuals the opportunity to take personal responsibility for city beautification, improving quality of life, and promoting the spirit of volunteerism in Riverside! 🌷\n\n‼️ SIGN-UP FORM IS AVAILABLE IN THE LINKTREE IN OUR BIO! Please sign up by Wednesday, September 30th @ 6:00 PM!\n\nALL CLEANUP SUPPLIES WILL BE PROVIDED! (Gloves, vests, scrapers, graffiti clean-up kits, bags, etc)\nClothing: Must wear closed-toe shoes while participating. No sandals or flip flops.\n\n🗓️October 1st @ 9:30-10:30 AM\n📍1695 Spruce Street, Riverside, CA, 92507\n✏️Sign up via the google form in our link tree or below by September 30th @ 6:00 PM\nWe hope to see you all there! 😁\n\n↳ #ucr #ucrpds #predental #predentalsociety #futuredentists dental dentist volunteering cleanup"
+      }
+     ]
+    }
+   ],
+   "date_evidence": [
+    {
+     "field": "caption",
+     "quote": "Hello PDS family! We’re having our first volunteer event of the Fall quarter in collaboration with Keep Riverside Clean and Beautiful (KRCB)! It will take place on Thursday, October 1st from 9:30-10:30am on our adopted street, Spruce Street x Chicago Street.\n\nJoin us and your fellow pre-dents to help restore the streets and parks in our community, continuing the mission of keeping Riverside clean and beautiful! KRCB gives individuals the opportunity to take personal responsibility for city beautification, improving quality of life, and promoting the spirit of volunteerism in Riverside! 🌷\n\n‼️ SIGN-UP FORM IS AVAILABLE IN THE LINKTREE IN OUR BIO! Please sign up by Wednesday, September 30th @ 6:00 PM!\n\nALL CLEANUP SUPPLIES WILL BE PROVIDED! (Gloves, vests, scrapers, graffiti clean-up kits, bags, etc)\nClothing: Must wear closed-toe shoes while participating. No sandals or flip flops.\n\n🗓️October 1st @ 9:30-10:30 AM\n📍1695 Spruce Street, Riverside, CA, 92507\n✏️Sign up via the google form in our link tree or below by September 30th @ 6:00 PM\nWe hope to see you all there! 😁\n\n↳ #ucr #ucrpds #predental #predentalsociety #futuredentists dental dentist volunteering cleanup"
+    },
+    {
+     "field": "slide_1_ocr",
+     "quote": "pds\nNO\nPARKING\nENTIRE\nBLOCK\nOUTREACH\nKEEP RIVERSIDE\nCLEAN AND\nBEAUTIFUL\nWHERE: Spruce Street x\nChicago Street\nDATE: 10/1 (Thursday)\nfrom 9:30am-10:30am\nRSVP DUE: 9/30 @6PM\nWear comfortable closed-toed\nshoes and pants! All safety\nequipment and grabbers will be\nprovided\nSHUTTLING IS PROVIDED!"
+    }
+   ],
+   "activity_evidence": [
+    {
+     "field": "caption",
+     "quote": "Hello PDS family! We’re having our first volunteer event of the Fall quarter in collaboration with Keep Riverside Clean and Beautiful (KRCB)! It will take place on Thursday, October 1st from 9:30-10:30am on our adopted street, Spruce Street x Chicago Street.\n\nJoin us and your fellow pre-dents to help restore the streets and parks in our community, continuing the mission of keeping Riverside clean and beautiful! KRCB gives individuals the opportunity to take personal responsibility for city beautification, improving quality of life, and promoting the spirit of volunteerism in Riverside! 🌷\n\n‼️ SIGN-UP FORM IS AVAILABLE IN THE LINKTREE IN OUR BIO! Please sign up by Wednesday, September 30th @ 6:00 PM!\n\nALL CLEANUP SUPPLIES WILL BE PROVIDED! (Gloves, vests, scrapers, graffiti clean-up kits, bags, etc)\nClothing: Must wear closed-toe shoes while participating. No sandals or flip flops.\n\n🗓️October 1st @ 9:30-10:30 AM\n📍1695 Spruce Street, Riverside, CA, 92507\n✏️Sign up via the google form in our link tree or below by September 30th @ 6:00 PM\nWe hope to see you all there! 😁\n\n↳ #ucr #ucrpds #predental #predentalsociety #futuredentists dental dentist volunteering cleanup"
+    },
+    {
+     "field": "slide_1_ocr",
+     "quote": "pds\nNO\nPARKING\nENTIRE\nBLOCK\nOUTREACH\nKEEP RIVERSIDE\nCLEAN AND\nBEAUTIFUL\nWHERE: Spruce Street x\nChicago Street\nDATE: 10/1 (Thursday)\nfrom 9:30am-10:30am\nRSVP DUE: 9/30 @6PM\nWear comfortable closed-toed\nshoes and pants! All safety\nequipment and grabbers will be\nprovided\nSHUTTLING IS PROVIDED!"
+    }
+   ],
+   "use_source_occurrences": false
+  }
+ },
+ "pse_recruitment": {
+  "post": {
+   "media_id": "3995937187540986297",
+   "handle": "ucrpse",
+   "owner_username": "ucrpse",
+   "shortcode": "Dd0a7NgJ2m5",
+   "permalink": "https://www.instagram.com/p/Dd0a7NgJ2m5/",
+   "posted_at": "2026-09-28T15:00:04+00:00",
+   "typename": "GraphImage"
+  },
+  "images": [
+   {
+    "index": 0,
+    "ocr_text": "Recruitment\nSCHEDULE\nFall '26 October 5th - October 8th\nMonday\n10.5 Info Night\n07:00PM - Glen Mor J315\nFt. RYSE Energy\nCasual Attire\nTBD Fundraiser\nShuttle Provided\nwednesday\n10.7 - BBQ w/ the Bros\n7:00PM- Lot 15\nShuttle Provided\nHot Dogs & Burgers!\nCasual Attire\nTuesday\n10.6 - Guest Speaker\n07:00PM Glen Mor J315\nFt. RYSE Energy\nProfessional Attire\n08:30PM- Boba Tea House\nShuttle Provided\nThursday\n10.8 Applications\n-\nDUE AT 10:00PM !!!!!\nFriday & Saturday are invite-only interviews.\n*Locations are subject to change.",
+    "qr_urls": []
+   }
+  ],
+  "source": {
+   "texts": {
+    "caption": "Recruitment Week starts NEXT WEEK!! \nCome out to meet our members, sit in with a special guest speaker, and have some BBQ with the bros! \n\nInterest Form in Bio.",
+    "slide_1_ocr": "Recruitment\nSCHEDULE\nFall '26 October 5th - October 8th\nMonday\n10.5 Info Night\n07:00PM - Glen Mor J315\nFt. RYSE Energy\nCasual Attire\nTBD Fundraiser\nShuttle Provided\nwednesday\n10.7 - BBQ w/ the Bros\n7:00PM- Lot 15\nShuttle Provided\nHot Dogs & Burgers!\nCasual Attire\nTuesday\n10.6 - Guest Speaker\n07:00PM Glen Mor J315\nFt. RYSE Energy\nProfessional Attire\n08:30PM- Boba Tea House\nShuttle Provided\nThursday\n10.8 Applications\n-\nDUE AT 10:00PM !!!!!\nFriday & Saturday are invite-only interviews.\n*Locations are subject to change."
+   },
+   "origin": "instagram",
+   "posted_at": "2026-09-28T15:00:04+00:00",
+   "source_key": "instagram:post:3995937187540986297",
+   "source_occurrences": []
+  },
+  "result": {
+   "kind": "activity",
+   "reason": "The source advertises a series of recruitment events including an info night, guest speaker session, and BBQ, as well as an application deadline.",
+   "schedule": null,
+   "date_role": "occurrence",
+   "occurrences": [
+    {
+     "title": "Info Night",
+     "all_day": false,
+     "ends_at": null,
+     "location": "Glen Mor J315",
+     "starts_at": "2026-10-05T19:00:00-07:00",
+     "date_evidence": [
+      {
+       "field": "slide_1_ocr",
+       "quote": "Recruitment\nSCHEDULE\nFall '26 October 5th - October 8th\nMonday\n10.5 Info Night\n07:00PM - Glen Mor J315\nFt. RYSE Energy\nCasual Attire\nTBD Fundraiser\nShuttle Provided\nwednesday\n10.7 - BBQ w/ the Bros\n7:00PM- Lot 15\nShuttle Provided\nHot Dogs & Burgers!\nCasual Attire\nTuesday\n10.6 - Guest Speaker\n07:00PM Glen Mor J315\nFt. RYSE Energy\nProfessional Attire\n08:30PM- Boba Tea House\nShuttle Provided\nThursday\n10.8 Applications\n-\nDUE AT 10:00PM !!!!!\nFriday & Saturday are invite-only interviews.\n*Locations are subject to change."
+      }
+     ],
+     "activity_evidence": [
+      {
+       "field": "slide_1_ocr",
+       "quote": "Recruitment\nSCHEDULE\nFall '26 October 5th - October 8th\nMonday\n10.5 Info Night\n07:00PM - Glen Mor J315\nFt. RYSE Energy\nCasual Attire\nTBD Fundraiser\nShuttle Provided\nwednesday\n10.7 - BBQ w/ the Bros\n7:00PM- Lot 15\nShuttle Provided\nHot Dogs & Burgers!\nCasual Attire\nTuesday\n10.6 - Guest Speaker\n07:00PM Glen Mor J315\nFt. RYSE Energy\nProfessional Attire\n08:30PM- Boba Tea House\nShuttle Provided\nThursday\n10.8 Applications\n-\nDUE AT 10:00PM !!!!!\nFriday & Saturday are invite-only interviews.\n*Locations are subject to change."
+      }
+     ],
+     "location_evidence": [
+      {
+       "field": "slide_1_ocr",
+       "quote": "Recruitment\nSCHEDULE\nFall '26 October 5th - October 8th\nMonday\n10.5 Info Night\n07:00PM - Glen Mor J315\nFt. RYSE Energy\nCasual Attire\nTBD Fundraiser\nShuttle Provided\nwednesday\n10.7 - BBQ w/ the Bros\n7:00PM- Lot 15\nShuttle Provided\nHot Dogs & Burgers!\nCasual Attire\nTuesday\n10.6 - Guest Speaker\n07:00PM Glen Mor J315\nFt. RYSE Energy\nProfessional Attire\n08:30PM- Boba Tea House\nShuttle Provided\nThursday\n10.8 Applications\n-\nDUE AT 10:00PM !!!!!\nFriday & Saturday are invite-only interviews.\n*Locations are subject to change."
+      }
+     ]
+    },
+    {
+     "title": "Guest Speaker Session",
+     "all_day": false,
+     "ends_at": null,
+     "location": "Glen Mor J315",
+     "starts_at": "2026-10-06T19:00:00-07:00",
+     "date_evidence": [
+      {
+       "field": "slide_1_ocr",
+       "quote": "Recruitment\nSCHEDULE\nFall '26 October 5th - October 8th\nMonday\n10.5 Info Night\n07:00PM - Glen Mor J315\nFt. RYSE Energy\nCasual Attire\nTBD Fundraiser\nShuttle Provided\nwednesday\n10.7 - BBQ w/ the Bros\n7:00PM- Lot 15\nShuttle Provided\nHot Dogs & Burgers!\nCasual Attire\nTuesday\n10.6 - Guest Speaker\n07:00PM Glen Mor J315\nFt. RYSE Energy\nProfessional Attire\n08:30PM- Boba Tea House\nShuttle Provided\nThursday\n10.8 Applications\n-\nDUE AT 10:00PM !!!!!\nFriday & Saturday are invite-only interviews.\n*Locations are subject to change."
+      }
+     ],
+     "activity_evidence": [
+      {
+       "field": "slide_1_ocr",
+       "quote": "Recruitment\nSCHEDULE\nFall '26 October 5th - October 8th\nMonday\n10.5 Info Night\n07:00PM - Glen Mor J315\nFt. RYSE Energy\nCasual Attire\nTBD Fundraiser\nShuttle Provided\nwednesday\n10.7 - BBQ w/ the Bros\n7:00PM- Lot 15\nShuttle Provided\nHot Dogs & Burgers!\nCasual Attire\nTuesday\n10.6 - Guest Speaker\n07:00PM Glen Mor J315\nFt. RYSE Energy\nProfessional Attire\n08:30PM- Boba Tea House\nShuttle Provided\nThursday\n10.8 Applications\n-\nDUE AT 10:00PM !!!!!\nFriday & Saturday are invite-only interviews.\n*Locations are subject to change."
+      }
+     ],
+     "location_evidence": [
+      {
+       "field": "slide_1_ocr",
+       "quote": "Recruitment\nSCHEDULE\nFall '26 October 5th - October 8th\nMonday\n10.5 Info Night\n07:00PM - Glen Mor J315\nFt. RYSE Energy\nCasual Attire\nTBD Fundraiser\nShuttle Provided\nwednesday\n10.7 - BBQ w/ the Bros\n7:00PM- Lot 15\nShuttle Provided\nHot Dogs & Burgers!\nCasual Attire\nTuesday\n10.6 - Guest Speaker\n07:00PM Glen Mor J315\nFt. RYSE Energy\nProfessional Attire\n08:30PM- Boba Tea House\nShuttle Provided\nThursday\n10.8 Applications\n-\nDUE AT 10:00PM !!!!!\nFriday & Saturday are invite-only interviews.\n*Locations are subject to change."
+      }
+     ]
+    },
+    {
+     "title": "Boba Tea House Social",
+     "all_day": false,
+     "ends_at": null,
+     "location": "Boba Tea House",
+     "starts_at": "2026-10-06T20:30:00-07:00",
+     "date_evidence": [
+      {
+       "field": "slide_1_ocr",
+       "quote": "Recruitment\nSCHEDULE\nFall '26 October 5th - October 8th\nMonday\n10.5 Info Night\n07:00PM - Glen Mor J315\nFt. RYSE Energy\nCasual Attire\nTBD Fundraiser\nShuttle Provided\nwednesday\n10.7 - BBQ w/ the Bros\n7:00PM- Lot 15\nShuttle Provided\nHot Dogs & Burgers!\nCasual Attire\nTuesday\n10.6 - Guest Speaker\n07:00PM Glen Mor J315\nFt. RYSE Energy\nProfessional Attire\n08:30PM- Boba Tea House\nShuttle Provided\nThursday\n10.8 Applications\n-\nDUE AT 10:00PM !!!!!\nFriday & Saturday are invite-only interviews.\n*Locations are subject to change."
+      }
+     ],
+     "activity_evidence": [
+      {
+       "field": "slide_1_ocr",
+       "quote": "Recruitment\nSCHEDULE\nFall '26 October 5th - October 8th\nMonday\n10.5 Info Night\n07:00PM - Glen Mor J315\nFt. RYSE Energy\nCasual Attire\nTBD Fundraiser\nShuttle Provided\nwednesday\n10.7 - BBQ w/ the Bros\n7:00PM- Lot 15\nShuttle Provided\nHot Dogs & Burgers!\nCasual Attire\nTuesday\n10.6 - Guest Speaker\n07:00PM Glen Mor J315\nFt. RYSE Energy\nProfessional Attire\n08:30PM- Boba Tea House\nShuttle Provided\nThursday\n10.8 Applications\n-\nDUE AT 10:00PM !!!!!\nFriday & Saturday are invite-only interviews.\n*Locations are subject to change."
+      }
+     ],
+     "location_evidence": [
+      {
+       "field": "slide_1_ocr",
+       "quote": "Recruitment\nSCHEDULE\nFall '26 October 5th - October 8th\nMonday\n10.5 Info Night\n07:00PM - Glen Mor J315\nFt. RYSE Energy\nCasual Attire\nTBD Fundraiser\nShuttle Provided\nwednesday\n10.7 - BBQ w/ the Bros\n7:00PM- Lot 15\nShuttle Provided\nHot Dogs & Burgers!\nCasual Attire\nTuesday\n10.6 - Guest Speaker\n07:00PM Glen Mor J315\nFt. RYSE Energy\nProfessional Attire\n08:30PM- Boba Tea House\nShuttle Provided\nThursday\n10.8 Applications\n-\nDUE AT 10:00PM !!!!!\nFriday & Saturday are invite-only interviews.\n*Locations are subject to change."
+      }
+     ]
+    },
+    {
+     "title": "BBQ w/ the Bros",
+     "all_day": false,
+     "ends_at": null,
+     "location": "Lot 15",
+     "starts_at": "2026-10-07T19:00:00-07:00",
+     "date_evidence": [
+      {
+       "field": "slide_1_ocr",
+       "quote": "Recruitment\nSCHEDULE\nFall '26 October 5th - October 8th\nMonday\n10.5 Info Night\n07:00PM - Glen Mor J315\nFt. RYSE Energy\nCasual Attire\nTBD Fundraiser\nShuttle Provided\nwednesday\n10.7 - BBQ w/ the Bros\n7:00PM- Lot 15\nShuttle Provided\nHot Dogs & Burgers!\nCasual Attire\nTuesday\n10.6 - Guest Speaker\n07:00PM Glen Mor J315\nFt. RYSE Energy\nProfessional Attire\n08:30PM- Boba Tea House\nShuttle Provided\nThursday\n10.8 Applications\n-\nDUE AT 10:00PM !!!!!\nFriday & Saturday are invite-only interviews.\n*Locations are subject to change."
+      }
+     ],
+     "activity_evidence": [
+      {
+       "field": "slide_1_ocr",
+       "quote": "Recruitment\nSCHEDULE\nFall '26 October 5th - October 8th\nMonday\n10.5 Info Night\n07:00PM - Glen Mor J315\nFt. RYSE Energy\nCasual Attire\nTBD Fundraiser\nShuttle Provided\nwednesday\n10.7 - BBQ w/ the Bros\n7:00PM- Lot 15\nShuttle Provided\nHot Dogs & Burgers!\nCasual Attire\nTuesday\n10.6 - Guest Speaker\n07:00PM Glen Mor J315\nFt. RYSE Energy\nProfessional Attire\n08:30PM- Boba Tea House\nShuttle Provided\nThursday\n10.8 Applications\n-\nDUE AT 10:00PM !!!!!\nFriday & Saturday are invite-only interviews.\n*Locations are subject to change."
+      }
+     ],
+     "location_evidence": [
+      {
+       "field": "slide_1_ocr",
+       "quote": "Recruitment\nSCHEDULE\nFall '26 October 5th - October 8th\nMonday\n10.5 Info Night\n07:00PM - Glen Mor J315\nFt. RYSE Energy\nCasual Attire\nTBD Fundraiser\nShuttle Provided\nwednesday\n10.7 - BBQ w/ the Bros\n7:00PM- Lot 15\nShuttle Provided\nHot Dogs & Burgers!\nCasual Attire\nTuesday\n10.6 - Guest Speaker\n07:00PM Glen Mor J315\nFt. RYSE Energy\nProfessional Attire\n08:30PM- Boba Tea House\nShuttle Provided\nThursday\n10.8 Applications\n-\nDUE AT 10:00PM !!!!!\nFriday & Saturday are invite-only interviews.\n*Locations are subject to change."
+      }
+     ]
+    },
+    {
+     "title": "Application Deadline",
+     "all_day": false,
+     "ends_at": null,
+     "location": "",
+     "starts_at": "2026-10-08T22:00:00-07:00",
+     "date_evidence": [
+      {
+       "field": "slide_1_ocr",
+       "quote": "Recruitment\nSCHEDULE\nFall '26 October 5th - October 8th\nMonday\n10.5 Info Night\n07:00PM - Glen Mor J315\nFt. RYSE Energy\nCasual Attire\nTBD Fundraiser\nShuttle Provided\nwednesday\n10.7 - BBQ w/ the Bros\n7:00PM- Lot 15\nShuttle Provided\nHot Dogs & Burgers!\nCasual Attire\nTuesday\n10.6 - Guest Speaker\n07:00PM Glen Mor J315\nFt. RYSE Energy\nProfessional Attire\n08:30PM- Boba Tea House\nShuttle Provided\nThursday\n10.8 Applications\n-\nDUE AT 10:00PM !!!!!\nFriday & Saturday are invite-only interviews.\n*Locations are subject to change."
+      }
+     ],
+     "activity_evidence": [
+      {
+       "field": "slide_1_ocr",
+       "quote": "Recruitment\nSCHEDULE\nFall '26 October 5th - October 8th\nMonday\n10.5 Info Night\n07:00PM - Glen Mor J315\nFt. RYSE Energy\nCasual Attire\nTBD Fundraiser\nShuttle Provided\nwednesday\n10.7 - BBQ w/ the Bros\n7:00PM- Lot 15\nShuttle Provided\nHot Dogs & Burgers!\nCasual Attire\nTuesday\n10.6 - Guest Speaker\n07:00PM Glen Mor J315\nFt. RYSE Energy\nProfessional Attire\n08:30PM- Boba Tea House\nShuttle Provided\nThursday\n10.8 Applications\n-\nDUE AT 10:00PM !!!!!\nFriday & Saturday are invite-only interviews.\n*Locations are subject to change."
+      }
+     ],
+     "location_evidence": []
+    }
+   ],
+   "date_evidence": [
+    {
+     "field": "slide_1_ocr",
+     "quote": "Recruitment\nSCHEDULE\nFall '26 October 5th - October 8th\nMonday\n10.5 Info Night\n07:00PM - Glen Mor J315\nFt. RYSE Energy\nCasual Attire\nTBD Fundraiser\nShuttle Provided\nwednesday\n10.7 - BBQ w/ the Bros\n7:00PM- Lot 15\nShuttle Provided\nHot Dogs & Burgers!\nCasual Attire\nTuesday\n10.6 - Guest Speaker\n07:00PM Glen Mor J315\nFt. RYSE Energy\nProfessional Attire\n08:30PM- Boba Tea House\nShuttle Provided\nThursday\n10.8 Applications\n-\nDUE AT 10:00PM !!!!!\nFriday & Saturday are invite-only interviews.\n*Locations are subject to change."
+    }
+   ],
+   "activity_evidence": [
+    {
+     "field": "slide_1_ocr",
+     "quote": "Recruitment\nSCHEDULE\nFall '26 October 5th - October 8th\nMonday\n10.5 Info Night\n07:00PM - Glen Mor J315\nFt. RYSE Energy\nCasual Attire\nTBD Fundraiser\nShuttle Provided\nwednesday\n10.7 - BBQ w/ the Bros\n7:00PM- Lot 15\nShuttle Provided\nHot Dogs & Burgers!\nCasual Attire\nTuesday\n10.6 - Guest Speaker\n07:00PM Glen Mor J315\nFt. RYSE Energy\nProfessional Attire\n08:30PM- Boba Tea House\nShuttle Provided\nThursday\n10.8 Applications\n-\nDUE AT 10:00PM !!!!!\nFriday & Saturday are invite-only interviews.\n*Locations are subject to change."
+    }
+   ],
+   "use_source_occurrences": false
+  }
+ },
+ "csa_welcome": {
+  "post": {
+   "media_id": "3994927916525294302",
+   "handle": "ucrcsa",
+   "owner_username": "ucrcsa",
+   "shortcode": "Ddw1cYnyBLe",
+   "permalink": "https://www.instagram.com/p/Ddw1cYnyBLe/",
+   "posted_at": "2026-09-26T19:58:42+00:00",
+   "typename": "GraphVideo"
+  },
+  "images": [
+   {
+    "index": 0,
+    "ocr_text": "UCR X CSA\nWELCOME WEEK\n2026-2027\n9/28: Boba tea house\n>8pm shuttling @ lot 15\n9/29: info night\n>8pm pentland bear cave\n9/30: CCN info night\n>8pm pentland bear cave\n10/1: Field Day\n>8pm shuttling @ lot 15\n10/2: Super secret\nsocial",
+    "qr_urls": []
+   }
+  ],
+  "source": {
+   "texts": {
+    "caption": "WELCOME BACK CSA !!\n\nRemember to come out this upcoming week for our WELCOME WEEK!!! We have lots of fun and exciting things planned so come out and hangout with us 🙏\n\n🔥 MONDAY 9/28 - Boba Tea House (Shuttling @ Lot 15)\n \n🔥 TUESDAY 9/29 - Info Night @ Pentland Bear Cave\n\n🔥 WEDNESDAY 9/30 - CCN info night @ Pentland Bear Cave\n\n🔥 THURSDAY 10/1 - Field Day (Shuttling @ Lot 15)\n\n🔥 FRIDAY 10/2 - SURPRISE AFTER SOCIAL !!! STAY TUNED\n\nIf you have any questions or concerns, feel free to message @joy.ce_wang and @bradleyyc77 , our Social chairs for more information!\n\nAlso a huge thank you to @aelfricedenofficial for the awesome fits in this video #aelfriceden ‼️🔥\n_____________________________________________\n\nThe Chinese Student Association (CSA) at UC Riverside is a social, cultural, and service oriented organization that strives to promote Chinese American culture throughout the UCR and Riverside communities. We provide various opportunities and events throughout the year that allow students to develop leadership skills and also provide a social outlet for students with similar backgrounds and interests. Our organization is a great way to meet lifelong friends and create fond memories that will contribute to a successful college experience and beyond!",
+    "slide_1_ocr": "UCR X CSA\nWELCOME WEEK\n2026-2027\n9/28: Boba tea house\n>8pm shuttling @ lot 15\n9/29: info night\n>8pm pentland bear cave\n9/30: CCN info night\n>8pm pentland bear cave\n10/1: Field Day\n>8pm shuttling @ lot 15\n10/2: Super secret\nsocial"
+   },
+   "origin": "instagram",
+   "posted_at": "2026-09-26T19:58:42+00:00",
+   "source_key": "instagram:post:3994927916525294302",
+   "source_occurrences": []
+  },
+  "result": {
+   "kind": "activity",
+   "reason": "The Chinese Student Association is hosting a series of events for Welcome Week, each with a specific date, activity, and location.",
+   "schedule": null,
+   "date_role": "occurrence",
+   "occurrences": [
+    {
+     "title": "Boba Tea House",
+     "all_day": false,
+     "ends_at": null,
+     "location": "Lot 15",
+     "starts_at": "2026-09-28T20:00:00-07:00",
+     "date_evidence": [
+      {
+       "field": "caption",
+       "quote": "WELCOME BACK CSA !!\n\nRemember to come out this upcoming week for our WELCOME WEEK!!! We have lots of fun and exciting things planned so come out and hangout with us 🙏\n\n🔥 MONDAY 9/28 - Boba Tea House (Shuttling @ Lot 15)\n \n🔥 TUESDAY 9/29 - Info Night @ Pentland Bear Cave\n\n🔥 WEDNESDAY 9/30 - CCN info night @ Pentland Bear Cave\n\n🔥 THURSDAY 10/1 - Field Day (Shuttling @ Lot 15)\n\n🔥 FRIDAY 10/2 - SURPRISE AFTER SOCIAL !!! STAY TUNED\n\nIf you have any questions or concerns, feel free to message @joy.ce_wang and @bradleyyc77 , our Social chairs for more information!\n\nAlso a huge thank you to @aelfricedenofficial for the awesome fits in this video #aelfriceden ‼️🔥\n_____________________________________________\n\nThe Chinese Student Association (CSA) at UC Riverside is a social, cultural, and service oriented organization that strives to promote Chinese American culture throughout the UCR and Riverside communities. We provide various opportunities and events throughout the year that allow students to develop leadership skills and also provide a social outlet for students with similar backgrounds and interests. Our organization is a great way to meet lifelong friends and create fond memories that will contribute to a successful college experience and beyond!"
+      },
+      {
+       "field": "slide_1_ocr",
+       "quote": "UCR X CSA\nWELCOME WEEK\n2026-2027\n9/28: Boba tea house\n>8pm shuttling @ lot 15\n9/29: info night\n>8pm pentland bear cave\n9/30: CCN info night\n>8pm pentland bear cave\n10/1: Field Day\n>8pm shuttling @ lot 15\n10/2: Super secret\nsocial"
+      }
+     ],
+     "activity_evidence": [
+      {
+       "field": "caption",
+       "quote": "WELCOME BACK CSA !!\n\nRemember to come out this upcoming week for our WELCOME WEEK!!! We have lots of fun and exciting things planned so come out and hangout with us 🙏\n\n🔥 MONDAY 9/28 - Boba Tea House (Shuttling @ Lot 15)\n \n🔥 TUESDAY 9/29 - Info Night @ Pentland Bear Cave\n\n🔥 WEDNESDAY 9/30 - CCN info night @ Pentland Bear Cave\n\n🔥 THURSDAY 10/1 - Field Day (Shuttling @ Lot 15)\n\n🔥 FRIDAY 10/2 - SURPRISE AFTER SOCIAL !!! STAY TUNED\n\nIf you have any questions or concerns, feel free to message @joy.ce_wang and @bradleyyc77 , our Social chairs for more information!\n\nAlso a huge thank you to @aelfricedenofficial for the awesome fits in this video #aelfriceden ‼️🔥\n_____________________________________________\n\nThe Chinese Student Association (CSA) at UC Riverside is a social, cultural, and service oriented organization that strives to promote Chinese American culture throughout the UCR and Riverside communities. We provide various opportunities and events throughout the year that allow students to develop leadership skills and also provide a social outlet for students with similar backgrounds and interests. Our organization is a great way to meet lifelong friends and create fond memories that will contribute to a successful college experience and beyond!"
+      }
+     ],
+     "location_evidence": [
+      {
+       "field": "caption",
+       "quote": "WELCOME BACK CSA !!\n\nRemember to come out this upcoming week for our WELCOME WEEK!!! We have lots of fun and exciting things planned so come out and hangout with us 🙏\n\n🔥 MONDAY 9/28 - Boba Tea House (Shuttling @ Lot 15)\n \n🔥 TUESDAY 9/29 - Info Night @ Pentland Bear Cave\n\n🔥 WEDNESDAY 9/30 - CCN info night @ Pentland Bear Cave\n\n🔥 THURSDAY 10/1 - Field Day (Shuttling @ Lot 15)\n\n🔥 FRIDAY 10/2 - SURPRISE AFTER SOCIAL !!! STAY TUNED\n\nIf you have any questions or concerns, feel free to message @joy.ce_wang and @bradleyyc77 , our Social chairs for more information!\n\nAlso a huge thank you to @aelfricedenofficial for the awesome fits in this video #aelfriceden ‼️🔥\n_____________________________________________\n\nThe Chinese Student Association (CSA) at UC Riverside is a social, cultural, and service oriented organization that strives to promote Chinese American culture throughout the UCR and Riverside communities. We provide various opportunities and events throughout the year that allow students to develop leadership skills and also provide a social outlet for students with similar backgrounds and interests. Our organization is a great way to meet lifelong friends and create fond memories that will contribute to a successful college experience and beyond!"
+      },
+      {
+       "field": "slide_1_ocr",
+       "quote": "UCR X CSA\nWELCOME WEEK\n2026-2027\n9/28: Boba tea house\n>8pm shuttling @ lot 15\n9/29: info night\n>8pm pentland bear cave\n9/30: CCN info night\n>8pm pentland bear cave\n10/1: Field Day\n>8pm shuttling @ lot 15\n10/2: Super secret\nsocial"
+      }
+     ]
+    },
+    {
+     "title": "Info Night",
+     "all_day": false,
+     "ends_at": null,
+     "location": "Pentland Bear Cave",
+     "starts_at": "2026-09-29T20:00:00-07:00",
+     "date_evidence": [
+      {
+       "field": "caption",
+       "quote": "WELCOME BACK CSA !!\n\nRemember to come out this upcoming week for our WELCOME WEEK!!! We have lots of fun and exciting things planned so come out and hangout with us 🙏\n\n🔥 MONDAY 9/28 - Boba Tea House (Shuttling @ Lot 15)\n \n🔥 TUESDAY 9/29 - Info Night @ Pentland Bear Cave\n\n🔥 WEDNESDAY 9/30 - CCN info night @ Pentland Bear Cave\n\n🔥 THURSDAY 10/1 - Field Day (Shuttling @ Lot 15)\n\n🔥 FRIDAY 10/2 - SURPRISE AFTER SOCIAL !!! STAY TUNED\n\nIf you have any questions or concerns, feel free to message @joy.ce_wang and @bradleyyc77 , our Social chairs for more information!\n\nAlso a huge thank you to @aelfricedenofficial for the awesome fits in this video #aelfriceden ‼️🔥\n_____________________________________________\n\nThe Chinese Student Association (CSA) at UC Riverside is a social, cultural, and service oriented organization that strives to promote Chinese American culture throughout the UCR and Riverside communities. We provide various opportunities and events throughout the year that allow students to develop leadership skills and also provide a social outlet for students with similar backgrounds and interests. Our organization is a great way to meet lifelong friends and create fond memories that will contribute to a successful college experience and beyond!"
+      },
+      {
+       "field": "slide_1_ocr",
+       "quote": "UCR X CSA\nWELCOME WEEK\n2026-2027\n9/28: Boba tea house\n>8pm shuttling @ lot 15\n9/29: info night\n>8pm pentland bear cave\n9/30: CCN info night\n>8pm pentland bear cave\n10/1: Field Day\n>8pm shuttling @ lot 15\n10/2: Super secret\nsocial"
+      }
+     ],
+     "activity_evidence": [
+      {
+       "field": "caption",
+       "quote": "WELCOME BACK CSA !!\n\nRemember to come out this upcoming week for our WELCOME WEEK!!! We have lots of fun and exciting things planned so come out and hangout with us 🙏\n\n🔥 MONDAY 9/28 - Boba Tea House (Shuttling @ Lot 15)\n \n🔥 TUESDAY 9/29 - Info Night @ Pentland Bear Cave\n\n🔥 WEDNESDAY 9/30 - CCN info night @ Pentland Bear Cave\n\n🔥 THURSDAY 10/1 - Field Day (Shuttling @ Lot 15)\n\n🔥 FRIDAY 10/2 - SURPRISE AFTER SOCIAL !!! STAY TUNED\n\nIf you have any questions or concerns, feel free to message @joy.ce_wang and @bradleyyc77 , our Social chairs for more information!\n\nAlso a huge thank you to @aelfricedenofficial for the awesome fits in this video #aelfriceden ‼️🔥\n_____________________________________________\n\nThe Chinese Student Association (CSA) at UC Riverside is a social, cultural, and service oriented organization that strives to promote Chinese American culture throughout the UCR and Riverside communities. We provide various opportunities and events throughout the year that allow students to develop leadership skills and also provide a social outlet for students with similar backgrounds and interests. Our organization is a great way to meet lifelong friends and create fond memories that will contribute to a successful college experience and beyond!"
+      }
+     ],
+     "location_evidence": [
+      {
+       "field": "caption",
+       "quote": "WELCOME BACK CSA !!\n\nRemember to come out this upcoming week for our WELCOME WEEK!!! We have lots of fun and exciting things planned so come out and hangout with us 🙏\n\n🔥 MONDAY 9/28 - Boba Tea House (Shuttling @ Lot 15)\n \n🔥 TUESDAY 9/29 - Info Night @ Pentland Bear Cave\n\n🔥 WEDNESDAY 9/30 - CCN info night @ Pentland Bear Cave\n\n🔥 THURSDAY 10/1 - Field Day (Shuttling @ Lot 15)\n\n🔥 FRIDAY 10/2 - SURPRISE AFTER SOCIAL !!! STAY TUNED\n\nIf you have any questions or concerns, feel free to message @joy.ce_wang and @bradleyyc77 , our Social chairs for more information!\n\nAlso a huge thank you to @aelfricedenofficial for the awesome fits in this video #aelfriceden ‼️🔥\n_____________________________________________\n\nThe Chinese Student Association (CSA) at UC Riverside is a social, cultural, and service oriented organization that strives to promote Chinese American culture throughout the UCR and Riverside communities. We provide various opportunities and events throughout the year that allow students to develop leadership skills and also provide a social outlet for students with similar backgrounds and interests. Our organization is a great way to meet lifelong friends and create fond memories that will contribute to a successful college experience and beyond!"
+      },
+      {
+       "field": "slide_1_ocr",
+       "quote": "UCR X CSA\nWELCOME WEEK\n2026-2027\n9/28: Boba tea house\n>8pm shuttling @ lot 15\n9/29: info night\n>8pm pentland bear cave\n9/30: CCN info night\n>8pm pentland bear cave\n10/1: Field Day\n>8pm shuttling @ lot 15\n10/2: Super secret\nsocial"
+      }
+     ]
+    },
+    {
+     "title": "CCN Info Night",
+     "all_day": false,
+     "ends_at": null,
+     "location": "Pentland Bear Cave",
+     "starts_at": "2026-09-30T20:00:00-07:00",
+     "date_evidence": [
+      {
+       "field": "caption",
+       "quote": "WELCOME BACK CSA !!\n\nRemember to come out this upcoming week for our WELCOME WEEK!!! We have lots of fun and exciting things planned so come out and hangout with us 🙏\n\n🔥 MONDAY 9/28 - Boba Tea House (Shuttling @ Lot 15)\n \n🔥 TUESDAY 9/29 - Info Night @ Pentland Bear Cave\n\n🔥 WEDNESDAY 9/30 - CCN info night @ Pentland Bear Cave\n\n🔥 THURSDAY 10/1 - Field Day (Shuttling @ Lot 15)\n\n🔥 FRIDAY 10/2 - SURPRISE AFTER SOCIAL !!! STAY TUNED\n\nIf you have any questions or concerns, feel free to message @joy.ce_wang and @bradleyyc77 , our Social chairs for more information!\n\nAlso a huge thank you to @aelfricedenofficial for the awesome fits in this video #aelfriceden ‼️🔥\n_____________________________________________\n\nThe Chinese Student Association (CSA) at UC Riverside is a social, cultural, and service oriented organization that strives to promote Chinese American culture throughout the UCR and Riverside communities. We provide various opportunities and events throughout the year that allow students to develop leadership skills and also provide a social outlet for students with similar backgrounds and interests. Our organization is a great way to meet lifelong friends and create fond memories that will contribute to a successful college experience and beyond!"
+      },
+      {
+       "field": "slide_1_ocr",
+       "quote": "UCR X CSA\nWELCOME WEEK\n2026-2027\n9/28: Boba tea house\n>8pm shuttling @ lot 15\n9/29: info night\n>8pm pentland bear cave\n9/30: CCN info night\n>8pm pentland bear cave\n10/1: Field Day\n>8pm shuttling @ lot 15\n10/2: Super secret\nsocial"
+      }
+     ],
+     "activity_evidence": [
+      {
+       "field": "caption",
+       "quote": "WELCOME BACK CSA !!\n\nRemember to come out this upcoming week for our WELCOME WEEK!!! We have lots of fun and exciting things planned so come out and hangout with us 🙏\n\n🔥 MONDAY 9/28 - Boba Tea House (Shuttling @ Lot 15)\n \n🔥 TUESDAY 9/29 - Info Night @ Pentland Bear Cave\n\n🔥 WEDNESDAY 9/30 - CCN info night @ Pentland Bear Cave\n\n🔥 THURSDAY 10/1 - Field Day (Shuttling @ Lot 15)\n\n🔥 FRIDAY 10/2 - SURPRISE AFTER SOCIAL !!! STAY TUNED\n\nIf you have any questions or concerns, feel free to message @joy.ce_wang and @bradleyyc77 , our Social chairs for more information!\n\nAlso a huge thank you to @aelfricedenofficial for the awesome fits in this video #aelfriceden ‼️🔥\n_____________________________________________\n\nThe Chinese Student Association (CSA) at UC Riverside is a social, cultural, and service oriented organization that strives to promote Chinese American culture throughout the UCR and Riverside communities. We provide various opportunities and events throughout the year that allow students to develop leadership skills and also provide a social outlet for students with similar backgrounds and interests. Our organization is a great way to meet lifelong friends and create fond memories that will contribute to a successful college experience and beyond!"
+      }
+     ],
+     "location_evidence": [
+      {
+       "field": "caption",
+       "quote": "WELCOME BACK CSA !!\n\nRemember to come out this upcoming week for our WELCOME WEEK!!! We have lots of fun and exciting things planned so come out and hangout with us 🙏\n\n🔥 MONDAY 9/28 - Boba Tea House (Shuttling @ Lot 15)\n \n🔥 TUESDAY 9/29 - Info Night @ Pentland Bear Cave\n\n🔥 WEDNESDAY 9/30 - CCN info night @ Pentland Bear Cave\n\n🔥 THURSDAY 10/1 - Field Day (Shuttling @ Lot 15)\n\n🔥 FRIDAY 10/2 - SURPRISE AFTER SOCIAL !!! STAY TUNED\n\nIf you have any questions or concerns, feel free to message @joy.ce_wang and @bradleyyc77 , our Social chairs for more information!\n\nAlso a huge thank you to @aelfricedenofficial for the awesome fits in this video #aelfriceden ‼️🔥\n_____________________________________________\n\nThe Chinese Student Association (CSA) at UC Riverside is a social, cultural, and service oriented organization that strives to promote Chinese American culture throughout the UCR and Riverside communities. We provide various opportunities and events throughout the year that allow students to develop leadership skills and also provide a social outlet for students with similar backgrounds and interests. Our organization is a great way to meet lifelong friends and create fond memories that will contribute to a successful college experience and beyond!"
+      },
+      {
+       "field": "slide_1_ocr",
+       "quote": "UCR X CSA\nWELCOME WEEK\n2026-2027\n9/28: Boba tea house\n>8pm shuttling @ lot 15\n9/29: info night\n>8pm pentland bear cave\n9/30: CCN info night\n>8pm pentland bear cave\n10/1: Field Day\n>8pm shuttling @ lot 15\n10/2: Super secret\nsocial"
+      }
+     ]
+    },
+    {
+     "title": "Field Day",
+     "all_day": false,
+     "ends_at": null,
+     "location": "Lot 15",
+     "starts_at": "2026-10-01T20:00:00-07:00",
+     "date_evidence": [
+      {
+       "field": "caption",
+       "quote": "WELCOME BACK CSA !!\n\nRemember to come out this upcoming week for our WELCOME WEEK!!! We have lots of fun and exciting things planned so come out and hangout with us 🙏\n\n🔥 MONDAY 9/28 - Boba Tea House (Shuttling @ Lot 15)\n \n🔥 TUESDAY 9/29 - Info Night @ Pentland Bear Cave\n\n🔥 WEDNESDAY 9/30 - CCN info night @ Pentland Bear Cave\n\n🔥 THURSDAY 10/1 - Field Day (Shuttling @ Lot 15)\n\n🔥 FRIDAY 10/2 - SURPRISE AFTER SOCIAL !!! STAY TUNED\n\nIf you have any questions or concerns, feel free to message @joy.ce_wang and @bradleyyc77 , our Social chairs for more information!\n\nAlso a huge thank you to @aelfricedenofficial for the awesome fits in this video #aelfriceden ‼️🔥\n_____________________________________________\n\nThe Chinese Student Association (CSA) at UC Riverside is a social, cultural, and service oriented organization that strives to promote Chinese American culture throughout the UCR and Riverside communities. We provide various opportunities and events throughout the year that allow students to develop leadership skills and also provide a social outlet for students with similar backgrounds and interests. Our organization is a great way to meet lifelong friends and create fond memories that will contribute to a successful college experience and beyond!"
+      },
+      {
+       "field": "slide_1_ocr",
+       "quote": "UCR X CSA\nWELCOME WEEK\n2026-2027\n9/28: Boba tea house\n>8pm shuttling @ lot 15\n9/29: info night\n>8pm pentland bear cave\n9/30: CCN info night\n>8pm pentland bear cave\n10/1: Field Day\n>8pm shuttling @ lot 15\n10/2: Super secret\nsocial"
+      }
+     ],
+     "activity_evidence": [
+      {
+       "field": "caption",
+       "quote": "WELCOME BACK CSA !!\n\nRemember to come out this upcoming week for our WELCOME WEEK!!! We have lots of fun and exciting things planned so come out and hangout with us 🙏\n\n🔥 MONDAY 9/28 - Boba Tea House (Shuttling @ Lot 15)\n \n🔥 TUESDAY 9/29 - Info Night @ Pentland Bear Cave\n\n🔥 WEDNESDAY 9/30 - CCN info night @ Pentland Bear Cave\n\n🔥 THURSDAY 10/1 - Field Day (Shuttling @ Lot 15)\n\n🔥 FRIDAY 10/2 - SURPRISE AFTER SOCIAL !!! STAY TUNED\n\nIf you have any questions or concerns, feel free to message @joy.ce_wang and @bradleyyc77 , our Social chairs for more information!\n\nAlso a huge thank you to @aelfricedenofficial for the awesome fits in this video #aelfriceden ‼️🔥\n_____________________________________________\n\nThe Chinese Student Association (CSA) at UC Riverside is a social, cultural, and service oriented organization that strives to promote Chinese American culture throughout the UCR and Riverside communities. We provide various opportunities and events throughout the year that allow students to develop leadership skills and also provide a social outlet for students with similar backgrounds and interests. Our organization is a great way to meet lifelong friends and create fond memories that will contribute to a successful college experience and beyond!"
+      }
+     ],
+     "location_evidence": [
+      {
+       "field": "caption",
+       "quote": "WELCOME BACK CSA !!\n\nRemember to come out this upcoming week for our WELCOME WEEK!!! We have lots of fun and exciting things planned so come out and hangout with us 🙏\n\n🔥 MONDAY 9/28 - Boba Tea House (Shuttling @ Lot 15)\n \n🔥 TUESDAY 9/29 - Info Night @ Pentland Bear Cave\n\n🔥 WEDNESDAY 9/30 - CCN info night @ Pentland Bear Cave\n\n🔥 THURSDAY 10/1 - Field Day (Shuttling @ Lot 15)\n\n🔥 FRIDAY 10/2 - SURPRISE AFTER SOCIAL !!! STAY TUNED\n\nIf you have any questions or concerns, feel free to message @joy.ce_wang and @bradleyyc77 , our Social chairs for more information!\n\nAlso a huge thank you to @aelfricedenofficial for the awesome fits in this video #aelfriceden ‼️🔥\n_____________________________________________\n\nThe Chinese Student Association (CSA) at UC Riverside is a social, cultural, and service oriented organization that strives to promote Chinese American culture throughout the UCR and Riverside communities. We provide various opportunities and events throughout the year that allow students to develop leadership skills and also provide a social outlet for students with similar backgrounds and interests. Our organization is a great way to meet lifelong friends and create fond memories that will contribute to a successful college experience and beyond!"
+      },
+      {
+       "field": "slide_1_ocr",
+       "quote": "UCR X CSA\nWELCOME WEEK\n2026-2027\n9/28: Boba tea house\n>8pm shuttling @ lot 15\n9/29: info night\n>8pm pentland bear cave\n9/30: CCN info night\n>8pm pentland bear cave\n10/1: Field Day\n>8pm shuttling @ lot 15\n10/2: Super secret\nsocial"
+      }
+     ]
+    }
+   ],
+   "date_evidence": [
+    {
+     "field": "caption",
+     "quote": "WELCOME BACK CSA !!\n\nRemember to come out this upcoming week for our WELCOME WEEK!!! We have lots of fun and exciting things planned so come out and hangout with us 🙏\n\n🔥 MONDAY 9/28 - Boba Tea House (Shuttling @ Lot 15)\n \n🔥 TUESDAY 9/29 - Info Night @ Pentland Bear Cave\n\n🔥 WEDNESDAY 9/30 - CCN info night @ Pentland Bear Cave\n\n🔥 THURSDAY 10/1 - Field Day (Shuttling @ Lot 15)\n\n🔥 FRIDAY 10/2 - SURPRISE AFTER SOCIAL !!! STAY TUNED\n\nIf you have any questions or concerns, feel free to message @joy.ce_wang and @bradleyyc77 , our Social chairs for more information!\n\nAlso a huge thank you to @aelfricedenofficial for the awesome fits in this video #aelfriceden ‼️🔥\n_____________________________________________\n\nThe Chinese Student Association (CSA) at UC Riverside is a social, cultural, and service oriented organization that strives to promote Chinese American culture throughout the UCR and Riverside communities. We provide various opportunities and events throughout the year that allow students to develop leadership skills and also provide a social outlet for students with similar backgrounds and interests. Our organization is a great way to meet lifelong friends and create fond memories that will contribute to a successful college experience and beyond!"
+    },
+    {
+     "field": "slide_1_ocr",
+     "quote": "UCR X CSA\nWELCOME WEEK\n2026-2027\n9/28: Boba tea house\n>8pm shuttling @ lot 15\n9/29: info night\n>8pm pentland bear cave\n9/30: CCN info night\n>8pm pentland bear cave\n10/1: Field Day\n>8pm shuttling @ lot 15\n10/2: Super secret\nsocial"
+    }
+   ],
+   "activity_evidence": [
+    {
+     "field": "caption",
+     "quote": "WELCOME BACK CSA !!\n\nRemember to come out this upcoming week for our WELCOME WEEK!!! We have lots of fun and exciting things planned so come out and hangout with us 🙏\n\n🔥 MONDAY 9/28 - Boba Tea House (Shuttling @ Lot 15)\n \n🔥 TUESDAY 9/29 - Info Night @ Pentland Bear Cave\n\n🔥 WEDNESDAY 9/30 - CCN info night @ Pentland Bear Cave\n\n🔥 THURSDAY 10/1 - Field Day (Shuttling @ Lot 15)\n\n🔥 FRIDAY 10/2 - SURPRISE AFTER SOCIAL !!! STAY TUNED\n\nIf you have any questions or concerns, feel free to message @joy.ce_wang and @bradleyyc77 , our Social chairs for more information!\n\nAlso a huge thank you to @aelfricedenofficial for the awesome fits in this video #aelfriceden ‼️🔥\n_____________________________________________\n\nThe Chinese Student Association (CSA) at UC Riverside is a social, cultural, and service oriented organization that strives to promote Chinese American culture throughout the UCR and Riverside communities. We provide various opportunities and events throughout the year that allow students to develop leadership skills and also provide a social outlet for students with similar backgrounds and interests. Our organization is a great way to meet lifelong friends and create fond memories that will contribute to a successful college experience and beyond!"
+    },
+    {
+     "field": "slide_1_ocr",
+     "quote": "UCR X CSA\nWELCOME WEEK\n2026-2027\n9/28: Boba tea house\n>8pm shuttling @ lot 15\n9/29: info night\n>8pm pentland bear cave\n9/30: CCN info night\n>8pm pentland bear cave\n10/1: Field Day\n>8pm shuttling @ lot 15\n10/2: Super secret\nsocial"
+    }
+   ],
+   "use_source_occurrences": false
+  }
+ },
+ "designing_dreams": {
+  "post": {
+   "media_id": "3991225804188653761",
+   "handle": "designingdreamsucr",
+   "owner_username": "designingdreamsucr",
+   "shortcode": "Ddjrrj1CZjB",
+   "permalink": "https://www.instagram.com/p/Ddjrrj1CZjB/",
+   "posted_at": "2026-09-21T17:20:14+00:00",
+   "typename": "GraphSidecar"
+  },
+  "images": [
+   {
+    "index": 0,
+    "ocr_text": "Fall Event Schedule\nBoba Social 09/25\n@AI bowl\n4:00pm - 6:00pm\nSewing Kits- First Meeting! 10/02\n@Hub 265\n6:00pm - 8:00pm\nTailoring Pop-up 10/07\n@Upper Hub Plaza Patio\n9:00am - 2:00pm",
+    "qr_urls": []
+   },
+   {
+    "index": 1,
+    "ocr_text": "Fall Event Schedule\nBeginner Workshop 10/16\n@Hub 260\n-\n4:30pm 6:30pm\nRave/Halloween Meeting 10/23\n@Hub 268\n5:30pm - 7:30pm\nIntermediate Workshop 11/14\n@Hub 268\n4:30pm - 6:30pm",
+    "qr_urls": []
+   }
+  ],
+  "source": {
+   "texts": {
+    "caption": "A new season of stitching, creating, and connecting ! 🧵✨\n\nOur Fall Schedule is here 🍂!\nCome hangout with us, learn something new, and create with us ! 🩵🪡\n\n🩵 Beginner Friendly \n🪡 No experience needed for beginner events\n🗓️ Save the date + bring a friend ! \n\nWhich event are you most excited for? 🪡✨\n\n🩵🍂🧵🪡",
+    "slide_1_ocr": "Fall Event Schedule\nBoba Social 09/25\n@AI bowl\n4:00pm - 6:00pm\nSewing Kits- First Meeting! 10/02\n@Hub 265\n6:00pm - 8:00pm\nTailoring Pop-up 10/07\n@Upper Hub Plaza Patio\n9:00am - 2:00pm",
+    "slide_2_ocr": "Fall Event Schedule\nBeginner Workshop 10/16\n@Hub 260\n-\n4:30pm 6:30pm\nRave/Halloween Meeting 10/23\n@Hub 268\n5:30pm - 7:30pm\nIntermediate Workshop 11/14\n@Hub 268\n4:30pm - 6:30pm"
+   },
+   "origin": "instagram",
+   "posted_at": "2026-09-21T17:20:14+00:00",
+   "source_key": "instagram:post:3991225804188653761",
+   "source_occurrences": []
+  },
+  "result": {
+   "kind": "activity",
+   "reason": "The source advertises a series of specific social and workshop events with dates, times, and locations.",
+   "schedule": null,
+   "date_role": "occurrence",
+   "occurrences": [
+    {
+     "title": "Boba Social",
+     "all_day": false,
+     "ends_at": "2026-09-25T18:00:00-07:00",
+     "location": "AI bowl",
+     "starts_at": "2026-09-25T16:00:00-07:00",
+     "date_evidence": [
+      {
+       "field": "slide_1_ocr",
+       "quote": "Fall Event Schedule\nBoba Social 09/25\n@AI bowl\n4:00pm - 6:00pm\nSewing Kits- First Meeting! 10/02\n@Hub 265\n6:00pm - 8:00pm\nTailoring Pop-up 10/07\n@Upper Hub Plaza Patio\n9:00am - 2:00pm"
+      }
+     ],
+     "activity_evidence": [
+      {
+       "field": "slide_1_ocr",
+       "quote": "Fall Event Schedule\nBoba Social 09/25\n@AI bowl\n4:00pm - 6:00pm\nSewing Kits- First Meeting! 10/02\n@Hub 265\n6:00pm - 8:00pm\nTailoring Pop-up 10/07\n@Upper Hub Plaza Patio\n9:00am - 2:00pm"
+      }
+     ],
+     "location_evidence": [
+      {
+       "field": "slide_1_ocr",
+       "quote": "Fall Event Schedule\nBoba Social 09/25\n@AI bowl\n4:00pm - 6:00pm\nSewing Kits- First Meeting! 10/02\n@Hub 265\n6:00pm - 8:00pm\nTailoring Pop-up 10/07\n@Upper Hub Plaza Patio\n9:00am - 2:00pm"
+      }
+     ]
+    },
+    {
+     "title": "Sewing Kits- First Meeting!",
+     "all_day": false,
+     "ends_at": "2026-10-02T20:00:00-07:00",
+     "location": "Hub 265",
+     "starts_at": "2026-10-02T18:00:00-07:00",
+     "date_evidence": [
+      {
+       "field": "slide_1_ocr",
+       "quote": "Fall Event Schedule\nBoba Social 09/25\n@AI bowl\n4:00pm - 6:00pm\nSewing Kits- First Meeting! 10/02\n@Hub 265\n6:00pm - 8:00pm\nTailoring Pop-up 10/07\n@Upper Hub Plaza Patio\n9:00am - 2:00pm"
+      }
+     ],
+     "activity_evidence": [
+      {
+       "field": "slide_1_ocr",
+       "quote": "Fall Event Schedule\nBoba Social 09/25\n@AI bowl\n4:00pm - 6:00pm\nSewing Kits- First Meeting! 10/02\n@Hub 265\n6:00pm - 8:00pm\nTailoring Pop-up 10/07\n@Upper Hub Plaza Patio\n9:00am - 2:00pm"
+      }
+     ],
+     "location_evidence": [
+      {
+       "field": "slide_1_ocr",
+       "quote": "Fall Event Schedule\nBoba Social 09/25\n@AI bowl\n4:00pm - 6:00pm\nSewing Kits- First Meeting! 10/02\n@Hub 265\n6:00pm - 8:00pm\nTailoring Pop-up 10/07\n@Upper Hub Plaza Patio\n9:00am - 2:00pm"
+      }
+     ]
+    },
+    {
+     "title": "Tailoring Pop-up",
+     "all_day": false,
+     "ends_at": "2026-10-07T14:00:00-07:00",
+     "location": "Upper Hub Plaza Patio",
+     "starts_at": "2026-10-07T09:00:00-07:00",
+     "date_evidence": [
+      {
+       "field": "slide_1_ocr",
+       "quote": "Fall Event Schedule\nBoba Social 09/25\n@AI bowl\n4:00pm - 6:00pm\nSewing Kits- First Meeting! 10/02\n@Hub 265\n6:00pm - 8:00pm\nTailoring Pop-up 10/07\n@Upper Hub Plaza Patio\n9:00am - 2:00pm"
+      }
+     ],
+     "activity_evidence": [
+      {
+       "field": "slide_1_ocr",
+       "quote": "Fall Event Schedule\nBoba Social 09/25\n@AI bowl\n4:00pm - 6:00pm\nSewing Kits- First Meeting! 10/02\n@Hub 265\n6:00pm - 8:00pm\nTailoring Pop-up 10/07\n@Upper Hub Plaza Patio\n9:00am - 2:00pm"
+      }
+     ],
+     "location_evidence": [
+      {
+       "field": "slide_1_ocr",
+       "quote": "Fall Event Schedule\nBoba Social 09/25\n@AI bowl\n4:00pm - 6:00pm\nSewing Kits- First Meeting! 10/02\n@Hub 265\n6:00pm - 8:00pm\nTailoring Pop-up 10/07\n@Upper Hub Plaza Patio\n9:00am - 2:00pm"
+      }
+     ]
+    },
+    {
+     "title": "Beginner Workshop",
+     "all_day": false,
+     "ends_at": "2026-10-16T18:30:00-07:00",
+     "location": "Hub 260",
+     "starts_at": "2026-10-16T16:30:00-07:00",
+     "date_evidence": [
+      {
+       "field": "slide_2_ocr",
+       "quote": "Fall Event Schedule\nBeginner Workshop 10/16\n@Hub 260\n-\n4:30pm 6:30pm\nRave/Halloween Meeting 10/23\n@Hub 268\n5:30pm - 7:30pm\nIntermediate Workshop 11/14\n@Hub 268\n4:30pm - 6:30pm"
+      }
+     ],
+     "activity_evidence": [
+      {
+       "field": "slide_2_ocr",
+       "quote": "Fall Event Schedule\nBeginner Workshop 10/16\n@Hub 260\n-\n4:30pm 6:30pm\nRave/Halloween Meeting 10/23\n@Hub 268\n5:30pm - 7:30pm\nIntermediate Workshop 11/14\n@Hub 268\n4:30pm - 6:30pm"
+      }
+     ],
+     "location_evidence": [
+      {
+       "field": "slide_2_ocr",
+       "quote": "Fall Event Schedule\nBeginner Workshop 10/16\n@Hub 260\n-\n4:30pm 6:30pm\nRave/Halloween Meeting 10/23\n@Hub 268\n5:30pm - 7:30pm\nIntermediate Workshop 11/14\n@Hub 268\n4:30pm - 6:30pm"
+      }
+     ]
+    },
+    {
+     "title": "Rave/Halloween Meeting",
+     "all_day": false,
+     "ends_at": "2026-10-23T19:30:00-07:00",
+     "location": "Hub 268",
+     "starts_at": "2026-10-23T17:30:00-07:00",
+     "date_evidence": [
+      {
+       "field": "slide_2_ocr",
+       "quote": "Fall Event Schedule\nBeginner Workshop 10/16\n@Hub 260\n-\n4:30pm 6:30pm\nRave/Halloween Meeting 10/23\n@Hub 268\n5:30pm - 7:30pm\nIntermediate Workshop 11/14\n@Hub 268\n4:30pm - 6:30pm"
+      }
+     ],
+     "activity_evidence": [
+      {
+       "field": "slide_2_ocr",
+       "quote": "Fall Event Schedule\nBeginner Workshop 10/16\n@Hub 260\n-\n4:30pm 6:30pm\nRave/Halloween Meeting 10/23\n@Hub 268\n5:30pm - 7:30pm\nIntermediate Workshop 11/14\n@Hub 268\n4:30pm - 6:30pm"
+      }
+     ],
+     "location_evidence": [
+      {
+       "field": "slide_2_ocr",
+       "quote": "Fall Event Schedule\nBeginner Workshop 10/16\n@Hub 260\n-\n4:30pm 6:30pm\nRave/Halloween Meeting 10/23\n@Hub 268\n5:30pm - 7:30pm\nIntermediate Workshop 11/14\n@Hub 268\n4:30pm - 6:30pm"
+      }
+     ]
+    },
+    {
+     "title": "Intermediate Workshop",
+     "all_day": false,
+     "ends_at": "2026-11-14T18:30:00-08:00",
+     "location": "Hub 268",
+     "starts_at": "2026-11-14T16:30:00-08:00",
+     "date_evidence": [
+      {
+       "field": "slide_2_ocr",
+       "quote": "Fall Event Schedule\nBeginner Workshop 10/16\n@Hub 260\n-\n4:30pm 6:30pm\nRave/Halloween Meeting 10/23\n@Hub 268\n5:30pm - 7:30pm\nIntermediate Workshop 11/14\n@Hub 268\n4:30pm - 6:30pm"
+      }
+     ],
+     "activity_evidence": [
+      {
+       "field": "slide_2_ocr",
+       "quote": "Fall Event Schedule\nBeginner Workshop 10/16\n@Hub 260\n-\n4:30pm 6:30pm\nRave/Halloween Meeting 10/23\n@Hub 268\n5:30pm - 7:30pm\nIntermediate Workshop 11/14\n@Hub 268\n4:30pm - 6:30pm"
+      }
+     ],
+     "location_evidence": [
+      {
+       "field": "slide_2_ocr",
+       "quote": "Fall Event Schedule\nBeginner Workshop 10/16\n@Hub 260\n-\n4:30pm 6:30pm\nRave/Halloween Meeting 10/23\n@Hub 268\n5:30pm - 7:30pm\nIntermediate Workshop 11/14\n@Hub 268\n4:30pm - 6:30pm"
+      }
+     ]
+    }
+   ],
+   "date_evidence": [
+    {
+     "field": "slide_1_ocr",
+     "quote": "Fall Event Schedule\nBoba Social 09/25\n@AI bowl\n4:00pm - 6:00pm\nSewing Kits- First Meeting! 10/02\n@Hub 265\n6:00pm - 8:00pm\nTailoring Pop-up 10/07\n@Upper Hub Plaza Patio\n9:00am - 2:00pm"
+    },
+    {
+     "field": "slide_2_ocr",
+     "quote": "Fall Event Schedule\nBeginner Workshop 10/16\n@Hub 260\n-\n4:30pm 6:30pm\nRave/Halloween Meeting 10/23\n@Hub 268\n5:30pm - 7:30pm\nIntermediate Workshop 11/14\n@Hub 268\n4:30pm - 6:30pm"
+    }
+   ],
+   "activity_evidence": [
+    {
+     "field": "slide_1_ocr",
+     "quote": "Fall Event Schedule\nBoba Social 09/25\n@AI bowl\n4:00pm - 6:00pm\nSewing Kits- First Meeting! 10/02\n@Hub 265\n6:00pm - 8:00pm\nTailoring Pop-up 10/07\n@Upper Hub Plaza Patio\n9:00am - 2:00pm"
+    },
+    {
+     "field": "slide_2_ocr",
+     "quote": "Fall Event Schedule\nBeginner Workshop 10/16\n@Hub 260\n-\n4:30pm 6:30pm\nRave/Halloween Meeting 10/23\n@Hub 268\n5:30pm - 7:30pm\nIntermediate Workshop 11/14\n@Hub 268\n4:30pm - 6:30pm"
+    }
+   ],
+   "use_source_occurrences": false
+  }
+ },
+ "aacf_welcome": {
+  "post": {
+   "media_id": "3992368583007792793",
+   "handle": "aacfucriverside",
+   "owner_username": "aacfucriverside",
+   "shortcode": "DdnvhLim-6Z",
+   "permalink": "https://www.instagram.com/p/DdnvhLim-6Z/",
+   "posted_at": "2026-09-23T07:10:44+00:00",
+   "typename": "GraphSidecar"
+  },
+  "images": [
+   {
+    "index": 0,
+    "ocr_text": "RAMUR\nUCR AACF\nWELCOME\nWEEK\nSip n' Stroll\n9/25\n↑ Al Knoll\n7:30-9:30pm\nWelcome Picnic\n9/28\nAndulka Park\n6-9pm\nFreshman Night\n10/2\nHUB 302N\n8-10pm\nSmall Group Kickoff\n10/5\nBT Walkway\n7-9pm\nOutreach Night\n9/30\nHUB 302N\n8-10pm",
+    "qr_urls": []
+   },
+   {
+    "index": 1,
+    "ocr_text": "SiP &\nSTROLL\nFriday, Sept. 25th\nAl Knoll\n7:30-9:30pm\nCome join\nus for boba & fellowship!",
+    "qr_urls": []
+   },
+   {
+    "index": 2,
+    "ocr_text": "Welcome\nPicnic\nMonday, Sept. 28th\n6-9PM\nAndulka\nPark\nfood, games, and meet new people!",
+    "qr_urls": []
+   },
+   {
+    "index": 3,
+    "ocr_text": "OUTREACH\nNIGHT\nCome out and learn\nmore about AACF\nWednesday, Sept. 30th\n8-10pm | HUB 302N",
+    "qr_urls": []
+   },
+   {
+    "index": 4,
+    "ocr_text": "....\nFRESHMAN\nCome to get to know one\nNIGHT\nanother\nFriday, Oct. 2nd | 8-10pm | HUB 302N",
+    "qr_urls": []
+   },
+   {
+    "index": 5,
+    "ocr_text": "SMALL\nGROUP\nKICKOFF\nCome meet the small group\nleaders and fellowship\nMonday, Oct. 5th\n7-9pm\nBell Tower Walkway",
+    "qr_urls": []
+   }
+  ],
+  "source": {
+   "texts": {
+    "caption": "Hey Highlanders🐻! Come check us out at our upcoming welcome week events this year. Links to sign up will be found in our linktree (link in bio) SEE YOU THERE!",
+    "slide_1_ocr": "RAMUR\nUCR AACF\nWELCOME\nWEEK\nSip n' Stroll\n9/25\n↑ Al Knoll\n7:30-9:30pm\nWelcome Picnic\n9/28\nAndulka Park\n6-9pm\nFreshman Night\n10/2\nHUB 302N\n8-10pm\nSmall Group Kickoff\n10/5\nBT Walkway\n7-9pm\nOutreach Night\n9/30\nHUB 302N\n8-10pm",
+    "slide_2_ocr": "SiP &\nSTROLL\nFriday, Sept. 25th\nAl Knoll\n7:30-9:30pm\nCome join\nus for boba & fellowship!",
+    "slide_3_ocr": "Welcome\nPicnic\nMonday, Sept. 28th\n6-9PM\nAndulka\nPark\nfood, games, and meet new people!",
+    "slide_4_ocr": "OUTREACH\nNIGHT\nCome out and learn\nmore about AACF\nWednesday, Sept. 30th\n8-10pm | HUB 302N",
+    "slide_5_ocr": "....\nFRESHMAN\nCome to get to know one\nNIGHT\nanother\nFriday, Oct. 2nd | 8-10pm | HUB 302N",
+    "slide_6_ocr": "SMALL\nGROUP\nKICKOFF\nCome meet the small group\nleaders and fellowship\nMonday, Oct. 5th\n7-9pm\nBell Tower Walkway"
+   },
+   "origin": "instagram",
+   "posted_at": "2026-09-23T07:10:44+00:00",
+   "source_key": "instagram:post:3992368583007792793",
+   "source_occurrences": []
+  },
+  "result": {
+   "kind": "activity",
+   "reason": "The source advertises a series of specific welcome week events with dates, times, and locations.",
+   "schedule": null,
+   "date_role": "occurrence",
+   "occurrences": [
+    {
+     "title": "Sip n' Stroll",
+     "all_day": false,
+     "ends_at": "2026-09-25T21:30:00-07:00",
+     "location": "Al Knoll",
+     "starts_at": "2026-09-25T19:30:00-07:00",
+     "date_evidence": [
+      {
+       "field": "slide_2_ocr",
+       "quote": "SiP &\nSTROLL\nFriday, Sept. 25th\nAl Knoll\n7:30-9:30pm\nCome join\nus for boba & fellowship!"
+      }
+     ],
+     "activity_evidence": [
+      {
+       "field": "slide_2_ocr",
+       "quote": "SiP &\nSTROLL\nFriday, Sept. 25th\nAl Knoll\n7:30-9:30pm\nCome join\nus for boba & fellowship!"
+      }
+     ],
+     "location_evidence": [
+      {
+       "field": "slide_1_ocr",
+       "quote": "RAMUR\nUCR AACF\nWELCOME\nWEEK\nSip n' Stroll\n9/25\n↑ Al Knoll\n7:30-9:30pm\nWelcome Picnic\n9/28\nAndulka Park\n6-9pm\nFreshman Night\n10/2\nHUB 302N\n8-10pm\nSmall Group Kickoff\n10/5\nBT Walkway\n7-9pm\nOutreach Night\n9/30\nHUB 302N\n8-10pm"
+      },
+      {
+       "field": "slide_2_ocr",
+       "quote": "SiP &\nSTROLL\nFriday, Sept. 25th\nAl Knoll\n7:30-9:30pm\nCome join\nus for boba & fellowship!"
+      }
+     ]
+    },
+    {
+     "title": "Welcome Picnic",
+     "all_day": false,
+     "ends_at": "2026-09-28T21:00:00-07:00",
+     "location": "Andulka Park",
+     "starts_at": "2026-09-28T18:00:00-07:00",
+     "date_evidence": [
+      {
+       "field": "slide_3_ocr",
+       "quote": "Welcome\nPicnic\nMonday, Sept. 28th\n6-9PM\nAndulka\nPark\nfood, games, and meet new people!"
+      }
+     ],
+     "activity_evidence": [
+      {
+       "field": "slide_3_ocr",
+       "quote": "Welcome\nPicnic\nMonday, Sept. 28th\n6-9PM\nAndulka\nPark\nfood, games, and meet new people!"
+      }
+     ],
+     "location_evidence": [
+      {
+       "field": "slide_1_ocr",
+       "quote": "RAMUR\nUCR AACF\nWELCOME\nWEEK\nSip n' Stroll\n9/25\n↑ Al Knoll\n7:30-9:30pm\nWelcome Picnic\n9/28\nAndulka Park\n6-9pm\nFreshman Night\n10/2\nHUB 302N\n8-10pm\nSmall Group Kickoff\n10/5\nBT Walkway\n7-9pm\nOutreach Night\n9/30\nHUB 302N\n8-10pm"
+      },
+      {
+       "field": "slide_3_ocr",
+       "quote": "Welcome\nPicnic\nMonday, Sept. 28th\n6-9PM\nAndulka\nPark\nfood, games, and meet new people!"
+      }
+     ]
+    },
+    {
+     "title": "Outreach Night",
+     "all_day": false,
+     "ends_at": "2026-09-30T22:00:00-07:00",
+     "location": "HUB 302N",
+     "starts_at": "2026-09-30T20:00:00-07:00",
+     "date_evidence": [
+      {
+       "field": "slide_4_ocr",
+       "quote": "OUTREACH\nNIGHT\nCome out and learn\nmore about AACF\nWednesday, Sept. 30th\n8-10pm | HUB 302N"
+      }
+     ],
+     "activity_evidence": [
+      {
+       "field": "slide_4_ocr",
+       "quote": "OUTREACH\nNIGHT\nCome out and learn\nmore about AACF\nWednesday, Sept. 30th\n8-10pm | HUB 302N"
+      }
+     ],
+     "location_evidence": [
+      {
+       "field": "slide_1_ocr",
+       "quote": "RAMUR\nUCR AACF\nWELCOME\nWEEK\nSip n' Stroll\n9/25\n↑ Al Knoll\n7:30-9:30pm\nWelcome Picnic\n9/28\nAndulka Park\n6-9pm\nFreshman Night\n10/2\nHUB 302N\n8-10pm\nSmall Group Kickoff\n10/5\nBT Walkway\n7-9pm\nOutreach Night\n9/30\nHUB 302N\n8-10pm"
+      },
+      {
+       "field": "slide_4_ocr",
+       "quote": "OUTREACH\nNIGHT\nCome out and learn\nmore about AACF\nWednesday, Sept. 30th\n8-10pm | HUB 302N"
+      }
+     ]
+    },
+    {
+     "title": "Freshman Night",
+     "all_day": false,
+     "ends_at": "2026-10-02T22:00:00-07:00",
+     "location": "HUB 302N",
+     "starts_at": "2026-10-02T20:00:00-07:00",
+     "date_evidence": [
+      {
+       "field": "slide_5_ocr",
+       "quote": "....\nFRESHMAN\nCome to get to know one\nNIGHT\nanother\nFriday, Oct. 2nd | 8-10pm | HUB 302N"
+      }
+     ],
+     "activity_evidence": [
+      {
+       "field": "slide_5_ocr",
+       "quote": "....\nFRESHMAN\nCome to get to know one\nNIGHT\nanother\nFriday, Oct. 2nd | 8-10pm | HUB 302N"
+      }
+     ],
+     "location_evidence": [
+      {
+       "field": "slide_1_ocr",
+       "quote": "RAMUR\nUCR AACF\nWELCOME\nWEEK\nSip n' Stroll\n9/25\n↑ Al Knoll\n7:30-9:30pm\nWelcome Picnic\n9/28\nAndulka Park\n6-9pm\nFreshman Night\n10/2\nHUB 302N\n8-10pm\nSmall Group Kickoff\n10/5\nBT Walkway\n7-9pm\nOutreach Night\n9/30\nHUB 302N\n8-10pm"
+      },
+      {
+       "field": "slide_5_ocr",
+       "quote": "....\nFRESHMAN\nCome to get to know one\nNIGHT\nanother\nFriday, Oct. 2nd | 8-10pm | HUB 302N"
+      }
+     ]
+    },
+    {
+     "title": "Small Group Kickoff",
+     "all_day": false,
+     "ends_at": "2026-10-05T21:00:00-07:00",
+     "location": "Bell Tower Walkway",
+     "starts_at": "2026-10-05T19:00:00-07:00",
+     "date_evidence": [
+      {
+       "field": "slide_6_ocr",
+       "quote": "SMALL\nGROUP\nKICKOFF\nCome meet the small group\nleaders and fellowship\nMonday, Oct. 5th\n7-9pm\nBell Tower Walkway"
+      }
+     ],
+     "activity_evidence": [
+      {
+       "field": "slide_6_ocr",
+       "quote": "SMALL\nGROUP\nKICKOFF\nCome meet the small group\nleaders and fellowship\nMonday, Oct. 5th\n7-9pm\nBell Tower Walkway"
+      }
+     ],
+     "location_evidence": [
+      {
+       "field": "slide_1_ocr",
+       "quote": "RAMUR\nUCR AACF\nWELCOME\nWEEK\nSip n' Stroll\n9/25\n↑ Al Knoll\n7:30-9:30pm\nWelcome Picnic\n9/28\nAndulka Park\n6-9pm\nFreshman Night\n10/2\nHUB 302N\n8-10pm\nSmall Group Kickoff\n10/5\nBT Walkway\n7-9pm\nOutreach Night\n9/30\nHUB 302N\n8-10pm"
+      },
+      {
+       "field": "slide_6_ocr",
+       "quote": "SMALL\nGROUP\nKICKOFF\nCome meet the small group\nleaders and fellowship\nMonday, Oct. 5th\n7-9pm\nBell Tower Walkway"
+      }
+     ]
+    }
+   ],
+   "date_evidence": [
+    {
+     "field": "slide_1_ocr",
+     "quote": "RAMUR\nUCR AACF\nWELCOME\nWEEK\nSip n' Stroll\n9/25\n↑ Al Knoll\n7:30-9:30pm\nWelcome Picnic\n9/28\nAndulka Park\n6-9pm\nFreshman Night\n10/2\nHUB 302N\n8-10pm\nSmall Group Kickoff\n10/5\nBT Walkway\n7-9pm\nOutreach Night\n9/30\nHUB 302N\n8-10pm"
+    },
+    {
+     "field": "slide_2_ocr",
+     "quote": "SiP &\nSTROLL\nFriday, Sept. 25th\nAl Knoll\n7:30-9:30pm\nCome join\nus for boba & fellowship!"
+    },
+    {
+     "field": "slide_3_ocr",
+     "quote": "Welcome\nPicnic\nMonday, Sept. 28th\n6-9PM\nAndulka\nPark\nfood, games, and meet new people!"
+    },
+    {
+     "field": "slide_4_ocr",
+     "quote": "OUTREACH\nNIGHT\nCome out and learn\nmore about AACF\nWednesday, Sept. 30th\n8-10pm | HUB 302N"
+    },
+    {
+     "field": "slide_5_ocr",
+     "quote": "....\nFRESHMAN\nCome to get to know one\nNIGHT\nanother\nFriday, Oct. 2nd | 8-10pm | HUB 302N"
+    },
+    {
+     "field": "slide_6_ocr",
+     "quote": "SMALL\nGROUP\nKICKOFF\nCome meet the small group\nleaders and fellowship\nMonday, Oct. 5th\n7-9pm\nBell Tower Walkway"
+    }
+   ],
+   "activity_evidence": [
+    {
+     "field": "slide_1_ocr",
+     "quote": "RAMUR\nUCR AACF\nWELCOME\nWEEK\nSip n' Stroll\n9/25\n↑ Al Knoll\n7:30-9:30pm\nWelcome Picnic\n9/28\nAndulka Park\n6-9pm\nFreshman Night\n10/2\nHUB 302N\n8-10pm\nSmall Group Kickoff\n10/5\nBT Walkway\n7-9pm\nOutreach Night\n9/30\nHUB 302N\n8-10pm"
+    }
+   ],
+   "use_source_occurrences": false
+  }
+ },
+ "msa_welcome": {
+  "post": {
+   "media_id": "3995798591671828458",
+   "handle": "msaucr",
+   "owner_username": "msaucr",
+   "shortcode": "Ddz7aYCmv_q",
+   "permalink": "https://www.instagram.com/p/Ddz7aYCmv_q/",
+   "posted_at": "2026-09-28T00:45:33+00:00",
+   "typename": "GraphSidecar"
+  },
+  "images": [
+   {
+    "index": 0,
+    "ocr_text": "MSA UCR\nبسم الله الرحمن الرحيم\nعرات\nWelcome\nWeek\n28 TC\nSEP 28 TO OCT 2",
+    "qr_urls": []
+   },
+   {
+    "index": 1,
+    "ocr_text": "k\nMSA UCR\nMeet the\nBoard\nMONDAY, SEP 28\n| HUB 355\n4:30 PM | HUB 355\nMeet the MSA board, new\nfaces, and enjoy boba and\nfood!\n50",
+    "qr_urls": []
+   },
+   {
+    "index": 2,
+    "ocr_text": "k\nMSA UCR\nGame\nDay\nTUESDAY, SEP 29\n5:00 PM | AI Bowl\nCome join us for some fun\ngames: soccer, football,\nvolleyball, and enjoy ice\ncream!",
+    "qr_urls": []
+   },
+   {
+    "index": 3,
+    "ocr_text": "MSA UCR\nFall\nInvolvement\nFair\nWEDNESDAY, SEP 30\n10AM-1PM | Bell Tower\nStop by our table and say\nsalam!",
+    "qr_urls": []
+   },
+   {
+    "index": 4,
+    "ocr_text": "k\nMSA UCR\nClub\nMixer\nWEDNESDAY, SEP 30\n4PM-6PM | The Barn\nStop by our table and say\nMSA U\nsalam!\nR\nMSA\nFOLLOW US!!",
+    "qr_urls": []
+   },
+   {
+    "index": 5,
+    "ocr_text": "MSA UCR\nE\n$7.00\nRegular Sweet $0.00\ncchiato\n$7.50\nRegular Cold For $0.75\nMacchieto\nMatche\nCake\n$7.00\n$0.00\n16 Oz $5.50\nRegular Whip Crem $0.50\n59.50\nAngular Cold Foam $0.75\n58.00\nSaffron $0.00\n646.50\n$4.07\n65052\nQamaria\nSocial\nWEDNESDAY, SEP 30\n6:30 PM | Qamaria\nGrab a drink, socialize, and\nmeet new friends!",
+    "qr_urls": []
+   },
+   {
+    "index": 6,
+    "ocr_text": "k\nMSA UCR\nBrother's\nBBQ &\nBasketball\nTHURSDAY, OCT 1\n4:45 PM | Islamic Center of\nRiverside\nJoin us for Asr Salah at 5pm\nand meet other brothers, play\nbasketball, and enjoy some\nBBQ!\nICR\nISLAMIC CENTER OF RIVERSIDE",
+    "qr_urls": []
+   },
+   {
+    "index": 7,
+    "ocr_text": "MSA UCR\nSister's\nGame\nNight\nTHURSDAY, OCT 1\n5:30 PM | North District Patio\nCome hang out, meet other sisters,\nand enjoy some snacks, drinks and\nfun games together. Feel free to\nbring your own games to play with\neveryone!",
+    "qr_urls": []
+   },
+   {
+    "index": 8,
+    "ocr_text": "MSA UCR\nJummah\nPicnic\nFRIDAY, OCT 2\n1:00 PM | AI Bowl\nCome join us for our annual\nWelcome Week Jummah picnic\nand enjoy some tacos. Wear your\nabayas and thobes!\nA",
+    "qr_urls": []
+   }
+  ],
+  "source": {
+   "texts": {
+    "caption": "السلام عليكم \nWelcome Week 2026 is finally here! Check out the details and come by our events this week. We’re looking forward to meeting everyone inshaAllah! 💜",
+    "slide_1_ocr": "MSA UCR\nبسم الله الرحمن الرحيم\nعرات\nWelcome\nWeek\n28 TC\nSEP 28 TO OCT 2",
+    "slide_2_ocr": "k\nMSA UCR\nMeet the\nBoard\nMONDAY, SEP 28\n| HUB 355\n4:30 PM | HUB 355\nMeet the MSA board, new\nfaces, and enjoy boba and\nfood!\n50",
+    "slide_3_ocr": "k\nMSA UCR\nGame\nDay\nTUESDAY, SEP 29\n5:00 PM | AI Bowl\nCome join us for some fun\ngames: soccer, football,\nvolleyball, and enjoy ice\ncream!",
+    "slide_4_ocr": "MSA UCR\nFall\nInvolvement\nFair\nWEDNESDAY, SEP 30\n10AM-1PM | Bell Tower\nStop by our table and say\nsalam!",
+    "slide_5_ocr": "k\nMSA UCR\nClub\nMixer\nWEDNESDAY, SEP 30\n4PM-6PM | The Barn\nStop by our table and say\nMSA U\nsalam!\nR\nMSA\nFOLLOW US!!",
+    "slide_6_ocr": "MSA UCR\nE\n$7.00\nRegular Sweet $0.00\ncchiato\n$7.50\nRegular Cold For $0.75\nMacchieto\nMatche\nCake\n$7.00\n$0.00\n16 Oz $5.50\nRegular Whip Crem $0.50\n59.50\nAngular Cold Foam $0.75\n58.00\nSaffron $0.00\n646.50\n$4.07\n65052\nQamaria\nSocial\nWEDNESDAY, SEP 30\n6:30 PM | Qamaria\nGrab a drink, socialize, and\nmeet new friends!",
+    "slide_7_ocr": "k\nMSA UCR\nBrother's\nBBQ &\nBasketball\nTHURSDAY, OCT 1\n4:45 PM | Islamic Center of\nRiverside\nJoin us for Asr Salah at 5pm\nand meet other brothers, play\nbasketball, and enjoy some\nBBQ!\nICR\nISLAMIC CENTER OF RIVERSIDE",
+    "slide_8_ocr": "MSA UCR\nSister's\nGame\nNight\nTHURSDAY, OCT 1\n5:30 PM | North District Patio\nCome hang out, meet other sisters,\nand enjoy some snacks, drinks and\nfun games together. Feel free to\nbring your own games to play with\neveryone!",
+    "slide_9_ocr": "MSA UCR\nJummah\nPicnic\nFRIDAY, OCT 2\n1:00 PM | AI Bowl\nCome join us for our annual\nWelcome Week Jummah picnic\nand enjoy some tacos. Wear your\nabayas and thobes!\nA"
+   },
+   "origin": "instagram",
+   "posted_at": "2026-09-28T00:45:33+00:00",
+   "source_key": "instagram:post:3995798591671828458",
+   "source_occurrences": []
+  },
+  "result": {
+   "kind": "activity",
+   "reason": "The source advertises a series of specific Welcome Week events hosted by MSA UCR with dates, times, and locations.",
+   "schedule": null,
+   "date_role": "occurrence",
+   "occurrences": [
+    {
+     "title": "Meet the Board",
+     "all_day": false,
+     "ends_at": null,
+     "location": "HUB 355",
+     "starts_at": "2026-09-28T16:30:00-07:00",
+     "date_evidence": [
+      {
+       "field": "slide_2_ocr",
+       "quote": "k\nMSA UCR\nMeet the\nBoard\nMONDAY, SEP 28\n| HUB 355\n4:30 PM | HUB 355\nMeet the MSA board, new\nfaces, and enjoy boba and\nfood!\n50"
+      }
+     ],
+     "activity_evidence": [
+      {
+       "field": "slide_2_ocr",
+       "quote": "k\nMSA UCR\nMeet the\nBoard\nMONDAY, SEP 28\n| HUB 355\n4:30 PM | HUB 355\nMeet the MSA board, new\nfaces, and enjoy boba and\nfood!\n50"
+      }
+     ],
+     "location_evidence": [
+      {
+       "field": "slide_2_ocr",
+       "quote": "k\nMSA UCR\nMeet the\nBoard\nMONDAY, SEP 28\n| HUB 355\n4:30 PM | HUB 355\nMeet the MSA board, new\nfaces, and enjoy boba and\nfood!\n50"
+      }
+     ]
+    },
+    {
+     "title": "Game Day",
+     "all_day": false,
+     "ends_at": null,
+     "location": "AI Bowl",
+     "starts_at": "2026-09-29T17:00:00-07:00",
+     "date_evidence": [
+      {
+       "field": "slide_3_ocr",
+       "quote": "k\nMSA UCR\nGame\nDay\nTUESDAY, SEP 29\n5:00 PM | AI Bowl\nCome join us for some fun\ngames: soccer, football,\nvolleyball, and enjoy ice\ncream!"
+      }
+     ],
+     "activity_evidence": [
+      {
+       "field": "slide_3_ocr",
+       "quote": "k\nMSA UCR\nGame\nDay\nTUESDAY, SEP 29\n5:00 PM | AI Bowl\nCome join us for some fun\ngames: soccer, football,\nvolleyball, and enjoy ice\ncream!"
+      }
+     ],
+     "location_evidence": [
+      {
+       "field": "slide_3_ocr",
+       "quote": "k\nMSA UCR\nGame\nDay\nTUESDAY, SEP 29\n5:00 PM | AI Bowl\nCome join us for some fun\ngames: soccer, football,\nvolleyball, and enjoy ice\ncream!"
+      }
+     ]
+    },
+    {
+     "title": "Fall Involvement Fair",
+     "all_day": false,
+     "ends_at": "2026-09-30T13:00:00-07:00",
+     "location": "Bell Tower",
+     "starts_at": "2026-09-30T10:00:00-07:00",
+     "date_evidence": [
+      {
+       "field": "slide_4_ocr",
+       "quote": "MSA UCR\nFall\nInvolvement\nFair\nWEDNESDAY, SEP 30\n10AM-1PM | Bell Tower\nStop by our table and say\nsalam!"
+      }
+     ],
+     "activity_evidence": [
+      {
+       "field": "slide_4_ocr",
+       "quote": "MSA UCR\nFall\nInvolvement\nFair\nWEDNESDAY, SEP 30\n10AM-1PM | Bell Tower\nStop by our table and say\nsalam!"
+      }
+     ],
+     "location_evidence": [
+      {
+       "field": "slide_4_ocr",
+       "quote": "MSA UCR\nFall\nInvolvement\nFair\nWEDNESDAY, SEP 30\n10AM-1PM | Bell Tower\nStop by our table and say\nsalam!"
+      }
+     ]
+    },
+    {
+     "title": "Club Mixer",
+     "all_day": false,
+     "ends_at": "2026-09-30T18:00:00-07:00",
+     "location": "The Barn",
+     "starts_at": "2026-09-30T16:00:00-07:00",
+     "date_evidence": [
+      {
+       "field": "slide_5_ocr",
+       "quote": "k\nMSA UCR\nClub\nMixer\nWEDNESDAY, SEP 30\n4PM-6PM | The Barn\nStop by our table and say\nMSA U\nsalam!\nR\nMSA\nFOLLOW US!!"
+      }
+     ],
+     "activity_evidence": [
+      {
+       "field": "slide_5_ocr",
+       "quote": "k\nMSA UCR\nClub\nMixer\nWEDNESDAY, SEP 30\n4PM-6PM | The Barn\nStop by our table and say\nMSA U\nsalam!\nR\nMSA\nFOLLOW US!!"
+      }
+     ],
+     "location_evidence": [
+      {
+       "field": "slide_5_ocr",
+       "quote": "k\nMSA UCR\nClub\nMixer\nWEDNESDAY, SEP 30\n4PM-6PM | The Barn\nStop by our table and say\nMSA U\nsalam!\nR\nMSA\nFOLLOW US!!"
+      }
+     ]
+    },
+    {
+     "title": "Qamaria Social",
+     "all_day": false,
+     "ends_at": null,
+     "location": "Qamaria",
+     "starts_at": "2026-09-30T18:30:00-07:00",
+     "date_evidence": [
+      {
+       "field": "slide_6_ocr",
+       "quote": "MSA UCR\nE\n$7.00\nRegular Sweet $0.00\ncchiato\n$7.50\nRegular Cold For $0.75\nMacchieto\nMatche\nCake\n$7.00\n$0.00\n16 Oz $5.50\nRegular Whip Crem $0.50\n59.50\nAngular Cold Foam $0.75\n58.00\nSaffron $0.00\n646.50\n$4.07\n65052\nQamaria\nSocial\nWEDNESDAY, SEP 30\n6:30 PM | Qamaria\nGrab a drink, socialize, and\nmeet new friends!"
+      }
+     ],
+     "activity_evidence": [
+      {
+       "field": "slide_6_ocr",
+       "quote": "MSA UCR\nE\n$7.00\nRegular Sweet $0.00\ncchiato\n$7.50\nRegular Cold For $0.75\nMacchieto\nMatche\nCake\n$7.00\n$0.00\n16 Oz $5.50\nRegular Whip Crem $0.50\n59.50\nAngular Cold Foam $0.75\n58.00\nSaffron $0.00\n646.50\n$4.07\n65052\nQamaria\nSocial\nWEDNESDAY, SEP 30\n6:30 PM | Qamaria\nGrab a drink, socialize, and\nmeet new friends!"
+      }
+     ],
+     "location_evidence": [
+      {
+       "field": "slide_6_ocr",
+       "quote": "MSA UCR\nE\n$7.00\nRegular Sweet $0.00\ncchiato\n$7.50\nRegular Cold For $0.75\nMacchieto\nMatche\nCake\n$7.00\n$0.00\n16 Oz $5.50\nRegular Whip Crem $0.50\n59.50\nAngular Cold Foam $0.75\n58.00\nSaffron $0.00\n646.50\n$4.07\n65052\nQamaria\nSocial\nWEDNESDAY, SEP 30\n6:30 PM | Qamaria\nGrab a drink, socialize, and\nmeet new friends!"
+      }
+     ]
+    },
+    {
+     "title": "Brother's BBQ & Basketball",
+     "all_day": false,
+     "ends_at": null,
+     "location": "Islamic Center of Riverside",
+     "starts_at": "2026-10-01T16:45:00-07:00",
+     "date_evidence": [
+      {
+       "field": "slide_7_ocr",
+       "quote": "k\nMSA UCR\nBrother's\nBBQ &\nBasketball\nTHURSDAY, OCT 1\n4:45 PM | Islamic Center of\nRiverside\nJoin us for Asr Salah at 5pm\nand meet other brothers, play\nbasketball, and enjoy some\nBBQ!\nICR\nISLAMIC CENTER OF RIVERSIDE"
+      }
+     ],
+     "activity_evidence": [
+      {
+       "field": "slide_7_ocr",
+       "quote": "k\nMSA UCR\nBrother's\nBBQ &\nBasketball\nTHURSDAY, OCT 1\n4:45 PM | Islamic Center of\nRiverside\nJoin us for Asr Salah at 5pm\nand meet other brothers, play\nbasketball, and enjoy some\nBBQ!\nICR\nISLAMIC CENTER OF RIVERSIDE"
+      }
+     ],
+     "location_evidence": [
+      {
+       "field": "slide_7_ocr",
+       "quote": "k\nMSA UCR\nBrother's\nBBQ &\nBasketball\nTHURSDAY, OCT 1\n4:45 PM | Islamic Center of\nRiverside\nJoin us for Asr Salah at 5pm\nand meet other brothers, play\nbasketball, and enjoy some\nBBQ!\nICR\nISLAMIC CENTER OF RIVERSIDE"
+      }
+     ]
+    },
+    {
+     "title": "Sister's Game Night",
+     "all_day": false,
+     "ends_at": null,
+     "location": "North District Patio",
+     "starts_at": "2026-10-01T17:30:00-07:00",
+     "date_evidence": [
+      {
+       "field": "slide_8_ocr",
+       "quote": "MSA UCR\nSister's\nGame\nNight\nTHURSDAY, OCT 1\n5:30 PM | North District Patio\nCome hang out, meet other sisters,\nand enjoy some snacks, drinks and\nfun games together. Feel free to\nbring your own games to play with\neveryone!"
+      }
+     ],
+     "activity_evidence": [
+      {
+       "field": "slide_8_ocr",
+       "quote": "MSA UCR\nSister's\nGame\nNight\nTHURSDAY, OCT 1\n5:30 PM | North District Patio\nCome hang out, meet other sisters,\nand enjoy some snacks, drinks and\nfun games together. Feel free to\nbring your own games to play with\neveryone!"
+      }
+     ],
+     "location_evidence": [
+      {
+       "field": "slide_8_ocr",
+       "quote": "MSA UCR\nSister's\nGame\nNight\nTHURSDAY, OCT 1\n5:30 PM | North District Patio\nCome hang out, meet other sisters,\nand enjoy some snacks, drinks and\nfun games together. Feel free to\nbring your own games to play with\neveryone!"
+      }
+     ]
+    },
+    {
+     "title": "Jummah Picnic",
+     "all_day": false,
+     "ends_at": null,
+     "location": "AI Bowl",
+     "starts_at": "2026-10-02T13:00:00-07:00",
+     "date_evidence": [
+      {
+       "field": "slide_9_ocr",
+       "quote": "MSA UCR\nJummah\nPicnic\nFRIDAY, OCT 2\n1:00 PM | AI Bowl\nCome join us for our annual\nWelcome Week Jummah picnic\nand enjoy some tacos. Wear your\nabayas and thobes!\nA"
+      }
+     ],
+     "activity_evidence": [
+      {
+       "field": "slide_9_ocr",
+       "quote": "MSA UCR\nJummah\nPicnic\nFRIDAY, OCT 2\n1:00 PM | AI Bowl\nCome join us for our annual\nWelcome Week Jummah picnic\nand enjoy some tacos. Wear your\nabayas and thobes!\nA"
+      }
+     ],
+     "location_evidence": [
+      {
+       "field": "slide_9_ocr",
+       "quote": "MSA UCR\nJummah\nPicnic\nFRIDAY, OCT 2\n1:00 PM | AI Bowl\nCome join us for our annual\nWelcome Week Jummah picnic\nand enjoy some tacos. Wear your\nabayas and thobes!\nA"
+      }
+     ]
+    }
+   ],
+   "date_evidence": [
+    {
+     "field": "slide_2_ocr",
+     "quote": "k\nMSA UCR\nMeet the\nBoard\nMONDAY, SEP 28\n| HUB 355\n4:30 PM | HUB 355\nMeet the MSA board, new\nfaces, and enjoy boba and\nfood!\n50"
+    },
+    {
+     "field": "slide_3_ocr",
+     "quote": "k\nMSA UCR\nGame\nDay\nTUESDAY, SEP 29\n5:00 PM | AI Bowl\nCome join us for some fun\ngames: soccer, football,\nvolleyball, and enjoy ice\ncream!"
+    },
+    {
+     "field": "slide_4_ocr",
+     "quote": "MSA UCR\nFall\nInvolvement\nFair\nWEDNESDAY, SEP 30\n10AM-1PM | Bell Tower\nStop by our table and say\nsalam!"
+    },
+    {
+     "field": "slide_5_ocr",
+     "quote": "k\nMSA UCR\nClub\nMixer\nWEDNESDAY, SEP 30\n4PM-6PM | The Barn\nStop by our table and say\nMSA U\nsalam!\nR\nMSA\nFOLLOW US!!"
+    },
+    {
+     "field": "slide_6_ocr",
+     "quote": "MSA UCR\nE\n$7.00\nRegular Sweet $0.00\ncchiato\n$7.50\nRegular Cold For $0.75\nMacchieto\nMatche\nCake\n$7.00\n$0.00\n16 Oz $5.50\nRegular Whip Crem $0.50\n59.50\nAngular Cold Foam $0.75\n58.00\nSaffron $0.00\n646.50\n$4.07\n65052\nQamaria\nSocial\nWEDNESDAY, SEP 30\n6:30 PM | Qamaria\nGrab a drink, socialize, and\nmeet new friends!"
+    },
+    {
+     "field": "slide_7_ocr",
+     "quote": "k\nMSA UCR\nBrother's\nBBQ &\nBasketball\nTHURSDAY, OCT 1\n4:45 PM | Islamic Center of\nRiverside\nJoin us for Asr Salah at 5pm\nand meet other brothers, play\nbasketball, and enjoy some\nBBQ!\nICR\nISLAMIC CENTER OF RIVERSIDE"
+    },
+    {
+     "field": "slide_8_ocr",
+     "quote": "MSA UCR\nSister's\nGame\nNight\nTHURSDAY, OCT 1\n5:30 PM | North District Patio\nCome hang out, meet other sisters,\nand enjoy some snacks, drinks and\nfun games together. Feel free to\nbring your own games to play with\neveryone!"
+    },
+    {
+     "field": "slide_9_ocr",
+     "quote": "MSA UCR\nJummah\nPicnic\nFRIDAY, OCT 2\n1:00 PM | AI Bowl\nCome join us for our annual\nWelcome Week Jummah picnic\nand enjoy some tacos. Wear your\nabayas and thobes!\nA"
+    }
+   ],
+   "activity_evidence": [
+    {
+     "field": "slide_2_ocr",
+     "quote": "k\nMSA UCR\nMeet the\nBoard\nMONDAY, SEP 28\n| HUB 355\n4:30 PM | HUB 355\nMeet the MSA board, new\nfaces, and enjoy boba and\nfood!\n50"
+    },
+    {
+     "field": "slide_3_ocr",
+     "quote": "k\nMSA UCR\nGame\nDay\nTUESDAY, SEP 29\n5:00 PM | AI Bowl\nCome join us for some fun\ngames: soccer, football,\nvolleyball, and enjoy ice\ncream!"
+    },
+    {
+     "field": "slide_4_ocr",
+     "quote": "MSA UCR\nFall\nInvolvement\nFair\nWEDNESDAY, SEP 30\n10AM-1PM | Bell Tower\nStop by our table and say\nsalam!"
+    },
+    {
+     "field": "slide_5_ocr",
+     "quote": "k\nMSA UCR\nClub\nMixer\nWEDNESDAY, SEP 30\n4PM-6PM | The Barn\nStop by our table and say\nMSA U\nsalam!\nR\nMSA\nFOLLOW US!!"
+    },
+    {
+     "field": "slide_6_ocr",
+     "quote": "MSA UCR\nE\n$7.00\nRegular Sweet $0.00\ncchiato\n$7.50\nRegular Cold For $0.75\nMacchieto\nMatche\nCake\n$7.00\n$0.00\n16 Oz $5.50\nRegular Whip Crem $0.50\n59.50\nAngular Cold Foam $0.75\n58.00\nSaffron $0.00\n646.50\n$4.07\n65052\nQamaria\nSocial\nWEDNESDAY, SEP 30\n6:30 PM | Qamaria\nGrab a drink, socialize, and\nmeet new friends!"
+    },
+    {
+     "field": "slide_7_ocr",
+     "quote": "k\nMSA UCR\nBrother's\nBBQ &\nBasketball\nTHURSDAY, OCT 1\n4:45 PM | Islamic Center of\nRiverside\nJoin us for Asr Salah at 5pm\nand meet other brothers, play\nbasketball, and enjoy some\nBBQ!\nICR\nISLAMIC CENTER OF RIVERSIDE"
+    },
+    {
+     "field": "slide_8_ocr",
+     "quote": "MSA UCR\nSister's\nGame\nNight\nTHURSDAY, OCT 1\n5:30 PM | North District Patio\nCome hang out, meet other sisters,\nand enjoy some snacks, drinks and\nfun games together. Feel free to\nbring your own games to play with\neveryone!"
+    },
+    {
+     "field": "slide_9_ocr",
+     "quote": "MSA UCR\nJummah\nPicnic\nFRIDAY, OCT 2\n1:00 PM | AI Bowl\nCome join us for our annual\nWelcome Week Jummah picnic\nand enjoy some tacos. Wear your\nabayas and thobes!\nA"
+    }
+   ],
+   "use_source_occurrences": false
+  }
+ },
+ "asig_intro": {
+  "post": {
+   "media_id": "3993387279296486330",
+   "handle": "asig.ucrsom",
+   "owner_username": "asig.ucrsom",
+   "shortcode": "DdrXJKZB9u6",
+   "permalink": "https://www.instagram.com/p/DdrXJKZB9u6/",
+   "posted_at": "2026-09-24T16:55:42+00:00",
+   "typename": "GraphImage"
+  },
+  "images": [
+   {
+    "index": 0,
+    "ocr_text": "ASIG INTRO\nMEETING\nPHYSICIAN Q&A PANEL\nESTHESIL\nHESILOGY\nTuesday, September 29\nVirtual\n6-7 PM\nLearn more about ASIG, our annual\nevents, and hear expert insight into\nwhat it takes to become an\nanesthesiologist!\nJoin us at the Zoom below!\nhttps://ucr.zoom.us/j/98095293822\nSTUDENT\nINTEREST GRO\nGROUP\nUCR\nSchool of Medicine\nDr. Anh-Thy Nguyen\nDr. Sravya Veligandla\n'd\nDr. Michael Armaneous",
+    "qr_urls": [
+     "https://ucr.zoom.us/j/98095293822"
+    ]
+   }
+  ],
+  "source": {
+   "texts": {
+    "caption": "Join us Tuesday, September 29 from 6-7pm via Zoom for our Anesthesiology Introductory Meeting! We will be joined by 3 amazing physicians for our Q&A panel— you won’t want to miss it! Join from the link or QR code above",
+    "slide_1_ocr": "ASIG INTRO\nMEETING\nPHYSICIAN Q&A PANEL\nESTHESIL\nHESILOGY\nTuesday, September 29\nVirtual\n6-7 PM\nLearn more about ASIG, our annual\nevents, and hear expert insight into\nwhat it takes to become an\nanesthesiologist!\nJoin us at the Zoom below!\nhttps://ucr.zoom.us/j/98095293822\nSTUDENT\nINTEREST GRO\nGROUP\nUCR\nSchool of Medicine\nDr. Anh-Thy Nguyen\nDr. Sravya Veligandla\n'd\nDr. Michael Armaneous"
+   },
+   "origin": "instagram",
+   "posted_at": "2026-09-24T16:55:42+00:00",
+   "source_key": "instagram:post:3993387279296486330",
+   "source_occurrences": []
+  },
+  "result": {
+   "kind": "activity",
+   "reason": "The source advertises an introductory meeting and Q&A panel with physicians, which is a specific, attendable event.",
+   "schedule": null,
+   "date_role": "occurrence",
+   "occurrences": [
+    {
+     "title": "Anesthesiology Introductory Meeting",
+     "all_day": false,
+     "ends_at": "2026-09-29T19:00:00-07:00",
+     "location": "Zoom",
+     "starts_at": "2026-09-29T18:00:00-07:00",
+     "date_evidence": [
+      {
+       "field": "caption",
+       "quote": "Join us Tuesday, September 29 from 6-7pm via Zoom for our Anesthesiology Introductory Meeting! We will be joined by 3 amazing physicians for our Q&A panel— you won’t want to miss it! Join from the link or QR code above"
+      },
+      {
+       "field": "slide_1_ocr",
+       "quote": "ASIG INTRO\nMEETING\nPHYSICIAN Q&A PANEL\nESTHESIL\nHESILOGY\nTuesday, September 29\nVirtual\n6-7 PM\nLearn more about ASIG, our annual\nevents, and hear expert insight into\nwhat it takes to become an\nanesthesiologist!\nJoin us at the Zoom below!\nhttps://ucr.zoom.us/j/98095293822\nSTUDENT\nINTEREST GRO\nGROUP\nUCR\nSchool of Medicine\nDr. Anh-Thy Nguyen\nDr. Sravya Veligandla\n'd\nDr. Michael Armaneous"
+      }
+     ],
+     "activity_evidence": [
+      {
+       "field": "caption",
+       "quote": "Join us Tuesday, September 29 from 6-7pm via Zoom for our Anesthesiology Introductory Meeting! We will be joined by 3 amazing physicians for our Q&A panel— you won’t want to miss it! Join from the link or QR code above"
+      },
+      {
+       "field": "slide_1_ocr",
+       "quote": "ASIG INTRO\nMEETING\nPHYSICIAN Q&A PANEL\nESTHESIL\nHESILOGY\nTuesday, September 29\nVirtual\n6-7 PM\nLearn more about ASIG, our annual\nevents, and hear expert insight into\nwhat it takes to become an\nanesthesiologist!\nJoin us at the Zoom below!\nhttps://ucr.zoom.us/j/98095293822\nSTUDENT\nINTEREST GRO\nGROUP\nUCR\nSchool of Medicine\nDr. Anh-Thy Nguyen\nDr. Sravya Veligandla\n'd\nDr. Michael Armaneous"
+      }
+     ],
+     "location_evidence": [
+      {
+       "field": "caption",
+       "quote": "Join us Tuesday, September 29 from 6-7pm via Zoom for our Anesthesiology Introductory Meeting! We will be joined by 3 amazing physicians for our Q&A panel— you won’t want to miss it! Join from the link or QR code above"
+      },
+      {
+       "field": "slide_1_ocr",
+       "quote": "ASIG INTRO\nMEETING\nPHYSICIAN Q&A PANEL\nESTHESIL\nHESILOGY\nTuesday, September 29\nVirtual\n6-7 PM\nLearn more about ASIG, our annual\nevents, and hear expert insight into\nwhat it takes to become an\nanesthesiologist!\nJoin us at the Zoom below!\nhttps://ucr.zoom.us/j/98095293822\nSTUDENT\nINTEREST GRO\nGROUP\nUCR\nSchool of Medicine\nDr. Anh-Thy Nguyen\nDr. Sravya Veligandla\n'd\nDr. Michael Armaneous"
+      }
+     ]
+    }
+   ],
+   "date_evidence": [
+    {
+     "field": "caption",
+     "quote": "Join us Tuesday, September 29 from 6-7pm via Zoom for our Anesthesiology Introductory Meeting! We will be joined by 3 amazing physicians for our Q&A panel— you won’t want to miss it! Join from the link or QR code above"
+    },
+    {
+     "field": "slide_1_ocr",
+     "quote": "ASIG INTRO\nMEETING\nPHYSICIAN Q&A PANEL\nESTHESIL\nHESILOGY\nTuesday, September 29\nVirtual\n6-7 PM\nLearn more about ASIG, our annual\nevents, and hear expert insight into\nwhat it takes to become an\nanesthesiologist!\nJoin us at the Zoom below!\nhttps://ucr.zoom.us/j/98095293822\nSTUDENT\nINTEREST GRO\nGROUP\nUCR\nSchool of Medicine\nDr. Anh-Thy Nguyen\nDr. Sravya Veligandla\n'd\nDr. Michael Armaneous"
+    }
+   ],
+   "activity_evidence": [
+    {
+     "field": "caption",
+     "quote": "Join us Tuesday, September 29 from 6-7pm via Zoom for our Anesthesiology Introductory Meeting! We will be joined by 3 amazing physicians for our Q&A panel— you won’t want to miss it! Join from the link or QR code above"
+    },
+    {
+     "field": "slide_1_ocr",
+     "quote": "ASIG INTRO\nMEETING\nPHYSICIAN Q&A PANEL\nESTHESIL\nHESILOGY\nTuesday, September 29\nVirtual\n6-7 PM\nLearn more about ASIG, our annual\nevents, and hear expert insight into\nwhat it takes to become an\nanesthesiologist!\nJoin us at the Zoom below!\nhttps://ucr.zoom.us/j/98095293822\nSTUDENT\nINTEREST GRO\nGROUP\nUCR\nSchool of Medicine\nDr. Anh-Thy Nguyen\nDr. Sravya Veligandla\n'd\nDr. Michael Armaneous"
+    }
+   ],
+   "use_source_occurrences": false
+  }
+ },
+ "cmsp_sessions": {
+  "post": {
+   "media_id": "3981974972906924967",
+   "handle": "cmsp_ucr",
+   "owner_username": "cmsp_ucr",
+   "shortcode": "DdC0SP0nOun",
+   "permalink": "https://www.instagram.com/p/DdC0SP0nOun/",
+   "posted_at": "2026-09-08T23:00:29+00:00",
+   "typename": "GraphImage"
+  },
+  "images": [
+   {
+    "index": 0,
+    "ocr_text": "19\nCalifornia Medicine\nScholars Program\nUC RIVERSIDE\nSchool of Medicine\n15\nZoom invite\n16\nCMSP Inland Empire\nInformation Sessions\n2 SEPT\n15 SEPT\n2:00-3:00PM\n2 Sept - 28 Oct\n30 SEPT\n12:00 - 1:00PM\n12:00-1:00PM\n949 0511 0745\n949 0511 0745\n949 0511 0745\n13 OCT\n2:00-3:00PM\n21 OCT\n2:00-3:00PM\n28 OCT\n12:00-1:00PM\n949 0511 0745\n949 0511 0745\n949 0511 0745\nCMSP_IERHHO@medsch.ucr.edu\ncmsp.ucr.edu",
+    "qr_urls": [
+     "https://ucr.zoom.us/j/94905110745"
+    ]
+   }
+  ],
+  "source": {
+   "texts": {
+    "caption": "Curious about the California Medicine Scholars Program (CMSP) and how it can support you on your journey to medical school?\n\nJoin us for an online CMSP Information Session to learn more about:\n✨ The CMSP program and what we offer\n🎓 Eligibility and application requirements\n📝 Tips for submitting a strong application\n\nWhether you’re just beginning to explore medicine or already planning your path to medical school, we’d love to meet you!\n\n💻 Online Information Sessions\n📅 September 2, 15 and 30. October 13, 21 and 28.\n⏰ Times vary.\n🔗 https://ucr.zoom.us/j/94905110745\n\nCome with your questions! 🩺",
+    "slide_1_ocr": "19\nCalifornia Medicine\nScholars Program\nUC RIVERSIDE\nSchool of Medicine\n15\nZoom invite\n16\nCMSP Inland Empire\nInformation Sessions\n2 SEPT\n15 SEPT\n2:00-3:00PM\n2 Sept - 28 Oct\n30 SEPT\n12:00 - 1:00PM\n12:00-1:00PM\n949 0511 0745\n949 0511 0745\n949 0511 0745\n13 OCT\n2:00-3:00PM\n21 OCT\n2:00-3:00PM\n28 OCT\n12:00-1:00PM\n949 0511 0745\n949 0511 0745\n949 0511 0745\nCMSP_IERHHO@medsch.ucr.edu\ncmsp.ucr.edu"
+   },
+   "origin": "instagram",
+   "posted_at": "2026-09-08T23:00:29+00:00",
+   "source_key": "instagram:post:3981974972906924967",
+   "source_occurrences": []
+  },
+  "result": {
+   "kind": "activity",
+   "reason": "The source advertises multiple online information sessions for the California Medicine Scholars Program, providing specific dates and times for each.",
+   "schedule": null,
+   "date_role": "occurrence",
+   "occurrences": [
+    {
+     "title": "CMSP Information Session",
+     "all_day": false,
+     "ends_at": "2026-09-02T15:00:00-07:00",
+     "location": "https://ucr.zoom.us/j/94905110745",
+     "starts_at": "2026-09-02T14:00:00-07:00",
+     "date_evidence": [
+      {
+       "field": "slide_1_ocr",
+       "quote": "19\nCalifornia Medicine\nScholars Program\nUC RIVERSIDE\nSchool of Medicine\n15\nZoom invite\n16\nCMSP Inland Empire\nInformation Sessions\n2 SEPT\n15 SEPT\n2:00-3:00PM\n2 Sept - 28 Oct\n30 SEPT\n12:00 - 1:00PM\n12:00-1:00PM\n949 0511 0745\n949 0511 0745\n949 0511 0745\n13 OCT\n2:00-3:00PM\n21 OCT\n2:00-3:00PM\n28 OCT\n12:00-1:00PM\n949 0511 0745\n949 0511 0745\n949 0511 0745\nCMSP_IERHHO@medsch.ucr.edu\ncmsp.ucr.edu"
+      }
+     ],
+     "activity_evidence": [
+      {
+       "field": "caption",
+       "quote": "Curious about the California Medicine Scholars Program (CMSP) and how it can support you on your journey to medical school?\n\nJoin us for an online CMSP Information Session to learn more about:\n✨ The CMSP program and what we offer\n🎓 Eligibility and application requirements\n📝 Tips for submitting a strong application\n\nWhether you’re just beginning to explore medicine or already planning your path to medical school, we’d love to meet you!\n\n💻 Online Information Sessions\n📅 September 2, 15 and 30. October 13, 21 and 28.\n⏰ Times vary.\n🔗 https://ucr.zoom.us/j/94905110745\n\nCome with your questions! 🩺"
+      }
+     ],
+     "location_evidence": [
+      {
+       "field": "caption",
+       "quote": "Curious about the California Medicine Scholars Program (CMSP) and how it can support you on your journey to medical school?\n\nJoin us for an online CMSP Information Session to learn more about:\n✨ The CMSP program and what we offer\n🎓 Eligibility and application requirements\n📝 Tips for submitting a strong application\n\nWhether you’re just beginning to explore medicine or already planning your path to medical school, we’d love to meet you!\n\n💻 Online Information Sessions\n📅 September 2, 15 and 30. October 13, 21 and 28.\n⏰ Times vary.\n🔗 https://ucr.zoom.us/j/94905110745\n\nCome with your questions! 🩺"
+      },
+      {
+       "field": "slide_1_ocr",
+       "quote": "19\nCalifornia Medicine\nScholars Program\nUC RIVERSIDE\nSchool of Medicine\n15\nZoom invite\n16\nCMSP Inland Empire\nInformation Sessions\n2 SEPT\n15 SEPT\n2:00-3:00PM\n2 Sept - 28 Oct\n30 SEPT\n12:00 - 1:00PM\n12:00-1:00PM\n949 0511 0745\n949 0511 0745\n949 0511 0745\n13 OCT\n2:00-3:00PM\n21 OCT\n2:00-3:00PM\n28 OCT\n12:00-1:00PM\n949 0511 0745\n949 0511 0745\n949 0511 0745\nCMSP_IERHHO@medsch.ucr.edu\ncmsp.ucr.edu"
+      }
+     ]
+    },
+    {
+     "title": "CMSP Information Session",
+     "all_day": false,
+     "ends_at": "2026-09-15T13:00:00-07:00",
+     "location": "https://ucr.zoom.us/j/94905110745",
+     "starts_at": "2026-09-15T12:00:00-07:00",
+     "date_evidence": [
+      {
+       "field": "slide_1_ocr",
+       "quote": "19\nCalifornia Medicine\nScholars Program\nUC RIVERSIDE\nSchool of Medicine\n15\nZoom invite\n16\nCMSP Inland Empire\nInformation Sessions\n2 SEPT\n15 SEPT\n2:00-3:00PM\n2 Sept - 28 Oct\n30 SEPT\n12:00 - 1:00PM\n12:00-1:00PM\n949 0511 0745\n949 0511 0745\n949 0511 0745\n13 OCT\n2:00-3:00PM\n21 OCT\n2:00-3:00PM\n28 OCT\n12:00-1:00PM\n949 0511 0745\n949 0511 0745\n949 0511 0745\nCMSP_IERHHO@medsch.ucr.edu\ncmsp.ucr.edu"
+      }
+     ],
+     "activity_evidence": [
+      {
+       "field": "caption",
+       "quote": "Curious about the California Medicine Scholars Program (CMSP) and how it can support you on your journey to medical school?\n\nJoin us for an online CMSP Information Session to learn more about:\n✨ The CMSP program and what we offer\n🎓 Eligibility and application requirements\n📝 Tips for submitting a strong application\n\nWhether you’re just beginning to explore medicine or already planning your path to medical school, we’d love to meet you!\n\n💻 Online Information Sessions\n📅 September 2, 15 and 30. October 13, 21 and 28.\n⏰ Times vary.\n🔗 https://ucr.zoom.us/j/94905110745\n\nCome with your questions! 🩺"
+      }
+     ],
+     "location_evidence": [
+      {
+       "field": "caption",
+       "quote": "Curious about the California Medicine Scholars Program (CMSP) and how it can support you on your journey to medical school?\n\nJoin us for an online CMSP Information Session to learn more about:\n✨ The CMSP program and what we offer\n🎓 Eligibility and application requirements\n📝 Tips for submitting a strong application\n\nWhether you’re just beginning to explore medicine or already planning your path to medical school, we’d love to meet you!\n\n💻 Online Information Sessions\n📅 September 2, 15 and 30. October 13, 21 and 28.\n⏰ Times vary.\n🔗 https://ucr.zoom.us/j/94905110745\n\nCome with your questions! 🩺"
+      },
+      {
+       "field": "slide_1_ocr",
+       "quote": "19\nCalifornia Medicine\nScholars Program\nUC RIVERSIDE\nSchool of Medicine\n15\nZoom invite\n16\nCMSP Inland Empire\nInformation Sessions\n2 SEPT\n15 SEPT\n2:00-3:00PM\n2 Sept - 28 Oct\n30 SEPT\n12:00 - 1:00PM\n12:00-1:00PM\n949 0511 0745\n949 0511 0745\n949 0511 0745\n13 OCT\n2:00-3:00PM\n21 OCT\n2:00-3:00PM\n28 OCT\n12:00-1:00PM\n949 0511 0745\n949 0511 0745\n949 0511 0745\nCMSP_IERHHO@medsch.ucr.edu\ncmsp.ucr.edu"
+      }
+     ]
+    },
+    {
+     "title": "CMSP Information Session",
+     "all_day": false,
+     "ends_at": "2026-09-30T13:00:00-07:00",
+     "location": "https://ucr.zoom.us/j/94905110745",
+     "starts_at": "2026-09-30T12:00:00-07:00",
+     "date_evidence": [
+      {
+       "field": "slide_1_ocr",
+       "quote": "19\nCalifornia Medicine\nScholars Program\nUC RIVERSIDE\nSchool of Medicine\n15\nZoom invite\n16\nCMSP Inland Empire\nInformation Sessions\n2 SEPT\n15 SEPT\n2:00-3:00PM\n2 Sept - 28 Oct\n30 SEPT\n12:00 - 1:00PM\n12:00-1:00PM\n949 0511 0745\n949 0511 0745\n949 0511 0745\n13 OCT\n2:00-3:00PM\n21 OCT\n2:00-3:00PM\n28 OCT\n12:00-1:00PM\n949 0511 0745\n949 0511 0745\n949 0511 0745\nCMSP_IERHHO@medsch.ucr.edu\ncmsp.ucr.edu"
+      }
+     ],
+     "activity_evidence": [
+      {
+       "field": "caption",
+       "quote": "Curious about the California Medicine Scholars Program (CMSP) and how it can support you on your journey to medical school?\n\nJoin us for an online CMSP Information Session to learn more about:\n✨ The CMSP program and what we offer\n🎓 Eligibility and application requirements\n📝 Tips for submitting a strong application\n\nWhether you’re just beginning to explore medicine or already planning your path to medical school, we’d love to meet you!\n\n💻 Online Information Sessions\n📅 September 2, 15 and 30. October 13, 21 and 28.\n⏰ Times vary.\n🔗 https://ucr.zoom.us/j/94905110745\n\nCome with your questions! 🩺"
+      }
+     ],
+     "location_evidence": [
+      {
+       "field": "caption",
+       "quote": "Curious about the California Medicine Scholars Program (CMSP) and how it can support you on your journey to medical school?\n\nJoin us for an online CMSP Information Session to learn more about:\n✨ The CMSP program and what we offer\n🎓 Eligibility and application requirements\n📝 Tips for submitting a strong application\n\nWhether you’re just beginning to explore medicine or already planning your path to medical school, we’d love to meet you!\n\n💻 Online Information Sessions\n📅 September 2, 15 and 30. October 13, 21 and 28.\n⏰ Times vary.\n🔗 https://ucr.zoom.us/j/94905110745\n\nCome with your questions! 🩺"
+      },
+      {
+       "field": "slide_1_ocr",
+       "quote": "19\nCalifornia Medicine\nScholars Program\nUC RIVERSIDE\nSchool of Medicine\n15\nZoom invite\n16\nCMSP Inland Empire\nInformation Sessions\n2 SEPT\n15 SEPT\n2:00-3:00PM\n2 Sept - 28 Oct\n30 SEPT\n12:00 - 1:00PM\n12:00-1:00PM\n949 0511 0745\n949 0511 0745\n949 0511 0745\n13 OCT\n2:00-3:00PM\n21 OCT\n2:00-3:00PM\n28 OCT\n12:00-1:00PM\n949 0511 0745\n949 0511 0745\n949 0511 0745\nCMSP_IERHHO@medsch.ucr.edu\ncmsp.ucr.edu"
+      }
+     ]
+    },
+    {
+     "title": "CMSP Information Session",
+     "all_day": false,
+     "ends_at": "2026-10-13T15:00:00-07:00",
+     "location": "https://ucr.zoom.us/j/94905110745",
+     "starts_at": "2026-10-13T14:00:00-07:00",
+     "date_evidence": [
+      {
+       "field": "slide_1_ocr",
+       "quote": "19\nCalifornia Medicine\nScholars Program\nUC RIVERSIDE\nSchool of Medicine\n15\nZoom invite\n16\nCMSP Inland Empire\nInformation Sessions\n2 SEPT\n15 SEPT\n2:00-3:00PM\n2 Sept - 28 Oct\n30 SEPT\n12:00 - 1:00PM\n12:00-1:00PM\n949 0511 0745\n949 0511 0745\n949 0511 0745\n13 OCT\n2:00-3:00PM\n21 OCT\n2:00-3:00PM\n28 OCT\n12:00-1:00PM\n949 0511 0745\n949 0511 0745\n949 0511 0745\nCMSP_IERHHO@medsch.ucr.edu\ncmsp.ucr.edu"
+      }
+     ],
+     "activity_evidence": [
+      {
+       "field": "caption",
+       "quote": "Curious about the California Medicine Scholars Program (CMSP) and how it can support you on your journey to medical school?\n\nJoin us for an online CMSP Information Session to learn more about:\n✨ The CMSP program and what we offer\n🎓 Eligibility and application requirements\n📝 Tips for submitting a strong application\n\nWhether you’re just beginning to explore medicine or already planning your path to medical school, we’d love to meet you!\n\n💻 Online Information Sessions\n📅 September 2, 15 and 30. October 13, 21 and 28.\n⏰ Times vary.\n🔗 https://ucr.zoom.us/j/94905110745\n\nCome with your questions! 🩺"
+      }
+     ],
+     "location_evidence": [
+      {
+       "field": "caption",
+       "quote": "Curious about the California Medicine Scholars Program (CMSP) and how it can support you on your journey to medical school?\n\nJoin us for an online CMSP Information Session to learn more about:\n✨ The CMSP program and what we offer\n🎓 Eligibility and application requirements\n📝 Tips for submitting a strong application\n\nWhether you’re just beginning to explore medicine or already planning your path to medical school, we’d love to meet you!\n\n💻 Online Information Sessions\n📅 September 2, 15 and 30. October 13, 21 and 28.\n⏰ Times vary.\n🔗 https://ucr.zoom.us/j/94905110745\n\nCome with your questions! 🩺"
+      },
+      {
+       "field": "slide_1_ocr",
+       "quote": "19\nCalifornia Medicine\nScholars Program\nUC RIVERSIDE\nSchool of Medicine\n15\nZoom invite\n16\nCMSP Inland Empire\nInformation Sessions\n2 SEPT\n15 SEPT\n2:00-3:00PM\n2 Sept - 28 Oct\n30 SEPT\n12:00 - 1:00PM\n12:00-1:00PM\n949 0511 0745\n949 0511 0745\n949 0511 0745\n13 OCT\n2:00-3:00PM\n21 OCT\n2:00-3:00PM\n28 OCT\n12:00-1:00PM\n949 0511 0745\n949 0511 0745\n949 0511 0745\nCMSP_IERHHO@medsch.ucr.edu\ncmsp.ucr.edu"
+      }
+     ]
+    },
+    {
+     "title": "CMSP Information Session",
+     "all_day": false,
+     "ends_at": "2026-10-21T15:00:00-07:00",
+     "location": "https://ucr.zoom.us/j/94905110745",
+     "starts_at": "2026-10-21T14:00:00-07:00",
+     "date_evidence": [
+      {
+       "field": "slide_1_ocr",
+       "quote": "19\nCalifornia Medicine\nScholars Program\nUC RIVERSIDE\nSchool of Medicine\n15\nZoom invite\n16\nCMSP Inland Empire\nInformation Sessions\n2 SEPT\n15 SEPT\n2:00-3:00PM\n2 Sept - 28 Oct\n30 SEPT\n12:00 - 1:00PM\n12:00-1:00PM\n949 0511 0745\n949 0511 0745\n949 0511 0745\n13 OCT\n2:00-3:00PM\n21 OCT\n2:00-3:00PM\n28 OCT\n12:00-1:00PM\n949 0511 0745\n949 0511 0745\n949 0511 0745\nCMSP_IERHHO@medsch.ucr.edu\ncmsp.ucr.edu"
+      }
+     ],
+     "activity_evidence": [
+      {
+       "field": "caption",
+       "quote": "Curious about the California Medicine Scholars Program (CMSP) and how it can support you on your journey to medical school?\n\nJoin us for an online CMSP Information Session to learn more about:\n✨ The CMSP program and what we offer\n🎓 Eligibility and application requirements\n📝 Tips for submitting a strong application\n\nWhether you’re just beginning to explore medicine or already planning your path to medical school, we’d love to meet you!\n\n💻 Online Information Sessions\n📅 September 2, 15 and 30. October 13, 21 and 28.\n⏰ Times vary.\n🔗 https://ucr.zoom.us/j/94905110745\n\nCome with your questions! 🩺"
+      }
+     ],
+     "location_evidence": [
+      {
+       "field": "caption",
+       "quote": "Curious about the California Medicine Scholars Program (CMSP) and how it can support you on your journey to medical school?\n\nJoin us for an online CMSP Information Session to learn more about:\n✨ The CMSP program and what we offer\n🎓 Eligibility and application requirements\n📝 Tips for submitting a strong application\n\nWhether you’re just beginning to explore medicine or already planning your path to medical school, we’d love to meet you!\n\n💻 Online Information Sessions\n📅 September 2, 15 and 30. October 13, 21 and 28.\n⏰ Times vary.\n🔗 https://ucr.zoom.us/j/94905110745\n\nCome with your questions! 🩺"
+      },
+      {
+       "field": "slide_1_ocr",
+       "quote": "19\nCalifornia Medicine\nScholars Program\nUC RIVERSIDE\nSchool of Medicine\n15\nZoom invite\n16\nCMSP Inland Empire\nInformation Sessions\n2 SEPT\n15 SEPT\n2:00-3:00PM\n2 Sept - 28 Oct\n30 SEPT\n12:00 - 1:00PM\n12:00-1:00PM\n949 0511 0745\n949 0511 0745\n949 0511 0745\n13 OCT\n2:00-3:00PM\n21 OCT\n2:00-3:00PM\n28 OCT\n12:00-1:00PM\n949 0511 0745\n949 0511 0745\n949 0511 0745\nCMSP_IERHHO@medsch.ucr.edu\ncmsp.ucr.edu"
+      }
+     ]
+    },
+    {
+     "title": "CMSP Information Session",
+     "all_day": false,
+     "ends_at": "2026-10-28T13:00:00-07:00",
+     "location": "https://ucr.zoom.us/j/94905110745",
+     "starts_at": "2026-10-28T12:00:00-07:00",
+     "date_evidence": [
+      {
+       "field": "slide_1_ocr",
+       "quote": "19\nCalifornia Medicine\nScholars Program\nUC RIVERSIDE\nSchool of Medicine\n15\nZoom invite\n16\nCMSP Inland Empire\nInformation Sessions\n2 SEPT\n15 SEPT\n2:00-3:00PM\n2 Sept - 28 Oct\n30 SEPT\n12:00 - 1:00PM\n12:00-1:00PM\n949 0511 0745\n949 0511 0745\n949 0511 0745\n13 OCT\n2:00-3:00PM\n21 OCT\n2:00-3:00PM\n28 OCT\n12:00-1:00PM\n949 0511 0745\n949 0511 0745\n949 0511 0745\nCMSP_IERHHO@medsch.ucr.edu\ncmsp.ucr.edu"
+      }
+     ],
+     "activity_evidence": [
+      {
+       "field": "caption",
+       "quote": "Curious about the California Medicine Scholars Program (CMSP) and how it can support you on your journey to medical school?\n\nJoin us for an online CMSP Information Session to learn more about:\n✨ The CMSP program and what we offer\n🎓 Eligibility and application requirements\n📝 Tips for submitting a strong application\n\nWhether you’re just beginning to explore medicine or already planning your path to medical school, we’d love to meet you!\n\n💻 Online Information Sessions\n📅 September 2, 15 and 30. October 13, 21 and 28.\n⏰ Times vary.\n🔗 https://ucr.zoom.us/j/94905110745\n\nCome with your questions! 🩺"
+      }
+     ],
+     "location_evidence": [
+      {
+       "field": "caption",
+       "quote": "Curious about the California Medicine Scholars Program (CMSP) and how it can support you on your journey to medical school?\n\nJoin us for an online CMSP Information Session to learn more about:\n✨ The CMSP program and what we offer\n🎓 Eligibility and application requirements\n📝 Tips for submitting a strong application\n\nWhether you’re just beginning to explore medicine or already planning your path to medical school, we’d love to meet you!\n\n💻 Online Information Sessions\n📅 September 2, 15 and 30. October 13, 21 and 28.\n⏰ Times vary.\n🔗 https://ucr.zoom.us/j/94905110745\n\nCome with your questions! 🩺"
+      },
+      {
+       "field": "slide_1_ocr",
+       "quote": "19\nCalifornia Medicine\nScholars Program\nUC RIVERSIDE\nSchool of Medicine\n15\nZoom invite\n16\nCMSP Inland Empire\nInformation Sessions\n2 SEPT\n15 SEPT\n2:00-3:00PM\n2 Sept - 28 Oct\n30 SEPT\n12:00 - 1:00PM\n12:00-1:00PM\n949 0511 0745\n949 0511 0745\n949 0511 0745\n13 OCT\n2:00-3:00PM\n21 OCT\n2:00-3:00PM\n28 OCT\n12:00-1:00PM\n949 0511 0745\n949 0511 0745\n949 0511 0745\nCMSP_IERHHO@medsch.ucr.edu\ncmsp.ucr.edu"
+      }
+     ]
+    }
+   ],
+   "date_evidence": [
+    {
+     "field": "caption",
+     "quote": "Curious about the California Medicine Scholars Program (CMSP) and how it can support you on your journey to medical school?\n\nJoin us for an online CMSP Information Session to learn more about:\n✨ The CMSP program and what we offer\n🎓 Eligibility and application requirements\n📝 Tips for submitting a strong application\n\nWhether you’re just beginning to explore medicine or already planning your path to medical school, we’d love to meet you!\n\n💻 Online Information Sessions\n📅 September 2, 15 and 30. October 13, 21 and 28.\n⏰ Times vary.\n🔗 https://ucr.zoom.us/j/94905110745\n\nCome with your questions! 🩺"
+    },
+    {
+     "field": "slide_1_ocr",
+     "quote": "19\nCalifornia Medicine\nScholars Program\nUC RIVERSIDE\nSchool of Medicine\n15\nZoom invite\n16\nCMSP Inland Empire\nInformation Sessions\n2 SEPT\n15 SEPT\n2:00-3:00PM\n2 Sept - 28 Oct\n30 SEPT\n12:00 - 1:00PM\n12:00-1:00PM\n949 0511 0745\n949 0511 0745\n949 0511 0745\n13 OCT\n2:00-3:00PM\n21 OCT\n2:00-3:00PM\n28 OCT\n12:00-1:00PM\n949 0511 0745\n949 0511 0745\n949 0511 0745\nCMSP_IERHHO@medsch.ucr.edu\ncmsp.ucr.edu"
+    }
+   ],
+   "activity_evidence": [
+    {
+     "field": "caption",
+     "quote": "Curious about the California Medicine Scholars Program (CMSP) and how it can support you on your journey to medical school?\n\nJoin us for an online CMSP Information Session to learn more about:\n✨ The CMSP program and what we offer\n🎓 Eligibility and application requirements\n📝 Tips for submitting a strong application\n\nWhether you’re just beginning to explore medicine or already planning your path to medical school, we’d love to meet you!\n\n💻 Online Information Sessions\n📅 September 2, 15 and 30. October 13, 21 and 28.\n⏰ Times vary.\n🔗 https://ucr.zoom.us/j/94905110745\n\nCome with your questions! 🩺"
+    },
+    {
+     "field": "slide_1_ocr",
+     "quote": "19\nCalifornia Medicine\nScholars Program\nUC RIVERSIDE\nSchool of Medicine\n15\nZoom invite\n16\nCMSP Inland Empire\nInformation Sessions\n2 SEPT\n15 SEPT\n2:00-3:00PM\n2 Sept - 28 Oct\n30 SEPT\n12:00 - 1:00PM\n12:00-1:00PM\n949 0511 0745\n949 0511 0745\n949 0511 0745\n13 OCT\n2:00-3:00PM\n21 OCT\n2:00-3:00PM\n28 OCT\n12:00-1:00PM\n949 0511 0745\n949 0511 0745\n949 0511 0745\nCMSP_IERHHO@medsch.ucr.edu\ncmsp.ucr.edu"
+    }
+   ],
+   "use_source_occurrences": false
+  }
+ },
+ "polisci_awards": {
+  "source": {
+   "texts": {
+    "caption": "",
+    "ocr_text": "UNDERGRADUATE POLITICAL\nSCIENCE AWARDS 2026-2027\nAPPLY NOW!\nPOLITICAL SCIENCE OUTSTANDING STUDENT AWARD\nGiven to a student who will be a Senior in 2026-27 with\na strong scholastic record (cumulative UCR GPA 3.5+)\nand outstanding contributions in community service,\ndepartment, and campus organizations. A monetary\naward up to $1,000 will be awarded.\nJUDGE ERNEST M. LOPEZ MEMORIAL GRANTS\nAwarded to students who will be Seniors in 2026-27,\ndisadvantaged by social or economic hardship, and\napplying to law school. Grants of $500 or more help\ncover law school preparation and application costs.\nPAY IT FORWARD FIRST GENERATION\nUNIVERSITY STUDENT AWARDS\nAwarded based on merit to Juniors or Seniors in 2026-27,\nstudying political science, and the first generation in\ntheir family to pursue a university-level education.\nA monetary award of $1,000 or more will be given.\n**APPLICATION DEADLINE: WED. MAY 27, 4PM\n@ucrposc_academicadvising101",
+    "post_caption": ""
+   },
+   "origin": "instagram",
+   "posted_at": "2026-05-26T18:31:02Z",
+   "source_key": "instagram:3905737909998506298",
+   "source_occurrences": []
+  },
+  "result": {
+   "kind": "deadline",
+   "reason": "The source explicitly states an application deadline with a specific date and time.",
+   "schedule": null,
+   "date_role": "cutoff",
+   "occurrences": [
+    {
+     "title": "Political Science Awards Application Deadline",
+     "all_day": false,
+     "ends_at": null,
+     "location": "",
+     "starts_at": "2027-05-27T16:00:00-07:00",
+     "date_evidence": [
+      {
+       "field": "ocr_text",
+       "quote": "**APPLICATION DEADLINE: WED. MAY 27, 4PM"
+      }
+     ],
+     "activity_evidence": [
+      {
+       "field": "ocr_text",
+       "quote": "POLITICAL SCIENCE OUTSTANDING STUDENT AWARD"
+      },
+      {
+       "field": "ocr_text",
+       "quote": "JUDGE ERNEST M. LOPEZ MEMORIAL GRANTS"
+      },
+      {
+       "field": "ocr_text",
+       "quote": "PAY IT FORWARD FIRST GENERATION\nUNIVERSITY STUDENT AWARDS"
+      }
+     ],
+     "location_evidence": []
+    }
+   ],
+   "date_evidence": [
+    {
+     "field": "ocr_text",
+     "quote": "**APPLICATION DEADLINE: WED. MAY 27, 4PM"
+    }
+   ],
+   "activity_evidence": [
+    {
+     "field": "ocr_text",
+     "quote": "POLITICAL SCIENCE OUTSTANDING STUDENT AWARD"
+    },
+    {
+     "field": "ocr_text",
+     "quote": "JUDGE ERNEST M. LOPEZ MEMORIAL GRANTS"
+    },
+    {
+     "field": "ocr_text",
+     "quote": "PAY IT FORWARD FIRST GENERATION\nUNIVERSITY STUDENT AWARDS"
+    }
+   ],
+   "use_source_occurrences": false
+  }
+ }
+}
