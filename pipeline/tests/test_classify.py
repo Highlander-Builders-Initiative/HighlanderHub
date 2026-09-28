@@ -556,7 +556,7 @@ class ClassifyContentKindTests(unittest.TestCase):
         ))
 
     def test_free_food_detection_preserves_word_boundaries_and_optional_texts(self) -> None:
-        for text, expected in (("FREE PIZZA tonight", True), ("Boba meetup", True),
+        for text, expected in (("FREE PIZZA tonight", True), ("Boba meetup", False), ("Free boba", True),
                                ("refreshments", True), ("Bobak speaks", False),
                                ("Pizza for sale", False), (None, False), ("", False)):
             with self.subTest(text=text):

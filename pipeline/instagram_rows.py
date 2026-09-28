@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from typing import Any, Iterable
 
 from category_inference import infer_category_from_text
-from classify import classify_content_kind, detect_free_food
+from classify import classify_content_kind, detect_free_food, title_offers_boba
 from event_dates import midnight_end, normalize_timestamptz, was_stale_when_posted
 from url_utils import normalize_http_url, normalize_rsvp_url
 
@@ -29,6 +29,9 @@ _RSVP_WAIVED_AFTER = re.compile(
     r"\s*(?:(?:is|are)\s+)?(?:not\s+(?:required|needed|necessary|mandatory)|optional|unnecessary"
     r"|(?:appreciated|encouraged|recommended)\s*,?\s*but\s+not\s+required)\b", re.I)
 _CAPTION_URL = re.compile(r"https?://[^\s<>\"')\]]+", re.I)
+# A direct meeting link ("ucr.zoom.us/j/949...") is how to join, not a
+# registration; a Zoom webinar's /webinar/register/ page still is one.
+_MEETING_JOIN_URL = re.compile(r"https?://(?:[\w-]+\.)*zoom\.us/j/", re.I)
 # Gratitude addressed to people who already took part ("thank you for
 # participating", "thanks to everyone who came") recaps an occasion.
 _RECAP = re.compile(
@@ -153,8 +156,9 @@ def build_instagram_row(
         "content_kind": content_kind, "tags": tags, "source": "instagram",
         "source_url": normalize_http_url(raw.get("permalink")),
         "image_url": normalize_http_url(image_url),
-        "has_free_food": detect_free_food(text, title, description, *tags),
-        "rsvp_required": bool(rsvp_url) or _bool_or_default(occurrence.get("rsvp_required"), False)
+        "has_free_food": detect_free_food(text, title, description, *tags) or title_offers_boba(title),
+        "rsvp_required": bool(rsvp_url and not _MEETING_JOIN_URL.match(rsvp_url))
+                         or _bool_or_default(occurrence.get("rsvp_required"), False)
                          or _requires_signup(text),
         "rsvp_url": rsvp_url, "scraped_at": scraped_at,
     }
