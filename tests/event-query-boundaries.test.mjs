@@ -21,7 +21,7 @@ hook.deregister();
 
 const source = Array.from({ length: 1101 }, (_, i) => ({
   id: `ig_${String(i).padStart(4, '0')}`, title: i === 1100 ? 'Boundary Match' : `Event ${i}`,
-  description: '', starts_at: '2027-05-25T18:00:00Z', ends_at: '2027-05-25T20:00:00Z',
+  description: '', starts_at: '2099-05-25T18:00:00Z', sort_at: '2099-05-25T18:00:00Z', ends_at: '2099-05-25T20:00:00Z',
   location: 'HUB', host: 'Club', host_handle: i === 1099 ? 'aacfucriverside' : 'club', hosts: [],
   category: i % 2 ? 'academic' : 'hangout',
   content_kind: i === 1098 ? 'student_deadline' : 'student_event', tags: [], has_free_food: i === 1100,
@@ -32,7 +32,7 @@ function installApi(t, cap = 1000) {
   t.mock.method(globalThis, 'fetch', async (input) => {
     const url = new URL(input instanceof Request ? input.url : input);
     const p = url.searchParams;
-    assert.equal(p.get('order'), 'starts_at.asc,id.asc');
+    assert.equal(p.get('order'), 'sort_at.asc,id.asc');
     assert.equal(p.get('content_kind'), 'in.(student_event,student_deadline)');
     let rows = source;
     if (p.has('id')) {
@@ -45,8 +45,8 @@ function installApi(t, cap = 1000) {
       rows = rows.filter(row => `eq.${row.content_kind}` === kind);
     }
     for (const value of p.getAll('or')) {
-      const after = /^\(starts_at\.gt\."(.+)",and\(starts_at\.eq\."(.+)",id\.gt\."(.+)"\)\)$/.exec(value);
-      if (after) rows = rows.filter(row => row.starts_at > after[1] || (row.starts_at === after[2] && row.id > after[3]));
+      const after = /^\(sort_at\.gt\."(.+)",and\(sort_at\.eq\."(.+)",id\.gt\."(.+)"\)\)$/.exec(value);
+      if (after) rows = rows.filter(row => row.sort_at > after[1] || (row.sort_at === after[2] && row.id > after[3]));
     }
     for (const condition of p.getAll('starts_at')) {
       const [operator, ...value] = condition.split('.');
@@ -89,7 +89,7 @@ test('search pages stay disjoint when a matched row ends before hydration', asyn
   const second = await events.getEventsPage({ query: 'event', after: first.cursor, limit: 24 });
   const firstIds = first.events.map(row => row.id);
   assert.deepEqual(firstIds.filter(id => second.events.some(row => row.id === id)), []);
-  assert.deepEqual(first.cursor, { startsAt: '2027-05-25T18:00:00Z', id: 'ig_0023' });
+  assert.deepEqual(first.cursor, { sortAt: '2099-05-25T18:00:00Z', id: 'ig_0023' });
   assert.equal(second.events[0].id, 'ig_0024');
   // Each page hydrates exactly its own ids, never the next page's first row.
   const hydrated = requests.filter(r => r.params.has('id')).map(r => r.params.get('id').slice(4, -1).split(','));
@@ -103,6 +103,7 @@ test('events that end between page reads do not shift later events out of the fe
   const rows = Array.from({ length: 60 }, (_, i) => ({
     ...source[i], id: `ev_${String(i).padStart(2, '0')}`,
     starts_at: new Date(Date.UTC(2027, 0, 1, 10, i)).toISOString(),
+    sort_at: new Date(Date.UTC(2027, 0, 1, 10, i)).toISOString(),
     ends_at: i < 5 ? '2027-01-01T12:00:00.000Z' : '2027-01-02T12:00:00.000Z',
   }));
   t.mock.method(globalThis, 'fetch', async (input) => {
@@ -111,8 +112,8 @@ test('events that end between page reads do not shift later events out of the fe
     for (const filter of p.getAll('or')) {
       const active = /^\(ends_at\.gte\.([^,]+),/.exec(filter);
       if (active) page = page.filter(row => row.ends_at >= active[1]);
-      const after = /^\(starts_at\.gt\."(.+)",and\(starts_at\.eq\."(.+)",id\.gt\."(.+)"\)\)$/.exec(filter);
-      if (after) page = page.filter(row => row.starts_at > after[1] || (row.starts_at === after[2] && row.id > after[3]));
+      const after = /^\(sort_at\.gt\."(.+)",and\(sort_at\.eq\."(.+)",id\.gt\."(.+)"\)\)$/.exec(filter);
+      if (after) page = page.filter(row => row.sort_at > after[1] || (row.sort_at === after[2] && row.id > after[3]));
     }
     const offset = Number(p.get('offset') ?? 0);
     page = page.slice(offset, offset + Number(p.get('limit') ?? 1000));
@@ -124,19 +125,41 @@ test('events that end between page reads do not shift later events out of the fe
   const second = await events.getEventsPage({ after: first.cursor, limit: 24 });
   const shown = new Set([...first.events, ...second.events].map(row => row.id));
   assert.deepEqual(rows.slice(5, 48).map(row => row.id).filter(id => !shown.has(id)), []);
-  assert.deepEqual(first.cursor, { startsAt: rows[23].starts_at, id: 'ev_23' });
+  assert.deepEqual(first.cursor, { sortAt: rows[23].sort_at, id: 'ev_23' });
   assert.equal(second.events[0].id, 'ev_24');
+});
+
+test('a cached page served after midnight drops the deadlines that closed since it was read', async t => {
+  // What a read at 11 PM Sunday saw; the cache serves it again at 12:05 AM.
+  // In feed order: the date-only deadline sorts at its 11:59 PM cutoff.
+  const rows = [
+    { ...source[1], id: 'overnight', starts_at: '2026-09-28T04:00:00Z', sort_at: '2026-09-28T04:00:00Z',
+      ends_at: '2026-09-28T09:00:00Z' },
+    { ...source[0], id: 'by_sunday', content_kind: 'student_deadline',
+      starts_at: '2026-09-27T07:00:00Z', sort_at: '2026-09-28T06:59:00Z', ends_at: '2026-09-28T07:00:00Z' },
+    { ...source[2], id: 'sunday_1159pm', content_kind: 'student_deadline',
+      starts_at: '2026-09-28T06:59:00Z', sort_at: '2026-09-28T06:59:00Z', ends_at: null },
+  ];
+  t.mock.method(globalThis, 'fetch', async (input) => {
+    const offset = Number(new URL(input).searchParams.get('offset') ?? 0);
+    return new Response(JSON.stringify(rows.slice(offset)), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  });
+  t.mock.timers.enable({ apis: ['Date'], now: Date.parse('2026-09-28T07:05:00Z') });
+  const page = await events.getEventsPage({ limit: 24 });
+  assert.deepEqual(page.events.map(event => event.id), ['overnight']);
+  // The next page still starts after the last row read, not the last one shown.
+  assert.deepEqual(page.cursor, { sortAt: '2026-09-28T06:59:00Z', id: 'sunday_1159pm' });
 });
 
 test('the events API rejects a cursor it cannot read instead of starting over', async t => {
   const requests = installApi(t);
   // Page one would carry an equally unreadable cursor back: the feed would never advance.
-  for (const query of ['after=yesterday&afterId=ig_0001', 'after=2027-05-25T18:00:00Z', 'afterId=ig_0001']) {
+  for (const query of ['after=yesterday&afterId=ig_0001', 'after=2099-05-25T18:00:00Z', 'afterId=ig_0001']) {
     const response = await eventsRoute.GET(new Request(`https://hub.test/api/events?${query}`));
     assert.equal(response.status, 400, query);
   }
   assert.equal(requests.length, 0);
-  const next = await eventsRoute.GET(new Request('https://hub.test/api/events?after=2027-05-25T18:00:00Z&afterId=ig_0001&limit=2'));
+  const next = await eventsRoute.GET(new Request('https://hub.test/api/events?after=2099-05-25T18:00:00Z&afterId=ig_0001&limit=2'));
   assert.deepEqual((await next.json()).events.map(event => event.id), ['ig_0002', 'ig_0003']);
 });
 
@@ -176,7 +199,7 @@ test('category and date filters precede page ranges, including free food', async
   assert.equal(first.hasMore, true);
   assert.equal(new Set([...first.events, ...second.events].map(row => row.id)).size, 48);
   assert.equal(requests.reduce((n, r) => n + r.rows, 0), 50);
-  const food = await events.getEventsPage({ freeFood: true, dayWindow: 'today', todayKey: '2027-05-25' });
+  const food = await events.getEventsPage({ freeFood: true, dayWindow: 'today', todayKey: '2099-05-25' });
   assert.deepEqual(food.events.map(row => row.id), ['ig_1100']);
   assert.ok(requests.at(-1).params.getAll('starts_at').length === 2);
   // Free food narrows a topic rather than replacing it.
@@ -199,7 +222,7 @@ test('Hosted by pages through the shared source, like search', async t => {
 test('counts and calendars exhaust even a server cap smaller than the batch', async t => {
   installApi(t, 137);
   assert.equal((await events.getEventFilterCountSource()).length, 1101);
-  assert.equal((await events.getCalendarEvents({ startDayKey: '2027-05-01', endDayKey: '2027-05-31' })).length, 1101);
+  assert.equal((await events.getCalendarEvents({ startDayKey: '2099-05-01', endDayKey: '2099-05-31' })).length, 1101);
 });
 
 test('a failed continuation rejects the entire count result', async t => {

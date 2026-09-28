@@ -135,7 +135,15 @@ function isSavedDayWindow(value: unknown): value is DayWindow {
 function isSavedCursor(value: unknown): value is EventFeedCursor | null {
   if (value === null) return true;
   const cursor = value as Partial<EventFeedCursor> | undefined;
-  return typeof cursor?.startsAt === "string" && typeof cursor.id === "string";
+  return typeof cursor?.sortAt === "string" && typeof cursor.id === "string";
+}
+
+/** Snapshots saved before events carried their feed order have none. */
+function isSavedEvents(value: unknown): value is CampusEvent[] {
+  return (
+    Array.isArray(value) &&
+    value.every((event) => typeof (event as Partial<CampusEvent>)?.sortAt === "string")
+  );
 }
 
 function isSavedCategory(value: unknown): value is CategoryValue {
@@ -166,7 +174,7 @@ function readSessionSnapshot() {
       typeof parsed.path !== "string" ||
       typeof parsed.scrollY !== "number" ||
       typeof parsed.savedAt !== "number" ||
-      !Array.isArray(parsed.events) ||
+      !isSavedEvents(parsed.events) ||
       typeof parsed.hasMore !== "boolean" ||
       !isSavedCursor(parsed.cursor) ||
       (Object.prototype.hasOwnProperty.call(parsed, "view") &&

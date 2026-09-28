@@ -1,11 +1,11 @@
 import type {
   EventCategory,
   EventContentKind,
-  EventRow,
 } from "@/lib/supabase-rows";
+import type { StoredEventRow } from "@/lib/events/map-event-row";
 
-/** Live event row for admin (generated EventRow + DB moderation columns). */
-export type AdminEventRow = EventRow & {
+/** Live event row for admin (stored event row + DB moderation columns). */
+export type AdminEventRow = StoredEventRow & {
   is_locked: boolean;
   created_at: string;
   updated_at: string;
@@ -57,8 +57,8 @@ export type AdminEventUpdatePayload = {
 /** Same ordering as `getEventsPage` on the public /events feed. */
 export function sortEventsByFeedOrder(events: AdminEventRow[]): AdminEventRow[] {
   return [...events].sort((a, b) => {
-    const byStart = a.starts_at.localeCompare(b.starts_at);
-    if (byStart !== 0) return byStart;
+    const byTime = Date.parse(a.sort_at) - Date.parse(b.sort_at);
+    if (byTime !== 0) return byTime;
     return a.id.localeCompare(b.id);
   });
 }

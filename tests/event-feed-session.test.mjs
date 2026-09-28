@@ -62,6 +62,7 @@ test("event feed session keeps the list snapshot and return metadata together", 
         title: "Event 1",
         description: "Desc",
         startsAt: "2026-05-20T18:30:00.000-07:00",
+        sortAt: "2026-05-20T18:30:00.000-07:00",
         location: "HUB 302",
         host: "QA",
         category: "hangout",
@@ -215,6 +216,35 @@ test("snapshots saved before the rail's switches restore with them off", async (
       [saved.category, saved.freeFood, saved.deadlines, saved.hostGroup],
       ["sports", false, false, "all"]
     );
+  } finally {
+    Date.now = previousNow;
+    env.restore();
+  }
+});
+
+test("snapshots saved before events carried their feed order are dropped", async () => {
+  const env = installBrowserEnv();
+  const previousNow = Date.now;
+  // Later than the other mocked snapshots and long before the real clock, so
+  // the module's in-memory snapshot never carries between tests.
+  Date.now = () => 1_750_000_000_000;
+
+  try {
+    const session = await importTsModule("src/lib/events/feed-session.ts");
+    const snapshot = (event, cursor) => JSON.stringify({
+      path: "/events", scrollY: 0, events: [event], hasMore: true, cursor,
+      category: "all", query: "", dayWindow: "all", loadedCount: 1, savedAt: Date.now(),
+    });
+    const startsAt = "2026-05-20T18:30:00.000-07:00";
+    const event = { id: "event-1", title: "Event 1", startsAt };
+
+    env.store.set("highlanderhub.eventFeed", snapshot(event, { startsAt, id: "event-1" }));
+    assert.equal(session.getSavedEventFeedSnapshot(), null);
+    env.store.set("highlanderhub.eventFeed", snapshot(event, null));
+    assert.equal(session.getSavedEventFeedSnapshot(), null);
+    env.store.set("highlanderhub.eventFeed",
+      snapshot({ ...event, sortAt: startsAt }, { sortAt: startsAt, id: "event-1" }));
+    assert.equal(session.getSavedEventFeedSnapshot()?.cursor?.id, "event-1");
   } finally {
     Date.now = previousNow;
     env.restore();

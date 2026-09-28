@@ -8,6 +8,7 @@ export const E2E_FIXTURE_EVENT: CampusEvent = {
   description:
     "A deterministic event used by Playwright to verify the browse and detail flow.",
   startsAt: "2026-05-20T18:30:00.000-07:00",
+  sortAt: "2026-05-20T18:30:00.000-07:00",
   endsAt: "2026-05-20T20:00:00.000-07:00",
   location: "HUB 302",
   host: "Highlander Hub QA",
@@ -34,6 +35,7 @@ export const E2E_FIXTURE_EVENTS: CampusEvent[] = [
     description:
       "A deterministic student deadline used by Playwright to verify deadline labeling.",
     startsAt: "2026-05-21T23:59:00.000-07:00",
+    sortAt: "2026-05-21T23:59:00.000-07:00",
     endsAt: undefined,
     category: "academic",
     contentKind: "student_deadline",
@@ -46,6 +48,7 @@ export const E2E_FIXTURE_EVENTS: CampusEvent[] = [
     description:
       "A deterministic fundraiser used by Playwright to verify it is excluded from browse.",
     startsAt: "2026-05-22T18:00:00.000-07:00",
+    sortAt: "2026-05-22T18:00:00.000-07:00",
     endsAt: undefined,
     category: "other",
     contentKind: "fundraiser",
@@ -58,6 +61,7 @@ export const E2E_FIXTURE_EVENTS: CampusEvent[] = [
     description:
       "A deterministic non-student official item used to verify it is excluded from browse.",
     startsAt: "2026-05-23T09:00:00.000-07:00",
+    sortAt: "2026-05-23T09:00:00.000-07:00",
     endsAt: undefined,
     category: "other",
     contentKind: "other",

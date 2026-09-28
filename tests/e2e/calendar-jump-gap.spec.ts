@@ -2,13 +2,17 @@ import { expect, test } from "@playwright/test";
 import { E2E_FIXTURE_EVENT } from "../../src/lib/events/fixtures";
 
 function eventsOn(day: string, count: number, prefix: string) {
-  return Array.from({ length: count }, (_, index) => ({
-    ...E2E_FIXTURE_EVENT,
-    id: `${prefix}-${index}`,
-    title: `${prefix} ${index}`,
-    startsAt: `${day}T${String(10 + Math.floor(index / 6)).padStart(2, "0")}:${String((index % 6) * 10).padStart(2, "0")}:00-07:00`,
-    endsAt: undefined,
-  }));
+  return Array.from({ length: count }, (_, index) => {
+    const startsAt = `${day}T${String(10 + Math.floor(index / 6)).padStart(2, "0")}:${String((index % 6) * 10).padStart(2, "0")}:00-07:00`;
+    return {
+      ...E2E_FIXTURE_EVENT,
+      id: `${prefix}-${index}`,
+      title: `${prefix} ${index}`,
+      startsAt,
+      sortAt: startsAt,
+      endsAt: undefined,
+    };
+  });
 }
 
 const initial = [
@@ -25,7 +29,7 @@ test("a calendar jump past the loaded pages also loads the days before the grid"
   await page.addInitScript(({ initial }) => {
     sessionStorage.setItem("highlanderhub.eventFeed", JSON.stringify({
       path: "/events", scrollY: 0, events: initial, hasMore: true,
-      cursor: { startsAt: initial[initial.length - 1].startsAt, id: initial[initial.length - 1].id },
+      cursor: { sortAt: initial[initial.length - 1].sortAt, id: initial[initial.length - 1].id },
       category: "all", query: "", dayWindow: "all",
       loadedCount: 24, eventId: initial[0].id, eventTop: 300, savedAt: Date.now(),
     }));

@@ -1,5 +1,5 @@
 import type { CampusEvent } from "@/types/event";
-import { formatTimeRange } from "@/lib/dates";
+import { formatAllDay, formatTimeRange, pacificDayKey } from "@/lib/dates";
 import { normalizeHttpUrl } from "@/lib/events/validation";
 
 function calendarDate(value: string) {
@@ -9,18 +9,45 @@ function calendarDate(value: string) {
     .replace(/\.\d{3}Z$/, "Z");
 }
 
+/** YYYYMMDD of the Pacific date, for an all-day entry. */
+function calendarDay(value: string) {
+  return pacificDayKey(value).replace(/-/g, "");
+}
+
 function addHours(value: string, hours: number) {
   return new Date(
     new Date(value).getTime() + hours * 60 * 60 * 1000
   ).toISOString();
 }
 
-export function calendarHref(event: CampusEvent) {
+/**
+ * The entry's bounds. A date-only listing (midnight to midnight; see
+ * formatAllDay), such as a deadline due "by Sep 27", becomes an all-day entry
+ * on its Pacific dates, end exclusive. As a timed entry it would open at the
+ * midnight starting the day, and the default alert would ring the night before.
+ */
+function calendarRange(event: CampusEvent) {
+  if (event.endsAt && formatAllDay(event.startsAt, event.endsAt)) {
+    return {
+      allDay: true,
+      start: calendarDay(event.startsAt),
+      end: calendarDay(event.endsAt),
+    };
+  }
   const end = event.endsAt ?? addHours(event.startsAt, 1);
+  return {
+    allDay: false,
+    start: calendarDate(event.startsAt),
+    end: calendarDate(end),
+  };
+}
+
+export function calendarHref(event: CampusEvent) {
+  const { start, end } = calendarRange(event);
   const params = new URLSearchParams({
     action: "TEMPLATE",
     text: event.title,
-    dates: `${calendarDate(event.startsAt)}/${calendarDate(end)}`,
+    dates: `${start}/${end}`,
     details: event.description,
     location: event.location,
   });
@@ -68,7 +95,8 @@ function foldIcsLine(line: string) {
  * complements `calendarHref` (Google's web template) for the rest of campus.
  */
 export function buildIcsContent(event: CampusEvent, now = new Date()) {
-  const end = event.endsAt ?? addHours(event.startsAt, 1);
+  const { allDay, start, end } = calendarRange(event);
+  const valueType = allDay ? ";VALUE=DATE" : "";
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
@@ -77,8 +105,8 @@ export function buildIcsContent(event: CampusEvent, now = new Date()) {
     "BEGIN:VEVENT",
     `UID:${event.id}@highlanderhub.app`,
     `DTSTAMP:${calendarDate(now.toISOString())}`,
-    `DTSTART:${calendarDate(event.startsAt)}`,
-    `DTEND:${calendarDate(end)}`,
+    `DTSTART${valueType}:${start}`,
+    `DTEND${valueType}:${end}`,
     `SUMMARY:${escapeIcsText(event.title)}`,
     `DESCRIPTION:${escapeIcsText(event.description)}`,
     `LOCATION:${escapeIcsText(event.location)}`,

@@ -11,6 +11,7 @@ for (const scenario of ["loaded month", "adjacent month", "filtered day"] as con
       id: `calendar-load-${index}`,
       title: `Calendar load event ${index}`,
       startsAt: "2026-06-01T18:30:00-07:00",
+      sortAt: "2026-06-01T18:30:00-07:00",
       endsAt: "2026-06-01T20:00:00-07:00",
     }));
     const calendarEvents = scenario === "filtered day"
@@ -18,6 +19,7 @@ for (const scenario of ["loaded month", "adjacent month", "filtered day"] as con
           ...E2E_FIXTURE_EVENT,
           id: "calendar-filtered-out",
           startsAt: "2026-06-02T18:30:00-07:00",
+          sortAt: "2026-06-02T18:30:00-07:00",
           category: "academic",
         }]
       : juneEvents;

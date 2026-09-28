@@ -110,7 +110,7 @@ test("calendar loads its own month-range events outside feed pagination", () => 
   assert.match(browser, /isCalendarLoading/);
   assert.match(browser, /useEventFeedRestore/);
   assert.match(browser, /useEventFeedNavigation/);
-  assert.match(navigation, /mergeUniqueEventsByStart\(current, eventsToMerge\)/);
+  assert.match(navigation, /mergeUniqueEventsInFeedOrder\(current, eventsToMerge\)/);
   assert.match(navigation, /key >= lastLoadedDay && key <= dayKey/);
   assert.match(navigation, /calendarJumpSuppressUntilRef/);
   assert.match(navigation, /calendarJumpEndsAtLoadedBoundary/);
@@ -405,7 +405,7 @@ test("event back navigation restores from a snapshot before falling back to pagi
   assert.match(restore, /restoreSavedEventFeedSpot/);
   assert.match(restore, /restoreEventsUntilTarget/);
   assert.match(restore, /deriveRestoreIntent/);
-  assert.match(restore, /mergeUniqueEventsByStart/);
+  assert.match(restore, /mergeUniqueEventsInFeedOrder/);
   assert.match(restore, /root\.style\.scrollBehavior = "auto"/);
   assert.match(restore, /const limitToFetch = Math\.max\(0, target\.loadedCount - current\.length\);/);
   assert.match(

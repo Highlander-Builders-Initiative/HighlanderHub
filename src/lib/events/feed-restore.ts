@@ -11,7 +11,7 @@ import {
   type SavedScrollPosition,
 } from "@/lib/events/feed-session";
 import { fetchEventsPage, type EventsApiPage } from "@/lib/events/api";
-import { mergeUniqueEventsByStart } from "@/lib/events/merge";
+import { mergeUniqueEventsInFeedOrder } from "@/lib/events/merge";
 
 export type EventFeedRestorePatch = Partial<EventFeedFacets> & {
   category?: CategoryValue;
@@ -45,7 +45,7 @@ export function restoreToEventCard(eventId: string, eventTop = 0) {
 }
 
 function sameCursor(a: EventFeedCursor | null, b: EventFeedCursor | null) {
-  return a?.startsAt === b?.startsAt && a?.id === b?.id;
+  return a?.sortAt === b?.sortAt && a?.id === b?.id;
 }
 
 export async function restoreEventsUntilTarget(
@@ -64,7 +64,7 @@ export async function restoreEventsUntilTarget(
     const limitToFetch = Math.max(0, target.loadedCount - current.length);
     if (limitToFetch > 0) {
       const page = await fetchPage(next, limitToFetch, filters);
-      const nextEvents = mergeUniqueEventsByStart(restored, page.events);
+      const nextEvents = mergeUniqueEventsInFeedOrder(restored, page.events);
       if (nextEvents.length === restored.length && sameCursor(page.cursor, restoredNext)) {
         return { current: restored, next: restoredNext, more: restoredMore };
       }
@@ -79,7 +79,7 @@ export async function restoreEventsUntilTarget(
     !restored.some((event) => event.id === target.eventId)
   ) {
     const page = await fetchPage(restoredNext, undefined, filters);
-    const nextEvents = mergeUniqueEventsByStart(restored, page.events);
+    const nextEvents = mergeUniqueEventsInFeedOrder(restored, page.events);
     if (nextEvents.length === restored.length && sameCursor(page.cursor, restoredNext)) break;
     restored = nextEvents;
     restoredNext = page.cursor;

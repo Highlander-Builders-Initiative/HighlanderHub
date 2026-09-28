@@ -2,9 +2,8 @@ import { cache } from "react";
 import { unstable_cache } from "next/cache";
 import { coerceEventCategory, type CampusEvent } from "@/types/event";
 import type { EventFeedCursor, EventFilterCountSource } from "@/types/events-feed";
-import type { EventRow } from "@/lib/supabase-rows";
 import { publicEventHosts } from "@/lib/events/anonymized-hosts";
-import { eventRowToCampusEvent } from "@/lib/events/map-event-row";
+import { eventRowToCampusEvent, type StoredEventRow } from "@/lib/events/map-event-row";
 import { supabase } from "@/lib/supabase";
 import {
   addPacificDays,
@@ -63,11 +62,12 @@ type CalendarEventsOptions = {
 };
 
 type EventFilterCountRow = Pick<
-  EventRow,
+  StoredEventRow,
   | "id"
   | "title"
   | "description"
   | "starts_at"
+  | "sort_at"
   | "location"
   | "host"
   | "host_handle"
@@ -78,7 +78,7 @@ type EventFilterCountRow = Pick<
   | "has_free_food"
 >;
 
-type EventSitemapRow = Pick<EventRow, "id" | "scraped_at">;
+type EventSitemapRow = Pick<StoredEventRow, "id" | "scraped_at">;
 
 export type EventsPageResult = {
   events: CampusEvent[];
@@ -101,6 +101,7 @@ function toEventFilterCountSource(
     title: r.title,
     description: r.description,
     startsAt: r.starts_at,
+    sortAt: r.sort_at,
     location: r.location,
     host: hosts.map((entry) => entry.host || entry.hostHandle).join(" & "),
     hostHandle: hosts[0]?.hostHandle,
@@ -139,24 +140,24 @@ function hasEventPageFilters({
 }
 
 function toCursor(
-  event: { startsAt: string; id: string } | undefined,
+  event: EventFeedCursor | undefined,
   fallback: EventFeedCursor | null
 ): EventFeedCursor | null {
-  return event ? { startsAt: event.startsAt, id: event.id } : fallback;
+  return event ? { sortAt: event.sortAt, id: event.id } : fallback;
 }
 
 /** Index of the first event after `after` in a list in feed order. */
 function indexAfter(
-  events: { startsAt: string; id: string }[],
+  events: EventFeedCursor[],
   after: EventFeedCursor | null
 ): number {
   if (!after) return 0;
-  const instant = Date.parse(after.startsAt);
-  const start = events.findIndex((event) => Date.parse(event.startsAt) >= instant);
+  const instant = Date.parse(after.sortAt);
+  const start = events.findIndex((event) => Date.parse(event.sortAt) >= instant);
   if (start < 0) return events.length;
   // Resume after the cursor's own row. If it is gone, repeat its instant:
   // the client drops the events it already has.
-  for (let i = start; i < events.length && Date.parse(events[i].startsAt) === instant; i += 1) {
+  for (let i = start; i < events.length && Date.parse(events[i].sortAt) === instant; i += 1) {
     if (events[i].id === after.id) return i + 1;
   }
   return start;
@@ -179,9 +180,9 @@ function paginateEvents(
 // Quoted, so an id's dots or a timestamp's colons stay part of the value.
 const postgrestValue = (value: string) => `"${value.replace(/[\\"]/g, "\\$&")}"`;
 
-function afterCursorFilter({ startsAt, id }: EventFeedCursor): string {
-  const start = postgrestValue(startsAt);
-  return `starts_at.gt.${start},and(starts_at.eq.${start},id.gt.${postgrestValue(id)})`;
+function afterCursorFilter({ sortAt, id }: EventFeedCursor): string {
+  const at = postgrestValue(sortAt);
+  return `sort_at.gt.${at},and(sort_at.eq.${at},id.gt.${postgrestValue(id)})`;
 }
 
 export function activeEventFilter(nowIso: string): string {
@@ -235,13 +236,33 @@ async function withDbRetry<T extends { error: unknown }>(
   reportDbFailure(operation, lastError, context);
 }
 
+/**
+ * `refresh` runs on every cached result, however old: past its TTL an entry is
+ * still served once (stale-while-revalidate) while it refills, and a rarely
+ * read key can be hours old by then.
+ */
 function cachePublicRead<Args extends unknown[], Result>(
   operation: (...args: Args) => Promise<Result>,
-  keyParts: string[]
+  keyParts: string[],
+  refresh: (result: Result) => Result = (result) => result
 ): (...args: Args) => Promise<Result> {
   const cached = unstable_cache(operation, keyParts, eventsCacheOptions);
   return (...args: Args) =>
-    e2eFixturesEnabled() ? operation(...args) : cached(...args);
+    e2eFixturesEnabled() ? operation(...args) : cached(...args).then(refresh);
+}
+
+/**
+ * activeEventFilter, re-applied at read time: a cached page was filtered
+ * against the clock when it was read, so it can still hold events that have
+ * ended since, such as a deadline that closed at midnight. The cursor stays
+ * the page's own, so the next page starts where the read left off.
+ */
+function dropEndedEvents(page: EventsPageResult): EventsPageResult {
+  const now = Date.now();
+  const events = page.events.filter(
+    (event) => Date.parse(event.endsAt ?? event.startsAt) >= now
+  );
+  return events.length === page.events.length ? page : { ...page, events };
 }
 
 async function getEventsUpcomingThisWeekUncached(): Promise<number> {
@@ -275,7 +296,8 @@ async function getEventsUpcomingThisWeekUncached(): Promise<number> {
 }
 
 /**
- * Reads visible events from Supabase, sorted by start time ascending.
+ * Reads visible events from Supabase in feed order: by `sort_at` (when each
+ * starts or, for a deadline, is due), then id.
  * Events stay visible until their `ends_at` time; if they have no end time,
  * they fall back to `starts_at` so one-off posts still disappear.
  */
@@ -326,8 +348,8 @@ async function getEventsPageUncached({
           supabase.from("events").select("*")
             .in("content_kind", PUBLIC_CONTENT_KINDS)
             .or(activeEventFilter(nowIso)).in("id", ids)
-            .order("starts_at", { ascending: true }).order("id", { ascending: true })
-            .range(offset, end).overrideTypes<EventRow[], { merge: false }>(), ids.length);
+            .order("sort_at", { ascending: true }).order("id", { ascending: true })
+            .range(offset, end).overrideTypes<StoredEventRow[], { merge: false }>(), ids.length);
         return {
           events: rows.map(eventRowToCampusEvent),
           hasMore: matches.length > from + pageSize,
@@ -349,9 +371,9 @@ async function getEventsPageUncached({
             .lt("starts_at", parsePacificDateTimeInput(`${addPacificDays(range.end, 1)}T00:00`)!);
         }
         if (after) request = request.or(afterCursorFilter(after));
-        return request.order("starts_at", { ascending: true })
+        return request.order("sort_at", { ascending: true })
           .order("id", { ascending: true }).range(offset, end)
-          .overrideTypes<EventRow[], { merge: false }>();
+          .overrideTypes<StoredEventRow[], { merge: false }>();
       }, pageSize + 1);
 
       const events = rows.slice(0, pageSize).map(eventRowToCampusEvent);
@@ -398,10 +420,10 @@ async function getEventFilterCountSourceUncached(): Promise<
       const rows = await readEventRows("event filter counts", (from, to) =>
         supabase
           .from("events")
-          .select("id,title,description,starts_at,location,host,host_handle,hosts,category,content_kind,tags,has_free_food")
+          .select("id,title,description,starts_at,sort_at,location,host,host_handle,hosts,category,content_kind,tags,has_free_food")
           .in("content_kind", PUBLIC_CONTENT_KINDS)
           .or(activeEventFilter(nowIso))
-          .order("starts_at", { ascending: true })
+          .order("sort_at", { ascending: true })
           .order("id", { ascending: true })
           .range(from, to)
           .overrideTypes<EventFilterCountRow[], { merge: false }>()
@@ -428,7 +450,7 @@ async function getSitemapEventsUncached(): Promise<EventSitemapEntry[]> {
           .select("id,starts_at,scraped_at")
           .in("content_kind", PUBLIC_CONTENT_KINDS)
           .or(activeEventFilter(nowIso))
-          .order("starts_at", { ascending: true })
+          .order("sort_at", { ascending: true })
           .order("id", { ascending: true })
           .limit(EVENTS_SITEMAP_LIMIT)
           .overrideTypes<EventSitemapRow[], { merge: false }>()
@@ -468,10 +490,10 @@ async function getCalendarEventsUncached({
           .in("content_kind", PUBLIC_CONTENT_KINDS)
           .gte("starts_at", startIso)
           .lt("starts_at", endIso)
-          .order("starts_at", { ascending: true })
+          .order("sort_at", { ascending: true })
           .order("id", { ascending: true })
           .range(from, to)
-          .overrideTypes<EventRow[], { merge: false }>()
+          .overrideTypes<StoredEventRow[], { merge: false }>()
       );
 
       return rows.map(eventRowToCampusEvent);
@@ -496,7 +518,7 @@ const getEventByIdUncached = cache(async function getEventById(
             .select("*")
             .eq("id", id)
             .limit(1)
-            .overrideTypes<EventRow[], { merge: false }>(),
+            .overrideTypes<StoredEventRow[], { merge: false }>(),
         { id }
       );
 
@@ -517,7 +539,8 @@ export const getEventsUpcomingThisWeek = cachePublicRead(
 );
 export const getEventsPage = cachePublicRead(
   getEventsPageUncached,
-  ["events-page"]
+  ["events-page"],
+  dropEndedEvents
 );
 export const getEventFilterCountSource = cachePublicRead(
   getEventFilterCountSourceUncached,

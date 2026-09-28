@@ -36,9 +36,12 @@ test("generated EventRow matches events upsert schema", () => {
 
 test("events.ts reads rows through generated EventRow type", () => {
   const eventsTs = readFileSync(new URL("../src/lib/events/index.ts", import.meta.url), "utf8");
-  assert.match(eventsTs, /from "@\/lib\/supabase-rows"/);
-  assert.match(eventsTs, /EventRow/);
-  assert.match(eventsTs, /overrideTypes<EventRow\[\], \{ merge: false \}>/);
+  const mapper = readFileSync(new URL("../src/lib/events/map-event-row.ts", import.meta.url), "utf8");
+  // Stored rows are the generated upsert shape plus columns the database derives.
+  assert.match(mapper, /from "@\/lib\/supabase-rows"/);
+  assert.match(mapper, /export type StoredEventRow = EventRow & \{/);
+  assert.match(eventsTs, /StoredEventRow/);
+  assert.match(eventsTs, /overrideTypes<StoredEventRow\[\], \{ merge: false \}>/);
   assert.match(eventsTs, /EventFilterCountRow/);
   assert.doesNotMatch(eventsTs, /interface EventRow/);
   assert.doesNotMatch(eventsTs, /as EventRow/);

@@ -93,7 +93,7 @@ test("event category badges use a full-feed count source outside pagination", ()
   assert.match(data, /export const getEventFilterCountSource = cachePublicRead\(/);
   assert.match(
     data,
-    /\.select\("id,title,description,starts_at,location,host,host_handle,hosts,category,content_kind,tags,has_free_food"\)/
+    /\.select\("id,title,description,starts_at,sort_at,location,host,host_handle,hosts,category,content_kind,tags,has_free_food"\)/
   );
   assert.match(layout, /getEventFilterCountSource/);
   assert.match(layout, /filterCountSource: shareCalendarEvents\(calendarEvents, countSource\)/);

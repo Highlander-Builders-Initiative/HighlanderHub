@@ -11,7 +11,7 @@ function event(id) {
 }
 
 // A feed resumes after its last loaded event.
-const after = (id) => ({ startsAt: "2026-05-20T18:30:00.000-07:00", id });
+const after = (id) => ({ sortAt: "2026-05-20T18:30:00.000-07:00", id });
 
 function snapshot(overrides = {}) {
   return {

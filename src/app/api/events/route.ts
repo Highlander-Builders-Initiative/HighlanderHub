@@ -14,17 +14,17 @@ const TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const startsAt = searchParams.get("after");
+  const sortAt = searchParams.get("after");
   const id = searchParams.get("afterId");
   // Cursors come from this route's own responses. Starting over on one it
   // cannot read would return page one with an equally unreadable cursor, and
   // the feed would request page one forever instead of showing an error.
-  if ((startsAt || id) && !(startsAt && id && TIMESTAMP.test(startsAt))) {
+  if ((sortAt || id) && !(sortAt && id && TIMESTAMP.test(sortAt))) {
     return NextResponse.json({ error: "Invalid cursor." }, { status: 400 });
   }
   const limit = readPositiveInt(searchParams.get("limit"), EVENTS_PAGE_SIZE);
   const page = await getEventsPage({
-    after: startsAt && id ? { startsAt, id } : null,
+    after: sortAt && id ? { sortAt, id } : null,
     limit,
     ...readEventFeedQuery((key) => searchParams.get(key)),
   });

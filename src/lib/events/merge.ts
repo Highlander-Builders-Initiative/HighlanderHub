@@ -1,6 +1,7 @@
 import type { CampusEvent } from "@/types/event";
 
-export function mergeUniqueEventsByStart(
+/** Adds the events not already loaded, keeping the feed's (sortAt, id) order. */
+export function mergeUniqueEventsInFeedOrder(
   current: CampusEvent[],
   incoming: CampusEvent[]
 ): CampusEvent[] {
@@ -9,7 +10,7 @@ export function mergeUniqueEventsByStart(
     if (!merged.has(event.id)) merged.set(event.id, event);
   }
   return Array.from(merged.values()).sort((a, b) => {
-    const byStart = Date.parse(a.startsAt) - Date.parse(b.startsAt);
-    return byStart === 0 ? a.id.localeCompare(b.id) : byStart;
+    const byTime = Date.parse(a.sortAt) - Date.parse(b.sortAt);
+    return byTime === 0 ? a.id.localeCompare(b.id) : byTime;
   });
 }
