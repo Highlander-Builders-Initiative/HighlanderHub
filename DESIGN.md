@@ -328,7 +328,7 @@ The top of `/events`: the page title "Events" (Bricolage, the feed's one brand m
 The `/events` side columns, from lg: Topics on the left, the mini calendar and When on the right. They sit on the page with no panel (The One-Surface Rule).
 
 - **The One Selected State.** Neutral selections (a When window, the Cards / Compact toggle, "All" in Topics) are the same `bg-ink/[0.06]` fill, with no ring, track or shadow. The calendar's chosen day is the one solid-ink selection, because it is a date picker's cursor, not a filter.
-- **Topics highlight:** one highlight slides under the hovered row and rests on the selected one. Over a category it wears that category's `CATEGORY_PILL` wash and ring, the same one its tag pill wears on a card, so hovering previews the color you are filtering by and the rail and the tags read as one signal; the selected label takes the category's `-ink`. "All" has no hue and takes the neutral fill.
+- **Topics:** 15px labels, 12px counts, and rows at least 44px tall in both the desktop rail and mobile filter grid. Hover adds an instant neutral wash with no animation. The selected row keeps its category's `CATEGORY_PILL` wash and ring and matching `-ink` label; "All" uses the neutral fill.
 - **Mini calendar:** a heat wash in `highlander` (7%, 15% and 24% for 1, 3 and 6+ events) marks how busy each day of the focused month is, one calm signal rather than competing category dots. Empty days fade to `faint`, adjacent-month days to `muted/45`; today is underlined; the chosen day is solid ink.
 
 ### Active Filter Chips (signature)
