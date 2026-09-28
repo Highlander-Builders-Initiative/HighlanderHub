@@ -1,7 +1,7 @@
 import type { EventRow } from "@/lib/supabase-rows";
 import { publicEventHosts } from "@/lib/events/anonymized-hosts";
 import { normalizeHttpUrl } from "@/lib/events/validation";
-import type { CampusEvent } from "@/types/event";
+import { coerceEventCategory, type CampusEvent } from "@/types/event";
 
 /** DB snake_case row → app `CampusEvent` (shared by feed and admin). */
 export function eventRowToCampusEvent(r: EventRow): CampusEvent {
@@ -16,7 +16,7 @@ export function eventRowToCampusEvent(r: EventRow): CampusEvent {
     host: hosts.map((entry) => entry.host || entry.hostHandle).join(" & "),
     hostHandle: hosts[0]?.hostHandle,
     hosts,
-    category: r.category,
+    category: coerceEventCategory(r.category),
     contentKind: r.content_kind,
     tags: r.tags,
     source: r.source,

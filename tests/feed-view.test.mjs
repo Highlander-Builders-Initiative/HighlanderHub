@@ -117,10 +117,12 @@ test("the view toggle is two named icons", () => {
   assert.doesNotMatch(toggle, />\s*\{v\.label\}\s*</);
 });
 
-test("the Topics highlight wears the hovered or selected category's color", () => {
+test("the selected Topics row wears its category's color; hover is a neutral wash", () => {
   const filter = read("src/components/events/EventCategoryFilter.tsx");
+  const row = read("src/components/events/EventFilterRow.tsx");
 
   assert.match(filter, /CATEGORY_PILL\[value as EventCategory\]\.highlight/);
-  assert.match(filter, /className=\{\(id\) => `rounded-xl \$\{highlightClass/);
-  assert.match(filter, /enableHover/);
+  assert.match(filter, /selectedClass=\{`\$\{highlightClass\(c\.value\)\} \$\{activeText\(c\.value\)\}`\}/);
+  assert.match(row, /hover:bg-ink\/\[0\.04\]/);
+  assert.doesNotMatch(filter, /enableHover/);
 });

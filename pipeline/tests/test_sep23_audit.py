@@ -178,11 +178,13 @@ class CategoryTests(unittest.TestCase):
             "Culver Center of the Arts. Watch the full interview on the KUCR YouTube channel"))
 
     def test_a_dance_workshop_is_arts(self):
+        # 909DT is a dance troupe (arts-and-expression): with the caption's
+        # dancers, that outweighs the workshop format.
         self.assertEqual("arts", infer_category_from_text(
             "909DT Pre-Audition Workshop with Aamyah Davis",
             "Next up for our pre-audition workshops, we welcome Aamyah Davis! Workshop will again, be held "
             "at the UCR SRC Walkway on Wednesday 9/23 at 8PM and is completely FREE! Dancers of all levels "
-            "are welcome!!"))
+            "are welcome!!", host_type="arts-and-expression"))
 
     def test_career_workshops_and_interview_practice_stay_career(self):
         for title in ("Resume Workshop", "Mock Interviews with Recruiters", "LinkedIn Workshop",

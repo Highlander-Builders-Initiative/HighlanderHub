@@ -16,10 +16,11 @@ test("tags run Deadline, category, Free food, RSVP", () => {
   );
 });
 
-test("a free-food category and the free-food flag make one tag", () => {
-  assert.deepEqual(labels({ category: "free_food", hasFreeFood: true }), ["Free food"]);
-  assert.deepEqual(labels({ category: "free_food" }), ["Free food"]);
-  assert.deepEqual(labels({ category: "social", hasFreeFood: true }), ["Social", "Free food"]);
+test("free food is its own tag beside the activity; an uncategorized event has none", () => {
+  assert.deepEqual(labels({ category: "hangout", hasFreeFood: true }), ["Hang out", "Free food"]);
+  assert.deepEqual(labels({ category: "other", hasFreeFood: true }), ["Free food"]);
+  assert.deepEqual(labels({ category: "other" }), []);
+  assert.deepEqual(labels({ category: "academic" }), ["Learning"]);
 });
 
 test("each tag names its kind, so the compact row can drop the category", () => {

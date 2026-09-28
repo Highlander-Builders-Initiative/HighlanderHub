@@ -22,7 +22,7 @@ async function clickUntilPressed(page: Page, name: string) {
  * are plain anchor loads (full page) instead of intercepted overlays.
  */
 export async function waitForEventsBrowserHydration(page: Page) {
-  await clickUntilPressed(page, "Social");
+  await clickUntilPressed(page, "Hang out");
   await clickUntilPressed(page, "All");
   // Wait for the filter navigation to commit before opening a detail route.
   await expect(page).toHaveURL(/\/events$/);

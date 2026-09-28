@@ -19,7 +19,8 @@ const migrationNames = ['20260513073310_init_schema.sql', '20260527000000_add_ev
   '20260919000000_drop_event_is_free.sql', '20260922000000_event_duplicate_hosts.sql',
   '20260922010000_reconcile_legacy_duplicates.sql',
   '20260925010000_drop_highlander_link_reconcile.sql',
-  '20260926010000_publication_noop_writes.sql'];
+  '20260926010000_publication_noop_writes.sql', '20260928000000_activity_categories.sql',
+  '20260928010000_activity_categories_backfill.sql'];
 for (const name of migrationNames) {
   await db.exec(await readFile(new URL(name, migrations), 'utf8'));
 }

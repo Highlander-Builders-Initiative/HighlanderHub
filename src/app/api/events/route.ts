@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
 import { EVENTS_PAGE_SIZE, getEventsPage } from "@/lib/events";
-import {
-  coerceCategoryParam,
-  coerceDayWindowParam,
-} from "@/components/events/events-filters";
+import { readEventFeedQuery } from "@/components/events/events-filters";
 
 export const dynamic = "force-dynamic";
 
@@ -29,9 +26,7 @@ export async function GET(request: Request) {
   const page = await getEventsPage({
     after: startsAt && id ? { startsAt, id } : null,
     limit,
-    query: searchParams.get("q") ?? "",
-    category: coerceCategoryParam(searchParams.get("cat")),
-    dayWindow: coerceDayWindowParam(searchParams.get("when")),
+    ...readEventFeedQuery((key) => searchParams.get(key)),
   });
 
   return NextResponse.json({

@@ -1,6 +1,6 @@
 import { cache } from "react";
 import { unstable_cache } from "next/cache";
-import type { CampusEvent } from "@/types/event";
+import { coerceEventCategory, type CampusEvent } from "@/types/event";
 import type { EventFeedCursor, EventFilterCountSource } from "@/types/events-feed";
 import type { EventRow } from "@/lib/supabase-rows";
 import { publicEventHosts } from "@/lib/events/anonymized-hosts";
@@ -20,7 +20,9 @@ import {
   normalizeEventQuery,
   type CategoryValue,
   type DayWindow,
+  type EventFeedFacets,
 } from "@/components/events/events-filters";
+import { coerceHostGroupParam } from "@/lib/host-groups";
 import { PUBLIC_CONTENT_KINDS } from "@/lib/events/content-kind";
 import {
   E2E_FIXTURE_EVENTS,
@@ -45,7 +47,7 @@ const eventsCacheOptions = {
   tags: [EVENTS_CACHE_TAG],
 };
 
-type EventsPageOptions = {
+type EventsPageOptions = Partial<EventFeedFacets> & {
   limit?: number;
   /** The last event already loaded; the page starts after it. */
   after?: EventFeedCursor | null;
@@ -71,6 +73,7 @@ type EventFilterCountRow = Pick<
   | "host_handle"
   | "hosts"
   | "category"
+  | "content_kind"
   | "tags"
   | "has_free_food"
 >;
@@ -102,7 +105,8 @@ function toEventFilterCountSource(
     host: hosts.map((entry) => entry.host || entry.hostHandle).join(" & "),
     hostHandle: hosts[0]?.hostHandle,
     hosts,
-    category: r.category,
+    category: coerceEventCategory(r.category),
+    contentKind: r.content_kind,
     tags: r.tags,
     hasFreeFood: r.has_free_food,
   };
@@ -120,11 +124,17 @@ function hasEventPageFilters({
   query,
   category = "all",
   dayWindow = "all",
+  freeFood = false,
+  deadlines = false,
+  hostGroup = "all",
 }: EventsPageOptions): boolean {
   return (
     normalizeEventQuery(query).length > 0 ||
     coerceCategoryParam(category) !== "all" ||
-    coerceDayWindowParam(dayWindow) !== "all"
+    coerceDayWindowParam(dayWindow) !== "all" ||
+    freeFood ||
+    deadlines ||
+    coerceHostGroupParam(hostGroup) !== "all"
   );
 }
 
@@ -275,6 +285,9 @@ async function getEventsPageUncached({
   query = "",
   category = "all",
   dayWindow = "all",
+  freeFood = false,
+  deadlines = false,
+  hostGroup = "all",
   todayKey = pacificTodayKey(),
 }: EventsPageOptions = {}): Promise<EventsPageResult> {
   const pageSize = Math.max(1, Math.min(limit, 60));
@@ -282,14 +295,13 @@ async function getEventsPageUncached({
   const filters = {
     category: coerceCategoryParam(category),
     dayWindow: coerceDayWindowParam(dayWindow),
+    freeFood,
+    deadlines,
+    hostGroup: coerceHostGroupParam(hostGroup),
     todayKey,
     normalizedQuery,
   };
-  const hasFilters = hasEventPageFilters({
-    query,
-    category: filters.category,
-    dayWindow: filters.dayWindow,
-  });
+  const hasFilters = hasEventPageFilters({ query, ...filters });
 
   return withE2eFixture(
     () => {
@@ -301,9 +313,10 @@ async function getEventsPageUncached({
     async () => {
       const nowIso = new Date().toISOString();
 
-      // Search uses the same sanitized public-host semantics as the browser.
-      // Share a complete, narrow source across pages; hydrate only this page.
-      if (normalizedQuery) {
+      // Search and Hosted by use the same sanitized public-host semantics as
+      // the browser (every host of a merged listing counts). Share a complete,
+      // narrow source across pages; hydrate only this page.
+      if (normalizedQuery || filters.hostGroup !== "all") {
         const matches = filterEventSource(await getEventFilterCountSource(), filters);
         const from = indexAfter(matches, after);
         const slice = matches.slice(from, from + pageSize);
@@ -328,11 +341,9 @@ async function getEventsPageUncached({
       const rows = await readEventRows("events", (offset, end) => {
         let request = supabase.from("events").select("*")
           .in("content_kind", PUBLIC_CONTENT_KINDS).or(activeEventFilter(nowIso));
-        if (filters.category === "free_food") {
-          request = request.or("has_free_food.eq.true,category.eq.free_food");
-        } else if (filters.category !== "all") {
-          request = request.eq("category", filters.category);
-        }
+        if (filters.category !== "all") request = request.eq("category", filters.category);
+        if (filters.freeFood) request = request.eq("has_free_food", true);
+        if (filters.deadlines) request = request.eq("content_kind", "student_deadline");
         if (range) {
           request = request.gte("starts_at", parsePacificDateTimeInput(`${range.start}T00:00`)!)
             .lt("starts_at", parsePacificDateTimeInput(`${addPacificDays(range.end, 1)}T00:00`)!);
@@ -387,7 +398,7 @@ async function getEventFilterCountSourceUncached(): Promise<
       const rows = await readEventRows("event filter counts", (from, to) =>
         supabase
           .from("events")
-          .select("id,title,description,starts_at,location,host,host_handle,hosts,category,tags,has_free_food")
+          .select("id,title,description,starts_at,location,host,host_handle,hosts,category,content_kind,tags,has_free_food")
           .in("content_kind", PUBLIC_CONTENT_KINDS)
           .or(activeEventFilter(nowIso))
           .order("starts_at", { ascending: true })

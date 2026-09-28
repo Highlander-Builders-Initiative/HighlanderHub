@@ -3,6 +3,7 @@
 import { useReducer, useCallback, useEffect } from "react";
 import { formatPacificDateTimeInput } from "@/lib/dates";
 import { validateEventTimes } from "@/lib/events/validation";
+import { coerceEventCategory } from "@/types/event";
 import type { AdminEventRow, AdminEventUpdatePayload } from "./types";
 
 type EditFormState = {
@@ -52,7 +53,8 @@ function formReducer(state: EditFormState, action: EditFormAction): EditFormStat
       location: event.location,
       host: event.host,
       hostHandle: event.host_handle || "",
-      category: event.category,
+      // A row still carrying a retired category edits as uncategorized.
+      category: coerceEventCategory(event.category),
       contentKind: event.content_kind,
       imageUrl: event.image_url || "",
       rsvpUrl: event.rsvp_url || "",

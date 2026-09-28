@@ -8,20 +8,46 @@ import {
 export { EVENT_CATEGORIES };
 export type { EventCategory, EventContentKind, EventSource };
 
+/**
+ * A category is what a student would be doing there. `other` is an event whose
+ * text names no activity: it shows under All, never in a topic.
+ */
 export const EVENT_CATEGORY_LABELS: Record<EventCategory, string> = {
-  club: "Club / org",
-  academic: "Academic / lecture",
-  social: "Social",
-  career: "Career / professional",
-  sports: "Sports / athletics",
-  arts: "Arts / performance",
-  community: "Community / service",
-  free_food: "Free food",
+  hangout: "Hang out",
+  get_involved: "Get involved",
+  career: "Career & skills",
+  academic: "Talks & learning",
+  sports: "Sports & rec",
+  arts: "Arts & shows",
+  volunteering: "Volunteering",
+  other: "Other",
 };
 
-/** "Club", "Academic", … "Free food": the label without its " / " qualifier. */
+const EVENT_CATEGORY_SHORT_LABELS: Record<EventCategory, string> = {
+  hangout: "Hang out",
+  get_involved: "Get involved",
+  career: "Career",
+  academic: "Learning",
+  sports: "Sports",
+  arts: "Arts",
+  volunteering: "Volunteering",
+  other: "Event",
+};
+
+/** "Career", "Learning", …: the one- or two-word name a card's tag wears. */
 export function categoryShortLabel(category: EventCategory): string {
-  return EVENT_CATEGORY_LABELS[category].split(" / ")[0];
+  return EVENT_CATEGORY_SHORT_LABELS[category];
+}
+
+/**
+ * A stored category the app knows, else `other`. Rows written before the
+ * activity categories ('club', 'social', …) read as uncategorized until the
+ * pipeline rewrites them.
+ */
+export function coerceEventCategory(value: unknown): EventCategory {
+  return (EVENT_CATEGORIES as readonly unknown[]).includes(value)
+    ? (value as EventCategory)
+    : "other";
 }
 
 export interface CampusEvent {

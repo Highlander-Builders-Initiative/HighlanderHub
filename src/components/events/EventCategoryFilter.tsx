@@ -3,6 +3,11 @@
 import { CATEGORY_PILL } from "@/lib/category-colors";
 import type { EventCategory } from "@/types/event";
 import { CATEGORIES, type CategoryValue } from "./events-filters";
+import {
+  EventFilterRow,
+  FILTER_GROUP_CLASS,
+  type FilterLayout,
+} from "./EventFilterRow";
 
 /** The selected row's label keeps its category's ink; "All" has none. */
 function activeText(value: CategoryValue) {
@@ -21,23 +26,13 @@ function highlightClass(value: CategoryValue) {
 }
 
 type EventCategoryFilterProps = {
-  layout: "rail" | "grid";
+  layout: FilterLayout;
   category: CategoryValue;
   onCategoryChange: (cat: CategoryValue) => void;
   counts: Map<CategoryValue, number>;
   /** Counts are still loading: show a placeholder instead of a misleading 0. */
   countsPending?: boolean;
 };
-
-const GROUP_CLASS = {
-  rail: "flex flex-col gap-1",
-  grid: "grid grid-cols-2 gap-1.5",
-} as const;
-
-const BUTTON_CLASS = {
-  rail: "min-h-11 rounded-xl px-3 py-2 text-[15px]",
-  grid: "min-h-11 rounded-xl px-3 py-2.5 text-[15px]",
-} as const;
 
 export function EventCategoryFilter({
   layout,
@@ -48,46 +43,24 @@ export function EventCategoryFilter({
 }: EventCategoryFilterProps) {
   return (
     <div
-      className={GROUP_CLASS[layout]}
+      className={FILTER_GROUP_CLASS[layout]}
       role="group"
       aria-label="Filter events by category"
     >
-      {CATEGORIES.map((c) => {
-        const active = category === c.value;
-        const count = counts.get(c.value) ?? 0;
-        return (
-          <button
-            key={c.value}
-            data-id={c.value}
-            type="button"
-            aria-pressed={active}
-            onClick={() => onCategoryChange(c.value)}
-            className={`interactive-focus flex w-full items-center ${BUTTON_CLASS[layout]} ${
-              active
-                ? `${highlightClass(c.value)} ${activeText(c.value)} font-medium`
-                : "text-ink/80 hover:bg-ink/[0.04] hover:text-ink"
-            }`}
-          >
-            <span className="min-w-0 flex-1 truncate text-left">
-              {c.label}
-            </span>
-            <span
-              className={`pl-2 text-[12px] tabular-nums ${
-                active ? "text-muted" : "text-muted/80"
-              }`}
-            >
-              {countsPending ? (
-                <span
-                  aria-hidden
-                  className="skeleton inline-block h-2 w-3.5 rounded-full bg-ink/10 align-middle"
-                />
-              ) : (
-                count
-              )}
-            </span>
-          </button>
-        );
-      })}
+      {CATEGORIES.map((c) => (
+        <EventFilterRow
+          key={c.value}
+          id={c.value}
+          layout={layout}
+          pressed={category === c.value}
+          selectedClass={`${highlightClass(c.value)} ${activeText(c.value)}`}
+          onClick={() => onCategoryChange(c.value)}
+          count={counts.get(c.value) ?? 0}
+          countsPending={countsPending}
+        >
+          {c.label}
+        </EventFilterRow>
+      ))}
     </div>
   );
 }

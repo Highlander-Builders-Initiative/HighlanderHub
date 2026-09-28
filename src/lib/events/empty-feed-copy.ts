@@ -4,6 +4,7 @@ import {
   type CategoryValue,
   type DayWindow,
 } from "@/components/events/events-filters";
+import { hostGroupPhrase, type HostGroupValue } from "@/lib/host-groups";
 
 export type EmptyFeedCopy = {
   headline: string;
@@ -17,10 +18,14 @@ export type EmptyFeedCopyFilters = {
   hasCategory: boolean;
   dayWindow: DayWindow;
   hasDayWindow: boolean;
+  freeFood: boolean;
+  deadlines: boolean;
+  hostGroup: HostGroupValue;
+  hasHostGroup: boolean;
 };
 
 type EmptyFeedCopyContext = {
-  cat: string;
+  what: string;
   win: string;
   quoted: string;
   dayWindow: DayWindow;
@@ -29,39 +34,39 @@ type EmptyFeedCopyContext = {
 type EmptyFeedCopyFactory = (context: EmptyFeedCopyContext) => EmptyFeedCopy;
 
 const EMPTY_HAS_QUERY = 1;
-const EMPTY_HAS_CATEGORY = 2;
+const EMPTY_HAS_FILTERS = 2;
 const EMPTY_HAS_WINDOW = 4;
 
 const EMPTY_COPY_BY_MASK: Record<number, EmptyFeedCopyFactory> = {
-  [EMPTY_HAS_QUERY | EMPTY_HAS_CATEGORY | EMPTY_HAS_WINDOW]: ({
-    cat,
+  [EMPTY_HAS_QUERY | EMPTY_HAS_FILTERS | EMPTY_HAS_WINDOW]: ({
+    what,
     win,
     quoted,
   }) => ({
-    headline: `Nothing in ${cat} ${win} matches ${quoted}.`,
+    headline: `No ${what} ${win} match ${quoted}.`,
     nudge:
-      "Clearing the search opens this up faster than loosening the category or window.",
+      "Clearing the search opens this up faster than loosening the filters or the window.",
   }),
-  [EMPTY_HAS_QUERY | EMPTY_HAS_CATEGORY]: ({ cat, quoted }) => ({
-    headline: `Nothing in ${cat} matches ${quoted}.`,
-    nudge: "Clear the search first; the category is usually the smaller change.",
+  [EMPTY_HAS_QUERY | EMPTY_HAS_FILTERS]: ({ what, quoted }) => ({
+    headline: `No ${what} match ${quoted}.`,
+    nudge: "Clear the search first; the filters are usually the smaller change.",
   }),
   [EMPTY_HAS_QUERY | EMPTY_HAS_WINDOW]: ({ win, quoted }) => ({
     headline: `Nothing ${win} matches ${quoted}.`,
     nudge: "Widen the window past " + win + ", or shorten the search.",
   }),
-  [EMPTY_HAS_CATEGORY | EMPTY_HAS_WINDOW]: ({ cat, win }) => ({
-    headline: `No ${cat} ${win}.`,
-    nudge: `Try opening the window past ${win}; ${cat} is a smaller pool than the date.`,
+  [EMPTY_HAS_FILTERS | EMPTY_HAS_WINDOW]: ({ what, win }) => ({
+    headline: `No ${what} ${win}.`,
+    nudge: `Try opening the window past ${win}; the filters are a smaller pool than the date.`,
   }),
   [EMPTY_HAS_QUERY]: ({ quoted }) => ({
     headline: `Nothing on the bulletin matches ${quoted}.`,
     nudge:
       "Shorter or different words usually do it; titles, hosts, and tags are all searched.",
   }),
-  [EMPTY_HAS_CATEGORY]: ({ cat }) => ({
-    headline: `No ${cat} queued right now.`,
-    nudge: "Switch back to All to see everything that's up.",
+  [EMPTY_HAS_FILTERS]: ({ what }) => ({
+    headline: `No ${what} queued right now.`,
+    nudge: "Clear a filter to see more of what's up.",
   }),
   [EMPTY_HAS_WINDOW]: ({ win, dayWindow }) => ({
     headline: `Nothing on the calendar ${win}.`,
@@ -76,17 +81,30 @@ const EMPTY_COPY_BY_MASK: Record<number, EmptyFeedCopyFactory> = {
   }),
 };
 
+/** "Hang out events with free food from faith groups", "Career & skills deadlines". */
+function describeFilters(filters: EmptyFeedCopyFilters): string {
+  const noun = filters.deadlines ? "deadlines" : "events";
+  return [
+    filters.hasCategory ? `${categoryLabel(filters.category)} ${noun}` : noun,
+    filters.freeFood ? "with free food" : "",
+    filters.hasHostGroup ? `from ${hostGroupPhrase(filters.hostGroup)}` : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
 export function getEmptyFeedCopy(filters: EmptyFeedCopyFilters): EmptyFeedCopy {
-  const cat = categoryLabel(filters.category);
+  const hasFilters =
+    filters.hasCategory || filters.freeFood || filters.deadlines || filters.hasHostGroup;
   const win = dayWindowPhrase(filters.dayWindow);
   const quoted = `“${filters.query}”`;
   const mask =
     (filters.hasQuery ? EMPTY_HAS_QUERY : 0) |
-    (filters.hasCategory ? EMPTY_HAS_CATEGORY : 0) |
+    (hasFilters ? EMPTY_HAS_FILTERS : 0) |
     (filters.hasDayWindow ? EMPTY_HAS_WINDOW : 0);
 
   return EMPTY_COPY_BY_MASK[mask]({
-    cat,
+    what: describeFilters(filters),
     win,
     quoted,
     dayWindow: filters.dayWindow,

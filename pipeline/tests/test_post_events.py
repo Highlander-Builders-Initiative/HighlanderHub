@@ -722,9 +722,11 @@ class PostPublicationTests(unittest.TestCase):
         self.assertEqual("2026-09-16T07:00:00+00:00", rows[0]["ends_at"])
 
     def test_flyer_supplies_category_and_free_food_separately(self):
+        # The title names a study jam; a workshop mention on the flyer does not
+        # outweigh it, and the pizza is its own fact.
         self.cached["images"][1]["ocr_text"] += " Resume workshop. FREE PIZZA!"
         rows, _ = self.rows()
-        self.assertEqual("career", rows[0]["category"])
+        self.assertEqual("academic", rows[0]["category"])
         self.assertTrue(rows[0]["has_free_food"])
 
     def test_make_update_dispatches_a_post_without_a_mapper_argument(self):
@@ -844,7 +846,7 @@ class PostPublicationTests(unittest.TestCase):
                 self.record.update(handle=handle, owner_username=handle)
                 self.source = publication.post_source(self.record, self.cached)
                 post = self.rows()[0][0]
-                self.assertEqual("career", post["category"])
+                self.assertEqual("academic", post["category"])
                 self.assertTrue(post["has_free_food"])
                 self.assertTrue(post["rsvp_required"])
                 self.assertEqual("https://lu.ma/studyjam", post["rsvp_url"])

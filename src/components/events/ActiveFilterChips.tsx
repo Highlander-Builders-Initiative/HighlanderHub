@@ -2,7 +2,13 @@
 
 import type { ReactNode } from "react";
 import { CATEGORY_RAIL } from "@/lib/category-colors";
-import { categoryLabel, dayWindowLabel } from "./events-filters";
+import {
+  NO_FEED_FACETS,
+  categoryLabel,
+  dayWindowLabel,
+  hostGroupLabel,
+  type EventFeedFacets,
+} from "./events-filters";
 import type { EventFeedActiveFilters } from "./useEventFeedFilters";
 
 type Props = {
@@ -10,6 +16,7 @@ type Props = {
   onClearCategory: () => void;
   onClearDayWindow: () => void;
   onClearQuery: () => void;
+  onFacetsChange: (next: Partial<EventFeedFacets>) => void;
   onClearAll: () => void;
 };
 
@@ -18,12 +25,14 @@ export function ActiveFilterChips({
   onClearCategory,
   onClearDayWindow,
   onClearQuery,
+  onFacetsChange,
   onClearAll,
 }: Props) {
   if (!activeFilters.hasAny) return null;
 
   const activeCategoryLabel = categoryLabel(activeFilters.category);
   const activeDayWindowLabel = dayWindowLabel(activeFilters.dayWindow);
+  const activeHostGroupLabel = hostGroupLabel(activeFilters.hostGroup);
 
   return (
     <div
@@ -42,6 +51,32 @@ export function ActiveFilterChips({
           }
         >
           {activeCategoryLabel}
+        </Chip>
+      )}
+      {activeFilters.freeFood && (
+        <Chip
+          ariaLabel="Remove Free food filter"
+          onClick={() => onFacetsChange({ freeFood: false })}
+          dotClass="bg-tag-amber"
+        >
+          Free food
+        </Chip>
+      )}
+      {activeFilters.deadlines && (
+        <Chip
+          ariaLabel="Remove Deadlines filter"
+          onClick={() => onFacetsChange({ deadlines: false })}
+          dotClass="bg-tag-coral"
+        >
+          Deadlines
+        </Chip>
+      )}
+      {activeFilters.hasHostGroup && (
+        <Chip
+          ariaLabel={`Remove ${activeHostGroupLabel} filter`}
+          onClick={() => onFacetsChange({ hostGroup: NO_FEED_FACETS.hostGroup })}
+        >
+          {activeHostGroupLabel}
         </Chip>
       )}
       {activeFilters.hasDayWindow && (

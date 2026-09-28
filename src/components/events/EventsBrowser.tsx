@@ -24,9 +24,13 @@ import { track } from "@/lib/analytics";
 import { getClubs } from "@/lib/clubs";
 import { saveEventFeedSnapshot } from "@/lib/events/feed-session";
 import {
+  DEFAULT_EVENT_FEED_QUERY,
   FEED_VIEW_COOKIE,
+  NO_FEED_FACETS,
+  eventFeedSearchParams,
   type CategoryValue,
   type DayWindow,
+  type EventFeedFacets,
   type EventFeedQuery,
   type FeedView,
 } from "./events-filters";
@@ -38,11 +42,7 @@ import type { EventFeedRestorePatch } from "@/lib/events/feed-restore";
 
 export type EventsBrowserInitialFilters = EventFeedQuery;
 
-const DEFAULT_INITIAL_FILTERS: EventsBrowserInitialFilters = {
-  category: "all",
-  query: "",
-  dayWindow: "all",
-};
+const DEFAULT_INITIAL_FILTERS: EventsBrowserInitialFilters = DEFAULT_EVENT_FEED_QUERY;
 
 type EventsBrowserProps = {
   events: CampusEvent[];
@@ -75,6 +75,11 @@ export function EventsBrowser({
   const [dayWindow, setDayWindow] = useState<DayWindow>(
     initialFilters.dayWindow
   );
+  const [facets, setFacets] = useState<EventFeedFacets>(() => ({
+    freeFood: initialFilters.freeFood,
+    deadlines: initialFilters.deadlines,
+    hostGroup: initialFilters.hostGroup,
+  }));
   const [loadedEvents, setLoadedEvents] = useState(events);
   const [hasMore, setHasMore] = useState(initialHasMore);
   const [cursor, setCursor] = useState(initialCursor);
@@ -109,6 +114,14 @@ export function EventsBrowser({
     }
     if (patch.dayWindow !== undefined) {
       setDayWindow(patch.dayWindow);
+    }
+    const { freeFood, deadlines, hostGroup } = patch;
+    if (freeFood !== undefined || deadlines !== undefined || hostGroup !== undefined) {
+      setFacets((current) => ({
+        freeFood: freeFood ?? current.freeFood,
+        deadlines: deadlines ?? current.deadlines,
+        hostGroup: hostGroup ?? current.hostGroup,
+      }));
     }
     if (patch.loadedEvents !== undefined) {
       setLoadedEvents(patch.loadedEvents);
@@ -147,9 +160,10 @@ export function EventsBrowser({
       category,
       query,
       dayWindow,
+      ...facets,
       loadedCount: loadedEvents.length,
     }, true);
-  }, [loadedEvents, hasMore, cursor, category, query, dayWindow, isRestoring, pathname]);
+  }, [loadedEvents, hasMore, cursor, category, query, dayWindow, facets, isRestoring, pathname]);
 
   const {
     trimmedQuery,
@@ -171,26 +185,24 @@ export function EventsBrowser({
     category,
     query,
     dayWindow,
+    ...facets,
     todayKey,
   });
 
-  const feedFilters = useMemo(
-    () => ({ category, query: trimmedQuery, dayWindow }),
-    [category, trimmedQuery, dayWindow]
+  const feedFilters = useMemo<EventFeedQuery>(
+    () => ({ category, query: trimmedQuery, dayWindow, ...facets }),
+    [category, trimmedQuery, dayWindow, facets]
   );
 
-  // Mirror the active filter state to the URL via ?cat=&q=&when=. Uses
-  // router.replace so each keystroke / chip click does not push a history
-  // entry; deep links survive, the back button doesn't.
+  // Mirror the active filter state to the URL via ?cat=&q=&when=&food=
+  // &deadlines=&host=. Uses router.replace so each keystroke / chip click
+  // does not push a history entry; deep links survive, the back button
+  // doesn't.
   const lastRequestedFilterHref = useRef<string | null>(null);
   const writeFiltersToUrl = useCallback(
     (next: EventFeedQuery) => {
       if (window.location.pathname !== "/events") return;
-      const params = new URLSearchParams();
-      if (next.category !== "all") params.set("cat", next.category);
-      if (next.query) params.set("q", next.query);
-      if (next.dayWindow !== "all") params.set("when", next.dayWindow);
-      const search = params.toString();
+      const search = eventFeedSearchParams(next).toString();
       const href = search ? `/events?${search}` : "/events";
       // Replacing the current URL refetches the first page and discards the
       // loaded pages when returning from a card.
@@ -209,15 +221,16 @@ export function EventsBrowser({
     [router]
   );
 
-  // Category and day-window are discrete clicks; write the URL immediately so
-  // a chip toggle is shareable the same frame it lands.
+  // Category, day-window and the other rail filters are discrete clicks;
+  // write the URL immediately so a chip toggle is shareable the same frame it
+  // lands.
   useEffect(() => {
     if (isRestoring || pathname !== "/events") return;
-    writeFiltersToUrl({ category, query: trimmedQuery, dayWindow });
+    writeFiltersToUrl({ category, query: trimmedQuery, dayWindow, ...facets });
     // trimmedQuery is intentionally excluded: text input shares the 600ms
     // debouncer below, which writes the URL and fires analytics together.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [category, dayWindow, isRestoring, writeFiltersToUrl, pathname]);
+  }, [category, dayWindow, facets, isRestoring, writeFiltersToUrl, pathname]);
 
   // Search input piggybacks on the existing 600ms debouncer that gates the
   // events_search analytics ping; one timer writes the URL and fires the ping
@@ -227,7 +240,7 @@ export function EventsBrowser({
     if (isRestoring || pathname !== "/events") return;
     if (trimmedQuery === lastTrackedQuery.current) return;
     const t = setTimeout(() => {
-      writeFiltersToUrl({ category, query: trimmedQuery, dayWindow });
+      writeFiltersToUrl({ category, query: trimmedQuery, dayWindow, ...facets });
       if (trimmedQuery.length > 0) {
         track("events_search", { query_length: trimmedQuery.length });
       }
@@ -241,6 +254,7 @@ export function EventsBrowser({
     setCategory("all");
     setQuery("");
     setDayWindow("all");
+    setFacets(NO_FEED_FACETS);
     track("events_clear_filters", {});
   }, []);
 
@@ -256,6 +270,13 @@ export function EventsBrowser({
   const handleDayWindow = useCallback((next: DayWindow) => {
     setDayWindow(next);
     track("events_day_window", { window: next });
+  }, []);
+
+  const handleFacets = useCallback((next: Partial<EventFeedFacets>) => {
+    setFacets((current) => ({ ...current, ...next }));
+    if (next.freeFood !== undefined) track("events_free_food", { on: next.freeFood });
+    if (next.deadlines !== undefined) track("events_deadlines", { on: next.deadlines });
+    if (next.hostGroup !== undefined) track("events_host_group", { group: next.hostGroup });
   }, []);
 
   const clearCategory = useCallback(() => {
@@ -324,6 +345,8 @@ export function EventsBrowser({
           <EventsLeftRail
             category={category}
             onCategoryChange={handleCategory}
+            facets={facets}
+            onFacetsChange={handleFacets}
             counts={counts}
           />
         </aside>
@@ -344,6 +367,7 @@ export function EventsBrowser({
           onClearCategory={clearCategory}
           onClearDayWindow={clearDayWindow}
           onClearQuery={clearQuery}
+          onFacetsChange={handleFacets}
           todayKey={todayKey}
           observedDayKey={observedDayKey}
           showObservedDay={pastFirstDayHeading}
@@ -387,6 +411,8 @@ export function EventsBrowser({
         onClose={closeMobileSheet}
         category={category}
         onCategoryChange={handleCategory}
+        facets={facets}
+        onFacetsChange={handleFacets}
         counts={counts}
         dayWindow={dayWindow}
         onDayWindowChange={handleDayWindow}

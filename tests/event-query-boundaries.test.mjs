@@ -22,8 +22,9 @@ hook.deregister();
 const source = Array.from({ length: 1101 }, (_, i) => ({
   id: `ig_${String(i).padStart(4, '0')}`, title: i === 1100 ? 'Boundary Match' : `Event ${i}`,
   description: '', starts_at: '2027-05-25T18:00:00Z', ends_at: '2027-05-25T20:00:00Z',
-  location: 'HUB', host: 'Club', host_handle: 'club', hosts: [], category: i % 2 ? 'academic' : 'social',
-  content_kind: 'student_event', tags: [], has_free_food: i === 1100,
+  location: 'HUB', host: 'Club', host_handle: i === 1099 ? 'aacfucriverside' : 'club', hosts: [],
+  category: i % 2 ? 'academic' : 'hangout',
+  content_kind: i === 1098 ? 'student_deadline' : 'student_event', tags: [], has_free_food: i === 1100,
   source: 'instagram', rsvp_required: false, scraped_at: '2026-09-26T00:00:00Z',
 }));
 function installApi(t, cap = 1000) {
@@ -39,8 +40,9 @@ function installApi(t, cap = 1000) {
       rows = rows.filter(row => ids.includes(row.id));
     }
     if (p.has('category')) rows = rows.filter(row => `eq.${row.category}` === p.get('category'));
-    if (p.getAll('or').some(value => value.includes('has_free_food'))) {
-      rows = rows.filter(row => row.has_free_food || row.category === 'free_food');
+    if (p.has('has_free_food')) rows = rows.filter(row => `eq.${row.has_free_food}` === p.get('has_free_food'));
+    for (const kind of p.getAll('content_kind').filter(value => value.startsWith('eq.'))) {
+      rows = rows.filter(row => `eq.${row.content_kind}` === kind);
     }
     for (const value of p.getAll('or')) {
       const after = /^\(starts_at\.gt\."(.+)",and\(starts_at\.eq\."(.+)",id\.gt\."(.+)"\)\)$/.exec(value);
@@ -168,16 +170,30 @@ test('a calendar range longer than a grid is fetched in contiguous grid-sized re
 
 test('category and date filters precede page ranges, including free food', async t => {
   const requests = installApi(t);
-  const first = await events.getEventsPage({ category: 'social', limit: 24 });
-  const second = await events.getEventsPage({ category: 'social', after: first.cursor, limit: 24 });
+  const first = await events.getEventsPage({ category: 'hangout', limit: 24 });
+  const second = await events.getEventsPage({ category: 'hangout', after: first.cursor, limit: 24 });
   assert.equal(first.events.length, 24);
   assert.equal(first.hasMore, true);
   assert.equal(new Set([...first.events, ...second.events].map(row => row.id)).size, 48);
   assert.equal(requests.reduce((n, r) => n + r.rows, 0), 50);
-  const food = await events.getEventsPage({ category: 'free_food', dayWindow: 'today', todayKey: '2027-05-25' });
+  const food = await events.getEventsPage({ freeFood: true, dayWindow: 'today', todayKey: '2027-05-25' });
   assert.deepEqual(food.events.map(row => row.id), ['ig_1100']);
   assert.ok(requests.at(-1).params.getAll('starts_at').length === 2);
+  // Free food narrows a topic rather than replacing it.
+  const hangoutFood = await events.getEventsPage({ category: 'hangout', freeFood: true });
+  assert.deepEqual(hangoutFood.events.map(row => row.id), ['ig_1100']);
+  const deadlines = await events.getEventsPage({ deadlines: true });
+  assert.deepEqual(deadlines.events.map(row => row.id), ['ig_1098']);
   t.diagnostic(`Two category pages: 50 rows, ${requests.slice(0, 2).reduce((n, r) => n + r.bytes, 0)} JSON bytes`);
+});
+
+test('Hosted by pages through the shared source, like search', async t => {
+  installApi(t);
+  const faith = await events.getEventsPage({ hostGroup: 'faith' });
+  assert.deepEqual(faith.events.map(row => row.id), ['ig_1099']);
+  assert.equal(faith.hasMore, false);
+  const faithRoute = await eventsRoute.GET(new Request('https://hub.test/api/events?host=faith'));
+  assert.deepEqual((await faithRoute.json()).events.map(row => row.id), ['ig_1099']);
 });
 
 test('counts and calendars exhaust even a server cap smaller than the batch', async t => {

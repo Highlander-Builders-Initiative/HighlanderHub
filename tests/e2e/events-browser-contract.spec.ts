@@ -5,11 +5,11 @@ test("a newer filter selection cancels an in-flight replacement of the current U
   await page.goto("/events");
   await waitForEventsBrowserHydration(page);
 
-  let releaseSocialResponse!: () => void;
-  const socialResponse = new Promise<void>((resolve) => {
-    releaseSocialResponse = resolve;
+  let releaseHangoutResponse!: () => void;
+  const hangoutResponse = new Promise<void>((resolve) => {
+    releaseHangoutResponse = resolve;
   });
-  let socialRequests = 0;
+  let hangoutRequests = 0;
   let allRequests = 0;
   await page.route(/\/events\?/, async (route) => {
     const url = new URL(route.request().url());
@@ -17,9 +17,9 @@ test("a newer filter selection cancels an in-flight replacement of the current U
       await route.continue();
       return;
     }
-    if (url.searchParams.get("cat") === "social") {
-      socialRequests += 1;
-      await socialResponse;
+    if (url.searchParams.get("cat") === "hangout") {
+      hangoutRequests += 1;
+      await hangoutResponse;
     } else if (!url.searchParams.has("cat")) {
       allRequests += 1;
     }
@@ -27,15 +27,15 @@ test("a newer filter selection cancels an in-flight replacement of the current U
   });
 
   try {
-    await categoryFilterButton(page, "Social").click();
-    await expect.poll(() => socialRequests).toBeGreaterThan(0);
+    await categoryFilterButton(page, "Hang out").click();
+    await expect.poll(() => hangoutRequests).toBeGreaterThan(0);
     await categoryFilterButton(page, "All").click();
     await expect(categoryFilterButton(page, "All")).toHaveAttribute("aria-pressed", "true");
     // Even though the address bar still says /events, replace the pending
-    // social navigation so its response cannot leave the feed filtered.
+    // Hang out navigation so its response cannot leave the feed filtered.
     await expect.poll(() => allRequests).toBeGreaterThan(0);
   } finally {
-    releaseSocialResponse();
+    releaseHangoutResponse();
   }
   await expect(page).toHaveURL(/\/events$/);
   await expect(page.locator("[data-event-id]")).toHaveCount(2);
@@ -57,15 +57,15 @@ test("event filters expose accessible state and recovery actions", async ({
   await expect(summary).toHaveAttribute("aria-live", "polite");
   await expect(summary).toHaveText("2 events loaded");
 
-  const socialFilter = categoryFilterButton(page, "Social");
-  await socialFilter.click();
-  await expect(socialFilter).toHaveAttribute("aria-pressed", "true");
+  const hangoutFilter = categoryFilterButton(page, "Hang out");
+  await hangoutFilter.click();
+  await expect(hangoutFilter).toHaveAttribute("aria-pressed", "true");
   await expect(summary).toHaveText("1 matching event");
   await expect(page.getByRole("button", { name: "Clear" })).toBeVisible();
 
   await search.fill("does-not-match");
   await expect(summary).toHaveText("0 matching events");
-  await expect(page.getByText(/Nothing in Social matches/)).toBeVisible();
+  await expect(page.getByText(/No Hang out events match/)).toBeVisible();
   await expect(page.getByRole("button", { name: "Clear filters" })).toBeVisible();
 
   await page.getByRole("button", { name: "Clear filters" }).click();
@@ -159,7 +159,7 @@ test("calendar trailing next-month days load that month before jumping", async (
     location: "HUB 260",
     host: "Highlander Hub QA",
     hostHandle: "@highlanderhub",
-    category: "social",
+    category: "hangout",
     tags: ["e2e", "calendar"],
     source: "manual",
     sourceUrl: "https://example.com/e2e-next-month-jump",

@@ -13,7 +13,7 @@ from url_utils import normalize_http_url, normalize_rsvp_url
 
 log = logging.getLogger("pipeline.instagram_rows")
 
-EVENT_CATEGORIES = ("club", "academic", "social", "career", "sports", "arts", "community", "free_food")
+EVENT_CATEGORIES = ("hangout", "get_involved", "career", "academic", "sports", "arts", "volunteering", "other")
 _ANONYMIZED_HOST_HANDLES = frozenset({"highlander_opps"})
 # A bare "link in bio" shares anything, including a stream to watch, so it
 # is not a signup term by itself ("RSVP at the link in bio" still is).
@@ -142,7 +142,8 @@ def build_instagram_row(
         host = account_meta.get("label") or host_handle
     category = occurrence.get("category")
     if not isinstance(category, str) or category not in EVENT_CATEGORIES:
-        category = infer_category_from_text(title, f"{description}\n{text}")
+        category = infer_category_from_text(title, f"{description}\n{text}",
+                                            host_type=account_meta.get("category"))
 
     return {
         "id": event_id, "title": title[:200], "description": description,

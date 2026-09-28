@@ -32,10 +32,10 @@ test("event category badge counts come from the full count source, not the loade
 
   function Harness() {
     result = useEventFeedFilters({
-      loadedEvents: [makeEvent("loaded-social", "social")],
+      loadedEvents: [makeEvent("loaded-hangout", "hangout")],
       filterCountSource: [
-        makeEvent("loaded-social", "social"),
-        makeEvent("unloaded-social", "social"),
+        makeEvent("loaded-hangout", "hangout"),
+        makeEvent("unloaded-hangout", "hangout"),
         makeEvent("unloaded-academic", "academic"),
       ],
       category: "all",
@@ -52,9 +52,9 @@ test("event category badge counts come from the full count source, not the loade
   assert.ok(result);
   assert.equal(result.filtered.length, 1);
   assert.equal(result.resultsLabel, "1 of 3 events loaded");
-  assert.equal(result.counts.get("all"), 3);
-  assert.equal(result.counts.get("social"), 2);
-  assert.equal(result.counts.get("academic"), 1);
+  assert.equal(result.counts.categories.get("all"), 3);
+  assert.equal(result.counts.categories.get("hangout"), 2);
+  assert.equal(result.counts.categories.get("academic"), 1);
 });
 
 test("event filter summary omits the total when every event is loaded", async () => {
@@ -62,12 +62,12 @@ test("event filter summary omits the total when every event is loaded", async ()
     "src/components/events/useEventFeedFilters.ts"
   );
   let result;
-  const socialEvent = makeEvent("loaded-social", "social");
+  const hangoutEvent = makeEvent("loaded-hangout", "hangout");
 
   function Harness() {
     result = useEventFeedFilters({
-      loadedEvents: [socialEvent],
-      filterCountSource: [socialEvent],
+      loadedEvents: [hangoutEvent],
+      filterCountSource: [hangoutEvent],
       category: "all",
       query: "",
       dayWindow: "all",
@@ -93,15 +93,14 @@ test("event category badges use a full-feed count source outside pagination", ()
   assert.match(data, /export const getEventFilterCountSource = cachePublicRead\(/);
   assert.match(
     data,
-    /\.select\("id,title,description,starts_at,location,host,host_handle,hosts,category,tags,has_free_food"\)/
+    /\.select\("id,title,description,starts_at,location,host,host_handle,hosts,category,content_kind,tags,has_free_food"\)/
   );
   assert.match(layout, /getEventFilterCountSource/);
   assert.match(layout, /filterCountSource: shareCalendarEvents\(calendarEvents, countSource\)/);
   assert.match(feedData, /filterCountSource: EventFilterCountSource\[\]/);
   assert.match(browser, /filterCountSource,/);
   assert.match(filters, /filterCountSource: EventFilterCountSource\[\]/);
-  assert.match(filters, /filterEventSource\(filterCountSource, filters/);
-  assert.match(filters, /countEventsByCategory\(countSourceExceptCategory\)/);
+  assert.match(filters, /countEventFacets\(filterCountSource, filters/);
   assert.doesNotMatch(
     filters,
     /map\.set\("all", filteredExceptCategory\.length\)/

@@ -68,7 +68,9 @@ test("home page leads from the wall and hero words into the feed", () => {
 
   assert.match(homePage, /\/events\?when=week/);
   assert.match(homePage, /See all \$\{weekCount\} this week/);
-  assert.match(highlights, /href=\{`\/events\?cat=\$\{item\.category\}`\}/);
+  assert.match(highlights, /href=\{item\.href\}/);
+  assert.match(highlights, /eventsFeedHref\(\{ freeFood: true \}\)/);
+  assert.match(highlights, /eventsFeedHref\(\{ category: "sports" \}\)/);
   // The editors' note counts tracked accounts from the pipeline's list.
   assert.match(homePage, /TRACKED_ACCOUNT_COUNT/);
   assert.doesNotMatch(homePage, /instead of \d+/);
@@ -333,7 +335,7 @@ test("loading placeholders shimmer and flyers fade in over them", () => {
     "src/components/events/EventsBrowserSkeleton.tsx",
     "src/components/events/EventDetailLoading.tsx",
     "src/components/ui/RouteLoadingPage.tsx",
-    "src/components/events/EventCategoryFilter.tsx",
+    "src/components/events/EventFilterRow.tsx",
   ]) {
     assert.match(read(path), /\bskeleton\b[^"`]*rounded-full bg-ink\/10/);
   }
