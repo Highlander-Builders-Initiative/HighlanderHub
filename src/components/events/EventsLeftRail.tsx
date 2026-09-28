@@ -40,7 +40,6 @@ export function EventsLeftRail({
         countsPending={countsPending}
       />
 
-      <p className="mt-6 px-3 pb-2 text-[13px] font-medium text-muted">Only show</p>
       <EventFeedSwitches
         layout="rail"
         facets={facets}
@@ -49,7 +48,7 @@ export function EventsLeftRail({
         countsPending={countsPending}
       />
 
-      <p className="mt-6 px-3 pb-2 text-[13px] font-medium text-muted">Hosted by</p>
+      <p className="mt-6 px-3 pb-2 text-[12px] font-medium text-muted">Hosted by</p>
       <EventHostGroupFilter
         layout="rail"
         hostGroup={facets.hostGroup}
