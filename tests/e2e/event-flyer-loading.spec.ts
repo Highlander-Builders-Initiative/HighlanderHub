@@ -16,7 +16,7 @@ for (const view of ["Cards", "Compact"] as const) {
     await page.addInitScript((event) => {
       sessionStorage.setItem("highlanderhub.eventFeed", JSON.stringify({
         path: "/events", scrollY: 0, events: [event], hasMore: false,
-        cursor: { startsAt: event.startsAt, id: event.id },
+        cursor: { sortAt: event.sortAt, id: event.id },
         category: "all", query: "", dayWindow: "all", loadedCount: 1,
         eventId: event.id, eventTop: 100, savedAt: Date.now(),
       }));

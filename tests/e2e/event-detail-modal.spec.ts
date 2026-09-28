@@ -81,18 +81,17 @@ for (const mode of ["", " after refresh", " after viewport resize"]) {
     // Keep the API's order (start, then id): a scroll-triggered page load
     // re-sorts the loaded list, and an out-of-order list would move the card.
     const start = Date.parse(E2E_FIXTURE_EVENT.startsAt);
-    const events = Array.from({ length: 32 }, (_, i) => i === 24 ? E2E_FIXTURE_EVENT : ({
-      ...E2E_FIXTURE_EVENT,
-      id: `loaded-${i}`,
-      title: `Loaded event ${i}`,
-      startsAt: new Date(start + (i - 24) * 60_000).toISOString(),
-    }));
+    const events = Array.from({ length: 32 }, (_, i) => {
+      if (i === 24) return E2E_FIXTURE_EVENT;
+      const startsAt = new Date(start + (i - 24) * 60_000).toISOString();
+      return { ...E2E_FIXTURE_EVENT, id: `loaded-${i}`, title: `Loaded event ${i}`, startsAt, sortAt: startsAt };
+    });
     await page.addInitScript(({ events }) => {
       if (sessionStorage.getItem("modal-test-seeded")) return;
       sessionStorage.setItem("modal-test-seeded", "1");
       sessionStorage.setItem("highlanderhub.eventFeed", JSON.stringify({
         path: "/events", scrollY: 0, events, hasMore: true,
-        cursor: { startsAt: events[31].startsAt, id: events[31].id },
+        cursor: { sortAt: events[31].sortAt, id: events[31].id },
         category: "all", query: "", dayWindow: "all", loadedCount: 32,
         eventId: events[0].id, eventTop: 100, savedAt: Date.now(),
       }));
@@ -105,7 +104,7 @@ for (const mode of ["", " after refresh", " after viewport resize"]) {
     await page.route(/\/api\/events\?/, async (route) => {
       cursors.push(new URL(route.request().url()).searchParams.get("afterId") ?? "");
       await route.fulfill({ json: { events: [], hasMore: false,
-        cursor: { startsAt: events[31].startsAt, id: events[31].id } } });
+        cursor: { sortAt: events[31].sortAt, id: events[31].id } } });
     });
     await page.goto("/events");
     await expect(page.locator('[data-event-id]')).toHaveCount(32);

@@ -10,7 +10,7 @@ test('calendar failure stays unknown and retries the same month', async ({ page 
     attempts += 1;
     if (!recover) await route.fulfill({ status: 500, json: { error: 'offline' } });
     else await route.fulfill({ json: { events: [{ ...E2E_FIXTURE_EVENT,
-      startsAt: '2026-06-01T18:30:00-07:00' }] } });
+      startsAt: '2026-06-01T18:30:00-07:00', sortAt: '2026-06-01T18:30:00-07:00' }] } });
   });
   await page.goto('/events');
   await waitForEventsBrowserHydration(page);
@@ -38,7 +38,7 @@ test('superseded calendar responses cannot replace the current month', async ({ 
       await juneGate;
       await route.fulfill({ json: { events: [] } });
     } else await route.fulfill({ json: { events: [{ ...E2E_FIXTURE_EVENT,
-      startsAt: '2026-07-01T18:30:00-07:00' }] } });
+      startsAt: '2026-07-01T18:30:00-07:00', sortAt: '2026-07-01T18:30:00-07:00' }] } });
   });
   await page.goto('/events');
   await waitForEventsBrowserHydration(page);

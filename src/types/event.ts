@@ -56,6 +56,11 @@ export interface CampusEvent {
   description: string;
   startsAt: string; // ISO date string
   endsAt?: string;
+  /**
+   * When it starts or, for a deadline, is due: 11:59 PM on the due date when
+   * the source gives only a date. The feed's order. Derived by the database.
+   */
+  sortAt: string;
   location: string;
   host: string; // club, dept, or org running it
   hostHandle?: string; // @instagram or similar

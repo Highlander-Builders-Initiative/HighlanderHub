@@ -19,7 +19,7 @@ export async function fetchEventsPage(
 ): Promise<EventsApiPage> {
   const params = eventFeedSearchParams(filters);
   if (after) {
-    params.set("after", after.startsAt);
+    params.set("after", after.sortAt);
     params.set("afterId", after.id);
   }
   if (typeof limit === "number") {

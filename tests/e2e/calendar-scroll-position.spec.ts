@@ -2,13 +2,17 @@ import { expect, test, type Page } from "@playwright/test";
 import { E2E_FIXTURE_EVENT } from "../../src/lib/events/fixtures";
 
 function eventsOn(day: string, count: number, prefix: string) {
-  return Array.from({ length: count }, (_, index) => ({
-    ...E2E_FIXTURE_EVENT,
-    id: `${prefix}-${index}`,
-    title: `${prefix} ${index}`,
-    startsAt: `${day}T${String(10 + Math.floor(index / 6)).padStart(2, "0")}:${String((index % 6) * 10).padStart(2, "0")}:00-07:00`,
-    endsAt: undefined,
-  }));
+  return Array.from({ length: count }, (_, index) => {
+    const startsAt = `${day}T${String(10 + Math.floor(index / 6)).padStart(2, "0")}:${String((index % 6) * 10).padStart(2, "0")}:00-07:00`;
+    return {
+      ...E2E_FIXTURE_EVENT,
+      id: `${prefix}-${index}`,
+      title: `${prefix} ${index}`,
+      startsAt,
+      sortAt: startsAt,
+      endsAt: undefined,
+    };
+  });
 }
 
 const initial = [
@@ -25,7 +29,7 @@ async function openFeed(page: Page, mobile: boolean, view: "cards" | "compact") 
   await page.addInitScript(({ initial }) => {
     sessionStorage.setItem("highlanderhub.eventFeed", JSON.stringify({
       path: "/events", scrollY: 0, events: initial, hasMore: true,
-      cursor: { startsAt: initial[initial.length - 1].startsAt, id: initial[initial.length - 1].id },
+      cursor: { sortAt: initial[initial.length - 1].sortAt, id: initial[initial.length - 1].id },
       category: "all", query: "", dayWindow: "all",
       loadedCount: 24, eventId: initial[0].id, eventTop: 300, savedAt: Date.now(),
     }));
@@ -39,7 +43,7 @@ async function openFeed(page: Page, mobile: boolean, view: "cards" | "compact") 
   );
   await page.route(/\/api\/events\?/, (route) =>
     route.fulfill({ json: { events: [...missing, ...target], hasMore: false,
-      cursor: { startsAt: target.at(-1)!.startsAt, id: target.at(-1)!.id } } })
+      cursor: { sortAt: target.at(-1)!.sortAt, id: target.at(-1)!.id } } })
   );
   await page.goto("/events");
   await expect(page.locator("[data-event-id]")).toHaveCount(24);
@@ -94,7 +98,7 @@ test("calendar jump completes the partially loaded boundary day", async ({ page 
   await expect(page.locator("[data-event-id]")).toHaveCount(56);
   const saved = await page.evaluate(() => JSON.parse(sessionStorage.getItem("highlanderhub.eventFeed")!));
   // Calendar merges are not sequential API pages; the pagination cursor stays put.
-  expect(saved.cursor).toEqual({ startsAt: initial[23].startsAt, id: initial[23].id });
+  expect(saved.cursor).toEqual({ sortAt: initial[23].sortAt, id: initial[23].id });
 });
 
 test("manual scrolling cancels the calendar landing correction", async ({ page }) => {

@@ -155,6 +155,7 @@ test("calendar trailing next-month days load that month before jumping", async (
     description:
       "A deterministic event used to verify out-of-month calendar jumps.",
     startsAt: "2026-06-01T18:30:00.000-07:00",
+    sortAt: "2026-06-01T18:30:00.000-07:00",
     endsAt: "2026-06-01T20:00:00.000-07:00",
     location: "HUB 260",
     host: "Highlander Hub QA",

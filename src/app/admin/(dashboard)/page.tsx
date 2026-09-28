@@ -19,7 +19,7 @@ export default async function AdminDashboardPage() {
         .select("*")
         .or(activeEventFilter(nowIso))
         // Match public /events feed: soonest first, id tie-breaker for stable pages.
-        .order("starts_at", { ascending: true })
+        .order("sort_at", { ascending: true })
         .order("id", { ascending: true })
         .overrideTypes<AdminEventRow[], { merge: false }>(),
       supabase

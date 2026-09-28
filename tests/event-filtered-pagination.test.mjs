@@ -11,6 +11,7 @@ function makeSource(id, overrides = {}) {
     title: id,
     description: "",
     startsAt: "2026-05-25T18:30:00.000-07:00",
+    sortAt: "2026-05-25T18:30:00.000-07:00",
     location: "HUB",
     host: "QA",
     hostHandle: null,
@@ -41,6 +42,7 @@ test("shared event filters apply query, category, and day window consistently", 
     makeSource("later-hack", {
       title: "Fall Hackathon",
       startsAt: "2026-06-05T18:30:00.000-07:00",
+      sortAt: "2026-06-05T18:30:00.000-07:00",
     }),
     makeSource("movie", { title: "Movie Night" }),
   ];

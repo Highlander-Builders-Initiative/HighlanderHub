@@ -336,18 +336,20 @@ export function formatTimeRange(startIso: string, endIso?: string): string {
 /**
  * An event's time line. "start" is the feed card's start time ("7:00 PM");
  * "span" is the whole span ("7:00pm – 9:00pm") for detail, share and
- * featured. Both read "All day" for an event without clock times. A deadline's
- * time is its cutoff (start), even at midnight; its end is only the day
- * boundary, so it never reads as all day or as a span.
+ * featured. Both read "All day" for an event without clock times. A deadline
+ * reads as when it is due (sortAt), never as all day or as a span: a
+ * date-only one ("apply by Sep 27") is due 11:59 PM that day.
  */
 export function eventTimeLabel(
-  event: Pick<CampusEvent, "contentKind" | "startsAt" | "endsAt">,
+  event: Pick<CampusEvent, "contentKind" | "startsAt" | "endsAt" | "sortAt">,
   style: "start" | "span"
 ): string {
-  const endsAt = isDeadlineKind(event.contentKind) ? undefined : event.endsAt;
-  if (style === "span") return formatTimeRange(event.startsAt, endsAt);
-  const { time, period } = formatTimeParts(event.startsAt);
-  return formatAllDay(event.startsAt, endsAt) ?? `${time} ${period}`;
+  const isDeadline = isDeadlineKind(event.contentKind);
+  const startsAt = isDeadline ? event.sortAt : event.startsAt;
+  const endsAt = isDeadline ? undefined : event.endsAt;
+  if (style === "span") return formatTimeRange(startsAt, endsAt);
+  const { time, period } = formatTimeParts(startsAt);
+  return formatAllDay(startsAt, endsAt) ?? `${time} ${period}`;
 }
 
 export function formatUpcomingWeekLabel(count: number | null): string | null {

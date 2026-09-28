@@ -9,7 +9,7 @@ function event(id) {
 const ALL_FILTERS = { category: "all", query: "", dayWindow: "all" };
 
 // A feed resumes after its last loaded event.
-const after = (id, startsAt = "2026-05-20T18:30:00.000-07:00") => ({ startsAt, id });
+const after = (id, sortAt = "2026-05-20T18:30:00.000-07:00") => ({ sortAt, id });
 
 function richEvent(id, startsAt) {
   return {
@@ -17,6 +17,7 @@ function richEvent(id, startsAt) {
     title: id,
     description: id,
     startsAt,
+    sortAt: startsAt,
     location: "HUB",
     host: "QA",
     category: "social",

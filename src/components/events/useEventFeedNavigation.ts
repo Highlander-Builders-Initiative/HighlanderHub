@@ -24,7 +24,7 @@ import {
   type EventsApiPage,
 } from "@/lib/events/api";
 import { calendarJumpEndsAtLoadedBoundary } from "@/lib/events/calendar-feed-pagination";
-import { mergeUniqueEventsByStart } from "@/lib/events/merge";
+import { mergeUniqueEventsInFeedOrder } from "@/lib/events/merge";
 import { SCROLL_SPY_OFFSET_PX } from "@/lib/events/observed-day-key";
 import {
   eventFeedQueriesEqual,
@@ -156,14 +156,14 @@ export function useEventFeedNavigation({
           .then((gap) => {
             if (gapRequestRef.current === dayKey) gapRequestRef.current = null;
             setLoadedEvents((current) =>
-              mergeUniqueEventsByStart(current, [...gap, ...eventsToMerge])
+              mergeUniqueEventsInFeedOrder(current, [...gap, ...eventsToMerge])
             );
           });
         return true;
       }
 
       setLoadedEvents((current) =>
-        mergeUniqueEventsByStart(current, eventsToMerge)
+        mergeUniqueEventsInFeedOrder(current, eventsToMerge)
       );
       return true;
     },
@@ -360,7 +360,7 @@ export function useEventFeedNavigation({
       }
 
       setLoadedEvents((current) => {
-        return mergeUniqueEventsByStart(current, page.events);
+        return mergeUniqueEventsInFeedOrder(current, page.events);
       });
       setHasMore(page.hasMore);
       setCursor(page.cursor);

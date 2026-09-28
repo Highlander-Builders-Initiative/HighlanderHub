@@ -993,7 +993,9 @@ def main(*, notify: bool = True) -> None:
     original = {row['id']: row for row in rows}
     for row in updates:
         before = original[row['id']]
-        changes = {key: value for key, value in row.items() if value != before.get(key)}
+        # sort_at is generated from the times; Postgres rejects any write to it.
+        changes = {key: value for key, value in row.items()
+                   if key != 'sort_at' and value != before.get(key)}
         query = client().table('events').update(changes).eq('id', row['id']).eq('is_locked', False)
         if before.get('updated_at'):
             query = query.eq('updated_at', before['updated_at'])

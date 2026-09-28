@@ -6,8 +6,8 @@ import { importTsModule } from "./helpers/import-ts-module.mjs";
 const sourceFile = (path) => new URL(`../${path}`, import.meta.url);
 const read = (path) => readFileSync(sourceFile(path), "utf8");
 
-function event(id, startsAt) {
-  return { id, startsAt };
+function event(id, sortAt) {
+  return { id, sortAt };
 }
 
 test("event pages use deterministic ordering for offset pagination", () => {
@@ -15,19 +15,19 @@ test("event pages use deterministic ordering for offset pagination", () => {
 
   assert.match(
     source,
-    /\.order\("starts_at", \{ ascending: true \}\)\s*\.order\("id", \{ ascending: true \}\)\s*\.range\(from, to\)/
+    /\.order\("sort_at", \{ ascending: true \}\)\s*\.order\("id", \{ ascending: true \}\)\s*\.range\(from, to\)/
   );
 });
 
-test("merged event pages keep a stable order when start times tie", async () => {
-  const { mergeUniqueEventsByStart } = await importTsModule(
+test("merged event pages keep a stable order when feed times tie", async () => {
+  const { mergeUniqueEventsInFeedOrder } = await importTsModule(
     "src/lib/events/merge.ts"
   );
 
-  const startsAt = "2026-05-25T18:00:00.000Z";
-  const merged = mergeUniqueEventsByStart(
-    [event("event-b", startsAt)],
-    [event("event-a", startsAt), event("event-c", "2026-05-25T19:00:00.000Z")]
+  const sortAt = "2026-05-25T18:00:00.000Z";
+  const merged = mergeUniqueEventsInFeedOrder(
+    [event("event-b", sortAt)],
+    [event("event-a", sortAt), event("event-c", "2026-05-25T19:00:00.000Z")]
   );
 
   assert.deepEqual(
