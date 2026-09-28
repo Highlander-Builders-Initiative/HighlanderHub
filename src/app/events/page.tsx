@@ -7,6 +7,7 @@ import {
   coerceFeedView,
   readEventFeedQuery,
 } from "@/components/events/events-filters";
+import { DesktopMoreMenu } from "@/components/layout/DesktopMoreMenu";
 import { Footer } from "@/components/layout/Footer";
 import { getEventsPage } from "@/lib/events";
 
@@ -63,6 +64,11 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
             "linear-gradient(to top, black 40%, transparent 100%)",
         }}
       />
+
+      {/* The footer's links, for the one page whose footer is out of reach:
+          the feed loads more as you scroll. Every other page's footer is a
+          short scroll away, so they don't get this. */}
+      <DesktopMoreMenu />
 
       <Footer />
     </main>

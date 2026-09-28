@@ -327,7 +327,7 @@ The top of `/events`: the page title "Events" (Bricolage, the feed's one brand m
 
 ### Rails
 
-The `/events` side columns, from lg: Topics, Only show and Hosted by on the left, the mini calendar and When on the right. They sit on the page with no panel (The One-Surface Rule). The mobile filter sheet stacks the same three groups as two-column grids above When.
+The `/events` side columns, from lg: Topics, Only show and Hosted by on the left, the mini calendar and When on the right. They sit on the page with no panel (The One-Surface Rule). Their group headings are all the same 12px medium muted label. The mobile filter sheet stacks the same three groups as two-column grids above When.
 
 Each group answers one question, and they combine: Topics is what you'd be doing, Only show narrows to free food or deadlines, Hosted by is who runs it. Every row's count is what choosing it would show with the other filters applied. All three share one row (`EventFilterRow`).
 
@@ -358,6 +358,8 @@ Do not copy this pattern to non-filter surfaces. The "removable chip row" reads 
 - **Active states:** Underline-from-active for tabbed sections (defined globally via `.tab[aria-selected="true"]::after`).
 - **Links:** Events and About. No Home link; the wordmark is the way home.
 - **Mobile treatment:** Nav links shrink to 13px medium, each a 44px-tall target. No hamburger; the two links inline.
+- **Same links on every page.** Events and About stay in the bar on every route, the feed included, with the current page underlined. The bar never drops or reshuffles a link by page: a reader who found About at the top right once finds it there again, and on phones (which have no More menu) the bar is the only way to reach About from the feed. Events is not dropped on /events either; it marks where you are.
+- **More menu (desktop, /events only):** the footer's links (About, Socials, Privacy Policy, Terms of Service) for the one page whose footer is out of reach, since the feed loads more as you scroll. It is rendered by the /events page (so `/events/[id]` has it too), not the root layout: every other page's footer is a short scroll away, and the home page is a brand surface that takes no floating chrome. About repeats the bar's link on purpose, because on /events the masthead scrolls away and the menu stands in for the whole footer. The trigger (a 16px menu icon and "More") is styled like the masthead's idle links, 14px medium `text-ink/60`, ink on hover or while open, never full ink at rest. It is fixed to the bottom of the viewport but aligned to the page's `max-w-7xl` edge, under the masthead's links and the right rail, not to the viewport's corner. The menu opens upward; Socials flies out to the left, centered on its row (Discord level with Socials). The trigger fades out while the page footer is on screen, because the footer carries the same links and its bottom row sits where the trigger does.
 
 ### Tabs
 

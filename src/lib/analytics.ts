@@ -5,6 +5,7 @@ type Primitive = string | number | boolean | null;
 export type HbiCtaLocation =
   | "hero"
   | "footer_social"
+  | "more_menu"
   | "footer_credit"
   | "about_page"
   | "editors_note";

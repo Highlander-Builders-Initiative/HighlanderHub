@@ -127,16 +127,14 @@ export function EventsMobileFilterSheet({
               onCategoryChange={onCategoryChange}
               counts={counts.categories}
             />
-          </div>
-
-          <div className="mt-6">
-            <p className="pb-2 text-[12px] font-medium text-muted">Only show</p>
-            <EventFeedSwitches
-              layout="grid"
-              facets={facets}
-              onFacetsChange={onFacetsChange}
-              counts={counts}
-            />
+            <div className="mt-1.5">
+              <EventFeedSwitches
+                layout="grid"
+                facets={facets}
+                onFacetsChange={onFacetsChange}
+                counts={counts}
+              />
+            </div>
           </div>
 
           <div className="mt-6">
