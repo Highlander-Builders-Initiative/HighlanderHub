@@ -110,7 +110,7 @@ The system explicitly rejects three aesthetic families called out as anti-refere
 
 **Key Characteristics:**
 - Hairline-bordered surfaces; hover darkens the edge and nothing moves; no shadow blooms (see Elevation for direction).
-- Bricolage Grotesque carries the brand's display moments (wordmark, page titles, the landing page); the device's UI face carries the product. Two faces, never a third.
+- Bricolage Grotesque carries the brand's display moments (wordmark, page titles, the landing and About pages); the device's UI face carries the product. Two faces, never a third.
 - OKLCH thinking, hex frontmatter; tinted neutrals only, no pure #000.
 - Restrained color strategy: category accents at ≤10% of any surface, expressed as bright tinted washes (18%) plus a darker matched text color for AA contrast.
 - Mobile-first: every layout is designed for a phone first, scaled out.
@@ -168,7 +168,7 @@ The site follows the device's light/dark setting (`prefers-color-scheme`); there
 
 ## 3. Typography
 
-**Display Font:** Bricolage Grotesque (`--font-display`, the `font-display` class). The wordmark, page titles (the feed's "Events", About, the legal pages) and the landing page, whose body copy keeps it too (`.brand-type` on its `<main>`).
+**Display Font:** Bricolage Grotesque (`--font-display`, the `font-display` class). The wordmark, page titles (the feed's "Events", About, the legal pages) and the landing and About pages, whose body copy keeps it too (`.brand-type` on their `<main>`). An event card shown on those pages (About's flyer-to-listing example) resets `--font-body` to the UI face, so it reads as it does in the feed.
 **UI Font:** the device's own face (`--font-ui`: `-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`), which `--font-body` points at. SF on Apple, Segoe on Windows, Roboto on Android. Everything a reader scans on the product pages: the feed, the rails, filters, the event detail.
 
 **Character:** The /events layout follows Luma's event list, and Luma's list reads calm because its face disappears: it runs on `-apple-system`. Bricolage at 13–16px kept drawing the eye, so the layout said "quiet list" while the type said "poster". Bricolage now appears where the brand should be felt, at display sizes (28–72px, optical sizing on, semibold, tracking -0.02 to -0.035em), and the UI face carries the rest at regular and medium weights. On phones the UI face is SF, what students' other apps read in. It costs no font download. Meta strings (13px, muted) use the UI face without uppercase or tracked-out treatment.
@@ -379,6 +379,16 @@ A continuously scrolling, full-bleed strip of upcoming event flyers representing
 - **Accessibility:** Repeated decorative clone cards are kept out of the focus order (`tabIndex={-1}`) and hidden from screen readers (`aria-hidden="true"`) to prevent double-announcement.
 - **Reduced Motion:** If `prefers-reduced-motion: reduce` is active, the automated scrolling loop is entirely disabled and it remains a standard manual touch/swipe scroller.
 
+### About page (brand surface)
+
+About answers what a student asks before trusting the site: where the listings come from, how current they are, who checks them and who made it. It is a brand surface like the landing page (`.brand-type`), but the calm one: nothing on it moves, and it has no hero art. Its one picture is a real flyer from this week (The One-Landmark Rule).
+
+- **One heading scale.** The h1 (38 to 56px) is the only display-size type. Every section heading shares `SECTION_HEADING`, the feed title's 28/34px, and step titles and questions sit a tier below at 17 to 20px. No section gets its own bigger type to feel important.
+- **Intro.** The h1 and the lede with the one solid ink button ("Browse events"), side by side from lg. Canvas, no card, no image.
+- **Flyer trace ("How a flyer becomes a listing").** The page's one `bg-surface` band, so the `EventCard` sits on the tonal step it has in the feed. One live flyer in three numbered steps, side by side from lg (subgrid lines the pictures up under captions of different lengths), stacked on phones: *Posted* (the club's picture and handle over the flyer, whole, with a link to the post), *Read* (the fields read off it, a flat canvas card with hairline rows) and *Listed* (the real `EventCard` under its day heading). Hairlines only, no shadows. The read-out and the card are product data, so they reset `--font-body` to the UI face. The example prefers an upcoming event with a clock time; with none, the steps read without pictures.
+- **Questions, answered in the open.** A definition list, question left and answer right from lg, hairline rows. No accordion: the answers are short and are the point of the page. The run times in "How up to date is it?" are worked out in campus time per request (`campusRunTimes`), so daylight saving moves them.
+- **Run a club? / Built by HBI.** Two plain columns on canvas under the questions' last hairline. The club column's action is an outline button, so "Browse events" stays the page's only solid one. HBI's social icons are left to the footer just below.
+
 ### Campus Skyline (signature)
 
 The hero's landmark illustration: the Bell Tower standing on the horizon line
@@ -449,7 +459,7 @@ still signals category everywhere a user can act; the skyline is scenery, is
 ### Do:
 
 - **Do** keep the hue-as-meaning discipline: color signals category, full stop. If you reach for a color and it is not a category, stop and use type weight or spacing.
-- **Do** use Bricolage Grotesque for the wordmark, page titles and the landing page, and the UI face for everything a reader scans. Numbers are the UI face's `tabular-nums`. Two faces. No third.
+- **Do** use Bricolage Grotesque for the wordmark, page titles and the landing and About pages, and the UI face for everything a reader scans. Numbers are the UI face's `tabular-nums`. Two faces. No third.
 - **Do** keep eyebrows, taglines, and summary lines quiet: body face at regular weight, small (12–13px), sentence case, normal tracking, muted color. The "edited bulletin caption" look, not the "SaaS landing eyebrow" look.
 - **Do** prefer hairline-bordered surfaces (`border-ink/10` to `border-ink/15`) over background-tinted ones for default cards and rows.
 - **Do** ease motion out only (`cubic-bezier(0.16, 1, 0.3, 1)`). Durations: 180–300ms for state. Always.
