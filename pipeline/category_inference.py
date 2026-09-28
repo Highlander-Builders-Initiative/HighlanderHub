@@ -139,6 +139,9 @@ _CATEGORY_CONCEPTS: dict[str, tuple[tuple[tuple[str, ...], tuple[int, int]], ...
         (("yoga",), _STRONG),
         (("5k", "10k"), _TITLE_ONLY),
         (("fun run", "marathon", "triathlon"), _STRONG),
+        # A bare "run" is also a candidacy ("Run for ASUCR Senate"), so only
+        # phrases that can only mean running as exercise count.
+        (("group run", "group runs", "run club", "running club", "jogging"), _STRONG),
         (("swim", "swimming"), _STRONG),
         (("fitness", "workout", "workouts"), _STRONG),
         (("climbing", "bouldering"), _STRONG),

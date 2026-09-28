@@ -507,5 +507,102 @@
       "source_occurrences": []
     },
     "synthetic": true
+  },
+  {
+    "name": "Running Club week one routes",
+    "expected_kind": "activity",
+    "expected_date_role": "occurrence",
+    "expected_starts_at": [
+      "2026-09-28T17:00:00-07:00",
+      "2026-09-29T17:00:00-07:00",
+      "2026-09-30T17:00:00-07:00",
+      "2026-10-01T17:00:00-07:00",
+      "2026-10-02T17:00:00-07:00"
+    ],
+    "source": {
+      "source_key": "instagram:post:3995738486312381216",
+      "origin": "instagram",
+      "posted_at": "2026-09-27T22:46:07+00:00",
+      "texts": {
+        "caption": "Welcome (Back) to the Running Club at UCR. 🥳 Let’s all look forward to another year of fun, growth, and in building our own runner spirit. 🏃‍♂️💨 All is welcomed — at every pace, so don’t feel intimated to join us — since we’re all here for a good run. 🙌 We hope to see you all — whether you are new or a returning runner on our First Day. 🙈 #letsgorc\nHere are the routes for the Week:\n\nMonday: MLK — Base: 2.14 Mi, Mileage: 5.13 Mi.\nTuesday: Linden — Base: 1.95 Mi, Mileage: 4.7 Mi.\nWednesday: Cherryhill — Base: 2.14 Mi, Mileage: 5.53 Mi.\nThursday: Spruce — Base: 2.80 Mi, Mileage: 5.20 Mi\nFriday: Paper Cup — Base: 3.2 Mi, Mileage: 5.6 Mi\n\nℹ️ We meet at 5pm and start running at 5:15pm, Monday through Friday, at the SRC North Enterance Picnic Tables. Our paces range from 7 minutes/mile, to 12 minutes/mile, spanning our 2 different runner routes — Base and mileage. Anyone is welcome. No fees or regular commitment is required to join. Check out our starter guide for more information. ℹ️",
+        "slide_1_ocr": "Romaine Routes\nWEEK ONE\nFALL QUARTER\nMON\nMLK\nTUE\nLINDEN\nWED\nCHERRY\nHILL\nTHU SPRUCE\nFRI\nPAPER\nCUP",
+        "slide_2_ocr": "KANSAS\nCHICAGO AVE\nMONDAY:\nMLK\nUNIVERSITY AVE\nSTOP\n010\nIOWA AVE\n->\nMLK\nSTOP\nBASE: 2.14MI MILEAGE: 5.13MI",
+        "slide_3_ocr": "CHICAGO\nTUESDAY:\nLINDEN\nSPRUCE\nLINDEN\nBLAINE\nWATKINS\nCREST\nCANYON\nBASE: 1.95MI MILEAGE: 4.7MI",
+        "slide_4_ocr": "010\nWEDNESDAY:\nCHERRYHILL\nLINDEN\nCHICAGO\nLE CONTE\nROSEHILL\nCHERRYHILL\nMLK BLV STOP\nCANYON CREST\nMONTE VISTA\nCHAPALA\nGROVEHILL\nBASE: 2.14MI MILEAGE: 5.53MI",
+        "slide_5_ocr": "SPRUCE\nTHURSDAY:\nSPRUCE\nVALENCIA HILL\n↑\nFLANDERS\nBLAINE\nCANYON CREST\nABERDEEN\nBLAINE\nMOUNT VERMON\nBIG SPRINGS\nWATKINS\nBASE: 2.80MI MILEAGE: 5.20MI",
+        "slide_6_ocr": "↓\nSTOP\nIOWA\nFRIDAY:\nPAPER CUP\nCOLUMBIA\nSTOP\nNORTHGATE\nMARLBOROUGH\nLINDEN\nCANYON CREST\nBASE: 3.2MI MILEAGE: 5.6MI"
+      },
+      "source_occurrences": []
+    }
+  },
+  {
+    "name": "week lineup posted midweek",
+    "expected_kind": "activity",
+    "expected_date_role": "occurrence",
+    "expected_starts_at": [
+      "2026-10-01T18:00:00-07:00",
+      "2026-10-03T10:00:00-07:00"
+    ],
+    "source": {
+      "source_key": "instagram:post:test-week-lineup-midweek",
+      "origin": "instagram",
+      "posted_at": "2026-09-30T17:00:00Z",
+      "texts": {
+        "caption": "This week's practice schedule: Tuesday 6pm, Thursday 6pm, Saturday 10am at the Rec Center Field. All levels welcome!"
+      },
+      "source_occurrences": []
+    },
+    "synthetic": true
+  },
+  {
+    "name": "standing club runs name no week",
+    "expected_kind": [
+      "uncertain",
+      "service_schedule"
+    ],
+    "expected_starts_at": [],
+    "source": {
+      "source_key": "instagram:post:test-standing-club-runs",
+      "origin": "instagram",
+      "posted_at": "2026-09-27T22:00:00Z",
+      "texts": {
+        "caption": "Running Club meets every Monday, Wednesday and Friday at 5pm at the SRC North Entrance. All paces welcome, no fees!"
+      },
+      "source_occurrences": []
+    },
+    "synthetic": true
+  },
+  {
+    "name": "recap of this week's runs",
+    "expected_kind": "announcement",
+    "expected_starts_at": [],
+    "source": {
+      "source_key": "instagram:post:test-week-recap",
+      "origin": "instagram",
+      "posted_at": "2026-09-27T22:00:00Z",
+      "texts": {
+        "caption": "What a week! Thanks to everyone who came out to run with us this week: Monday: MLK, Wednesday: Cherryhill, Friday: Paper Cup. See you next quarter!"
+      },
+      "source_occurrences": []
+    },
+    "synthetic": true
+  },
+  {
+    "name": "library hours during move-in week",
+    "expected_kind": [
+      "service_schedule",
+      "announcement"
+    ],
+    "expected_starts_at": [],
+    "source": {
+      "source_key": "instagram:post:test-move-in-library-hours",
+      "origin": "instagram",
+      "posted_at": "2026-09-27T22:00:00Z",
+      "texts": {
+        "caption": "Moving in this week? Stop by Rivera Library! Our fall hours: MON-FRI: 9AM-5PM, SAT-SUN: 12PM-5PM."
+      },
+      "source_occurrences": []
+    },
+    "synthetic": true
   }
 ]

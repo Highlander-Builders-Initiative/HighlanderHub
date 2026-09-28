@@ -93,8 +93,9 @@ def main():
             kind = payload.get("result", {}).get("kind")
             # A reminder can name today's service session or its whole service
             # schedule. Either interpretation must produce individual sessions.
-            expected = {case["expected_kind"]}
-            if case["expected_kind"] == "service_schedule":
+            # A list accepts any of several readings that all publish the same.
+            expected = set(case["expected_kind"]) if isinstance(case["expected_kind"], list) else {case["expected_kind"]}
+            if "service_schedule" in expected:
                 expected.add("activity")
             passed = payload["status"] == "complete" and kind in expected
             if "expected_date_role" in case:

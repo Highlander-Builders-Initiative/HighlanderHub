@@ -21,7 +21,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 # Recorded for provenance; policy changes currently do not invalidate caches.
-VERSION = 7
+VERSION = 8
 MAX_OCCURRENCES = 100
 MODEL = "gemini-3.1-flash-lite"
 # Google recommends 1.0 for Gemini 3, but cached refusals assume a repeat call
@@ -124,7 +124,9 @@ that an activity exists. Decide what someone can actually attend or do.
 Kinds: activity (including all-day and multi-day activities), deadline (a dated
 action cutoff), application (a program opportunity, enrollment/recruitment pitch,
 or application/booking window), service_schedule
-(recurring availability), announcement (observance, awareness/resource notice,
+(recurring availability of an office, facility or service, such as advising
+or pantry hours; sessions a group holds for people to join, such as club runs,
+practices or meetings, are activities), announcement (observance, awareness/resource notice,
 greeting, closure, or other information), uncertain (insufficient evidence).
 Dates have roles: occurrence, recurring_hours, cutoff, application_window, program_duration,
 observance, notice_period, none, uncertain. A closure uses notice_period.
@@ -237,6 +239,17 @@ Never turn a seasonal schedule into one continuous event. When recurrence
 cannot be fully established but a session's date and time are explicitly
 printed ('Starting Sept. 29th ... 2-3 PM'), return that session as the only
 occurrence. Otherwise return occurrences=[].
+A lineup of activities scoped to one specific week ('this week', 'the routes
+for the week') is bounded by that week. Return each listed session with a
+printed start time as its own activity occurrence (ends_at=null without a
+printed end), dating each weekday within the week of the local publication
+date, counted from Sunday: a Sunday post's week is the days that follow it.
+Skip days already past. Cite the field containing the week phrase in each
+occurrence's date_evidence. A standing pattern that names no week ('every
+Monday', 'Mondays', 'weekly', 'we meet Monday through Friday') stays unbounded,
+an academic week number ('Week 1', 'Week 3 of fall') is never resolved to
+dates, service hours are never dated this way, and a recap of a past week is
+an announcement.
 
 Announcements, uncertain content and applications have no public occurrences:
 return occurrences=[], schedule=null, use_source_occurrences=false. Their dates
@@ -343,9 +356,25 @@ _WEEKDAY_NUMBERS = {name: number for number, name in enumerate(
 _THIS_WEEKDAY = re.compile(
     r"\bthis\s+(?:coming\s+)?(monday|tuesday|wednesday|thursday|friday|saturday|sunday"
     r"|mon|tues?|wed|thur?s?|fri|sat|sun)\b", re.I)
+# A lineup scoped to one week: "this week", "the routes for the week". Not "the
+# week of Oct 5" (another week, dated on its own) or an academic "Week 3".
+_THIS_WEEK = re.compile(r"\b(?:this|for\s+the)\s+week\b(?!\s+of\b)(?!\s*\d)", re.I)
 
 
-def _day_supported(day: date, text: str, source: dict) -> bool:
+def _named_weekdays(text: str) -> set[int]:
+    """Weekdays (0=Monday) the text names, with a two-day range filled in."""
+    names = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+    printed = [names.index(m.group()[:3].lower()) for m in re.finditer(
+        r"\b(?:mon(?:day)?|tue(?:sday)?|wed(?:nesday)?|thu(?:rsday)?|fri(?:day)?|sat(?:urday)?|sun(?:day)?)s?\b", text, re.I)]
+    supported = set(printed)
+    if len(printed) == 2 and re.search(r"(?:-|–|—|\bto\b|\bthrough\b)\s*(?:\n\s*)?(?:mon|tue|wed|thu|fri|sat|sun)", text, re.I):
+        supported |= {(printed[0] + i) % 7 for i in range((printed[1] - printed[0]) % 7 + 1)}
+    if re.search(r"\b(?:daily|every day)\b", text, re.I):
+        supported = set(range(7))
+    return supported
+
+
+def _day_supported(day: date, text: str, source: dict, *, week_scoped: bool = False) -> bool:
     from event_dates import evidence_dates, weekday_range_dates, _scan_printed_dates, _labeled_date, _OCR_DATE_RE, _MONTHS
 
     # Recognize ISO dates as well as human-readable flyer dates.
@@ -433,6 +462,16 @@ def _day_supported(day: date, text: str, source: dict) -> bool:
             weekday = _WEEKDAY_NUMBERS[match.group(1).lower()[:3]]
             if day == reference + timedelta(days=(weekday - reference.weekday()) % 7):
                 return True
+        # A week-scoped lineup of activities dates its named weekdays within
+        # the calendar week, Sunday first, that holds the publication date: a
+        # Sunday post's "routes for the week" are the days that follow it. Days
+        # already past are not upcoming sessions, and a standing "every Monday"
+        # names no week. Service hours are excluded: a library's standing hours
+        # beside "moving in this week" are not a week of dated sessions.
+        if week_scoped and _THIS_WEEK.search(text) and day >= reference:
+            week_start = reference - timedelta(days=(reference.weekday() + 1) % 7)
+            if day <= week_start + timedelta(days=6) and day.weekday() in _named_weekdays(text):
+                return True
     return False
 
 
@@ -493,7 +532,7 @@ def _next_midnight(value: datetime) -> datetime:
     return following.replace(tzinfo=PACIFIC if pacific else value.tzinfo)
 
 
-def validate_occurrence(item: dict, source: dict) -> None:
+def validate_occurrence(item: dict, source: dict, *, week_scoped: bool = False) -> None:
     if not isinstance(item, dict) or not isinstance(item.get("title"), str) or not item["title"].strip():
         raise ValueError("Occurrence requires a title")
     if not isinstance(item.get("all_day"), bool) or not isinstance(item.get("location"), str):
@@ -540,12 +579,14 @@ def validate_occurrence(item: dict, source: dict) -> None:
     if end and not item["all_day"] and end - start > timedelta(hours=24):
         raise ValueError("A timed occurrence cannot exceed 24 hours; recurring hours need a schedule or separate occurrences")
     # Use the supplied offset for sources that explicitly name another zone.
-    if not _day_supported(start.date(), text, source):
+    if not _day_supported(start.date(), text, source, week_scoped=week_scoped):
         reference = _publication_reference(source)
         raise ValueError(f"Occurrence start date lacks source support: {start.date()}; "
                          "cite a printed date or explicit relative date, never posted_at alone. "
                          + (f"Relative dates count from the local publication date, {reference}, "
-                            "not the UTC date in posted_at. " if reference else "") +
+                            "not the UTC date in posted_at; a weekday in an activity lineup for "
+                            "'this week' falls in that date's week (Sunday first) and never before it. "
+                            if reference else "") +
                          "In this occurrence's date_evidence, cite both caption and slide when "
                          "the month/range and day/time are split across fields; top-level citations "
                          "do not supply occurrence evidence. Do not guess activity/date associations")
@@ -554,7 +595,8 @@ def validate_occurrence(item: dict, source: dict) -> None:
                          "ends_at is 00:00:00 on the day AFTER the last included day, never 23:59:59")
     # A timed span is now at most overnight, and its next-day end need not be
     # printed. A multi-day all-day activity must still print its last day.
-    if end and item["all_day"] and not _day_supported(end.date() - timedelta(days=1), text, source):
+    if end and item["all_day"] and not _day_supported(end.date() - timedelta(days=1), text, source,
+                                                         week_scoped=week_scoped):
         raise ValueError("Occurrence end date lacks source support")
     if not item["all_day"]:
         if not _clock_supported(start.time(), text):
@@ -572,7 +614,9 @@ def expand_schedule(schedule: dict, source: dict, assessment: dict) -> list[dict
     location_evidence = schedule.get("location_evidence", [])
     first, last = date.fromisoformat(schedule["first_day"]), date.fromisoformat(schedule["last_day"])
     text = evidence_text(assessment["date_evidence"], source)
-    if not 0 <= (last - first).days <= 120 or not all(_day_supported(day, text, source) for day in (first, last)):
+    week_scoped = assessment["kind"] == "activity"
+    if not 0 <= (last - first).days <= 120 or not all(
+            _day_supported(day, text, source, week_scoped=week_scoped) for day in (first, last)):
         raise ValueError("Recurring schedule needs a supported bounded date range; "
                          "do not infer term boundaries. If the last day is absent but the first "
                          "session's date and time are printed, return schedule=null and that "
@@ -581,15 +625,7 @@ def expand_schedule(schedule: dict, source: dict, assessment: dict) -> list[dict
     weekdays = schedule["weekdays"]
     if not isinstance(weekdays, list) or not weekdays or any(type(d) is not int or d not in range(7) for d in weekdays):
         raise ValueError("Invalid recurrence weekdays")
-    names = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
-    printed = [names.index(m.group()[:3].lower()) for m in re.finditer(
-        r"\b(?:mon(?:day)?|tue(?:sday)?|wed(?:nesday)?|thu(?:rsday)?|fri(?:day)?|sat(?:urday)?|sun(?:day)?)s?\b", text, re.I)]
-    supported = set(printed)
-    if len(printed) == 2 and re.search(r"(?:-|–|—|\bto\b|\bthrough\b)\s*(?:\n\s*)?(?:mon|tue|wed|thu|fri|sat|sun)", text, re.I):
-        supported |= {(printed[0] + i) % 7 for i in range((printed[1] - printed[0]) % 7 + 1)}
-    if re.search(r"\b(?:daily|every day)\b", text, re.I):
-        supported = set(range(7))
-    if set(weekdays) != supported:
+    if set(weekdays) != _named_weekdays(text):
         raise ValueError("Recurrence weekdays differ from the quoted schedule")
     windows = schedule["windows"]
     if not isinstance(windows, list) or not 1 <= len(windows) <= 4:
@@ -654,7 +690,7 @@ def validate(result: Any, source: dict) -> dict:
         raise ValueError("Unsupported publication choices: occurrences must cite post evidence")
     for item in result["occurrences"]:
         try:
-            validate_occurrence(item, source)
+            validate_occurrence(item, source, week_scoped=kind == "activity")
             if kind == "service_schedule" and (item["all_day"] or not item["ends_at"]):
                 raise ValueError("Service availability requires explicit operating hours; "
                                  "an opening notice without hours is announcement/notice_period, "
