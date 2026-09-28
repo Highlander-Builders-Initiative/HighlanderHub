@@ -204,8 +204,10 @@ _OPEN_AUDIENCE_PHRASES = (
 
 # Free food is an independent attribute; preserve the existing caller contract.
 _FREE_FOOD_PATTERN = re.compile(
-    r"\b(free food|free pizza|pizza provided|free snacks|snacks provided|"
-    r"refreshments|lunch provided|dinner provided|free drinks|"
+    r"\b(free food|free pizza|free snacks|refreshments|free drinks|"
+    # "Pizza provided", "Food and drinks will be provided"
+    r"(?:food|pizza|snacks|drinks|breakfast|lunch|dinner)(?:\s+(?:&|and)\s+\w+)?"
+    r"\s+(?:(?:will\s+be|is|are)\s+)?provided|"
     r"free (?:\S+ ){0,2}boba|free (?:kona ice|shaved ice|ice cream|teas?|treats))\b",
     re.IGNORECASE,
 )

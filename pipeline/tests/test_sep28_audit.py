@@ -69,6 +69,11 @@ class FreeFoodTests(unittest.TestCase):
         self.assertFalse(detect_free_food("9/28: Boba tea house (shuttling @ Lot 15)"))
         self.assertTrue(detect_free_food("Design 101\nFree Merch & boba!"))
         self.assertTrue(detect_free_food("a chill 5 mile ride and free 16 oz. Boba for riders only!"))
+        # Trivia Night (ig_awwcucr_p3992906422932732771) had to be flagged by hand.
+        self.assertTrue(detect_free_food("trivia questions for all majors alike! Food and drinks will be provided"))
+        self.assertTrue(detect_free_food("Lunch is provided"))
+        self.assertFalse(detect_free_food("Transportation will be provided"))
+        self.assertFalse(detect_free_food("Food for purchase"))
 
     def test_a_session_titled_for_its_boba_still_counts(self):
         for title, offered in (("Games & Boba", True), ("Scavenger Hunt & Boba Social", True),
