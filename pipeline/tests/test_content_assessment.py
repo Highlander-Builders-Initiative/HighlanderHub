@@ -453,6 +453,59 @@ class ContentAssessmentTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             assess.validate(result, src)
 
+    def test_week_scoped_lineup_dates_its_weekdays_within_the_publication_week(self):
+        # Posted Sunday afternoon, Sept 27 local.
+        lineup = ("Here are the routes for the Week:\nMonday: MLK\nWednesday: Cherryhill\nFriday: Paper Cup\n"
+                  "We meet at 5pm at the SRC North Entrance.")
+
+        def supported(day, text, posted="2026-09-27T22:46:07Z", week_scoped=True):
+            return assess._day_supported(date.fromisoformat(day), text, {"posted_at": posted},
+                                         week_scoped=week_scoped)
+
+        for day in ("2026-09-28", "2026-09-30", "2026-10-02"):
+            self.assertTrue(supported(day, lineup), day)
+            # Only activity lineups are dated this way, never service hours.
+            self.assertFalse(supported(day, lineup, week_scoped=False), day)
+        # Unnamed weekdays, the following week, and posted_at's own day stay unsupported.
+        for day in ("2026-09-29", "2026-10-05", "2026-09-27"):
+            self.assertFalse(supported(day, lineup), day)
+        # "Monday through Friday" names every weekday between.
+        self.assertTrue(supported("2026-09-29", "Runs this week, Monday through Friday at 5pm"))
+        # Midweek, the days already past are not upcoming sessions and never roll forward.
+        midweek = "2026-09-30T17:00:00Z"
+        self.assertFalse(supported("2026-09-28", lineup, midweek))
+        self.assertFalse(supported("2026-10-05", lineup, midweek))
+        self.assertTrue(supported("2026-10-02", lineup, midweek))
+        # A Saturday post's week is the one ending that day, not the next.
+        self.assertFalse(supported("2026-09-28", lineup, "2026-09-26T20:00:00Z"))
+        # No week named: a standing pattern, another dated week, or an academic week number.
+        for text in ("We run every Monday, Wednesday and Friday at 5pm",
+                     "Join us for the week of Oct 5! Monday: MLK",
+                     "Routes for the week 1 of fall: Monday: MLK",
+                     "WEEK ONE FALL QUARTER\nMON MLK"):
+            self.assertFalse(supported("2026-09-28", text), text)
+
+    def test_week_scoped_club_runs_publish_as_sessions(self):
+        src = source("Here are the routes for the Week:\nMonday: MLK\nTuesday: Linden\n"
+                     "We meet at 5pm and start running at 5:15pm, Monday through Friday, at the SRC North Entrance Picnic Tables.")
+        src["posted_at"] = "2026-09-27T22:46:07Z"
+        result = decision(src)
+        result["occurrences"][0].update(title="Running Club: MLK route", starts_at="2026-09-28T17:00:00-07:00", ends_at=None)
+        assess.validate(result, src)
+        # The same lineup without its week is a standing schedule, not dated sessions.
+        src["texts"]["ocr_text"] = src["texts"]["ocr_text"].replace("Here are the routes for the Week:", "Our routes:")
+        stale = decision(src)
+        stale["occurrences"][0].update(starts_at="2026-09-28T17:00:00-07:00", ends_at=None)
+        with self.assertRaisesRegex(ValueError, "lacks source support"):
+            assess.validate(stale, src)
+        # Standing service hours beside "this week" are not a week of dated sessions.
+        src = source("Moving in this week? Stop by Rivera! Our fall hours: MON-FRI: 9AM-5PM")
+        src["posted_at"] = "2026-09-27T22:46:07Z"
+        hours = decision(src, "service_schedule", "occurrence")
+        hours["occurrences"][0].update(starts_at="2026-09-28T09:00:00-07:00", ends_at="2026-09-28T17:00:00-07:00")
+        with self.assertRaisesRegex(ValueError, "lacks source support"):
+            assess.validate(hours, src)
+
     def test_recurring_hours_expand_into_weekday_sessions_with_lunch_break(self):
         src = source("Drop-in advising on Zoom August 11 to September 17, 2026. Tuesday-Thursday, 10:00 AM to 3:00 PM, closed for lunch 12-1:00 PM.")
         result = decision(src, "service_schedule", "recurring_hours")

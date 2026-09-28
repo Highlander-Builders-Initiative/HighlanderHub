@@ -125,6 +125,14 @@ class CategoryInferenceTests(unittest.TestCase):
             with self.subTest(title=title):
                 self.assertEqual(expected, infer_category_from_text(title, description))
 
+    def test_group_runs_are_sports_but_candidacies_are_not(self) -> None:
+        self.assertEqual("sports", infer_category_from_text("Group Run: MLK Route", ""))
+        self.assertEqual("sports", infer_category_from_text(
+            "Running Club: MLK Route", "Welcome (Back) to the Running Club at UCR."))
+        for title in ("Run for ASUCR Senate", "Running for Office Info Night", "Rerun Screening"):
+            with self.subTest(title=title):
+                self.assertNotEqual("sports", infer_category_from_text(title, ""))
+
     def test_club_and_community_are_not_activities(self) -> None:
         self.assertEqual(
             "other",
