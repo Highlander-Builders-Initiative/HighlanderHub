@@ -32,7 +32,7 @@ for (const scenario of ["loaded month", "adjacent month", "filtered day"] as con
       await route.fulfill({ json: { events: calendarEvents } });
     });
 
-    await page.goto(scenario === "filtered day" ? "/events?cat=social" : "/events");
+    await page.goto(scenario === "filtered day" ? "/events?cat=hangout" : "/events");
     const rail = page.getByRole("complementary", { name: "Calendar and time filter" });
     await expect(rail.getByRole("heading", { level: 2 })).toHaveText(/may 2026/i);
     await expect(rail.locator("[aria-busy]")).toHaveAttribute("aria-busy", "false");

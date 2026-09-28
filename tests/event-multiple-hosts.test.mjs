@@ -8,7 +8,7 @@ const { getClubs } = await importTsModule('src/lib/clubs.ts');
 test('merged hosts display, search, and populate the club picker without exposing private accounts', () => {
   const event = eventRowToCampusEvent({
     id: 'ig_a_p1', title: 'Celebration', description: '', starts_at: '2026-10-03T01:00:00Z',
-    host: 'Club Alpha', host_handle: 'alpha', location: 'HUB', category: 'club', tags: [],
+    host: 'Club Alpha', host_handle: 'alpha', location: 'HUB', category: 'get_involved', tags: [],
     hosts: [{ host: 'Alpha duplicate', host_handle: '@ALPHA' },
       { host: 'Club Beta', host_handle: 'beta' },
       { host: 'Hidden', host_handle: 'highlander_opps' }],

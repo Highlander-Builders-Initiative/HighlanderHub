@@ -35,7 +35,15 @@ import { useInfiniteEventFeedLoader } from "./useInfiniteEventFeedLoader";
 import { useObservedDayKey } from "./useObservedDayKey";
 
 const pageKey = (cursor: EventFeedCursor | null, filters: EventFeedQuery) =>
-  JSON.stringify([cursor, filters.category, filters.dayWindow, filters.query]);
+  JSON.stringify([
+    cursor,
+    filters.category,
+    filters.dayWindow,
+    filters.query,
+    filters.freeFood,
+    filters.deadlines,
+    filters.hostGroup,
+  ]);
 
 type UseEventFeedNavigationArgs = {
   active: boolean;

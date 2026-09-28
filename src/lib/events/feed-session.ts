@@ -1,26 +1,29 @@
-import {
-  EVENT_CATEGORIES,
-  type CampusEvent,
-  type EventCategory,
-} from "@/types/event";
+import type { CampusEvent } from "@/types/event";
 import {
   DAY_WINDOWS,
   type DayWindow,
   type EventFeedCursor,
 } from "@/types/events-feed";
+import {
+  CATEGORIES,
+  NO_FEED_FACETS,
+  type CategoryValue,
+  type EventFeedFacets,
+} from "@/components/events/events-filters";
+import { coerceHostGroupParam } from "@/lib/host-groups";
 
 const FEED_SESSION_KEY = "highlanderhub.eventFeed";
 const RETURN_SCROLL_KEY = "highlanderhub.returnScroll";
 const RETURN_HISTORY_KEY = "highlanderhubEventReturn";
 const FEED_SESSION_TTL_MS = 10 * 60 * 1000;
 
-export type SavedEventFeedSnapshot = {
+export type SavedEventFeedSnapshot = EventFeedFacets & {
   path: string;
   scrollY: number;
   events: CampusEvent[];
   hasMore: boolean;
   cursor: EventFeedCursor | null;
-  category: EventCategory | "all";
+  category: CategoryValue;
   query: string;
   dayWindow: DayWindow;
   loadedCount: number;
@@ -135,10 +138,20 @@ function isSavedCursor(value: unknown): value is EventFeedCursor | null {
   return typeof cursor?.startsAt === "string" && typeof cursor.id === "string";
 }
 
-function isSavedCategory(value: unknown): value is EventCategory | "all" {
-  return (
-    value === "all" || EVENT_CATEGORIES.includes(value as EventCategory)
-  );
+function isSavedCategory(value: unknown): value is CategoryValue {
+  return CATEGORIES.some((category) => category.value === value);
+}
+
+/** Snapshots saved before the free food, deadline and host filters had none. */
+function savedFacets(parsed: Partial<EventFeedFacets>): EventFeedFacets {
+  return {
+    freeFood: parsed.freeFood === true,
+    deadlines: parsed.deadlines === true,
+    hostGroup:
+      typeof parsed.hostGroup === "string"
+        ? coerceHostGroupParam(parsed.hostGroup)
+        : NO_FEED_FACETS.hostGroup,
+  };
 }
 
 function readSessionSnapshot() {
@@ -175,7 +188,7 @@ function readSessionSnapshot() {
     }
 
     const { view: _view, ...snapshot } = parsed;
-    return snapshot as SavedEventFeedSnapshot;
+    return { ...snapshot, ...savedFacets(parsed) } as SavedEventFeedSnapshot;
   } catch {
     return null;
   }

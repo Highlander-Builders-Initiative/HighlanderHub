@@ -4,15 +4,24 @@ import { useRef } from "react";
 import { useDialogFocusTrap } from "@/components/ui/useDialogFocusTrap";
 import { EventCategoryFilter } from "./EventCategoryFilter";
 import { EventDayWindowFilter } from "./EventDayWindowFilter";
+import { EventFeedSwitches } from "./EventFeedSwitches";
+import { EventHostGroupFilter } from "./EventHostGroupFilter";
 import { EventsMiniCalendar } from "./EventsMiniCalendar";
-import { type CategoryValue, type DayWindow } from "./events-filters";
+import {
+  type CategoryValue,
+  type DayWindow,
+  type EventFacetCounts,
+  type EventFeedFacets,
+} from "./events-filters";
 
 type Props = {
   open: boolean;
   onClose: () => void;
   category: CategoryValue;
   onCategoryChange: (cat: CategoryValue) => void;
-  counts: Map<CategoryValue, number>;
+  facets: EventFeedFacets;
+  onFacetsChange: (next: Partial<EventFeedFacets>) => void;
+  counts: EventFacetCounts;
   dayWindow: DayWindow;
   onDayWindowChange: (next: DayWindow) => void;
   cursor: string;
@@ -34,6 +43,8 @@ export function EventsMobileFilterSheet({
   onClose,
   category,
   onCategoryChange,
+  facets,
+  onFacetsChange,
   counts,
   dayWindow,
   onDayWindowChange,
@@ -114,7 +125,27 @@ export function EventsMobileFilterSheet({
               layout="grid"
               category={category}
               onCategoryChange={onCategoryChange}
+              counts={counts.categories}
+            />
+          </div>
+
+          <div className="mt-6">
+            <p className="pb-2 text-[12px] font-medium text-muted">Only show</p>
+            <EventFeedSwitches
+              layout="grid"
+              facets={facets}
+              onFacetsChange={onFacetsChange}
               counts={counts}
+            />
+          </div>
+
+          <div className="mt-6">
+            <p className="pb-2 text-[12px] font-medium text-muted">Hosted by</p>
+            <EventHostGroupFilter
+              layout="grid"
+              hostGroup={facets.hostGroup}
+              onHostGroupChange={(hostGroup) => onFacetsChange({ hostGroup })}
+              counts={counts.hostGroups}
             />
           </div>
 

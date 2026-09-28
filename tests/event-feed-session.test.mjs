@@ -64,7 +64,7 @@ test("event feed session keeps the list snapshot and return metadata together", 
         startsAt: "2026-05-20T18:30:00.000-07:00",
         location: "HUB 302",
         host: "QA",
-        category: "social",
+        category: "hangout",
         tags: [],
         source: "manual",
         rsvpRequired: false,
@@ -167,7 +167,7 @@ test("event feed session entries expire after ten minutes", async () => {
     session.saveEventFeedSnapshot({
       path: "/events",
       scrollY: 420,
-      category: "social",
+      category: "hangout",
       query: "dance",
       dayWindow: "today",
       events: [],
@@ -180,6 +180,41 @@ test("event feed session entries expire after ten minutes", async () => {
 
     assert.equal(session.getSavedEventFeedSnapshot(), null);
     assert.equal(env.store.size, 0);
+  } finally {
+    Date.now = previousNow;
+    env.restore();
+  }
+});
+
+test("snapshots saved before the rail's switches restore with them off", async () => {
+  const env = installBrowserEnv();
+  const previousNow = Date.now;
+  Date.now = () => 1_700_000_000_000;
+
+  try {
+    const session = await importTsModule("src/lib/events/feed-session.ts");
+    env.store.set(
+      "highlanderhub.eventFeed",
+      JSON.stringify({
+        path: "/events",
+        scrollY: 0,
+        events: [],
+        hasMore: false,
+        cursor: null,
+        category: "sports",
+        query: "",
+        dayWindow: "all",
+        loadedCount: 0,
+        savedAt: 1_700_000_000_000,
+      })
+    );
+
+    const saved = session.getSavedEventFeedSnapshot();
+    assert.ok(saved);
+    assert.deepEqual(
+      [saved.category, saved.freeFood, saved.deadlines, saved.hostGroup],
+      ["sports", false, false, "all"]
+    );
   } finally {
     Date.now = previousNow;
     env.restore();
@@ -214,16 +249,16 @@ test("event feed session rejects stale calendar snapshots as invalid", async () 
   }
 });
 
-test("event feed session accepts every generated category value", async () => {
-  const env = installBrowserEnv({ search: "?category=club" });
+test("event feed session accepts every category the rail can select", async () => {
+  const env = installBrowserEnv({ search: "?category=all" });
   const previousNow = Date.now;
   Date.now = () => 1_700_000_000_000;
 
   try {
     const session = await importTsModule("src/lib/events/feed-session.ts");
-    const { EVENT_CATEGORIES } = await importTsModule("src/types/event.ts");
+    const { CATEGORIES } = await importTsModule("src/components/events/events-filters.ts");
 
-    for (const category of EVENT_CATEGORIES) {
+    for (const category of CATEGORIES.map((c) => c.value)) {
       const search = `?category=${category}`;
       const path = `/events${search}`;
       globalThis.window.location.search = search;

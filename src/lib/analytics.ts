@@ -16,6 +16,9 @@ type EventMap = {
   event_share: { id: string; method: "native" | "clipboard" | "mailto"; surface: "text" | "icon" };
   events_search: { query_length: number };
   events_filter: { category: string };
+  events_free_food: { on: boolean };
+  events_deadlines: { on: boolean };
+  events_host_group: { group: string };
   events_day_window: { window: "all" | "today" | "week" | "weekend" };
   events_calendar_jump: { day: string };
   events_view: { view: "cards" | "compact" };

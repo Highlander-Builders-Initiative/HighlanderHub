@@ -13,7 +13,7 @@ function campusEvent(id, overrides = {}) {
     host: "QA Club",
     hostHandle: "qa",
     hosts: [{ host: "QA Club", hostHandle: "qa" }],
-    category: "club",
+    category: "get_involved",
     contentKind: "student_event",
     tags: ["rsvp"],
     source: "instagram",
@@ -29,8 +29,8 @@ function campusEvent(id, overrides = {}) {
 
 // The shape toEventFilterCountSource builds, in its key order.
 function countEntry(event) {
-  const { id, title, description, startsAt, location, host, hostHandle, hosts, category, tags, hasFreeFood } = event;
-  return { id, title, description, startsAt, location, host, hostHandle, hosts, category, tags, hasFreeFood };
+  const { id, title, description, startsAt, location, host, hostHandle, hosts, category, contentKind, tags, hasFreeFood } = event;
+  return { id, title, description, startsAt, location, host, hostHandle, hosts, category, contentKind, tags, hasFreeFood };
 }
 
 test("count entries reuse the calendar's object for the same event", async () => {

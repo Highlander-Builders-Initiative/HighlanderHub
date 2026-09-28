@@ -4,9 +4,8 @@ import { Masthead } from "@/components/layout/Masthead";
 import { EventsBrowser } from "@/components/events/EventsBrowser";
 import {
   FEED_VIEW_COOKIE,
-  coerceCategoryParam,
-  coerceDayWindowParam,
   coerceFeedView,
+  readEventFeedQuery,
 } from "@/components/events/events-filters";
 import { Footer } from "@/components/layout/Footer";
 import { getEventsPage } from "@/lib/events";
@@ -31,11 +30,7 @@ type EventsPageProps = {
 export default async function EventsPage({ searchParams }: EventsPageProps) {
   const params = await searchParams;
   const initialView = coerceFeedView((await cookies()).get(FEED_VIEW_COOKIE)?.value);
-  const initialFilters = {
-    category: coerceCategoryParam(firstParam(params.cat)),
-    query: firstParam(params.q) ?? "",
-    dayWindow: coerceDayWindowParam(firstParam(params.when)),
-  };
+  const initialFilters = readEventFeedQuery((key) => firstParam(params[key]));
   // The calendar and filter counts come from the events layout, which a
   // filter change does not re-render.
   const initialPage = await getEventsPage(initialFilters);

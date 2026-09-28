@@ -14,7 +14,7 @@ const event = {
   startsAt: "2026-06-01T10:00:00.000-07:00",
   location: "HUB 302",
   host: "ACM",
-  category: "club",
+  category: "get_involved",
   contentKind: "student_event",
   tags: [],
   source: "manual",

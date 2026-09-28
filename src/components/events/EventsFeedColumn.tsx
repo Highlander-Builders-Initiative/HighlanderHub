@@ -15,7 +15,7 @@ import { EventCard, EventCompactRow } from "./EventCard";
 import { ActiveFilterChips } from "./ActiveFilterChips";
 import { EventFeedViewToggle } from "./EventFeedViewToggle";
 import { EventSearchBox } from "./EventSearchBox";
-import type { FeedView } from "./events-filters";
+import type { EventFeedFacets, FeedView } from "./events-filters";
 import type { EventFeedActiveFilters } from "./useEventFeedFilters";
 
 type Props = {
@@ -34,6 +34,7 @@ type Props = {
   onClearCategory: () => void;
   onClearDayWindow: () => void;
   onClearQuery: () => void;
+  onFacetsChange: (next: Partial<EventFeedFacets>) => void;
   todayKey: string;
   /** The day in view, which the desktop search bar names while scrolling. */
   observedDayKey: string;
@@ -71,6 +72,7 @@ export function EventsFeedColumn({
   onClearCategory,
   onClearDayWindow,
   onClearQuery,
+  onFacetsChange,
   todayKey,
   observedDayKey,
   showObservedDay,
@@ -253,6 +255,7 @@ export function EventsFeedColumn({
         onClearCategory={onClearCategory}
         onClearDayWindow={onClearDayWindow}
         onClearQuery={onClearQuery}
+        onFacetsChange={onFacetsChange}
         onClearAll={onClearFilters}
       />
 

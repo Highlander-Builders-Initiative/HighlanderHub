@@ -29,6 +29,7 @@ export type EventFilterCountSource = Pick<
   | "hostHandle"
   | "hosts"
   | "category"
+  | "contentKind"
   | "tags"
   | "hasFreeFood"
 >;

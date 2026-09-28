@@ -1,15 +1,18 @@
 import { type CampusEvent, categoryShortLabel } from "@/types/event";
 import { isDeadlineKind } from "@/lib/events/content-kind";
 
+// The palette moved over with the categories: Hang out keeps Social's coral,
+// Get involved Club's blue, Volunteering Community's green. `other` names no
+// activity, so it has no hue.
 export const CATEGORY_RAIL: Record<CampusEvent["category"], string> = {
-  club: "bg-tag-blue",
-  academic: "bg-tag-violet",
-  social: "bg-tag-coral",
+  hangout: "bg-tag-coral",
+  get_involved: "bg-tag-blue",
   career: "bg-ink",
+  academic: "bg-tag-violet",
   sports: "bg-tag-cyan",
   arts: "bg-tag-magenta",
-  community: "bg-tag-green",
-  free_food: "bg-tag-amber",
+  volunteering: "bg-tag-green",
+  other: "bg-ink/30",
 };
 
 /**
@@ -22,21 +25,21 @@ export const CATEGORY_PILL: Record<
   CampusEvent["category"],
   { highlight: string; text: string }
 > = {
-  club: {
-    highlight: "bg-tag-blue/[0.18] ring-1 ring-inset ring-tag-blue/30",
-    text: "text-tag-blue-ink",
-  },
-  academic: {
-    highlight: "bg-tag-violet/[0.18] ring-1 ring-inset ring-tag-violet/30",
-    text: "text-tag-violet-ink",
-  },
-  social: {
+  hangout: {
     highlight: "bg-tag-coral/[0.18] ring-1 ring-inset ring-tag-coral/30",
     text: "text-tag-coral-ink",
+  },
+  get_involved: {
+    highlight: "bg-tag-blue/[0.18] ring-1 ring-inset ring-tag-blue/30",
+    text: "text-tag-blue-ink",
   },
   career: {
     highlight: "bg-ink/[0.08] ring-1 ring-inset ring-ink/20",
     text: "text-ink",
+  },
+  academic: {
+    highlight: "bg-tag-violet/[0.18] ring-1 ring-inset ring-tag-violet/30",
+    text: "text-tag-violet-ink",
   },
   sports: {
     highlight: "bg-tag-cyan/[0.18] ring-1 ring-inset ring-tag-cyan/30",
@@ -46,14 +49,20 @@ export const CATEGORY_PILL: Record<
     highlight: "bg-tag-magenta/[0.18] ring-1 ring-inset ring-tag-magenta/30",
     text: "text-tag-magenta-ink",
   },
-  community: {
+  volunteering: {
     highlight: "bg-tag-green/[0.18] ring-1 ring-inset ring-tag-green/30",
     text: "text-tag-green-ink",
   },
-  free_food: {
-    highlight: "bg-tag-amber/[0.18] ring-1 ring-inset ring-tag-amber/30",
-    text: "text-tag-amber-ink",
+  other: {
+    highlight: "bg-ink/[0.06]",
+    text: "text-ink",
   },
+};
+
+/** Free food: an attribute of any event, in the amber hue. */
+export const FREE_FOOD_PILL = {
+  highlight: "bg-tag-amber/[0.18] ring-1 ring-inset ring-tag-amber/30",
+  text: "text-tag-amber-ink",
 };
 
 /** The Deadline tag: an urgency signal, not a category, in the coral hue. */
@@ -77,8 +86,7 @@ export type EventTag = {
 
 /**
  * The tag row on the feed card and the detail header, in order: Deadline, the
- * category, Free food, RSVP. A free-food category and the free-food flag are
- * the same fact, so they make one tag.
+ * category, Free food, RSVP. An uncategorized event has no category tag.
  */
 export function eventTags(
   event: Pick<CampusEvent, "contentKind" | "category" | "hasFreeFood" | "rsvpRequired">
@@ -87,15 +95,15 @@ export function eventTags(
   if (isDeadlineKind(event.contentKind)) {
     tags.push({ kind: "deadline", label: "Deadline", ...DEADLINE_PILL });
   }
-  if (event.category !== "free_food") {
+  if (event.category !== "other") {
     tags.push({
       kind: "category",
       label: categoryShortLabel(event.category),
       ...CATEGORY_PILL[event.category],
     });
   }
-  if (event.hasFreeFood || event.category === "free_food") {
-    tags.push({ kind: "free_food", label: "Free food", ...CATEGORY_PILL.free_food });
+  if (event.hasFreeFood) {
+    tags.push({ kind: "free_food", label: "Free food", ...FREE_FOOD_PILL });
   }
   if (event.rsvpRequired) {
     tags.push({ kind: "rsvp", label: "RSVP", ...RSVP_PILL });

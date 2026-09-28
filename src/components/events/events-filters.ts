@@ -1,6 +1,6 @@
 import {
   EVENT_CATEGORIES,
-  categoryShortLabel,
+  EVENT_CATEGORY_LABELS,
   type CampusEvent,
   type EventCategory,
 } from "@/types/event";
@@ -10,38 +10,59 @@ import {
   pacificTodayKey,
   pacificWeekdayIndex,
 } from "@/lib/dates";
+import { isDeadlineKind } from "@/lib/events/content-kind";
+import {
+  HOST_GROUPS,
+  coerceHostGroupParam,
+  hostGroupLabel,
+  matchesHostGroup,
+  type HostGroupValue,
+} from "@/lib/host-groups";
 import { DAY_WINDOWS, type DayWindow } from "@/types/events-feed";
 
-export type CategoryValue = EventCategory | "all";
-
-// Free Food leads the browse list (just after "All") since it's the
-// highest-intent filter for students; the rest follow EVENT_CATEGORIES order.
-const RAIL_CATEGORY_ORDER: EventCategory[] = [
-  "free_food",
-  ...EVENT_CATEGORIES.filter((value) => value !== "free_food"),
-];
+/** An activity the Topics rail lists: every category but `other`. */
+export type TopicCategory = Exclude<EventCategory, "other">;
+export type CategoryValue = TopicCategory | "all";
 
 export const CATEGORIES: { value: CategoryValue; label: string }[] = [
   { value: "all", label: "All" },
-  ...RAIL_CATEGORY_ORDER.map((value) => ({
-    value,
-    label:
-      value === "club"
-        ? "Clubs"
-        : value === "free_food"
-          ? "Free Food"
-          : categoryShortLabel(value),
-  })),
+  ...EVENT_CATEGORIES.filter(
+    (value): value is TopicCategory => value !== "other"
+  ).map((value) => ({ value, label: EVENT_CATEGORY_LABELS[value] })),
 ];
 
 export { DAY_WINDOWS };
 export type { DayWindow };
 
-/** The three fields that identify a paged event list. Its cursor belongs to them. */
-export type EventFeedQuery = {
+/**
+ * The feed's filters, one per independent question: what you'd be doing
+ * (category), when, whether there's free food, deadlines only, and who hosts.
+ * Free food and deadlines combine with any topic instead of replacing it.
+ */
+export type EventFeedFacets = {
+  freeFood: boolean;
+  deadlines: boolean;
+  hostGroup: HostGroupValue;
+};
+
+/** The fields that identify a paged event list. Its cursor belongs to them. */
+export type EventFeedQuery = EventFeedFacets & {
   query: string;
   category: CategoryValue;
   dayWindow: DayWindow;
+};
+
+export const NO_FEED_FACETS: EventFeedFacets = {
+  freeFood: false,
+  deadlines: false,
+  hostGroup: "all",
+};
+
+export const DEFAULT_EVENT_FEED_QUERY: EventFeedQuery = {
+  query: "",
+  category: "all",
+  dayWindow: "all",
+  ...NO_FEED_FACETS,
 };
 
 export function eventFeedQueriesEqual(
@@ -51,6 +72,9 @@ export function eventFeedQueriesEqual(
   return (
     a.category === b.category &&
     a.dayWindow === b.dayWindow &&
+    a.freeFood === b.freeFood &&
+    a.deadlines === b.deadlines &&
+    a.hostGroup === b.hostGroup &&
     a.query.trim() === b.query.trim()
   );
 }
@@ -67,6 +91,17 @@ export function dayWindowPhrase(value: DayWindow): string {
   return DAY_WINDOWS.find((w) => w.value === value)?.phrase ?? "";
 }
 
+export { hostGroupLabel };
+
+// Topics links shared before the activity categories: each old topic opens
+// the one that took its place. Free food is its own switch now (see
+// readEventFeedQuery).
+const LEGACY_CATEGORY_PARAMS: Record<string, TopicCategory> = {
+  social: "hangout",
+  club: "get_involved",
+  community: "volunteering",
+};
+
 /**
  * Coerce a raw URL search-param value into a known CategoryValue. Unknown or
  * missing values fall back to "all"; the URL is the only untrusted input here,
@@ -76,6 +111,7 @@ export function coerceCategoryParam(
   raw: string | undefined | null
 ): CategoryValue {
   if (!raw) return "all";
+  if (Object.hasOwn(LEGACY_CATEGORY_PARAMS, raw)) return LEGACY_CATEGORY_PARAMS[raw];
   return CATEGORIES.some((c) => c.value === raw)
     ? (raw as CategoryValue)
     : "all";
@@ -90,6 +126,43 @@ export function coerceDayWindowParam(
     : "all";
 }
 
+/**
+ * The feed's query from its URL: ?cat=&q=&when=&food=1&deadlines=1&host=.
+ * `get` reads one parameter, so both a page's searchParams and a route's
+ * URLSearchParams can supply it.
+ */
+export function readEventFeedQuery(
+  get: (key: string) => string | undefined | null
+): EventFeedQuery {
+  const cat = get("cat");
+  return {
+    query: get("q") ?? "",
+    category: coerceCategoryParam(cat),
+    dayWindow: coerceDayWindowParam(get("when")),
+    freeFood: get("food") === "1" || cat === "free_food",
+    deadlines: get("deadlines") === "1",
+    hostGroup: coerceHostGroupParam(get("host")),
+  };
+}
+
+/** The inverse of readEventFeedQuery; default filters are left out. */
+export function eventFeedSearchParams(filters: EventFeedQuery): URLSearchParams {
+  const params = new URLSearchParams();
+  if (filters.category !== "all") params.set("cat", filters.category);
+  if (filters.query.trim()) params.set("q", filters.query.trim());
+  if (filters.dayWindow !== "all") params.set("when", filters.dayWindow);
+  if (filters.freeFood) params.set("food", "1");
+  if (filters.deadlines) params.set("deadlines", "1");
+  if (filters.hostGroup !== "all") params.set("host", filters.hostGroup);
+  return params;
+}
+
+/** An /events link with these filters, for links into the feed. */
+export function eventsFeedHref(filters: Partial<EventFeedQuery>): string {
+  const search = eventFeedSearchParams({ ...DEFAULT_EVENT_FEED_QUERY, ...filters }).toString();
+  return search ? `/events?${search}` : "/events";
+}
+
 /** How the desktop feed lists events: flyer cards, or a compact row list. */
 export type FeedView = "cards" | "compact";
 
@@ -102,16 +175,10 @@ export function coerceFeedView(raw: string | undefined | null): FeedView {
 }
 
 export function matchesCategory(
-  ev: Pick<CampusEvent, "category" | "hasFreeFood">,
+  ev: Pick<CampusEvent, "category">,
   cat: CategoryValue
 ): boolean {
-  if (cat === "all") return true;
-  if (cat === "free_food") {
-    // Free food is its own attribute now; `category === "free_food"` only
-    // matches legacy rows predating the split (kept until they expire).
-    return ev.hasFreeFood || ev.category === "free_food";
-  }
-  return ev.category === cat;
+  return cat === "all" || ev.category === cat;
 }
 
 /**
@@ -160,9 +227,12 @@ type SearchableEvent = Pick<
 >;
 
 type EventFilterable = SearchableEvent &
-  Pick<CampusEvent, "startsAt" | "category" | "tags" | "hasFreeFood">;
+  Pick<CampusEvent, "startsAt" | "category" | "tags" | "hasFreeFood" | "contentKind">;
 
-export type EventFilterCriteria = {
+/** One filter the feed counts separately: each count applies all the others. */
+export type EventFeedFacet = "category" | "freeFood" | "deadlines" | "hostGroup";
+
+export type EventFilterCriteria = Partial<EventFeedFacets> & {
   category: CategoryValue;
   dayWindow: DayWindow;
   todayKey: string;
@@ -198,17 +268,24 @@ export function matchesEventFilters(
   event: EventFilterable,
   filters: EventFilterCriteria,
   options: {
-    includeCategory?: boolean;
+    /** Leave this filter out, to count what choosing it would show. */
+    except?: EventFeedFacet;
     searchText?: string;
   } = {}
 ): boolean {
   const normalizedQuery =
     filters.normalizedQuery ?? normalizeEventQuery(filters.query);
   const searchText = options.searchText ?? buildEventSearchText(event);
+  const { except } = options;
 
   if (!matchesQuery(searchText, normalizedQuery)) return false;
   if (!matchesDayWindow(event, filters.dayWindow, filters.todayKey)) return false;
-  if (options.includeCategory !== false && !matchesCategory(event, filters.category)) {
+  if (except !== "category" && !matchesCategory(event, filters.category)) return false;
+  if (except !== "freeFood" && filters.freeFood && !event.hasFreeFood) return false;
+  if (except !== "deadlines" && filters.deadlines && !isDeadlineKind(event.contentKind)) {
+    return false;
+  }
+  if (except !== "hostGroup" && !matchesHostGroup(event, filters.hostGroup ?? "all")) {
     return false;
   }
   return true;
@@ -218,26 +295,64 @@ export function filterEventSource<T extends EventFilterable>(
   events: T[],
   filters: EventFilterCriteria,
   options: {
-    includeCategory?: boolean;
+    except?: EventFeedFacet;
     searchText?: string[];
   } = {}
 ): T[] {
   return events.filter((event, index) =>
     matchesEventFilters(event, filters, {
-      includeCategory: options.includeCategory,
+      except: options.except,
       searchText: options.searchText?.[index],
     })
   );
 }
 
-export function countEventsByCategory<T extends Pick<CampusEvent, "category" | "hasFreeFood">>(
-  events: T[]
-): Map<CategoryValue, number> {
-  const map = new Map<CategoryValue, number>();
-  map.set("all", events.length);
+/** What each Topics row, switch and Hosted by row would show if chosen. */
+export type EventFacetCounts = {
+  categories: Map<CategoryValue, number>;
+  freeFood: number;
+  deadlines: number;
+  hostGroups: Map<HostGroupValue, number>;
+};
+
+export const EMPTY_FACET_COUNTS: EventFacetCounts = {
+  categories: new Map(),
+  freeFood: 0,
+  deadlines: 0,
+  hostGroups: new Map(),
+};
+
+export function countEventFacets<T extends EventFilterable>(
+  events: T[],
+  filters: EventFilterCriteria,
+  searchText?: string[]
+): EventFacetCounts {
+  const except = (facet: EventFeedFacet) =>
+    filterEventSource(events, filters, { except: facet, searchText });
+
+  const byCategory = except("category");
+  const categories = new Map<CategoryValue, number>();
   for (const c of CATEGORIES) {
-    if (c.value === "all") continue;
-    map.set(c.value, events.filter((ev) => matchesCategory(ev, c.value)).length);
+    categories.set(
+      c.value,
+      byCategory.filter((ev) => matchesCategory(ev, c.value)).length
+    );
   }
-  return map;
+
+  const byHost = except("hostGroup");
+  const hostGroups = new Map<HostGroupValue, number>([["all", byHost.length]]);
+  for (const ev of byHost) {
+    for (const { value } of HOST_GROUPS) {
+      if (matchesHostGroup(ev, value)) {
+        hostGroups.set(value, (hostGroups.get(value) ?? 0) + 1);
+      }
+    }
+  }
+
+  return {
+    categories,
+    freeFood: except("freeFood").filter((ev) => ev.hasFreeFood).length,
+    deadlines: except("deadlines").filter((ev) => isDeadlineKind(ev.contentKind)).length,
+    hostGroups,
+  };
 }

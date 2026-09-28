@@ -124,17 +124,19 @@ The palette is a wide, tinted-neutral page with seven bright accent hues used **
 
 Seven bright hues (the `tag` colors in `tailwind.config.ts`, mapped per category in `@/lib/category-colors`) exist as **category signals**, not decoration. Tags are bright on purpose: the earlier muted editorial hues (Iris, Forest, Sage…) read as colorless. Each hue is used as an 18% wash with a matched ring, and pairs with a darker `-ink` for its text (≥4.9:1 on that wash).
 
-- **Blue** (#1f6bff, ink #1450d8): "Club."
-- **Violet** (#8b4dff, ink #6230e0): "Academic."
-- **Coral** (#ff5433, ink #b82c14): "Social", and the Deadline tag.
-- **Cyan** (#00b3dc, ink #006a88): "Sports."
-- **Magenta** (#e83cc8, ink #a8168f): "Arts."
-- **Green** (#1fc254, ink #0e7432): "Community."
-- **Amber** (#ffb300, ink #9a5800): "Free Food."
+- **Blue** (#1f6bff, ink #1450d8): "Get involved."
+- **Violet** (#8b4dff, ink #6230e0): "Talks & learning."
+- **Coral** (#ff5433, ink #b82c14): "Hang out", and the Deadline tag.
+- **Cyan** (#00b3dc, ink #006a88): "Sports & rec."
+- **Magenta** (#e83cc8, ink #a8168f): "Arts & shows."
+- **Green** (#1fc254, ink #0e7432): "Volunteering."
+- **Amber** (#ffb300, ink #9a5800): "Free food", an attribute of any event rather than a category (`FREE_FOOD_PILL`).
 
-"Career" reuses **Ink** as its category color (no third neutral is invented).
+"Career & skills" reuses **Ink** as its category color (no third neutral is invented). An event whose text names no activity is `other`: it has no hue and no category tag, and appears only under All.
 
-The home hero's highlight words ("Free food, club nights, …") use each category's `-ink` text color, and each links to the feed filtered to its category (`/events?cat=…`), marked by a hairline `ink/20` underline that takes the word's color on hover. The older editorial hues (`highlander`, `leaf`, `coral`, `sky`, `gold`, `plum`, `sage` and their `deep-` pairs) remain only for admin error states, the flyer placeholder tint and the calendar heat; they are no longer category colors.
+The categories are activities, what a student would be doing there. They replaced Club, Social and Community, which overlapped: "Club" named the host, and "Community" was the classifier's fallback, so it held nearly half the feed. Each hue moved to the activity that took its old category's place (Social's coral to Hang out, Club's blue to Get involved, Community's green to Volunteering). Who hosts is a separate filter (Hosted by, under Rails), never a category.
+
+The home hero's highlight words ("Free food, club nights, …") use each topic's `-ink` text color, and each links to the feed filtered to it (`/events?cat=…`, or `?food=1` for Free food), marked by a hairline `ink/20` underline that takes the word's color on hover. The older editorial hues (`highlander`, `leaf`, `coral`, `sky`, `gold`, `plum`, `sage` and their `deep-` pairs) remain only for admin error states, the flyer placeholder tint and the calendar heat; they are no longer category colors.
 
 ### Neutral
 
@@ -245,8 +247,8 @@ Type runs larger than the system's `meta` token, matched to Luma's rows; phone s
 - **Location row** (same size and color): a 1em pin (or a 1em-wide video icon for online events), in the text's color, centered in the same 16px column as the first avatar with the same 8px gap, so the location starts at the byline's x. The icon's viewBox hugs its ink, so the pin nearly fills the column (16px tall at `sm+`) and sits ~9.5px (phones ~10.3px) from its text, close to the avatar's 8px, as on Luma. (A 24-unit icon box left ~5px of air in the column, and the pin read 13px from its text.) With several hosts the byline starts after the stack; the location stays with the first avatar.
 - **Tags row** (`mt-4`, `lg:mt-3`; wraps): pills at 13px (14px) medium, 12px from lg (Luma's badge size, so the row stays a footnote), `rounded-full`, from `eventTags` (the detail header renders the same list at 12px), in this order:
   - `Deadline` (`DEADLINE_PILL`, the coral wash), deadlines only.
-  - The category ("Academic", "Social", …), in its `CATEGORY_PILL` wash; its ink matches the Topics rail's label when that category is selected. Skipped for the Free food category, which the next pill covers.
-  - `Free food` (the `free_food` wash), when `hasFreeFood` or the category is Free food.
+  - The category's short name ("Hang out", "Learning", "Career", …), in its `CATEGORY_PILL` wash; its ink matches the Topics rail's label when that category is selected. Skipped for an uncategorized (`other`) event.
+  - `Free food` (the `FREE_FOOD_PILL` amber wash), when `hasFreeFood`.
   - `RSVP` (unfilled: `ring-ink/15 text-ink/70`), when `rsvpRequired`. It notes something to do before going, not a kind of event, so it carries no fill.
 - **Flyer slot** (120×150, shrinking on narrow phones to `clamp(80px, 100vw - 263px, 120px)` wide at 4:5; optional): the slot takes the width left once the text column has 181px, its width on a 375px phone, so it reaches 120×150 from a 383px screen and bottoms out at the old 80×100 below 344px. The fixed 80×100 phone slot was too small to read a flyer at, and left ~50px of empty card under it. the flyer is pinned whole at its own shape (`FlyerPoster`), anchored to the slot's top-right corner, 8px radius, `ring-ink/10` hairline. A shimmering 4:5 placeholder holds the slot while the image loads. See The Whole-Flyer Rule.
 
@@ -258,7 +260,7 @@ The feed's second shape, chosen with the Cards / Compact toggle in the feed head
 
 - **Desktop layout (lg+):** a four-column grid, about 70px tall: a 40x50 flyer thumbnail (`FlyerPoster`, whole, `rounded-md`, a 4:5 placeholder when there is no flyer), the start time in a 72px column (deadlines stack "Due" over the time), the title (16px medium, one line) over the hosts (14px faint, avatars and full club names), and the where over the tags, right-aligned and capped at 200px.
 - **Phone layout:** the same DOM restacked as three lines beside the thumbnail, about 84px tall (a phone card is ~200): time and where (13px faint, the pin as the separator), the title (15px medium), then the hosts by handle with the tags at the end. The title/hosts and where/tags groups are `display: contents` below lg, so their children take the phone grid's named areas directly.
-- **Tags:** Deadline, Free food and RSVP only. The category pill is dropped: the Topics rail already sorts by category, and half the feed reads "Community".
+- **Tags:** Deadline, Free food and RSVP only. The category pill is dropped: the Topics rail already sorts by category, and a row has no width to spare.
 - **Surface:** one per day, `rounded-[20px]` with an `ink/[0.06]` edge on canvas, rows divided by `divide-ink/[0.06]` (borders, so dark mode's edge curve applies). Hover is an `ink/[0.03]` wash; the first and last rows round with the surface.
 - **Focus:** the `.interactive-focus` ring is drawn inside the row (`outline-offset: -3px`, no canvas halo), since an outside ring would run under the neighbouring rows.
 - **Persistence:** the choice is a cookie (`hh_feed_view`, path `/events`, one year) that the page reads on the server, so a returning reader's first paint is already in their view.
@@ -269,12 +271,12 @@ The time column with its 2px category rail, and before it the leading category d
 
 ### Category Dot (signature)
 
-A 6px colored dot (`h-1.5 w-1.5 rounded-full`) is the system's saturated category signal. It leads the category chip in `ActiveFilterChips`, the filter row above the feed, using `CATEGORY_RAIL` from `@/lib/category-colors`:
+A 6px colored dot (`h-1.5 w-1.5 rounded-full`) is the system's saturated category signal. It leads the category chip in `ActiveFilterChips`, the filter row above the feed, using `CATEGORY_RAIL` from `@/lib/category-colors` (the Free food and Deadlines chips lead with their amber and coral dots):
 
 ```ts
-{ club: "bg-tag-blue", academic: "bg-tag-violet", social: "bg-tag-coral",
-  career: "bg-ink", sports: "bg-tag-cyan", arts: "bg-tag-magenta",
-  community: "bg-tag-green", free_food: "bg-tag-amber" }
+{ hangout: "bg-tag-coral", get_involved: "bg-tag-blue", career: "bg-ink",
+  academic: "bg-tag-violet", sports: "bg-tag-cyan", arts: "bg-tag-magenta",
+  volunteering: "bg-tag-green", other: "bg-ink/30" }
 ```
 
 Do not invent a separate palette for another surface. (The mini calendar once carried the dots too; it now uses a heat wash, see Rails.)
@@ -325,22 +327,27 @@ The top of `/events`: the page title "Events" (Bricolage, the feed's one brand m
 
 ### Rails
 
-The `/events` side columns, from lg: Topics on the left, the mini calendar and When on the right. They sit on the page with no panel (The One-Surface Rule).
+The `/events` side columns, from lg: Topics, Only show and Hosted by on the left, the mini calendar and When on the right. They sit on the page with no panel (The One-Surface Rule). The mobile filter sheet stacks the same three groups as two-column grids above When.
 
-- **The One Selected State.** Neutral selections (a When window, the Cards / Compact toggle, "All" in Topics) are the same `bg-ink/[0.06]` fill, with no ring, track or shadow. The calendar's chosen day is the one solid-ink selection, because it is a date picker's cursor, not a filter.
-- **Topics:** 15px labels, 12px counts, and rows at least 44px tall in both the desktop rail and mobile filter grid. Hover adds an instant neutral wash with no animation. The selected row keeps its category's `CATEGORY_PILL` wash and ring and matching `-ink` label; "All" uses the neutral fill.
+Each group answers one question, and they combine: Topics is what you'd be doing, Only show narrows to free food or deadlines, Hosted by is who runs it. Every row's count is what choosing it would show with the other filters applied. All three share one row (`EventFilterRow`).
+
+- **The One Selected State.** Neutral selections (a When window, the Cards / Compact toggle, "All" in Topics, a Hosted by group) are the same `bg-ink/[0.06]` fill, with no ring, track or shadow. The calendar's chosen day is the one solid-ink selection, because it is a date picker's cursor, not a filter.
+- **Topics:** 14px labels and 11px counts. Hover adds an instant neutral wash with no animation. The selected row keeps its category's `CATEGORY_PILL` wash and ring and matching `-ink` label; "All" uses the neutral fill. Single choice: All, Hang out, Get involved, Career & skills, Talks & learning, Sports & rec, Arts & shows, Volunteering.
+- **Only show:** Free food and Deadlines, switches that narrow whatever else is chosen (so Hang out + Free food is one question). A leading 16px check box marks them as switches rather than choices; on, the box fills with the tag's ink and the row wears its tag's wash (amber, coral). The heading says "Only show" so an unchecked Deadlines never reads as "deadlines hidden".
+- **Hosted by:** Cultural groups, Faith groups, Greek life, Campus offices, from each account's HighlanderLink directory type (`@/lib/host-groups`; the ethnic student programs list with Cultural groups). At most one; choosing the selected group again clears it. Labels stay short enough for the phone grid's half width.
 - **Mini calendar:** a heat wash in `highlander` (7%, 15% and 24% for 1, 3 and 6+ events) marks how busy each day of the focused month is, one calm signal rather than competing category dots. Empty days fade to `faint`, adjacent-month days to `muted/45`; today is underlined; the chosen day is solid ink.
 
 ### Active Filter Chips (signature)
 
-The removable-chip row that renders directly below the sticky filter bar on `/events` when at least one filter is active. One chip per active filter (category, day window, query); each chip is a single pill button that drops that one filter when clicked. "Clear all" sits as a trailing text-underline link.
+The removable-chip row that renders directly below the sticky filter bar on `/events` when at least one filter is active. One chip per active filter (category, Free food, Deadlines, host group, day window, query); each chip is a single pill button that drops that one filter when clicked. "Clear all" sits as a trailing text-underline link.
 
 - **Pill style:** `min-h-11` (touch-target compliant), `rounded-full`, hairline `border-ink/15`, faint `bg-surface` lift, `text-[13px]`, `px-3.5`. Hover darkens to `border-ink`; the `×` glyph shifts from `text-muted` to `text-ink`. The whole pill is the click target; the `×` is the visual affordance only.
 - **Category chip:** leads with a 6px Category Dot (see above).
-- **Day-window chip:** label only.
+- **Free food / Deadlines chips:** lead with their amber / coral dot.
+- **Host group and day-window chips:** label only.
 - **Query chip:** shows the search term wrapped in curly quotes — `"diwali"`.
 - **Divider:** `border-b border-ink/10` runs below the row. When no filters are active, the row and the divider both unmount; the page reads as if the chip-bar never existed.
-- **A11y:** each chip is a `<button>` with `aria-label` ("Remove Free Food filter", "Clear search for diwali"). Row wrapped in `role="group" aria-label="Active filters"`. The result-count below the row carries the `aria-live="polite"` announcement when a filter is removed.
+- **A11y:** each chip is a `<button>` with `aria-label` ("Remove Free food filter", "Clear search for diwali"). Row wrapped in `role="group" aria-label="Active filters"`. The result-count below the row carries the `aria-live="polite"` announcement when a filter is removed.
 
 Do not copy this pattern to non-filter surfaces. The "removable chip row" reads as a filter affordance specifically; on a non-filter surface, it reads as tag-soup.
 

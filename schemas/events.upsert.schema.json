@@ -34,14 +34,14 @@
     "category": {
       "type": "string",
       "enum": [
-        "club",
-        "academic",
-        "social",
+        "hangout",
+        "get_involved",
         "career",
+        "academic",
         "sports",
         "arts",
-        "community",
-        "free_food"
+        "volunteering",
+        "other"
       ]
     },
     "content_kind": {

@@ -87,7 +87,7 @@ class DirectionsQrTests(unittest.TestCase):
     def test_art_and_music_count_in_the_title_not_as_one_attraction(self):
         self.assertEqual("arts", infer_category_from_text("Riverside Art & Music Festival", "workshops, community"))
         self.assertEqual("arts", infer_category_from_text("Art of Arabic Calligraphy Workshop", ""))
-        self.assertEqual("community", infer_category_from_text(
+        self.assertEqual("hangout", infer_category_from_text(
             "The Welcome Picnic", "Music, food and games for our community!"))
         self.assertEqual("career", infer_category_from_text("State-of-the-art Resume Workshop", ""))
 

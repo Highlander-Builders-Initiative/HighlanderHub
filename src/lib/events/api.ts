@@ -1,6 +1,9 @@
 import type { CampusEvent } from "@/types/event";
 import type { EventFeedCursor } from "@/types/events-feed";
-import type { EventFeedQuery } from "@/components/events/events-filters";
+import {
+  eventFeedSearchParams,
+  type EventFeedQuery,
+} from "@/components/events/events-filters";
 import { CALENDAR_GRID_DAYS, addPacificDays } from "@/lib/dates";
 
 export type EventsApiPage = {
@@ -14,7 +17,7 @@ export async function fetchEventsPage(
   limit: number | undefined,
   filters: EventFeedQuery
 ): Promise<EventsApiPage> {
-  const params = new URLSearchParams();
+  const params = eventFeedSearchParams(filters);
   if (after) {
     params.set("after", after.startsAt);
     params.set("afterId", after.id);
@@ -22,9 +25,6 @@ export async function fetchEventsPage(
   if (typeof limit === "number") {
     params.set("limit", String(limit));
   }
-  if (filters.query.trim()) params.set("q", filters.query.trim());
-  if (filters.category !== "all") params.set("cat", filters.category);
-  if (filters.dayWindow !== "all") params.set("when", filters.dayWindow);
 
   const response = await fetch(`/api/events?${params}`);
   if (!response.ok) throw new Error("Unable to load more events.");

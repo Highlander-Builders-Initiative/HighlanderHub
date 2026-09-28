@@ -59,21 +59,21 @@ test("reloading an open overlay keeps the card and closes back to the feed", asy
 
 
 test("a filtered feed does not rewrite the detail URL or reset when closed", async ({ page }) => {
-  await page.goto("/events?cat=social&q=Showcase");
+  await page.goto("/events?cat=hangout&q=Showcase");
   await expect(page.locator('#event-filter-summary')).toHaveText("1 matching event");
   const dialog = await openOverlay(page);
   // Let both filter synchronization and the search debounce settle.
   await page.waitForTimeout(900);
   await expect(page).toHaveURL(/\/events\/e2e-highlander-hub-showcase$/);
   await dialog.getByRole("button", { name: "Close event" }).click();
-  await expect(page).toHaveURL(/\/events\?cat=social&q=Showcase$/);
+  await expect(page).toHaveURL(/\/events\?cat=hangout&q=Showcase$/);
   await expect(page.getByLabel("Search events")).toHaveValue("Showcase");
   await page.goForward();
   await expect(page.getByRole("dialog").getByRole("heading", { name: EVENT_NAME })).toBeVisible();
   await page.reload();
   await expect(page.getByRole("dialog").getByRole("heading", { name: EVENT_NAME })).toBeVisible();
   await page.getByRole("dialog").getByRole("button", { name: "Close event" }).click();
-  await expect(page).toHaveURL(/\/events\?cat=social&q=Showcase$/);
+  await expect(page).toHaveURL(/\/events\?cat=hangout&q=Showcase$/);
 });
 
 for (const mode of ["", " after refresh", " after viewport resize"]) {

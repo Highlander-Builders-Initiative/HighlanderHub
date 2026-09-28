@@ -16,7 +16,7 @@ function listing(id, extra = {}) {
     host: "United Sikh Movement",
     host_handle: "unitedsikhmovement",
     hosts: [],
-    category: "community",
+    category: "other",
     content_kind: "student_event",
     tags: [],
     source: "instagram",

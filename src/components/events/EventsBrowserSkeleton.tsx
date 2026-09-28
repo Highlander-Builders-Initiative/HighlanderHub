@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { EventsLeftRail } from "./EventsLeftRail";
 import { EventsRightRail } from "./EventsRightRail";
 import { pacificTodayKey, startOfPacificMonthKey } from "@/lib/dates";
-import type { CategoryValue } from "./events-filters";
+import { EMPTY_FACET_COUNTS, NO_FEED_FACETS } from "./events-filters";
 
 /**
  * Placeholder for /events while an in-app link to it waits on its data
@@ -22,7 +22,6 @@ import type { CategoryValue } from "./events-filters";
  */
 
 const noop = () => {};
-const EMPTY_CATEGORY_COUNTS = new Map<CategoryValue, number>();
 const EMPTY_DAY_COUNTS = new Map<string, number>();
 
 function Bar({ className }: { className: string }) {
@@ -87,7 +86,9 @@ export function EventsBrowserSkeleton() {
             <EventsLeftRail
               category="all"
               onCategoryChange={noop}
-              counts={EMPTY_CATEGORY_COUNTS}
+              facets={NO_FEED_FACETS}
+              onFacetsChange={noop}
+              counts={EMPTY_FACET_COUNTS}
               countsPending
             />
           </div>

@@ -1,6 +1,10 @@
-import type { EventCategory, CampusEvent } from "@/types/event";
+import type { CampusEvent } from "@/types/event";
 import type { DayWindow, EventFeedCursor } from "@/types/events-feed";
-import type { EventFeedQuery } from "@/components/events/events-filters";
+import type {
+  CategoryValue,
+  EventFeedFacets,
+  EventFeedQuery,
+} from "@/components/events/events-filters";
 import {
   clearEventFeedReturnState,
   type SavedEventFeedSnapshot,
@@ -9,8 +13,8 @@ import {
 import { fetchEventsPage, type EventsApiPage } from "@/lib/events/api";
 import { mergeUniqueEventsByStart } from "@/lib/events/merge";
 
-export type EventFeedRestorePatch = {
-  category?: EventCategory | "all";
+export type EventFeedRestorePatch = Partial<EventFeedFacets> & {
+  category?: CategoryValue;
   query?: string;
   dayWindow?: DayWindow;
   loadedEvents?: CampusEvent[];
@@ -181,6 +185,9 @@ export async function restoreSavedEventFeedSpot({
         category: snapshot.category,
         query: snapshot.query,
         dayWindow: snapshot.dayWindow,
+        freeFood: snapshot.freeFood,
+        deadlines: snapshot.deadlines,
+        hostGroup: snapshot.hostGroup,
         loadedEvents: snapshot.events,
         hasMore: snapshot.hasMore,
         cursor: snapshot.cursor,
@@ -210,6 +217,9 @@ export async function restoreSavedEventFeedSpot({
           category: snapshot.category,
           query: snapshot.query,
           dayWindow: snapshot.dayWindow,
+          freeFood: snapshot.freeFood,
+          deadlines: snapshot.deadlines,
+          hostGroup: snapshot.hostGroup,
         }
       : pageFilters;
 

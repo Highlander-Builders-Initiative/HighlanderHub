@@ -2,6 +2,7 @@
 
 import React from "react";
 import { IoClose } from "react-icons/io5";
+import { EVENT_CATEGORIES, EVENT_CATEGORY_LABELS } from "@/types/event";
 import type {
   AdminEventEditForm,
   SetAdminEventEditField,
@@ -143,14 +144,11 @@ export function AdminEventEditDrawer({
                     onChange={(e) => setField("category", e.target.value)}
                     className="w-full bg-canvas text-ink border border-ink/15 rounded-md py-2 px-3 text-sm focus:border-ink outline-none interactive-focus transition-colors"
                   >
-                    <option value="club">Club</option>
-                    <option value="academic">Academic</option>
-                    <option value="social">Social</option>
-                    <option value="career">Career</option>
-                    <option value="sports">Sports</option>
-                    <option value="arts">Arts</option>
-                    <option value="community">Community</option>
-                    <option value="free_food">Free Food</option>
+                    {EVENT_CATEGORIES.map((value) => (
+                      <option key={value} value={value}>
+                        {EVENT_CATEGORY_LABELS[value]}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div className="space-y-1.5">
