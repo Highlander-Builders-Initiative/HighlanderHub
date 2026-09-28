@@ -18,7 +18,7 @@ const TEXT_SIZE_CLASS = {
  * Segmented control for the time window: no track, and the selected window
  * sits on the same neutral ink fill as the Topics rail's selected row (the
  * one selected state, DESIGN.md). Uses the shared AnimatedBackground, the
- * same motion system as the Topics list and the calendar nav.
+ * same motion system as the calendar nav.
  */
 export function EventDayWindowFilter({
   layout,

@@ -1,6 +1,5 @@
 "use client";
 
-import { AnimatedBackground } from "@/components/core/animated-background";
 import { CATEGORY_PILL } from "@/lib/category-colors";
 import type { EventCategory } from "@/types/event";
 import { CATEGORIES, type CategoryValue } from "./events-filters";
@@ -11,7 +10,7 @@ function activeText(value: CategoryValue) {
 }
 
 /**
- * The sliding highlight under the hovered, then the selected, row: a
+ * The selected row's background: a
  * category's own wash (the same one its tag pill wears on a card), or the
  * neutral fill for "All", which has no hue.
  */
@@ -36,8 +35,8 @@ const GROUP_CLASS = {
 } as const;
 
 const BUTTON_CLASS = {
-  rail: "rounded-xl px-3 py-2 text-[14px]",
-  grid: "rounded-xl px-3 py-2.5 text-[14px]",
+  rail: "min-h-11 rounded-xl px-3 py-2 text-[15px]",
+  grid: "min-h-11 rounded-xl px-3 py-2.5 text-[15px]",
 } as const;
 
 export function EventCategoryFilter({
@@ -53,49 +52,42 @@ export function EventCategoryFilter({
       role="group"
       aria-label="Filter events by category"
     >
-      <AnimatedBackground
-        defaultValue={category}
-        enableHover
-        className={(id) => `rounded-xl ${highlightClass((id ?? "all") as CategoryValue)}`}
-        transition={{ type: "spring", bounce: 0.2, duration: 0.3 }}
-      >
-        {CATEGORIES.map((c) => {
-          const active = category === c.value;
-          const count = counts.get(c.value) ?? 0;
-          return (
-            <button
-              key={c.value}
-              data-id={c.value}
-              type="button"
-              aria-pressed={active}
-              onClick={() => onCategoryChange(c.value)}
-              className={`interactive-focus w-full transition-colors ${BUTTON_CLASS[layout]} ${
-                active
-                  ? `${activeText(c.value)} font-medium`
-                  : "text-ink/80 hover:text-ink"
+      {CATEGORIES.map((c) => {
+        const active = category === c.value;
+        const count = counts.get(c.value) ?? 0;
+        return (
+          <button
+            key={c.value}
+            data-id={c.value}
+            type="button"
+            aria-pressed={active}
+            onClick={() => onCategoryChange(c.value)}
+            className={`interactive-focus flex w-full items-center ${BUTTON_CLASS[layout]} ${
+              active
+                ? `${highlightClass(c.value)} ${activeText(c.value)} font-medium`
+                : "text-ink/80 hover:bg-ink/[0.04] hover:text-ink"
+            }`}
+          >
+            <span className="min-w-0 flex-1 truncate text-left">
+              {c.label}
+            </span>
+            <span
+              className={`pl-2 text-[12px] tabular-nums ${
+                active ? "text-muted" : "text-muted/80"
               }`}
             >
-              <span className="min-w-0 flex-1 truncate text-left">
-                {c.label}
-              </span>
-              <span
-                className={`pl-2 text-[11px] tabular-nums ${
-                  active ? "text-muted" : "text-muted/80"
-                }`}
-              >
-                {countsPending ? (
-                  <span
-                    aria-hidden
-                    className="skeleton inline-block h-2 w-3.5 rounded-full bg-ink/10 align-middle"
-                  />
-                ) : (
-                  count
-                )}
-              </span>
-            </button>
-          );
-        })}
-      </AnimatedBackground>
+              {countsPending ? (
+                <span
+                  aria-hidden
+                  className="skeleton inline-block h-2 w-3.5 rounded-full bg-ink/10 align-middle"
+                />
+              ) : (
+                count
+              )}
+            </span>
+          </button>
+        );
+      })}
     </div>
   );
 }
