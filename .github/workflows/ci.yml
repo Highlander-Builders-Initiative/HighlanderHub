@@ -24,9 +24,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           # Contract tests stub modules with module.registerHooks (Node 22.15+).
           node-version: "24"
@@ -35,14 +35,19 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Audit JavaScript dependencies
+        run: npm audit --audit-level=moderate
+
       - name: Lint
         run: npm run lint
 
-      - uses: actions/setup-python@v7
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: "3.12"
           cache: pip
-          cache-dependency-path: pipeline/requirements.txt
+          cache-dependency-path: |
+            pipeline/requirements*.txt
+            pipeline/constraints-security.txt
 
       - name: Install importer integration dependencies
         run: pip install -r pipeline/requirements.txt -r pipeline/requirements-legacy.txt
@@ -55,16 +60,23 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - uses: actions/setup-python@v7
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: "3.12"
           cache: pip
-          cache-dependency-path: pipeline/requirements.txt
+          cache-dependency-path: |
+            pipeline/requirements*.txt
+            pipeline/constraints-security.txt
 
       - name: Install pipeline dependencies
         run: pip install -r pipeline/requirements.txt -r pipeline/requirements-legacy.txt
+
+      - name: Audit Python dependencies
+        run: |
+          pip install pip-audit==2.10.1
+          pip-audit -r pipeline/requirements.txt -r pipeline/requirements-legacy.txt
 
       - name: Pipeline unit tests
         working-directory: pipeline
@@ -75,9 +87,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: "24"
           cache: npm
@@ -93,9 +105,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: "24"
           cache: npm
@@ -115,7 +127,7 @@ jobs:
       # failures can be opened with `npx playwright show-trace`.
       - name: Upload Playwright traces
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: playwright-traces-${{ github.run_id }}-${{ github.run_attempt }}
           path: test-results/

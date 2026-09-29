@@ -1,3 +1,4 @@
+import "server-only";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import crypto from "crypto";
 
@@ -17,9 +18,9 @@ export function getAdminPassword(): string | null {
  * Both sides are hashed to fixed-length digests first so that differing
  * lengths neither leak via timing nor throw from timingSafeEqual.
  */
-export function verifyPassword(candidate: string): boolean {
+export function verifyPassword(candidate: unknown): boolean {
   const password = getAdminPassword();
-  if (!password) return false;
+  if (!password || typeof candidate !== "string" || candidate.length > 1024) return false;
 
   const candidateHash = crypto.createHash("sha256").update(candidate).digest();
   const expectedHash = crypto.createHash("sha256").update(password).digest();
@@ -67,7 +68,7 @@ export function signSession(expiresAt: number): string {
  * Verifies if a given session string is cryptographically valid and not expired.
  */
 export function verifySession(sessionStr: string | undefined): boolean {
-  if (!sessionStr) return false;
+  if (!sessionStr || !/^\d{13}\.[a-f0-9]{64}$/.test(sessionStr)) return false;
 
   const password = getAdminPassword();
   if (!password) return false;
@@ -76,9 +77,9 @@ export function verifySession(sessionStr: string | undefined): boolean {
   if (parts.length !== 2) return false;
 
   const [expiresAtStr, signature] = parts;
-  const expiresAt = parseInt(expiresAtStr, 10);
+  const expiresAt = Number(expiresAtStr);
 
-  if (isNaN(expiresAt) || expiresAt < Date.now()) {
+  if (!Number.isSafeInteger(expiresAt) || expiresAt <= Date.now()) {
     return false; // Session is malformed or expired
   }
 
@@ -101,4 +102,23 @@ export function verifySession(sessionStr: string | undefined): boolean {
   } catch (err) {
     return false;
   }
+}
+
+/** Shared across server instances; never fall back to memory on a DB failure. */
+export async function checkAdminLoginRateLimit(ip: string): Promise<{
+  ok: boolean;
+  retryAfterSeconds: number;
+}> {
+  const password = getAdminPassword();
+  if (!password) throw new Error("Admin login is not configured.");
+  // A keyed hash keeps raw addresses out of the database and its backups.
+  const key = crypto.createHmac("sha256", password).update(`admin-login:${ip}`).digest("hex");
+  const { data, error } = await getAdminSupabase().rpc("check_admin_login_rate_limit", {
+    p_key: key,
+  });
+  if (error || typeof data?.ok !== "boolean" ||
+      !Number.isInteger(data?.retry_after_seconds) || data.retry_after_seconds < 0) {
+    throw new Error("Admin login rate limit is unavailable.");
+  }
+  return { ok: data.ok, retryAfterSeconds: data.retry_after_seconds };
 }

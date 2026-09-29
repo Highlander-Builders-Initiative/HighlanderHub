@@ -11,6 +11,12 @@ import image_ocr
 import instagram_cooldown
 
 
+def download_response(status=200, content=b"flyer", headers=None):
+    response = Mock(status_code=status, content=content, headers=headers or {})
+    response.iter_content.side_effect = lambda **kwargs: iter([response.content])
+    return response
+
+
 class ImageOcrTests(unittest.TestCase):
     def setUp(self):
         self.enterContext(patch.object(image_ocr, "GOOGLE_VISION_API_KEY_PRIMARY", "old-test-key"))
@@ -28,13 +34,13 @@ class ImageOcrTests(unittest.TestCase):
         self.enterContext(patch.object(instagram_cooldown, "_UNSAVED", None))
 
     def test_expired_url_does_not_pause_other_images(self):
-        response = Mock(status_code=403)
+        response = download_response(status=403)
         with patch("requests.get", return_value=response) as request:
             with self.assertRaises(image_ocr.ImageExpired):
-                image_ocr._download_image("https://cdn.example/expired.jpg")
+                image_ocr._download_image("https://scontent.cdninstagram.com/expired.jpg")
             response.status_code = 200
             response.content = b"flyer"
-            self.assertEqual(b"flyer", image_ocr._download_image("https://cdn.example/next.jpg"))
+            self.assertEqual(b"flyer", image_ocr._download_image("https://scontent.cdninstagram.com/next.jpg"))
         self.assertEqual(2, request.call_count)
         self.assertIsNone(instagram_cooldown.current())
 
@@ -42,7 +48,7 @@ class ImageOcrTests(unittest.TestCase):
         import requests
 
         url = "https://instagram.ftpa1-1.fna.fbcdn.net/v/flyer.jpg?oh=signature&_nc_ht=instagram.ftpa1-1.fna.fbcdn.net"
-        response = Mock(status_code=200, content=b"flyer")
+        response = download_response()
         for error in (requests.ConnectionError("[Errno 101] Network is unreachable"),
                       requests.ConnectTimeout("IPv6 unreachable")):
             with self.subTest(error=error), patch("requests.get", side_effect=[error, response]) as request, \
@@ -55,7 +61,7 @@ class ImageOcrTests(unittest.TestCase):
     def test_download_retries_are_bounded_and_do_not_reroute_other_hosts(self):
         import requests
 
-        for url in ("https://cdn.example/flyer.jpg", "https://instagram.fna.fbcdn.net.example/flyer.jpg"):
+        for url in ("https://scontent.cdninstagram.com/flyer.jpg", "https://scontent-lax3-1.cdninstagram.com/flyer.jpg"):
             with self.subTest(url=url), patch("requests.get", side_effect=requests.ConnectionError("offline")) as request, \
                  patch.object(image_ocr.time, "sleep") as sleep:
                 with self.assertRaises(requests.ConnectionError):
@@ -66,21 +72,21 @@ class ImageOcrTests(unittest.TestCase):
 
     def test_expired_regional_url_is_not_retried_or_rerouted(self):
         for status in (401, 403, 404, 410):
-            with self.subTest(status=status), patch("requests.get", return_value=Mock(status_code=status)) as request:
+            with self.subTest(status=status), patch("requests.get", return_value=download_response(status=status)) as request:
                 with self.assertRaises(image_ocr.ImageExpired):
                     image_ocr._download_image("https://instagram.ftpa1-1.fna.fbcdn.net/expired.jpg")
                 request.assert_called_once()
 
     def test_image_download_returns_bytes_and_reports_expired_urls(self):
-        response = Mock(status_code=200, content=b"flyer")
+        response = download_response()
         with patch("requests.get", return_value=response) as download:
-            self.assertEqual(b"flyer", image_ocr._download_image("https://cdn.example/flyer.jpg"))
-            download.assert_called_once_with("https://cdn.example/flyer.jpg", timeout=10)
+            self.assertEqual(b"flyer", image_ocr._download_image("https://scontent.cdninstagram.com/flyer.jpg"))
+            download.assert_called_once_with("https://scontent.cdninstagram.com/flyer.jpg", timeout=10, stream=True, allow_redirects=False)
             response.raise_for_status.assert_called_once()
             for status in (404, 410):
                 response.status_code = status
                 with self.assertRaises(image_ocr.ImageExpired):
-                    image_ocr._download_image("https://cdn.example/expired.jpg")
+                    image_ocr._download_image("https://scontent.cdninstagram.com/expired.jpg")
 
     def test_vision_reads_the_uploaded_image_and_surfaces_api_errors(self):
         response = Mock()
@@ -97,6 +103,43 @@ class ImageOcrTests(unittest.TestCase):
             response.json.return_value = {"responses": [{"error": {"message": "OCR unavailable"}}]}
             with self.assertRaisesRegex(RuntimeError, "OCR unavailable"):
                 image_ocr._vision_ocr(b"flyer")
+
+    def test_image_download_rejects_untrusted_destinations_before_network(self):
+        for url in ("http://scontent.cdninstagram.com/flyer.jpg", "https://127.0.0.1/",
+                    "https://169.254.169.254/", "https://[::1]/", "file:///etc/passwd",
+                    "https://scontent.cdninstagram.com.evil.example/",
+                    "https://evilcdninstagram.com/", "https://instagram.fna.fbcdn.net.example/",
+                    "https://user:password@scontent.cdninstagram.com/",
+                    "https://scontent.cdninstagram.com:8443/"):
+            with self.subTest(url=url), patch("requests.get") as request:
+                with self.assertRaises(ValueError):
+                    image_ocr._download_image(url)
+                request.assert_not_called()
+
+    def test_image_redirect_is_not_followed(self):
+        response = download_response(status=302, headers={"Location": "http://127.0.0.1/"})
+        with patch("requests.get", return_value=response) as request:
+            with self.assertRaisesRegex(ValueError, "redirects"):
+                image_ocr._download_image("https://scontent.cdninstagram.com/flyer.jpg")
+            self.assertFalse(request.call_args.kwargs["allow_redirects"])
+        response.close.assert_called_once()
+
+    def test_image_size_limit_checks_both_headers_and_actual_stream(self):
+        for declared in ({"Content-Length": "11"}, {}, {"Content-Length": "1"}):
+            response = download_response(content=b"12345678901", headers=declared)
+            with self.subTest(headers=declared), patch.object(image_ocr, "MAX_IMAGE_BYTES", 10), \
+                 patch("requests.get", return_value=response):
+                with self.assertRaisesRegex(ValueError, "size limit"):
+                    image_ocr._download_image("https://scontent.cdninstagram.com/flyer.jpg")
+            response.close.assert_called_once()
+
+    def test_image_stream_has_an_overall_time_limit(self):
+        response = download_response()
+        with patch("requests.get", return_value=response), \
+             patch.object(image_ocr.time, "monotonic", side_effect=[0, 31]):
+            with self.assertRaisesRegex(ValueError, "time limit"):
+                image_ocr._download_image("https://scontent.cdninstagram.com/flyer.jpg")
+        response.close.assert_called_once()
 
     def test_transient_vision_response_errors_retry_with_fresh_reservations(self):
         for code in (4, 8, 13, 14):

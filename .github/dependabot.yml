@@ -3,7 +3,7 @@ updates:
   - package-ecosystem: npm
     directory: /
     schedule:
-      interval: weekly
+      interval: daily
     open-pull-requests-limit: 10
     groups:
       # react, react-dom and their @types must move together: bumping one
@@ -29,11 +29,11 @@ updates:
   - package-ecosystem: pip
     directory: /pipeline
     schedule:
-      interval: weekly
+      interval: daily
     open-pull-requests-limit: 5
 
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: weekly
+      interval: daily
     open-pull-requests-limit: 5

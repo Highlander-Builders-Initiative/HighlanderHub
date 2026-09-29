@@ -16,6 +16,7 @@ from config import (
 log = logging.getLogger("pipeline.image_ocr")
 VISION_URL = "https://vision.googleapis.com/v1/images:annotate"
 DURABLE_FLYER_BUCKET = "event-flyers"
+MAX_IMAGE_BYTES = 10 * 1024 * 1024
 
 
 class ImageExpired(Exception):
@@ -30,6 +31,13 @@ def _download_image(url: str | None) -> bytes:
     # Apify supplies signed CDN URLs; an expired image does not invalidate
     # an Instagram login or warrant a day-long pause of unrelated downloads.
     parts = urlsplit(url)
+    host = (parts.hostname or "").lower()
+    # Only the Instagram CDN is a valid source for archived post media. Never
+    # let upstream metadata fetch local services, arbitrary hosts or credentials.
+    if (parts.scheme != "https" or parts.username or parts.password
+            or parts.port not in (None, 443)
+            or not host.endswith((".cdninstagram.com", ".fbcdn.net"))):
+        raise ValueError("Image URL must use the Instagram HTTPS CDN")
     # Some regional Instagram hosts resolve only to IPv6. The general CDN
     # serves the same signed path over a route reachable by Actions runners.
     fallback = (urlunsplit(parts._replace(netloc="scontent.cdninstagram.com"))
@@ -37,7 +45,7 @@ def _download_image(url: str | None) -> bytes:
                 else None)
     for attempt in range(3):
         try:
-            resp = requests.get(url, timeout=10)
+            resp = requests.get(url, timeout=10, stream=True, allow_redirects=False)
             break
         except (requests.ConnectionError, requests.Timeout):
             if attempt == 2:
@@ -46,10 +54,27 @@ def _download_image(url: str | None) -> bytes:
                 url, fallback = fallback, None
                 log.info("Retrying image through Instagram's general CDN")
             time.sleep(attempt + 1)
-    if resp.status_code in {401, 403, 404, 410}:
-        raise ImageExpired(f"image URL returned HTTP {resp.status_code}")
-    resp.raise_for_status()
-    return resp.content
+    try:
+        if resp.status_code in {401, 403, 404, 410}:
+            raise ImageExpired(f"image URL returned HTTP {resp.status_code}")
+        # A permitted CDN URL must not redirect the worker to an untrusted host.
+        if 300 <= resp.status_code < 400:
+            raise ValueError("Image redirects are not allowed")
+        resp.raise_for_status()
+        length = resp.headers.get("Content-Length")
+        if length and int(length) > MAX_IMAGE_BYTES:
+            raise ValueError("Image exceeds the download size limit")
+        image = bytearray()
+        started_at = time.monotonic()
+        for chunk in resp.iter_content(chunk_size=64 * 1024):
+            if time.monotonic() - started_at > 30:
+                raise ValueError("Image download exceeded its time limit")
+            if len(image) + len(chunk) > MAX_IMAGE_BYTES:
+                raise ValueError("Image exceeds the download size limit")
+            image.extend(chunk)
+        return bytes(image)
+    finally:
+        resp.close()
 
 
 def _vision_ocr(image_bytes: bytes) -> str:

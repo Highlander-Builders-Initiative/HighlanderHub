@@ -1,0 +1,10 @@
+# Minimum patched transitive versions, verified with pip-audit on 2026-09-28.
+# Constraints only apply when a dependency is installed; they add no packages.
+anyio>=4.14.2
+cryptography>=50.0.0
+h2>=4.4.1
+hpack>=4.2.0
+idna>=3.15
+pyasn1>=0.6.4
+pyjwt>=2.13.0
+soupsieve>=2.9.0
