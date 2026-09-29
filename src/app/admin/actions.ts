@@ -3,8 +3,8 @@
 import { cookies, headers } from "next/headers";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { EVENTS_CACHE_TAG } from "@/lib/events";
-import { signSession, verifySession, getAdminSupabase, getAdminPassword, verifyPassword } from "@/lib/admin";
-import { ADMIN_LOGIN_RATE_LIMIT, clientIp, rateLimit } from "@/lib/rate-limit";
+import { signSession, verifySession, getAdminSupabase, getAdminPassword, verifyPassword, checkAdminLoginRateLimit } from "@/lib/admin";
+import { clientIp } from "@/lib/rate-limit";
 import { parseAdminEventUpdate } from "./validate-event-update";
 import { duplicateMergeChanges } from "./duplicate-merge";
 import type { AdminEventRow, AdminEventUpdatePayload } from "./types";
@@ -25,7 +25,7 @@ async function requireAdmin() {
  * Authenticates the admin using the secure environment password.
  * Sets an HTTP-only cookie containing the cryptographically signed session.
  */
-export async function loginAdmin(password: string) {
+export async function loginAdmin(password: unknown) {
   if (!getAdminPassword()) {
     return {
       success: false,
@@ -33,11 +33,13 @@ export async function loginAdmin(password: string) {
     };
   }
 
-  // Throttle attempts per IP so the single shared password can't be brute-forced.
-  const limit = rateLimit(
-    `admin-login:${clientIp(await headers())}`,
-    ADMIN_LOGIN_RATE_LIMIT
-  );
+  // Reserve each attempt in the shared per-IP limit before checking the password.
+  let limit;
+  try {
+    limit = await checkAdminLoginRateLimit(clientIp(await headers()));
+  } catch {
+    return { success: false, error: "Sign-in is temporarily unavailable. Please try again later." };
+  }
   if (!limit.ok) {
     const minutes = Math.ceil(limit.retryAfterSeconds / 60);
     return {
@@ -92,6 +94,8 @@ export async function logoutAdmin() {
 export async function updateEvent(eventId: string, updatedFields: unknown) {
   await requireAdmin();
 
+  if (!isEventId(eventId)) return { success: false, error: "Invalid event ID." };
+
   const parsed = parseAdminEventUpdate(updatedFields);
   if (!parsed.ok) {
     return { success: false, error: parsed.error };
@@ -130,6 +134,8 @@ export async function updateEvent(eventId: string, updatedFields: unknown) {
  */
 export async function deleteEvent(eventId: string) {
   await requireAdmin();
+
+  if (!isEventId(eventId)) return { success: false, error: "Invalid event ID." };
 
   const supabase = getAdminSupabase();
 

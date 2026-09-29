@@ -40,6 +40,17 @@ test("buildIcsContent emits escaped single-event calendar content", () => {
   assert.match(ics, /\r\nEND:VCALENDAR\r\n$/);
 });
 
+test("calendar fields cannot inject properties through any newline encoding", () => {
+  for (const newline of ["\r", "\n", "\r\n"]) {
+    const payload = `untrusted${newline}BEGIN:VALARM${newline}ACTION:EMAIL`;
+    const ics = buildIcsContent({ ...event, id: payload, title: payload,
+      description: payload, location: payload }).replace(/\r\n /g, "");
+    assert.equal(ics.split("\r\n").filter(line => line === "BEGIN:VEVENT").length, 1);
+    assert.equal(ics.split("\r\n").some(line => /^(BEGIN:VALARM|ACTION:EMAIL)$/.test(line)), false);
+    assert.equal(ics.replace(/\r\n/g, "").includes("\r"), false);
+  }
+});
+
 test("a date-only deadline becomes an all-day entry on its due date, not a day opening at midnight", () => {
   // AEPi's "by Sep. 27th": stored as Pacific midnight to the midnight after.
   const deadline = {

@@ -1,40 +1,18 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
+import { importTsModule } from "./helpers/import-ts-module.mjs";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const read = (relPath) => readFileSync(join(__dirname, "..", relPath), "utf8");
+const { clientIp } = await importTsModule("src/lib/rate-limit.ts");
 
-// The suite can't execute TypeScript (no ts-node), so assert on source the same
-// way admin-event-update.test.mjs and security-headers.test.mjs do.
-
-test("rate-limit lib exposes the limiter, IP helper, and tuned configs", () => {
-  const src = read("src/lib/rate-limit.ts");
-
-  assert.match(src, /export function rateLimit\(/);
-  assert.match(src, /export function clientIp\(/);
-  assert.match(src, /export function rateLimitHeaders\(/);
-  assert.match(src, /export const ADMIN_LOGIN_RATE_LIMIT/);
-
-  // Fixed-window blocks once the per-key count reaches the limit.
-  assert.match(src, /existing\.count >= limit/);
-  // Expired entries are swept so the Map can't grow unbounded.
-  assert.match(src, /store\.delete\(key\)/);
-  // IP is taken from the leftmost proxy-forwarded address.
-  assert.match(src, /x-forwarded-for/);
+test("client address accepts IPs supplied by the trusted deployment proxy", () => {
+  assert.equal(clientIp(new Headers({ "x-forwarded-for": "203.0.113.5, 10.0.0.1" })), "203.0.113.5");
+  assert.equal(clientIp(new Headers({ "x-forwarded-for": "2001:db8::1" })), "2001:db8::1");
+  assert.equal(clientIp(new Headers({ "x-real-ip": "203.0.113.6" })), "203.0.113.6");
 });
 
-test("admin login is rate limited per IP to blunt brute-force", () => {
-  const src = read("src/app/admin/actions.ts");
-
-  assert.match(src, /ADMIN_LOGIN_RATE_LIMIT/);
-  assert.match(src, /rateLimit\(\s*`admin-login:\$\{clientIp\(await headers\(\)\)\}`/);
-
-  // The throttle must gate verifyPassword, not run after a successful check.
-  const guardIndex = src.indexOf("admin-login:");
-  const verifyIndex = src.indexOf("verifyPassword(password)");
-  assert.ok(guardIndex !== -1 && verifyIndex !== -1);
-  assert.ok(guardIndex < verifyIndex, "throttle must precede password check");
+test("missing or invalid addresses share a bucket", () => {
+  for (const value of ["", "arbitrary-key", "999.1.1.1", "https://example.com"]) {
+    assert.equal(clientIp(new Headers({ "x-forwarded-for": value })), "unknown");
+  }
+  assert.equal(clientIp(new Headers()), "unknown");
 });

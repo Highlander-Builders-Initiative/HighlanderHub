@@ -1,5 +1,7 @@
 import React from "react";
-import { getAdminSupabase } from "@/lib/admin";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { getAdminSupabase, verifySession } from "@/lib/admin";
 import { activeEventFilter } from "@/lib/events";
 import AdminDashboardClient from "./AdminDashboardClient";
 import type { AdminEventRow, DuplicateReviewPair } from "../types";
@@ -9,6 +11,10 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default async function AdminDashboardPage() {
+  // Pages and layouts can render independently. Authorize at the data read too.
+  const session = (await cookies()).get("hh_admin_session")?.value;
+  if (!verifySession(session)) redirect("/admin/login");
+
   const supabase = getAdminSupabase();
   const nowIso = new Date().toISOString();
 

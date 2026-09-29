@@ -65,7 +65,7 @@ function escapeIcsText(value: string) {
     .replace(/\\/g, "\\\\")
     .replace(/;/g, "\\;")
     .replace(/,/g, "\\,")
-    .replace(/\r?\n/g, "\\n");
+    .replace(/\r\n|[\r\n]/g, "\\n");
 }
 
 const textEncoder = new TextEncoder();
@@ -103,7 +103,7 @@ export function buildIcsContent(event: CampusEvent, now = new Date()) {
     "PRODID:-//Highlander Hub//Events//EN",
     "CALSCALE:GREGORIAN",
     "BEGIN:VEVENT",
-    `UID:${event.id}@highlanderhub.app`,
+    `UID:${escapeIcsText(event.id)}@highlanderhub.app`,
     `DTSTAMP:${calendarDate(now.toISOString())}`,
     `DTSTART${valueType}:${start}`,
     `DTEND${valueType}:${end}`,
