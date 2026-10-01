@@ -4,7 +4,12 @@ on:
   schedule:
     # 00:00, 08:00, 16:00 UTC. GitHub schedules are best-effort.
     - cron: "0 */8 * * *"
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      resume_halted:
+        description: "Resume Apify batches halted by an abort or output contract failure (only after reviewing the cause)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -129,7 +134,13 @@ jobs:
           GOOGLE_CLOUD_LOCATION: global
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
-        run: python pipeline/run.py
+          RESUME_HALTED: ${{ inputs.resume_halted && 'true' || 'false' }}
+        run: |
+          if [ "$RESUME_HALTED" = "true" ]; then
+            python pipeline/run.py --resume-halted
+          else
+            python pipeline/run.py
+          fi
 
       # Save even when collection/extraction partially fails. The normal cache
       # action's success-only save would lose paid work and pending run IDs.

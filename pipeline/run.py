@@ -18,6 +18,7 @@ reconstruct it from raw-file mtimes.
 """
 from __future__ import annotations
 
+import argparse
 import json
 import logging
 from logging.handlers import RotatingFileHandler
@@ -148,8 +149,9 @@ def _write_history(results: list[StageResult], total_seconds: float) -> None:
             "instructions": "Resolve the reported API/configuration error, then rerun. "
                             "Unfinished Apify batches resume without repeating completed batches. "
                             "A CollectionHalted stage stops paid batches on purpose and keeps "
-                            "doing so until its cause is reviewed and apify_posts.py is rerun "
-                            "with --resume-halted. "
+                            "doing so until its cause is reviewed and run.py is rerun with "
+                            "--resume-halted (in Actions: run the workflow manually with "
+                            "resume_halted checked). "
                             "Post extractions and assessments reuse their saved caches.",
             "checkpoints": "Supabase instagram_post_checkpoints",
             "apify_plan": str(DATA_DIR / "apify_plan.json"),
@@ -170,24 +172,25 @@ def _report(results: list[StageResult], total_seconds: float) -> None:
     _write_history(results, total_seconds)
 
 
-def _run_stages(results: list[StageResult]) -> None:
+def _run_stages(results: list[StageResult], *, resume_halted: bool) -> None:
     # Apify failures do not invalidate already mirrored posts or their CDN URLs.
     # Continue OCR on the completed prefix even if dataset pagination stopped.
     posts = InstagramPosts()
-    _safe("instagram.posts.collect", lambda: apify_posts.main(archive=posts.archive), results)
+    _safe("instagram.posts.collect",
+          lambda: apify_posts.main(resume_halted=resume_halted, archive=posts.archive), results)
     _safe("instagram.posts.extract", posts.extract_posts, results)
     _safe("instagram.publish", posts.publish, results)
     _safe("events.reconcile", reconcile_events.main, results)
 
 
-def main() -> None:
+def main(*, resume_halted: bool = False) -> None:
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
     )
     started = time.monotonic()
     results: list[StageResult] = []
     try:
-        _run_stages(results)
+        _run_stages(results, resume_halted=resume_halted)
     finally:
         # KeyboardInterrupt / unexpected abort still gets a summary.
         _report(results, time.monotonic() - started)
@@ -196,9 +199,13 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Run the Instagram event pipeline.")
+    parser.add_argument("--resume-halted", action="store_true",
+                        help="Resume Apify batches stopped by a reviewed abort or output contract failure")
+    args = parser.parse_args()
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s",
         handlers=[logging.StreamHandler(), RotatingFileHandler(DATA_DIR / "run.log", maxBytes=5_000_000, backupCount=1)],
     )
-    main()
+    main(resume_halted=args.resume_halted)

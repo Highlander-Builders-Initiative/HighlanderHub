@@ -164,6 +164,14 @@ class RunMainTests(unittest.TestCase):
         self.fake_modules["extract_posts"].extract_all.assert_called_once_with({"acm.ucr"}, cached_only=False, archive=ANY)
         self.assertIn("continued past them", self._history()["stages"][0]["error"])
 
+    def test_collection_resumes_halted_batches_only_when_requested(self) -> None:
+        collect = self.fake_modules["apify_posts"].main
+        self.run.main()
+        collect.assert_called_once_with(resume_halted=False, archive=ANY)
+        collect.reset_mock()
+        self.run.main(resume_halted=True)
+        collect.assert_called_once_with(resume_halted=True, archive=ANY)
+
     def test_failed_collection_still_publishes_extracted_archive(self) -> None:
         archived = [({"media_id": "700"}, {"status": "ok"})]
         self.fake_modules["apify_posts"].main.side_effect = RuntimeError("collection paused")
