@@ -6,6 +6,10 @@ on:
     - cron: "0 */8 * * *"
   workflow_dispatch:
     inputs:
+      migrate_plaintext_cache:
+        description: "One-time migration of existing paid recovery state; delete old plaintext caches/artifacts after verifying the encrypted save"
+        type: boolean
+        default: false
       resume_halted:
         description: "Resume Apify batches halted by an abort or output contract failure (only after reviewing the cause)"
         type: boolean
@@ -24,6 +28,7 @@ env:
 
 jobs:
   collect:
+    if: github.repository == 'Highlander-Builders-Initiative/HighlanderHub' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -36,8 +41,18 @@ jobs:
             pipeline/requirements*.txt
             pipeline/constraints-security.txt
 
-      - name: Restore pipeline caches and pending Apify run
+      - name: Restore encrypted pipeline state
         id: data
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: .pipeline-cache/state.enc
+          key: pipeline-encrypted-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            pipeline-encrypted-v1-
+
+      - name: Restore legacy state for an explicit one-time migration
+        id: legacy
+        if: inputs.migrate_plaintext_cache && steps.data.outputs.cache-matched-key == ''
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: pipeline/data
@@ -48,7 +63,26 @@ jobs:
       - name: Install dependencies
         run: pip install -r pipeline/requirements.txt
 
+      - name: Decrypt recovery state before any paid work
+        id: state
+        env:
+          PIPELINE_CACHE_KEY: ${{ secrets.PIPELINE_CACHE_KEY }}
+          MIGRATE_CACHE: ${{ inputs.migrate_plaintext_cache && 'true' || 'false' }}
+          LEGACY_CACHE: ${{ steps.legacy.outputs.cache-matched-key }}
+        run: |
+          if [ -f .pipeline-cache/state.enc ]; then
+            python pipeline/cache_state.py decrypt .pipeline-cache/state.enc
+          elif [ "$MIGRATE_CACHE" = "true" ] && [ -n "$LEGACY_CACHE" ]; then
+            # Validate the key and encrypt the existing paid recovery state.
+            mkdir -p pipeline/data
+            python pipeline/cache_state.py encrypt .pipeline-cache/state.enc
+          else
+            echo "No recovery state found. Migrate the legacy cache or recover pending paid runs before collection." >&2
+            exit 1
+          fi
+
       - name: Validate credentials
+        if: '!inputs.migrate_plaintext_cache'
         env:
           APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -114,6 +148,7 @@ jobs:
           fi
 
       - name: Run collection, OCR, assessment and publication
+        if: '!inputs.migrate_plaintext_cache'
         env:
           APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
           APIFY_POSTS_PER_PROFILE: ${{ vars.APIFY_POSTS_PER_PROFILE || '100' }}
@@ -142,25 +177,32 @@ jobs:
             python pipeline/run.py
           fi
 
-      # Save even when collection/extraction partially fails. The normal cache
+      # Encrypt even when collection/extraction partially fails. The normal cache
       # action's success-only save would lose paid work and pending run IDs.
-      - name: Save pipeline state
-        if: always() && steps.data.outcome == 'success'
+      - name: Encrypt pipeline state and diagnostics
+        id: encrypted
+        if: always() && steps.state.outcome == 'success'
+        env:
+          PIPELINE_CACHE_KEY: ${{ secrets.PIPELINE_CACHE_KEY }}
+        run: python pipeline/cache_state.py encrypt .pipeline-cache/state.enc
+
+      - name: Save encrypted pipeline state
+        if: always() && steps.encrypted.outcome == 'success'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
-          path: pipeline/data
-          key: pipeline-apify-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .pipeline-cache/state.enc
+          key: pipeline-encrypted-v1-${{ github.run_id }}-${{ github.run_attempt }}
 
-      - name: Upload run diagnostics
-        if: always()
+      - name: Upload encrypted run diagnostics
+        if: always() && steps.encrypted.outcome == 'success'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: pipeline-report-${{ github.run_id }}-${{ github.run_attempt }}
-          path: |
-            pipeline/data/last_run.json
-            pipeline/data/apify_run.json
-            pipeline/data/apify_plan.json
-            pipeline/data/apify_runs/*.json
-            pipeline/data/run.log
+          path: .pipeline-cache/state.enc
+          include-hidden-files: true
           if-no-files-found: ignore
           retention-days: 14
+
+      - name: Remove temporary service-account credentials
+        if: always()
+        run: rm -f "$RUNNER_TEMP/gcp.json"

@@ -32,6 +32,8 @@ all, open an issue and we'll fix it.
 ## Development
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for how the app, pipeline, and database fit together.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for local setup and checks, and
+[SECURITY.md](SECURITY.md) for reporting vulnerabilities privately.
 
 ## License
 

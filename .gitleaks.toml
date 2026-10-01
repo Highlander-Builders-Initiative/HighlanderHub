@@ -1,0 +1,13 @@
+title = "HighlanderHub secret scanning"
+
+[extend]
+useDefault = true
+
+# Exact fake CI credential, including its historical occurrences. Do not
+# suppress whole files, real JWTs, Supabase keys, or entire credential rules.
+[[allowlists]]
+description = "Nonfunctional Supabase placeholder used by secret-free CI"
+condition = "AND"
+paths = ['''(^|/)\.github/workflows/ci\.yml$''']
+regexTarget = "secret"
+regexes = ['''^eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.e30\.ci-placeholder$''']

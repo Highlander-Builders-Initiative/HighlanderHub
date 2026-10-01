@@ -8,8 +8,8 @@ const { normalizeEventQuery, buildEventSearchText, matchesQuery } =
   await importTsModule("src/components/events/events-filters.ts");
 
 test("every public scraped handle is searchable, including accounts outside the roster", () => {
-  const activity = JSON.parse(readFileSync(new URL("../pipeline/data/account_activity.json", import.meta.url)));
-  for (const handle of Object.keys(activity)) {
+  const { activityHandles } = JSON.parse(readFileSync(new URL("../src/lib/public-clubs.json", import.meta.url)));
+  for (const handle of activityHandles) {
     if (handle === "highlander_opps") continue;
     assert.equal(searchClubs(`@${handle}`)[0]?.handle, handle);
   }

@@ -22,6 +22,16 @@ playwright-report/
 .antigravitycli/
 .worktrees/
 .gemini/
+.impeccable/
+.release-private/
+.pipeline-cache/
+
+# Internal operational reports and agent planning artifacts
+docs/*audit-*.md
+docs/apify-cost-investigation.md
+docs/security/
+docs/superpowers/
+skills-lock.json
 
 # Python bytecode
 __pycache__/
@@ -32,5 +42,3 @@ supabase/.temp/
 
 # Pipeline runtime data (scraping state, repair reports, logs)
 pipeline/data/*
-# Build input: generate-public-clubs.mjs projects the public club directory
-!pipeline/data/account_activity.json

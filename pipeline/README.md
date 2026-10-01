@@ -26,6 +26,7 @@ Set these repository **Actions secrets**:
 | `GOOGLE_VISION_API_KEY_TERTIARY` | Optional third allowance: up to 1,000 OCR attempts each month |
 | `GOOGLE_VISION_API_KEY_PRIMARY` | Newer Vision key: all remaining OCR attempts, including paid usage |
 | `GEMINI_API_KEY` | Gemini assessment; alternatively use Vertex AI below |
+| `PIPELINE_CACHE_KEY` | 32 random bytes encoded as 64 lowercase hex characters; encrypts private recovery state and diagnostics |
 
 For Vertex AI instead of `GEMINI_API_KEY`, set `GOOGLE_CLOUD_PROJECT` and
 `GOOGLE_APPLICATION_CREDENTIALS_B64` (base64 service-account JSON). Credentials
@@ -303,10 +304,6 @@ production batch plan has not been measured live. Saved plans retain their
 original batch sizes, ordering and reservations so already-paid recovery is
 preserved; the new grouping and budget floor apply when the next plan is built.
 
-The retired official actor billed quiet diagnostics too: its one-row-per-check
-scenario cost $157.22/month for 647 profiles at this cadence. See
-[the cost investigation](../docs/apify-cost-investigation.md) for provider
-comparisons, measured migration checks, and remaining reliability limits.
 Charges settle asynchronously; usage read immediately after `SUCCEEDED` can
 understate the final total. Batch reports include separate feed/detail run IDs
 and usage. `APIFY_MAX_CHARGE_USD` covers both and remains a per-cycle ceiling.
@@ -323,11 +320,29 @@ Inspect Apify Console, then populate that intent file with the confirmed `id`
 and `started_at` plus its saved input metadata, or remove it only after verifying
 that no run started. The pipeline never automatically retries that creation POST.
 
-Actions saves `pipeline/data` even after failure and uploads plan/batch diagnostics.
+Actions encrypts `pipeline/data` with AES-256-GCM even after failure, then saves
+only `.pipeline-cache/state.enc` to caches and diagnostic artifacts. Fork pull
+requests can read base-branch caches, so plaintext recovery state must never be
+cached. Diagnostics can be decrypted locally with
+`PIPELINE_CACHE_KEY=... python pipeline/cache_state.py decrypt state.enc --directory /private/path`.
+Load the key securely from your secret store rather than entering it in shell history.
 Supabase remains authoritative for activations, post records and extraction
-caches. The saved plan and pending actor IDs depend on the Actions cache: eviction can lose these and cause new charges. No secrets are
-stored in these reports. `APIFY_MAX_CHARGE_USD` is a per-cycle ceiling, not a
+caches. The saved plan and pending actor IDs depend on the Actions cache: eviction
+or loss of the encryption key can lose these and cause new charges.
+`APIFY_MAX_CHARGE_USD` is a per-cycle ceiling, not a
 monthly budget, and does not include Google OCR/Gemini or other service charges.
+
+Before the first encrypted run, create `PIPELINE_CACHE_KEY` with a password manager
+or `openssl rand -hex 32` and retain a private recovery copy. On the default branch,
+manually run **Collect Instagram events** with **migrate_plaintext_cache** selected.
+It restores existing recovery state before encrypting it and skips paid collection,
+OCR, assessment, and publication. If the legacy cache is missing, it stops rather
+than discarding unknown paid intent. Scheduled collection
+fails closed until an encrypted cache exists. Verify the encrypted save and paid
+run recovery before deleting every legacy `pipeline-apify-v1-*` cache and old
+plaintext `pipeline-report-*` artifact. Keep the migration input disabled thereafter.
+Changing the key requires decrypting and reencrypting the last saved state with
+the old and new keys before running collection again.
 
 ## Local setup and tests
 

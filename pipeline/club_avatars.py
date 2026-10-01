@@ -21,14 +21,13 @@ import json
 import logging
 import os
 import sys
-import time
 from pathlib import Path
 
-import requests
 from PIL import Image, ImageOps
 
 from apify_posts import HPIX_ACTOR_ID, HPIX_BUILD, ApifyClient, hpix_input
 from post_archive import read_json, write_json
+from image_ocr import _download_image
 
 ROOT = Path(__file__).resolve().parent
 REPO = ROOT.parent
@@ -53,26 +52,12 @@ log = logging.getLogger("pipeline.club_avatars")
 
 def known_clubs() -> dict[str, str]:
     """Handle -> display label for every club the site knows."""
-    activity = json.loads(ACTIVITY_FILE.read_text())
+    activity = (json.loads(ACTIVITY_FILE.read_text()) if ACTIVITY_FILE.exists()
+                else json.loads((REPO / "src/lib/public-clubs.json").read_text())["activityHandles"])
     clubs = {handle.lower(): handle for handle in activity}
     clubs.update({account["handle"].lower(): account["label"]
                   for account in json.loads(ACCOUNTS_FILE.read_text())["accounts"]})
     return {handle: label for handle, label in clubs.items() if handle not in ANONYMIZED_HANDLES}
-
-
-def fetch(session: requests.Session, url: str) -> requests.Response:
-    # The image CDN can time out before serving a cached result on a retry.
-    for attempt in range(3):
-        try:
-            response = session.get(url, timeout=30)
-            response.raise_for_status()
-            return response
-        except requests.RequestException as exc:
-            if attempt == 2:
-                raise
-            log.warning("%s: %s; retrying", url, exc)
-            time.sleep(15 * (attempt + 1))
-    raise AssertionError("unreachable")
 
 
 def to_avatar(data: bytes) -> bytes:
@@ -115,15 +100,14 @@ def instagram_pictures(expected: dict[str, str]) -> dict[str, str]:
     return pictures
 
 
-def save(session: requests.Session, avatars: dict[str, str], pictures: dict[str, str],
+def save(avatars: dict[str, str], pictures: dict[str, str],
          source: str) -> list[str]:
     """Download each picture; returns the handles whose download failed."""
     AVATAR_DIR.mkdir(parents=True, exist_ok=True)
     failed = []
     for handle, url in sorted(pictures.items()):
         try:
-            response = fetch(session, url)
-            (AVATAR_DIR / f"{handle}.webp").write_bytes(to_avatar(response.content))
+            (AVATAR_DIR / f"{handle}.webp").write_bytes(to_avatar(_download_image(url)))
             avatars[handle] = source
         except Exception as exc:  # one bad image must not sink the batch
             failed.append(handle)
@@ -149,8 +133,6 @@ def main() -> int:
         wanted = {handle: label for handle, label in wanted.items() if handle in only}
     manifest = json.loads(MANIFEST_FILE.read_text()) if MANIFEST_FILE.exists() else {"avatars": {}}
     avatars: dict[str, str] = manifest["avatars"]
-    session = requests.Session()
-    session.headers.update({"Accept": "application/json", "User-Agent": "HighlanderHub-avatars/1.0"})
 
     # Roster clubs only: their stored user ID guards against reused handles.
     gaps = {account["handle"].lower(): str(account["instagram_user_id"])
@@ -161,7 +143,7 @@ def main() -> int:
              len(gaps), len(gaps) * PROFILE_PRICE_USD)
     if args.dry_run or not gaps:
         return 0
-    failed = save(session, avatars, instagram_pictures(gaps), INSTAGRAM)
+    failed = save(avatars, instagram_pictures(gaps), INSTAGRAM)
     # Consumed only once saved: until then a rerun re-reads the paid dataset.
     write_json(INSTAGRAM_RUN_FILE, {**read_json(INSTAGRAM_RUN_FILE), "consumed": True})
 

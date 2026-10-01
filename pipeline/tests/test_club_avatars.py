@@ -4,6 +4,7 @@ from __future__ import annotations
 import io
 import random
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import Mock, patch
@@ -15,6 +16,34 @@ import club_avatars
 
 
 class InstagramTests(unittest.TestCase):
+    def test_untrusted_profile_urls_do_not_fetch_or_write_avatars(self):
+        with tempfile.TemporaryDirectory() as temporary, \
+                patch.object(club_avatars, "AVATAR_DIR", Path(temporary)), \
+                patch("requests.get") as get:
+            avatars = {}
+            failed = club_avatars.save(avatars, {
+                "internal_ucr": "https://127.0.0.1/private",
+                "external_ucr": "https://untrusted.example/profile.jpg",
+            }, "instagram")
+            self.assertEqual(failed, ["external_ucr", "internal_ucr"])
+            self.assertEqual(avatars, {})
+            self.assertEqual(list(Path(temporary).iterdir()), [])
+            get.assert_not_called()
+
+    def test_bounded_profile_download_still_saves_verified_avatar(self):
+        response = Mock(status_code=200, headers={})
+        response.iter_content.return_value = [encode(Image.new("RGB", (128, 128), "red"))]
+        with tempfile.TemporaryDirectory() as temporary, \
+                patch.object(club_avatars, "AVATAR_DIR", Path(temporary)), \
+                patch("requests.get", return_value=response) as get:
+            avatars = {}
+            url = "https://scontent.cdninstagram.com/profile.jpg"
+            self.assertEqual(club_avatars.save(avatars, {"acm_ucr": url}, "instagram"), [])
+            self.assertEqual(avatars, {"acm_ucr": "instagram"})
+            self.assertTrue((Path(temporary) / "acm_ucr.webp").exists())
+            get.assert_called_once_with(url, timeout=10, stream=True, allow_redirects=False)
+            response.close.assert_called_once()
+
     def test_buys_profiles_only_and_keeps_verified_real_pictures(self):
         blank = "https://cdn.example/t51.2885-19/44884218_345707102882519_2446069589734326272_n.jpg"
         client = Mock()
