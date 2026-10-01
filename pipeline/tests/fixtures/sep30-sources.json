@@ -1,0 +1,1734 @@
+{
+  "ama_recruitment": {
+    "record": {
+      "handle": "amaucr",
+      "caption": "Strike a pose📸‼️\n\nMeet the rest of us at Fall Recruitment 10/5\n\n#ucr #edit #marketing",
+      "media_id": "3997738684408833264",
+      "permalink": "https://www.instagram.com/p/Dd60icNBqTw/",
+      "posted_at": "2026-09-30T17:00:09+00:00",
+      "owner_username": "amaucr"
+    },
+    "cached": {
+      "status": "ok",
+      "images": [
+        {
+          "index": 0,
+          "ocr_text": "TEHC3MELIN\nPOV: you forgot to take\nvideos during the photoshoot",
+          "qr_urls": []
+        }
+      ]
+    },
+    "assessment": {
+      "error": "GroundingRejected: Assessment failed validation after retry: Occurrence start date lacks source support: 2026-10-05; cite a printed date or explicit relative date, never posted_at alone. Relative dates count from the local publication date, Wednesday, September 30, 2026 (America/Los_Angeles), not the UTC date in posted_at; a weekday in an activity lineup for 'this week' falls in that date's week (Sunday first) and never before it. In this occurrence's date_evidence, cite both caption and slide when the month/range and day/time are split across fields; top-level citations do not supply occurrence evidence. Do not guess activity/date associations (occurrence 'Fall Recruitment')",
+      "source": {
+        "texts": {
+          "caption": "Strike a pose📸‼️\n\nMeet the rest of us at Fall Recruitment 10/5\n\n#ucr #edit #marketing",
+          "slide_1_ocr": "TEHC3MELIN\nPOV: you forgot to take\nvideos during the photoshoot"
+        },
+        "origin": "instagram",
+        "posted_at": "2026-09-30T17:00:09+00:00",
+        "source_key": "instagram:post:3997738684408833264",
+        "source_occurrences": []
+      },
+      "status": "error",
+      "validation_attempts": [
+        {
+          "error": "Occurrence start date lacks source support: 2026-10-05; cite a printed date or explicit relative date, never posted_at alone. Relative dates count from the local publication date, Wednesday, September 30, 2026 (America/Los_Angeles), not the UTC date in posted_at; a weekday in an activity lineup for 'this week' falls in that date's week (Sunday first) and never before it. In this occurrence's date_evidence, cite both caption and slide when the month/range and day/time are split across fields; top-level citations do not supply occurrence evidence. Do not guess activity/date associations (occurrence 'Fall Recruitment')",
+          "response": {
+            "kind": "activity",
+            "reason": "The post advertises a specific recruitment event for students to attend.",
+            "schedule": null,
+            "date_role": "occurrence",
+            "occurrences": [
+              {
+                "title": "Fall Recruitment",
+                "all_day": true,
+                "ends_at": null,
+                "location": "",
+                "starts_at": "2026-10-05T00:00:00-07:00",
+                "date_evidence": [
+                  {
+                    "field": "caption"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "caption"
+                  }
+                ],
+                "location_evidence": []
+              }
+            ],
+            "date_evidence": [
+              {
+                "field": "caption"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "caption"
+              }
+            ],
+            "use_source_occurrences": false
+          }
+        },
+        {
+          "error": "Occurrence start date lacks source support: 2026-10-05; cite a printed date or explicit relative date, never posted_at alone. Relative dates count from the local publication date, Wednesday, September 30, 2026 (America/Los_Angeles), not the UTC date in posted_at; a weekday in an activity lineup for 'this week' falls in that date's week (Sunday first) and never before it. In this occurrence's date_evidence, cite both caption and slide when the month/range and day/time are split across fields; top-level citations do not supply occurrence evidence. Do not guess activity/date associations (occurrence 'Fall Recruitment')",
+          "response": {
+            "kind": "activity",
+            "reason": "The post advertises a specific recruitment event for students to attend on October 5th.",
+            "schedule": null,
+            "date_role": "occurrence",
+            "occurrences": [
+              {
+                "title": "Fall Recruitment",
+                "all_day": true,
+                "ends_at": null,
+                "location": "",
+                "starts_at": "2026-10-05T00:00:00-07:00",
+                "date_evidence": [
+                  {
+                    "field": "caption"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "caption"
+                  }
+                ],
+                "location_evidence": []
+              }
+            ],
+            "date_evidence": [
+              {
+                "field": "caption"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "caption"
+              }
+            ],
+            "use_source_occurrences": false
+          }
+        }
+      ]
+    }
+  },
+  "pfv_schedule": {
+    "record": {
+      "handle": "precisionforvision",
+      "caption": "WELCOME TO THE 26-27 PFV YEAR!! 👀✨\n💫\nWe’re so excited to see you this fall! Here are the dates for the upcoming general meetings. 🤗\n💫\nOur first meeting will be on Monday, October 5th from 6:30-7:30 PM! The location will be announced by the end of the week! 🗓️\n💫\nDon’t forget to fill out the 2026-2027 general member application found on our Linktree in the bio (both new and previous members)! We can’t wait to meet all of you!! 🫂✏️\n💫\nBe on the lookout for the many opportunities and announcements we have planned this quarter!! 🥳",
+      "media_id": "3997697684412428251",
+      "permalink": "https://www.instagram.com/p/Dd6rNz-ze_b/",
+      "posted_at": "2026-09-30T15:38:52+00:00",
+      "owner_username": "precisionforvision"
+    },
+    "cached": {
+      "status": "ok",
+      "images": [
+        {
+          "index": 0,
+          "ocr_text": "FALL 2026\nGENERAL MEETING SCHEDULE\n10/05 Pentland\n10/19 Pierce 2301\n11/02 Pierce 2301\n11/16 On Zoom\nAttend at least 4 PFV events to\nbe an active member!\n80\nUC RIVERSIDE\nPFV\nEST. 2009",
+          "qr_urls": []
+        }
+      ]
+    },
+    "assessment": {
+      "error": "GroundingRejected: Assessment failed validation after retry: Occurrence start date lacks source support: 2026-10-19; cite a printed date or explicit relative date, never posted_at alone. Relative dates count from the local publication date, Wednesday, September 30, 2026 (America/Los_Angeles), not the UTC date in posted_at; a weekday in an activity lineup for 'this week' falls in that date's week (Sunday first) and never before it. In this occurrence's date_evidence, cite both caption and slide when the month/range and day/time are split across fields; top-level citations do not supply occurrence evidence. Do not guess activity/date associations (occurrence 'PFV General Meeting')",
+      "source": {
+        "texts": {
+          "caption": "WELCOME TO THE 26-27 PFV YEAR!! 👀✨\n💫\nWe’re so excited to see you this fall! Here are the dates for the upcoming general meetings. 🤗\n💫\nOur first meeting will be on Monday, October 5th from 6:30-7:30 PM! The location will be announced by the end of the week! 🗓️\n💫\nDon’t forget to fill out the 2026-2027 general member application found on our Linktree in the bio (both new and previous members)! We can’t wait to meet all of you!! 🫂✏️\n💫\nBe on the lookout for the many opportunities and announcements we have planned this quarter!! 🥳",
+          "slide_1_ocr": "FALL 2026\nGENERAL MEETING SCHEDULE\n10/05 Pentland\n10/19 Pierce 2301\n11/02 Pierce 2301\n11/16 On Zoom\nAttend at least 4 PFV events to\nbe an active member!\n80\nUC RIVERSIDE\nPFV\nEST. 2009"
+        },
+        "origin": "instagram",
+        "posted_at": "2026-09-30T15:38:52+00:00",
+        "source_key": "instagram:post:3997697684412428251",
+        "source_occurrences": []
+      },
+      "status": "error",
+      "validation_attempts": [
+        {
+          "error": "Occurrence start date lacks source support: 2026-10-19; cite a printed date or explicit relative date, never posted_at alone. Relative dates count from the local publication date, Wednesday, September 30, 2026 (America/Los_Angeles), not the UTC date in posted_at; a weekday in an activity lineup for 'this week' falls in that date's week (Sunday first) and never before it. In this occurrence's date_evidence, cite both caption and slide when the month/range and day/time are split across fields; top-level citations do not supply occurrence evidence. Do not guess activity/date associations (occurrence 'PFV General Meeting')",
+          "response": {
+            "kind": "activity",
+            "reason": "The source provides a schedule of upcoming general meetings for the PFV student organization, including specific dates, times, and locations for several sessions.",
+            "schedule": null,
+            "date_role": "occurrence",
+            "occurrences": [
+              {
+                "title": "PFV General Meeting",
+                "all_day": false,
+                "ends_at": "2026-10-05T19:30:00-07:00",
+                "location": "Pentland",
+                "starts_at": "2026-10-05T18:30:00-07:00",
+                "date_evidence": [
+                  {
+                    "field": "caption"
+                  },
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "caption"
+                  }
+                ],
+                "location_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ]
+              },
+              {
+                "title": "PFV General Meeting",
+                "all_day": true,
+                "ends_at": "2026-10-20T00:00:00-07:00",
+                "location": "Pierce 2301",
+                "starts_at": "2026-10-19T00:00:00-07:00",
+                "date_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "location_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ]
+              },
+              {
+                "title": "PFV General Meeting",
+                "all_day": true,
+                "ends_at": "2026-11-03T00:00:00-08:00",
+                "location": "Pierce 2301",
+                "starts_at": "2026-11-02T00:00:00-07:00",
+                "date_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "location_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ]
+              },
+              {
+                "title": "PFV General Meeting",
+                "all_day": true,
+                "ends_at": "2026-11-17T00:00:00-08:00",
+                "location": "On Zoom",
+                "starts_at": "2026-11-16T00:00:00-08:00",
+                "date_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "location_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ]
+              }
+            ],
+            "date_evidence": [
+              {
+                "field": "caption"
+              },
+              {
+                "field": "slide_1_ocr"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "caption"
+              },
+              {
+                "field": "slide_1_ocr"
+              }
+            ],
+            "use_source_occurrences": false
+          }
+        },
+        {
+          "error": "Occurrence start date lacks source support: 2026-10-19; cite a printed date or explicit relative date, never posted_at alone. Relative dates count from the local publication date, Wednesday, September 30, 2026 (America/Los_Angeles), not the UTC date in posted_at; a weekday in an activity lineup for 'this week' falls in that date's week (Sunday first) and never before it. In this occurrence's date_evidence, cite both caption and slide when the month/range and day/time are split across fields; top-level citations do not supply occurrence evidence. Do not guess activity/date associations (occurrence 'PFV General Meeting')",
+          "response": {
+            "kind": "activity",
+            "reason": "The source provides a list of upcoming general meetings for the PFV organization with specific dates and locations. The first meeting includes a specific time in the caption, while subsequent meetings are listed with dates and locations in the slide.",
+            "schedule": null,
+            "date_role": "occurrence",
+            "occurrences": [
+              {
+                "title": "PFV General Meeting",
+                "all_day": false,
+                "ends_at": "2026-10-05T19:30:00-07:00",
+                "location": "Pentland",
+                "starts_at": "2026-10-05T18:30:00-07:00",
+                "date_evidence": [
+                  {
+                    "field": "caption"
+                  },
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "caption"
+                  }
+                ],
+                "location_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ]
+              },
+              {
+                "title": "PFV General Meeting",
+                "all_day": true,
+                "ends_at": "2026-10-20T00:00:00-07:00",
+                "location": "Pierce 2301",
+                "starts_at": "2026-10-19T00:00:00-07:00",
+                "date_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "location_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ]
+              },
+              {
+                "title": "PFV General Meeting",
+                "all_day": true,
+                "ends_at": "2026-11-03T00:00:00-08:00",
+                "location": "Pierce 2301",
+                "starts_at": "2026-11-02T00:00:00-07:00",
+                "date_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "location_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ]
+              },
+              {
+                "title": "PFV General Meeting",
+                "all_day": true,
+                "ends_at": "2026-11-17T00:00:00-08:00",
+                "location": "On Zoom",
+                "starts_at": "2026-11-16T00:00:00-08:00",
+                "date_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "location_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ]
+              }
+            ],
+            "date_evidence": [
+              {
+                "field": "caption"
+              },
+              {
+                "field": "slide_1_ocr"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "caption"
+              },
+              {
+                "field": "slide_1_ocr"
+              }
+            ],
+            "use_source_occurrences": false
+          }
+        }
+      ]
+    }
+  },
+  "hospice_timeline": {
+    "record": {
+      "handle": "ucrhospice",
+      "caption": "Fall Recruitment Timeline for newcomers! Come visit us at tabling to know more or join us for our first member meeting followed by a boba fundraiser😋 Don’t forget to fill out the interest form (link in bio) to get updates and receive emails with important info!!!",
+      "media_id": "3997709651247947020",
+      "permalink": "https://www.instagram.com/p/Dd6t789yN0M/",
+      "posted_at": "2026-09-30T16:05:03+00:00",
+      "owner_username": "ucrhospice"
+    },
+    "cached": {
+      "status": "ok",
+      "images": [
+        {
+          "index": 0,
+          "ocr_text": "Fall Timeline\n30th Sept - Involvement Fair\n•9:30 AM - 2 PM\n• Belltower\n6th Oct Night at the SRC\n• 4 PM 6 PM\n• Student Recreation Center\n9th Oct - Online Orientation\n• Fill out the interest form (link in bio)\nto recieve detials via email.\n14th Oct Tabling\n• 9:30 AM - 2 PM\n• Belltower\n16th Oct First Member Meeting\n7 PM - 8 PM, HUB 367\n• Last chance for Fall onboarding!\n• BOBA funraiser after\n30th Oct - Onboarding Documents Due\nelite health\nHOSPICE PALLAT",
+          "qr_urls": []
+        }
+      ]
+    },
+    "assessment": {
+      "result": {
+        "kind": "activity",
+        "reason": "The source lists multiple specific upcoming events including an involvement fair, a recreation center night, an orientation, tabling, and a member meeting.",
+        "schedule": null,
+        "date_role": "occurrence",
+        "occurrences": [
+          {
+            "title": "Involvement Fair",
+            "all_day": false,
+            "ends_at": "2026-09-30T14:00:00-07:00",
+            "location": "Belltower",
+            "starts_at": "2026-09-30T09:30:00-07:00",
+            "date_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "Fall Timeline\n30th Sept - Involvement Fair\n•9:30 AM - 2 PM\n• Belltower\n6th Oct Night at the SRC\n• 4 PM 6 PM\n• Student Recreation Center\n9th Oct - Online Orientation\n• Fill out the interest form (link in bio)\nto recieve detials via email.\n14th Oct Tabling\n• 9:30 AM - 2 PM\n• Belltower\n16th Oct First Member Meeting\n7 PM - 8 PM, HUB 367\n• Last chance for Fall onboarding!\n• BOBA funraiser after\n30th Oct - Onboarding Documents Due\nelite health\nHOSPICE PALLAT"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "Fall Timeline\n30th Sept - Involvement Fair\n•9:30 AM - 2 PM\n• Belltower\n6th Oct Night at the SRC\n• 4 PM 6 PM\n• Student Recreation Center\n9th Oct - Online Orientation\n• Fill out the interest form (link in bio)\nto recieve detials via email.\n14th Oct Tabling\n• 9:30 AM - 2 PM\n• Belltower\n16th Oct First Member Meeting\n7 PM - 8 PM, HUB 367\n• Last chance for Fall onboarding!\n• BOBA funraiser after\n30th Oct - Onboarding Documents Due\nelite health\nHOSPICE PALLAT"
+              }
+            ],
+            "location_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "Fall Timeline\n30th Sept - Involvement Fair\n•9:30 AM - 2 PM\n• Belltower\n6th Oct Night at the SRC\n• 4 PM 6 PM\n• Student Recreation Center\n9th Oct - Online Orientation\n• Fill out the interest form (link in bio)\nto recieve detials via email.\n14th Oct Tabling\n• 9:30 AM - 2 PM\n• Belltower\n16th Oct First Member Meeting\n7 PM - 8 PM, HUB 367\n• Last chance for Fall onboarding!\n• BOBA funraiser after\n30th Oct - Onboarding Documents Due\nelite health\nHOSPICE PALLAT"
+              }
+            ]
+          },
+          {
+            "title": "Night at the SRC",
+            "all_day": false,
+            "ends_at": "2026-10-06T18:00:00-07:00",
+            "location": "Student Recreation Center",
+            "starts_at": "2026-10-06T16:00:00-07:00",
+            "date_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "Fall Timeline\n30th Sept - Involvement Fair\n•9:30 AM - 2 PM\n• Belltower\n6th Oct Night at the SRC\n• 4 PM 6 PM\n• Student Recreation Center\n9th Oct - Online Orientation\n• Fill out the interest form (link in bio)\nto recieve detials via email.\n14th Oct Tabling\n• 9:30 AM - 2 PM\n• Belltower\n16th Oct First Member Meeting\n7 PM - 8 PM, HUB 367\n• Last chance for Fall onboarding!\n• BOBA funraiser after\n30th Oct - Onboarding Documents Due\nelite health\nHOSPICE PALLAT"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "Fall Timeline\n30th Sept - Involvement Fair\n•9:30 AM - 2 PM\n• Belltower\n6th Oct Night at the SRC\n• 4 PM 6 PM\n• Student Recreation Center\n9th Oct - Online Orientation\n• Fill out the interest form (link in bio)\nto recieve detials via email.\n14th Oct Tabling\n• 9:30 AM - 2 PM\n• Belltower\n16th Oct First Member Meeting\n7 PM - 8 PM, HUB 367\n• Last chance for Fall onboarding!\n• BOBA funraiser after\n30th Oct - Onboarding Documents Due\nelite health\nHOSPICE PALLAT"
+              }
+            ],
+            "location_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "Fall Timeline\n30th Sept - Involvement Fair\n•9:30 AM - 2 PM\n• Belltower\n6th Oct Night at the SRC\n• 4 PM 6 PM\n• Student Recreation Center\n9th Oct - Online Orientation\n• Fill out the interest form (link in bio)\nto recieve detials via email.\n14th Oct Tabling\n• 9:30 AM - 2 PM\n• Belltower\n16th Oct First Member Meeting\n7 PM - 8 PM, HUB 367\n• Last chance for Fall onboarding!\n• BOBA funraiser after\n30th Oct - Onboarding Documents Due\nelite health\nHOSPICE PALLAT"
+              }
+            ]
+          },
+          {
+            "title": "Tabling",
+            "all_day": false,
+            "ends_at": "2026-10-14T14:00:00-07:00",
+            "location": "Belltower",
+            "starts_at": "2026-10-14T09:30:00-07:00",
+            "date_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "Fall Timeline\n30th Sept - Involvement Fair\n•9:30 AM - 2 PM\n• Belltower\n6th Oct Night at the SRC\n• 4 PM 6 PM\n• Student Recreation Center\n9th Oct - Online Orientation\n• Fill out the interest form (link in bio)\nto recieve detials via email.\n14th Oct Tabling\n• 9:30 AM - 2 PM\n• Belltower\n16th Oct First Member Meeting\n7 PM - 8 PM, HUB 367\n• Last chance for Fall onboarding!\n• BOBA funraiser after\n30th Oct - Onboarding Documents Due\nelite health\nHOSPICE PALLAT"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "Fall Timeline\n30th Sept - Involvement Fair\n•9:30 AM - 2 PM\n• Belltower\n6th Oct Night at the SRC\n• 4 PM 6 PM\n• Student Recreation Center\n9th Oct - Online Orientation\n• Fill out the interest form (link in bio)\nto recieve detials via email.\n14th Oct Tabling\n• 9:30 AM - 2 PM\n• Belltower\n16th Oct First Member Meeting\n7 PM - 8 PM, HUB 367\n• Last chance for Fall onboarding!\n• BOBA funraiser after\n30th Oct - Onboarding Documents Due\nelite health\nHOSPICE PALLAT"
+              }
+            ],
+            "location_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "Fall Timeline\n30th Sept - Involvement Fair\n•9:30 AM - 2 PM\n• Belltower\n6th Oct Night at the SRC\n• 4 PM 6 PM\n• Student Recreation Center\n9th Oct - Online Orientation\n• Fill out the interest form (link in bio)\nto recieve detials via email.\n14th Oct Tabling\n• 9:30 AM - 2 PM\n• Belltower\n16th Oct First Member Meeting\n7 PM - 8 PM, HUB 367\n• Last chance for Fall onboarding!\n• BOBA funraiser after\n30th Oct - Onboarding Documents Due\nelite health\nHOSPICE PALLAT"
+              }
+            ]
+          },
+          {
+            "title": "First Member Meeting",
+            "all_day": false,
+            "ends_at": "2026-10-16T20:00:00-07:00",
+            "location": "HUB 367",
+            "starts_at": "2026-10-16T19:00:00-07:00",
+            "date_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "Fall Timeline\n30th Sept - Involvement Fair\n•9:30 AM - 2 PM\n• Belltower\n6th Oct Night at the SRC\n• 4 PM 6 PM\n• Student Recreation Center\n9th Oct - Online Orientation\n• Fill out the interest form (link in bio)\nto recieve detials via email.\n14th Oct Tabling\n• 9:30 AM - 2 PM\n• Belltower\n16th Oct First Member Meeting\n7 PM - 8 PM, HUB 367\n• Last chance for Fall onboarding!\n• BOBA funraiser after\n30th Oct - Onboarding Documents Due\nelite health\nHOSPICE PALLAT"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "Fall Timeline\n30th Sept - Involvement Fair\n•9:30 AM - 2 PM\n• Belltower\n6th Oct Night at the SRC\n• 4 PM 6 PM\n• Student Recreation Center\n9th Oct - Online Orientation\n• Fill out the interest form (link in bio)\nto recieve detials via email.\n14th Oct Tabling\n• 9:30 AM - 2 PM\n• Belltower\n16th Oct First Member Meeting\n7 PM - 8 PM, HUB 367\n• Last chance for Fall onboarding!\n• BOBA funraiser after\n30th Oct - Onboarding Documents Due\nelite health\nHOSPICE PALLAT"
+              }
+            ],
+            "location_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "Fall Timeline\n30th Sept - Involvement Fair\n•9:30 AM - 2 PM\n• Belltower\n6th Oct Night at the SRC\n• 4 PM 6 PM\n• Student Recreation Center\n9th Oct - Online Orientation\n• Fill out the interest form (link in bio)\nto recieve detials via email.\n14th Oct Tabling\n• 9:30 AM - 2 PM\n• Belltower\n16th Oct First Member Meeting\n7 PM - 8 PM, HUB 367\n• Last chance for Fall onboarding!\n• BOBA funraiser after\n30th Oct - Onboarding Documents Due\nelite health\nHOSPICE PALLAT"
+              }
+            ]
+          }
+        ],
+        "date_evidence": [
+          {
+            "field": "slide_1_ocr",
+            "quote": "Fall Timeline\n30th Sept - Involvement Fair\n•9:30 AM - 2 PM\n• Belltower\n6th Oct Night at the SRC\n• 4 PM 6 PM\n• Student Recreation Center\n9th Oct - Online Orientation\n• Fill out the interest form (link in bio)\nto recieve detials via email.\n14th Oct Tabling\n• 9:30 AM - 2 PM\n• Belltower\n16th Oct First Member Meeting\n7 PM - 8 PM, HUB 367\n• Last chance for Fall onboarding!\n• BOBA funraiser after\n30th Oct - Onboarding Documents Due\nelite health\nHOSPICE PALLAT"
+          }
+        ],
+        "activity_evidence": [
+          {
+            "field": "slide_1_ocr",
+            "quote": "Fall Timeline\n30th Sept - Involvement Fair\n•9:30 AM - 2 PM\n• Belltower\n6th Oct Night at the SRC\n• 4 PM 6 PM\n• Student Recreation Center\n9th Oct - Online Orientation\n• Fill out the interest form (link in bio)\nto recieve detials via email.\n14th Oct Tabling\n• 9:30 AM - 2 PM\n• Belltower\n16th Oct First Member Meeting\n7 PM - 8 PM, HUB 367\n• Last chance for Fall onboarding!\n• BOBA funraiser after\n30th Oct - Onboarding Documents Due\nelite health\nHOSPICE PALLAT"
+          }
+        ],
+        "use_source_occurrences": false
+      },
+      "source": {
+        "texts": {
+          "caption": "Fall Recruitment Timeline for newcomers! Come visit us at tabling to know more or join us for our first member meeting followed by a boba fundraiser😋 Don’t forget to fill out the interest form (link in bio) to get updates and receive emails with important info!!!",
+          "slide_1_ocr": "Fall Timeline\n30th Sept - Involvement Fair\n•9:30 AM - 2 PM\n• Belltower\n6th Oct Night at the SRC\n• 4 PM 6 PM\n• Student Recreation Center\n9th Oct - Online Orientation\n• Fill out the interest form (link in bio)\nto recieve detials via email.\n14th Oct Tabling\n• 9:30 AM - 2 PM\n• Belltower\n16th Oct First Member Meeting\n7 PM - 8 PM, HUB 367\n• Last chance for Fall onboarding!\n• BOBA funraiser after\n30th Oct - Onboarding Documents Due\nelite health\nHOSPICE PALLAT"
+        },
+        "origin": "instagram",
+        "posted_at": "2026-09-30T16:05:03+00:00",
+        "source_key": "instagram:post:3997709651247947020",
+        "source_occurrences": []
+      },
+      "status": "complete"
+    }
+  },
+  "bsma_boba": {
+    "record": {
+      "handle": "bsma_ucr",
+      "caption": "🦷✉️WELCOME TO BSMA!✉️🦷\n\nOur first general meeting is finally here! Come meet the board, get to know about BSMA, and learn about our upcoming events, membership, and more! Stay tuned for a manual dexterity workshop! We’ll also be catering Krak Boba, first come first serve! 🧐🦷✨🧋\n\nThursday, October 8th at 8-9pm @ SSC123",
+      "media_id": "3997771601377298247",
+      "permalink": "https://www.instagram.com/p/Dd68BchPQdH/",
+      "posted_at": "2026-09-30T18:12:25+00:00",
+      "owner_username": "bsma_ucr"
+    },
+    "cached": {
+      "status": "ok",
+      "images": [
+        {
+          "index": 0,
+          "ocr_text": "Frist\neperal\nMeeting\n#2\nBSMA MEETING\nCOME JOIN OUR\nFIRST BSMA\nMEETING AS WE WILL\nBE INTRODUCING\nOUR BOARD, FUTURE\nEVENTS,\nMEMBERSHIP, AND\nOUR COMPOSITE\nFILLING WORKSHOP!\n15\nDATE: THURSDAY, OCTOBER 8TH\nbsma_ucr\n@8-9 PM\nWHERE: SSC123",
+          "qr_urls": []
+        }
+      ]
+    },
+    "assessment": {
+      "result": {
+        "kind": "activity",
+        "reason": "The source advertises a specific general meeting for the BSMA club with a date, time, and location.",
+        "schedule": null,
+        "date_role": "occurrence",
+        "occurrences": [
+          {
+            "title": "BSMA General Meeting",
+            "all_day": false,
+            "ends_at": "2026-10-08T21:00:00-07:00",
+            "location": "SSC123",
+            "starts_at": "2026-10-08T20:00:00-07:00",
+            "date_evidence": [
+              {
+                "field": "caption",
+                "quote": "🦷✉️WELCOME TO BSMA!✉️🦷\n\nOur first general meeting is finally here! Come meet the board, get to know about BSMA, and learn about our upcoming events, membership, and more! Stay tuned for a manual dexterity workshop! We’ll also be catering Krak Boba, first come first serve! 🧐🦷✨🧋\n\nThursday, October 8th at 8-9pm @ SSC123"
+              },
+              {
+                "field": "slide_1_ocr",
+                "quote": "Frist\neperal\nMeeting\n#2\nBSMA MEETING\nCOME JOIN OUR\nFIRST BSMA\nMEETING AS WE WILL\nBE INTRODUCING\nOUR BOARD, FUTURE\nEVENTS,\nMEMBERSHIP, AND\nOUR COMPOSITE\nFILLING WORKSHOP!\n15\nDATE: THURSDAY, OCTOBER 8TH\nbsma_ucr\n@8-9 PM\nWHERE: SSC123"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "caption",
+                "quote": "🦷✉️WELCOME TO BSMA!✉️🦷\n\nOur first general meeting is finally here! Come meet the board, get to know about BSMA, and learn about our upcoming events, membership, and more! Stay tuned for a manual dexterity workshop! We’ll also be catering Krak Boba, first come first serve! 🧐🦷✨🧋\n\nThursday, October 8th at 8-9pm @ SSC123"
+              },
+              {
+                "field": "slide_1_ocr",
+                "quote": "Frist\neperal\nMeeting\n#2\nBSMA MEETING\nCOME JOIN OUR\nFIRST BSMA\nMEETING AS WE WILL\nBE INTRODUCING\nOUR BOARD, FUTURE\nEVENTS,\nMEMBERSHIP, AND\nOUR COMPOSITE\nFILLING WORKSHOP!\n15\nDATE: THURSDAY, OCTOBER 8TH\nbsma_ucr\n@8-9 PM\nWHERE: SSC123"
+              }
+            ],
+            "location_evidence": [
+              {
+                "field": "caption",
+                "quote": "🦷✉️WELCOME TO BSMA!✉️🦷\n\nOur first general meeting is finally here! Come meet the board, get to know about BSMA, and learn about our upcoming events, membership, and more! Stay tuned for a manual dexterity workshop! We’ll also be catering Krak Boba, first come first serve! 🧐🦷✨🧋\n\nThursday, October 8th at 8-9pm @ SSC123"
+              },
+              {
+                "field": "slide_1_ocr",
+                "quote": "Frist\neperal\nMeeting\n#2\nBSMA MEETING\nCOME JOIN OUR\nFIRST BSMA\nMEETING AS WE WILL\nBE INTRODUCING\nOUR BOARD, FUTURE\nEVENTS,\nMEMBERSHIP, AND\nOUR COMPOSITE\nFILLING WORKSHOP!\n15\nDATE: THURSDAY, OCTOBER 8TH\nbsma_ucr\n@8-9 PM\nWHERE: SSC123"
+              }
+            ]
+          }
+        ],
+        "date_evidence": [
+          {
+            "field": "caption",
+            "quote": "🦷✉️WELCOME TO BSMA!✉️🦷\n\nOur first general meeting is finally here! Come meet the board, get to know about BSMA, and learn about our upcoming events, membership, and more! Stay tuned for a manual dexterity workshop! We’ll also be catering Krak Boba, first come first serve! 🧐🦷✨🧋\n\nThursday, October 8th at 8-9pm @ SSC123"
+          },
+          {
+            "field": "slide_1_ocr",
+            "quote": "Frist\neperal\nMeeting\n#2\nBSMA MEETING\nCOME JOIN OUR\nFIRST BSMA\nMEETING AS WE WILL\nBE INTRODUCING\nOUR BOARD, FUTURE\nEVENTS,\nMEMBERSHIP, AND\nOUR COMPOSITE\nFILLING WORKSHOP!\n15\nDATE: THURSDAY, OCTOBER 8TH\nbsma_ucr\n@8-9 PM\nWHERE: SSC123"
+          }
+        ],
+        "activity_evidence": [
+          {
+            "field": "caption",
+            "quote": "🦷✉️WELCOME TO BSMA!✉️🦷\n\nOur first general meeting is finally here! Come meet the board, get to know about BSMA, and learn about our upcoming events, membership, and more! Stay tuned for a manual dexterity workshop! We’ll also be catering Krak Boba, first come first serve! 🧐🦷✨🧋\n\nThursday, October 8th at 8-9pm @ SSC123"
+          },
+          {
+            "field": "slide_1_ocr",
+            "quote": "Frist\neperal\nMeeting\n#2\nBSMA MEETING\nCOME JOIN OUR\nFIRST BSMA\nMEETING AS WE WILL\nBE INTRODUCING\nOUR BOARD, FUTURE\nEVENTS,\nMEMBERSHIP, AND\nOUR COMPOSITE\nFILLING WORKSHOP!\n15\nDATE: THURSDAY, OCTOBER 8TH\nbsma_ucr\n@8-9 PM\nWHERE: SSC123"
+          }
+        ],
+        "use_source_occurrences": false
+      },
+      "source": {
+        "texts": {
+          "caption": "🦷✉️WELCOME TO BSMA!✉️🦷\n\nOur first general meeting is finally here! Come meet the board, get to know about BSMA, and learn about our upcoming events, membership, and more! Stay tuned for a manual dexterity workshop! We’ll also be catering Krak Boba, first come first serve! 🧐🦷✨🧋\n\nThursday, October 8th at 8-9pm @ SSC123",
+          "slide_1_ocr": "Frist\neperal\nMeeting\n#2\nBSMA MEETING\nCOME JOIN OUR\nFIRST BSMA\nMEETING AS WE WILL\nBE INTRODUCING\nOUR BOARD, FUTURE\nEVENTS,\nMEMBERSHIP, AND\nOUR COMPOSITE\nFILLING WORKSHOP!\n15\nDATE: THURSDAY, OCTOBER 8TH\nbsma_ucr\n@8-9 PM\nWHERE: SSC123"
+        },
+        "origin": "instagram",
+        "posted_at": "2026-09-30T18:12:25+00:00",
+        "source_key": "instagram:post:3997771601377298247",
+        "source_occurrences": []
+      },
+      "status": "complete"
+    }
+  },
+  "nasp_food": {
+    "record": {
+      "handle": "naspucr",
+      "caption": "UCR Students! Join us for our annual Fall Open House event on Tuesday, October 6, 2026 from 12pm-2pm at NASP (229 Costo Hall) to learn about our space and the resources we offer to the UCR campus. There will be food, while supplies last. Pre-registration is not required. We hope to see you there!",
+      "media_id": "3997835944917530945",
+      "permalink": "https://www.instagram.com/p/Dd7KpxHGPlB/",
+      "posted_at": "2026-09-30T20:13:25+00:00",
+      "owner_username": "naspucr"
+    },
+    "cached": {
+      "status": "ok",
+      "images": [
+        {
+          "index": 0,
+          "ocr_text": "NATIVE AMERICAN STUDENT PROGRAMS\nINVITES YOU TO\nFall\nOpenHouse\nOCTOBER 6TH, 2026\n12:00PM-2PM\nNASP Center- 229 Costo Hall\nFood while supplies last!\nNASP\nOf@naspucr\nnasp.ucr.edu\n951-827-3850",
+          "qr_urls": []
+        }
+      ]
+    },
+    "assessment": {
+      "result": {
+        "kind": "activity",
+        "reason": "The source advertises a specific upcoming open house event with a date, time, and location.",
+        "schedule": null,
+        "date_role": "occurrence",
+        "occurrences": [
+          {
+            "title": "Native American Student Programs Fall Open House",
+            "all_day": false,
+            "ends_at": "2026-10-06T14:00:00-07:00",
+            "location": "NASP (229 Costo Hall)",
+            "starts_at": "2026-10-06T12:00:00-07:00",
+            "date_evidence": [
+              {
+                "field": "caption",
+                "quote": "UCR Students! Join us for our annual Fall Open House event on Tuesday, October 6, 2026 from 12pm-2pm at NASP (229 Costo Hall) to learn about our space and the resources we offer to the UCR campus. There will be food, while supplies last. Pre-registration is not required. We hope to see you there!"
+              },
+              {
+                "field": "slide_1_ocr",
+                "quote": "NATIVE AMERICAN STUDENT PROGRAMS\nINVITES YOU TO\nFall\nOpenHouse\nOCTOBER 6TH, 2026\n12:00PM-2PM\nNASP Center- 229 Costo Hall\nFood while supplies last!\nNASP\nOf@naspucr\nnasp.ucr.edu\n951-827-3850"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "caption",
+                "quote": "UCR Students! Join us for our annual Fall Open House event on Tuesday, October 6, 2026 from 12pm-2pm at NASP (229 Costo Hall) to learn about our space and the resources we offer to the UCR campus. There will be food, while supplies last. Pre-registration is not required. We hope to see you there!"
+              },
+              {
+                "field": "slide_1_ocr",
+                "quote": "NATIVE AMERICAN STUDENT PROGRAMS\nINVITES YOU TO\nFall\nOpenHouse\nOCTOBER 6TH, 2026\n12:00PM-2PM\nNASP Center- 229 Costo Hall\nFood while supplies last!\nNASP\nOf@naspucr\nnasp.ucr.edu\n951-827-3850"
+              }
+            ],
+            "location_evidence": [
+              {
+                "field": "caption",
+                "quote": "UCR Students! Join us for our annual Fall Open House event on Tuesday, October 6, 2026 from 12pm-2pm at NASP (229 Costo Hall) to learn about our space and the resources we offer to the UCR campus. There will be food, while supplies last. Pre-registration is not required. We hope to see you there!"
+              },
+              {
+                "field": "slide_1_ocr",
+                "quote": "NATIVE AMERICAN STUDENT PROGRAMS\nINVITES YOU TO\nFall\nOpenHouse\nOCTOBER 6TH, 2026\n12:00PM-2PM\nNASP Center- 229 Costo Hall\nFood while supplies last!\nNASP\nOf@naspucr\nnasp.ucr.edu\n951-827-3850"
+              }
+            ]
+          }
+        ],
+        "date_evidence": [
+          {
+            "field": "caption",
+            "quote": "UCR Students! Join us for our annual Fall Open House event on Tuesday, October 6, 2026 from 12pm-2pm at NASP (229 Costo Hall) to learn about our space and the resources we offer to the UCR campus. There will be food, while supplies last. Pre-registration is not required. We hope to see you there!"
+          },
+          {
+            "field": "slide_1_ocr",
+            "quote": "NATIVE AMERICAN STUDENT PROGRAMS\nINVITES YOU TO\nFall\nOpenHouse\nOCTOBER 6TH, 2026\n12:00PM-2PM\nNASP Center- 229 Costo Hall\nFood while supplies last!\nNASP\nOf@naspucr\nnasp.ucr.edu\n951-827-3850"
+          }
+        ],
+        "activity_evidence": [
+          {
+            "field": "caption",
+            "quote": "UCR Students! Join us for our annual Fall Open House event on Tuesday, October 6, 2026 from 12pm-2pm at NASP (229 Costo Hall) to learn about our space and the resources we offer to the UCR campus. There will be food, while supplies last. Pre-registration is not required. We hope to see you there!"
+          },
+          {
+            "field": "slide_1_ocr",
+            "quote": "NATIVE AMERICAN STUDENT PROGRAMS\nINVITES YOU TO\nFall\nOpenHouse\nOCTOBER 6TH, 2026\n12:00PM-2PM\nNASP Center- 229 Costo Hall\nFood while supplies last!\nNASP\nOf@naspucr\nnasp.ucr.edu\n951-827-3850"
+          }
+        ],
+        "use_source_occurrences": false
+      },
+      "source": {
+        "texts": {
+          "caption": "UCR Students! Join us for our annual Fall Open House event on Tuesday, October 6, 2026 from 12pm-2pm at NASP (229 Costo Hall) to learn about our space and the resources we offer to the UCR campus. There will be food, while supplies last. Pre-registration is not required. We hope to see you there!",
+          "slide_1_ocr": "NATIVE AMERICAN STUDENT PROGRAMS\nINVITES YOU TO\nFall\nOpenHouse\nOCTOBER 6TH, 2026\n12:00PM-2PM\nNASP Center- 229 Costo Hall\nFood while supplies last!\nNASP\nOf@naspucr\nnasp.ucr.edu\n951-827-3850"
+        },
+        "origin": "instagram",
+        "posted_at": "2026-09-30T20:13:25+00:00",
+        "source_key": "instagram:post:3997835944917530945",
+        "source_occurrences": []
+      },
+      "status": "complete"
+    }
+  },
+  "csa_drinks": {
+    "record": {
+      "handle": "ucrcsa",
+      "caption": "INFO NIGHT\nUCR CCN Info Night\nWednesday, September 30th | 8 PM\nPentland Bear Cave\n_____________________________________________\n\nWHATS UP CSA 📣 Who wants to learn about our biggest production of the year 👀 Come out to learn about our Chinese Culture Night 🎭\n\nWe will be giving out energy drinks tonight in our meeting 👀 FIRST COME FIRST SERVE FOR ENERGY DRINKS ‼️\n\nDon’t miss out on our after social at Tra Boba! (shuttling @ lot 15 🚗)\n\nIf you have any questions or concerns, feel free to message @joshua.shiu our CCN director, for more information!\n_____________________________________________\n\nThe Chinese Student Association (CSA) at UC Riverside is a social, cultural, and service oriented organization that strives to promote Chinese American culture throughout the UCR and Riverside communities. We provide various opportunities and events throughout the year that allow students to develop leadership skills and also provide a social outlet for students with similar backgrounds and interests. Our organization is a great way to meet lifelong friends and create fond memories that will contribute to a successful college experience and beyond!",
+      "media_id": "3997784533826008187",
+      "permalink": "https://www.instagram.com/p/Dd6-9ozP_R7/",
+      "posted_at": "2026-09-30T18:36:38+00:00",
+      "owner_username": "ucrcsa"
+    },
+    "cached": {
+      "status": "ok",
+      "images": [
+        {
+          "index": 0,
+          "ocr_text": "hy name\nENDLY\nRHOOD'\nPIDER-MAN\nSEATTLE SPIDEY\nSCENE\nCUT\nTAKE\nDATE\nPROD.CO\nDIRECTOR\nCAN\nMAIN\nUCR X CSA\nCCN\nINFO NIGHT\n8pm\npentland\nbear cave\n0123456789",
+          "qr_urls": []
+        }
+      ]
+    },
+    "assessment": {
+      "result": {
+        "kind": "activity",
+        "reason": "The source advertises an informational meeting for the Chinese Culture Night production, including a specific date, time, and location.",
+        "schedule": null,
+        "date_role": "occurrence",
+        "occurrences": [
+          {
+            "title": "UCR CCN Info Night",
+            "all_day": false,
+            "ends_at": null,
+            "location": "Pentland Bear Cave",
+            "starts_at": "2026-09-30T20:00:00-07:00",
+            "date_evidence": [
+              {
+                "field": "caption",
+                "quote": "INFO NIGHT\nUCR CCN Info Night\nWednesday, September 30th | 8 PM\nPentland Bear Cave\n_____________________________________________\n\nWHATS UP CSA 📣 Who wants to learn about our biggest production of the year 👀 Come out to learn about our Chinese Culture Night 🎭\n\nWe will be giving out energy drinks tonight in our meeting 👀 FIRST COME FIRST SERVE FOR ENERGY DRINKS ‼️\n\nDon’t miss out on our after social at Tra Boba! (shuttling @ lot 15 🚗)\n\nIf you have any questions or concerns, feel free to message @joshua.shiu our CCN director, for more information!\n_____________________________________________\n\nThe Chinese Student Association (CSA) at UC Riverside is a social, cultural, and service oriented organization that strives to promote Chinese American culture throughout the UCR and Riverside communities. We provide various opportunities and events throughout the year that allow students to develop leadership skills and also provide a social outlet for students with similar backgrounds and interests. Our organization is a great way to meet lifelong friends and create fond memories that will contribute to a successful college experience and beyond!"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "caption",
+                "quote": "INFO NIGHT\nUCR CCN Info Night\nWednesday, September 30th | 8 PM\nPentland Bear Cave\n_____________________________________________\n\nWHATS UP CSA 📣 Who wants to learn about our biggest production of the year 👀 Come out to learn about our Chinese Culture Night 🎭\n\nWe will be giving out energy drinks tonight in our meeting 👀 FIRST COME FIRST SERVE FOR ENERGY DRINKS ‼️\n\nDon’t miss out on our after social at Tra Boba! (shuttling @ lot 15 🚗)\n\nIf you have any questions or concerns, feel free to message @joshua.shiu our CCN director, for more information!\n_____________________________________________\n\nThe Chinese Student Association (CSA) at UC Riverside is a social, cultural, and service oriented organization that strives to promote Chinese American culture throughout the UCR and Riverside communities. We provide various opportunities and events throughout the year that allow students to develop leadership skills and also provide a social outlet for students with similar backgrounds and interests. Our organization is a great way to meet lifelong friends and create fond memories that will contribute to a successful college experience and beyond!"
+              }
+            ],
+            "location_evidence": [
+              {
+                "field": "caption",
+                "quote": "INFO NIGHT\nUCR CCN Info Night\nWednesday, September 30th | 8 PM\nPentland Bear Cave\n_____________________________________________\n\nWHATS UP CSA 📣 Who wants to learn about our biggest production of the year 👀 Come out to learn about our Chinese Culture Night 🎭\n\nWe will be giving out energy drinks tonight in our meeting 👀 FIRST COME FIRST SERVE FOR ENERGY DRINKS ‼️\n\nDon’t miss out on our after social at Tra Boba! (shuttling @ lot 15 🚗)\n\nIf you have any questions or concerns, feel free to message @joshua.shiu our CCN director, for more information!\n_____________________________________________\n\nThe Chinese Student Association (CSA) at UC Riverside is a social, cultural, and service oriented organization that strives to promote Chinese American culture throughout the UCR and Riverside communities. We provide various opportunities and events throughout the year that allow students to develop leadership skills and also provide a social outlet for students with similar backgrounds and interests. Our organization is a great way to meet lifelong friends and create fond memories that will contribute to a successful college experience and beyond!"
+              },
+              {
+                "field": "slide_1_ocr",
+                "quote": "hy name\nENDLY\nRHOOD'\nPIDER-MAN\nSEATTLE SPIDEY\nSCENE\nCUT\nTAKE\nDATE\nPROD.CO\nDIRECTOR\nCAN\nMAIN\nUCR X CSA\nCCN\nINFO NIGHT\n8pm\npentland\nbear cave\n0123456789"
+              }
+            ]
+          }
+        ],
+        "date_evidence": [
+          {
+            "field": "caption",
+            "quote": "INFO NIGHT\nUCR CCN Info Night\nWednesday, September 30th | 8 PM\nPentland Bear Cave\n_____________________________________________\n\nWHATS UP CSA 📣 Who wants to learn about our biggest production of the year 👀 Come out to learn about our Chinese Culture Night 🎭\n\nWe will be giving out energy drinks tonight in our meeting 👀 FIRST COME FIRST SERVE FOR ENERGY DRINKS ‼️\n\nDon’t miss out on our after social at Tra Boba! (shuttling @ lot 15 🚗)\n\nIf you have any questions or concerns, feel free to message @joshua.shiu our CCN director, for more information!\n_____________________________________________\n\nThe Chinese Student Association (CSA) at UC Riverside is a social, cultural, and service oriented organization that strives to promote Chinese American culture throughout the UCR and Riverside communities. We provide various opportunities and events throughout the year that allow students to develop leadership skills and also provide a social outlet for students with similar backgrounds and interests. Our organization is a great way to meet lifelong friends and create fond memories that will contribute to a successful college experience and beyond!"
+          },
+          {
+            "field": "slide_1_ocr",
+            "quote": "hy name\nENDLY\nRHOOD'\nPIDER-MAN\nSEATTLE SPIDEY\nSCENE\nCUT\nTAKE\nDATE\nPROD.CO\nDIRECTOR\nCAN\nMAIN\nUCR X CSA\nCCN\nINFO NIGHT\n8pm\npentland\nbear cave\n0123456789"
+          }
+        ],
+        "activity_evidence": [
+          {
+            "field": "caption",
+            "quote": "INFO NIGHT\nUCR CCN Info Night\nWednesday, September 30th | 8 PM\nPentland Bear Cave\n_____________________________________________\n\nWHATS UP CSA 📣 Who wants to learn about our biggest production of the year 👀 Come out to learn about our Chinese Culture Night 🎭\n\nWe will be giving out energy drinks tonight in our meeting 👀 FIRST COME FIRST SERVE FOR ENERGY DRINKS ‼️\n\nDon’t miss out on our after social at Tra Boba! (shuttling @ lot 15 🚗)\n\nIf you have any questions or concerns, feel free to message @joshua.shiu our CCN director, for more information!\n_____________________________________________\n\nThe Chinese Student Association (CSA) at UC Riverside is a social, cultural, and service oriented organization that strives to promote Chinese American culture throughout the UCR and Riverside communities. We provide various opportunities and events throughout the year that allow students to develop leadership skills and also provide a social outlet for students with similar backgrounds and interests. Our organization is a great way to meet lifelong friends and create fond memories that will contribute to a successful college experience and beyond!"
+          },
+          {
+            "field": "slide_1_ocr",
+            "quote": "hy name\nENDLY\nRHOOD'\nPIDER-MAN\nSEATTLE SPIDEY\nSCENE\nCUT\nTAKE\nDATE\nPROD.CO\nDIRECTOR\nCAN\nMAIN\nUCR X CSA\nCCN\nINFO NIGHT\n8pm\npentland\nbear cave\n0123456789"
+          }
+        ],
+        "use_source_occurrences": false
+      },
+      "source": {
+        "texts": {
+          "caption": "INFO NIGHT\nUCR CCN Info Night\nWednesday, September 30th | 8 PM\nPentland Bear Cave\n_____________________________________________\n\nWHATS UP CSA 📣 Who wants to learn about our biggest production of the year 👀 Come out to learn about our Chinese Culture Night 🎭\n\nWe will be giving out energy drinks tonight in our meeting 👀 FIRST COME FIRST SERVE FOR ENERGY DRINKS ‼️\n\nDon’t miss out on our after social at Tra Boba! (shuttling @ lot 15 🚗)\n\nIf you have any questions or concerns, feel free to message @joshua.shiu our CCN director, for more information!\n_____________________________________________\n\nThe Chinese Student Association (CSA) at UC Riverside is a social, cultural, and service oriented organization that strives to promote Chinese American culture throughout the UCR and Riverside communities. We provide various opportunities and events throughout the year that allow students to develop leadership skills and also provide a social outlet for students with similar backgrounds and interests. Our organization is a great way to meet lifelong friends and create fond memories that will contribute to a successful college experience and beyond!",
+          "slide_1_ocr": "hy name\nENDLY\nRHOOD'\nPIDER-MAN\nSEATTLE SPIDEY\nSCENE\nCUT\nTAKE\nDATE\nPROD.CO\nDIRECTOR\nCAN\nMAIN\nUCR X CSA\nCCN\nINFO NIGHT\n8pm\npentland\nbear cave\n0123456789"
+        },
+        "origin": "instagram",
+        "posted_at": "2026-09-30T18:36:38+00:00",
+        "source_key": "instagram:post:3997784533826008187",
+        "source_occurrences": []
+      },
+      "status": "complete"
+    }
+  },
+  "taps_trip": {
+    "record": {
+      "handle": "csp_ucr",
+      "caption": "Sunday, October 4th: Meet us at Bannockburn Village at 11:50 AM to check in before we take the RTA Route 1 bus to The Cheech Museum in Downtown Riverside. If you are new to the Riverside area or live on campus, these travel trainings are a great opportunity to navigate public transit, familiarize yourself with nearby amenities, meet new people and get involved off campus.\n\nFree Transportation & Free Admission 🚍🎨\nEveryone UCR associated can use their free RTA bus pass throughout Riverside County. The Cheech and Riverside Art Museum offers free admission on the first Sunday of the month from 12 PM to 5 PM. The Cheech Marin Center for Chicano Art & Culture will be hosting the IE Zine Fest 26', a free event, live music, zine displays, vendors and free zine workshop from 1 PM-4 PM.\n\n#ucr #downtownriverside #riversidetransit",
+      "media_id": "3997715456455231193",
+      "permalink": "https://www.instagram.com/p/Dd6vQbfGkbZ/",
+      "posted_at": "2026-09-30T16:14:01+00:00",
+      "owner_username": "ucrtaps"
+    },
+    "cached": {
+      "status": "ok",
+      "images": [
+        {
+          "index": 0,
+          "ocr_text": "RIDE TO\nThe\nTHE CHEECH\nM\nSunday, October 4th\nOctober 4th\nJoin us Sunday, October 4th, to take the RTA Route 1 bus to\nThe Cheech Museum in Downtown Riverside.\nWe will leave UCR at 12 PM from Bannockburn Village and\narrive in Downtown Riverside at 12:20 PM\nM\nThe Cheech and Riverside Art Museum offer free admission\non the first Sunday of the month from 12 PM to 5 PM.\nThe Cheech will be hosting IE Zine Fest 26' featuring live\nmusic, zine workshops & zine vendors! FREE 1 PM - 4 PM\nSCAN QR CODE\nFOR DETAILS &\nJOIN OUR GROUP\nChelch\nUC RIVERSIDE",
+          "qr_urls": [
+            "https://events.ucr.edu/event/ride-to-the-cheech"
+          ]
+        }
+      ]
+    },
+    "assessment": {
+      "result": {
+        "kind": "activity",
+        "reason": "The source advertises a specific group trip to The Cheech Museum and the IE Zine Fest 26' occurring on Sunday, October 4th, 2026.",
+        "schedule": null,
+        "date_role": "occurrence",
+        "occurrences": [
+          {
+            "title": "Group Trip to The Cheech Museum",
+            "all_day": false,
+            "ends_at": null,
+            "location": "Bannockburn Village",
+            "starts_at": "2026-10-04T11:50:00-07:00",
+            "date_evidence": [
+              {
+                "field": "caption",
+                "quote": "Sunday, October 4th: Meet us at Bannockburn Village at 11:50 AM to check in before we take the RTA Route 1 bus to The Cheech Museum in Downtown Riverside. If you are new to the Riverside area or live on campus, these travel trainings are a great opportunity to navigate public transit, familiarize yourself with nearby amenities, meet new people and get involved off campus.\n\nFree Transportation & Free Admission 🚍🎨\nEveryone UCR associated can use their free RTA bus pass throughout Riverside County. The Cheech and Riverside Art Museum offers free admission on the first Sunday of the month from 12 PM to 5 PM. The Cheech Marin Center for Chicano Art & Culture will be hosting the IE Zine Fest 26', a free event, live music, zine displays, vendors and free zine workshop from 1 PM-4 PM.\n\n#ucr #downtownriverside #riversidetransit"
+              },
+              {
+                "field": "slide_1_ocr",
+                "quote": "RIDE TO\nThe\nTHE CHEECH\nM\nSunday, October 4th\nOctober 4th\nJoin us Sunday, October 4th, to take the RTA Route 1 bus to\nThe Cheech Museum in Downtown Riverside.\nWe will leave UCR at 12 PM from Bannockburn Village and\narrive in Downtown Riverside at 12:20 PM\nM\nThe Cheech and Riverside Art Museum offer free admission\non the first Sunday of the month from 12 PM to 5 PM.\nThe Cheech will be hosting IE Zine Fest 26' featuring live\nmusic, zine workshops & zine vendors! FREE 1 PM - 4 PM\nSCAN QR CODE\nFOR DETAILS &\nJOIN OUR GROUP\nChelch\nUC RIVERSIDE"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "caption",
+                "quote": "Sunday, October 4th: Meet us at Bannockburn Village at 11:50 AM to check in before we take the RTA Route 1 bus to The Cheech Museum in Downtown Riverside. If you are new to the Riverside area or live on campus, these travel trainings are a great opportunity to navigate public transit, familiarize yourself with nearby amenities, meet new people and get involved off campus.\n\nFree Transportation & Free Admission 🚍🎨\nEveryone UCR associated can use their free RTA bus pass throughout Riverside County. The Cheech and Riverside Art Museum offers free admission on the first Sunday of the month from 12 PM to 5 PM. The Cheech Marin Center for Chicano Art & Culture will be hosting the IE Zine Fest 26', a free event, live music, zine displays, vendors and free zine workshop from 1 PM-4 PM.\n\n#ucr #downtownriverside #riversidetransit"
+              }
+            ],
+            "location_evidence": [
+              {
+                "field": "caption",
+                "quote": "Sunday, October 4th: Meet us at Bannockburn Village at 11:50 AM to check in before we take the RTA Route 1 bus to The Cheech Museum in Downtown Riverside. If you are new to the Riverside area or live on campus, these travel trainings are a great opportunity to navigate public transit, familiarize yourself with nearby amenities, meet new people and get involved off campus.\n\nFree Transportation & Free Admission 🚍🎨\nEveryone UCR associated can use their free RTA bus pass throughout Riverside County. The Cheech and Riverside Art Museum offers free admission on the first Sunday of the month from 12 PM to 5 PM. The Cheech Marin Center for Chicano Art & Culture will be hosting the IE Zine Fest 26', a free event, live music, zine displays, vendors and free zine workshop from 1 PM-4 PM.\n\n#ucr #downtownriverside #riversidetransit"
+              },
+              {
+                "field": "slide_1_ocr",
+                "quote": "RIDE TO\nThe\nTHE CHEECH\nM\nSunday, October 4th\nOctober 4th\nJoin us Sunday, October 4th, to take the RTA Route 1 bus to\nThe Cheech Museum in Downtown Riverside.\nWe will leave UCR at 12 PM from Bannockburn Village and\narrive in Downtown Riverside at 12:20 PM\nM\nThe Cheech and Riverside Art Museum offer free admission\non the first Sunday of the month from 12 PM to 5 PM.\nThe Cheech will be hosting IE Zine Fest 26' featuring live\nmusic, zine workshops & zine vendors! FREE 1 PM - 4 PM\nSCAN QR CODE\nFOR DETAILS &\nJOIN OUR GROUP\nChelch\nUC RIVERSIDE"
+              }
+            ]
+          },
+          {
+            "title": "IE Zine Fest 26'",
+            "all_day": false,
+            "ends_at": "2026-10-04T16:00:00-07:00",
+            "location": "The Cheech Marin Center for Chicano Art & Culture",
+            "starts_at": "2026-10-04T13:00:00-07:00",
+            "date_evidence": [
+              {
+                "field": "caption",
+                "quote": "Sunday, October 4th: Meet us at Bannockburn Village at 11:50 AM to check in before we take the RTA Route 1 bus to The Cheech Museum in Downtown Riverside. If you are new to the Riverside area or live on campus, these travel trainings are a great opportunity to navigate public transit, familiarize yourself with nearby amenities, meet new people and get involved off campus.\n\nFree Transportation & Free Admission 🚍🎨\nEveryone UCR associated can use their free RTA bus pass throughout Riverside County. The Cheech and Riverside Art Museum offers free admission on the first Sunday of the month from 12 PM to 5 PM. The Cheech Marin Center for Chicano Art & Culture will be hosting the IE Zine Fest 26', a free event, live music, zine displays, vendors and free zine workshop from 1 PM-4 PM.\n\n#ucr #downtownriverside #riversidetransit"
+              },
+              {
+                "field": "slide_1_ocr",
+                "quote": "RIDE TO\nThe\nTHE CHEECH\nM\nSunday, October 4th\nOctober 4th\nJoin us Sunday, October 4th, to take the RTA Route 1 bus to\nThe Cheech Museum in Downtown Riverside.\nWe will leave UCR at 12 PM from Bannockburn Village and\narrive in Downtown Riverside at 12:20 PM\nM\nThe Cheech and Riverside Art Museum offer free admission\non the first Sunday of the month from 12 PM to 5 PM.\nThe Cheech will be hosting IE Zine Fest 26' featuring live\nmusic, zine workshops & zine vendors! FREE 1 PM - 4 PM\nSCAN QR CODE\nFOR DETAILS &\nJOIN OUR GROUP\nChelch\nUC RIVERSIDE"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "caption",
+                "quote": "Sunday, October 4th: Meet us at Bannockburn Village at 11:50 AM to check in before we take the RTA Route 1 bus to The Cheech Museum in Downtown Riverside. If you are new to the Riverside area or live on campus, these travel trainings are a great opportunity to navigate public transit, familiarize yourself with nearby amenities, meet new people and get involved off campus.\n\nFree Transportation & Free Admission 🚍🎨\nEveryone UCR associated can use their free RTA bus pass throughout Riverside County. The Cheech and Riverside Art Museum offers free admission on the first Sunday of the month from 12 PM to 5 PM. The Cheech Marin Center for Chicano Art & Culture will be hosting the IE Zine Fest 26', a free event, live music, zine displays, vendors and free zine workshop from 1 PM-4 PM.\n\n#ucr #downtownriverside #riversidetransit"
+              },
+              {
+                "field": "slide_1_ocr",
+                "quote": "RIDE TO\nThe\nTHE CHEECH\nM\nSunday, October 4th\nOctober 4th\nJoin us Sunday, October 4th, to take the RTA Route 1 bus to\nThe Cheech Museum in Downtown Riverside.\nWe will leave UCR at 12 PM from Bannockburn Village and\narrive in Downtown Riverside at 12:20 PM\nM\nThe Cheech and Riverside Art Museum offer free admission\non the first Sunday of the month from 12 PM to 5 PM.\nThe Cheech will be hosting IE Zine Fest 26' featuring live\nmusic, zine workshops & zine vendors! FREE 1 PM - 4 PM\nSCAN QR CODE\nFOR DETAILS &\nJOIN OUR GROUP\nChelch\nUC RIVERSIDE"
+              }
+            ],
+            "location_evidence": [
+              {
+                "field": "caption",
+                "quote": "Sunday, October 4th: Meet us at Bannockburn Village at 11:50 AM to check in before we take the RTA Route 1 bus to The Cheech Museum in Downtown Riverside. If you are new to the Riverside area or live on campus, these travel trainings are a great opportunity to navigate public transit, familiarize yourself with nearby amenities, meet new people and get involved off campus.\n\nFree Transportation & Free Admission 🚍🎨\nEveryone UCR associated can use their free RTA bus pass throughout Riverside County. The Cheech and Riverside Art Museum offers free admission on the first Sunday of the month from 12 PM to 5 PM. The Cheech Marin Center for Chicano Art & Culture will be hosting the IE Zine Fest 26', a free event, live music, zine displays, vendors and free zine workshop from 1 PM-4 PM.\n\n#ucr #downtownriverside #riversidetransit"
+              },
+              {
+                "field": "slide_1_ocr",
+                "quote": "RIDE TO\nThe\nTHE CHEECH\nM\nSunday, October 4th\nOctober 4th\nJoin us Sunday, October 4th, to take the RTA Route 1 bus to\nThe Cheech Museum in Downtown Riverside.\nWe will leave UCR at 12 PM from Bannockburn Village and\narrive in Downtown Riverside at 12:20 PM\nM\nThe Cheech and Riverside Art Museum offer free admission\non the first Sunday of the month from 12 PM to 5 PM.\nThe Cheech will be hosting IE Zine Fest 26' featuring live\nmusic, zine workshops & zine vendors! FREE 1 PM - 4 PM\nSCAN QR CODE\nFOR DETAILS &\nJOIN OUR GROUP\nChelch\nUC RIVERSIDE"
+              }
+            ]
+          }
+        ],
+        "date_evidence": [
+          {
+            "field": "caption",
+            "quote": "Sunday, October 4th: Meet us at Bannockburn Village at 11:50 AM to check in before we take the RTA Route 1 bus to The Cheech Museum in Downtown Riverside. If you are new to the Riverside area or live on campus, these travel trainings are a great opportunity to navigate public transit, familiarize yourself with nearby amenities, meet new people and get involved off campus.\n\nFree Transportation & Free Admission 🚍🎨\nEveryone UCR associated can use their free RTA bus pass throughout Riverside County. The Cheech and Riverside Art Museum offers free admission on the first Sunday of the month from 12 PM to 5 PM. The Cheech Marin Center for Chicano Art & Culture will be hosting the IE Zine Fest 26', a free event, live music, zine displays, vendors and free zine workshop from 1 PM-4 PM.\n\n#ucr #downtownriverside #riversidetransit"
+          },
+          {
+            "field": "slide_1_ocr",
+            "quote": "RIDE TO\nThe\nTHE CHEECH\nM\nSunday, October 4th\nOctober 4th\nJoin us Sunday, October 4th, to take the RTA Route 1 bus to\nThe Cheech Museum in Downtown Riverside.\nWe will leave UCR at 12 PM from Bannockburn Village and\narrive in Downtown Riverside at 12:20 PM\nM\nThe Cheech and Riverside Art Museum offer free admission\non the first Sunday of the month from 12 PM to 5 PM.\nThe Cheech will be hosting IE Zine Fest 26' featuring live\nmusic, zine workshops & zine vendors! FREE 1 PM - 4 PM\nSCAN QR CODE\nFOR DETAILS &\nJOIN OUR GROUP\nChelch\nUC RIVERSIDE"
+          }
+        ],
+        "activity_evidence": [
+          {
+            "field": "caption",
+            "quote": "Sunday, October 4th: Meet us at Bannockburn Village at 11:50 AM to check in before we take the RTA Route 1 bus to The Cheech Museum in Downtown Riverside. If you are new to the Riverside area or live on campus, these travel trainings are a great opportunity to navigate public transit, familiarize yourself with nearby amenities, meet new people and get involved off campus.\n\nFree Transportation & Free Admission 🚍🎨\nEveryone UCR associated can use their free RTA bus pass throughout Riverside County. The Cheech and Riverside Art Museum offers free admission on the first Sunday of the month from 12 PM to 5 PM. The Cheech Marin Center for Chicano Art & Culture will be hosting the IE Zine Fest 26', a free event, live music, zine displays, vendors and free zine workshop from 1 PM-4 PM.\n\n#ucr #downtownriverside #riversidetransit"
+          },
+          {
+            "field": "slide_1_ocr",
+            "quote": "RIDE TO\nThe\nTHE CHEECH\nM\nSunday, October 4th\nOctober 4th\nJoin us Sunday, October 4th, to take the RTA Route 1 bus to\nThe Cheech Museum in Downtown Riverside.\nWe will leave UCR at 12 PM from Bannockburn Village and\narrive in Downtown Riverside at 12:20 PM\nM\nThe Cheech and Riverside Art Museum offer free admission\non the first Sunday of the month from 12 PM to 5 PM.\nThe Cheech will be hosting IE Zine Fest 26' featuring live\nmusic, zine workshops & zine vendors! FREE 1 PM - 4 PM\nSCAN QR CODE\nFOR DETAILS &\nJOIN OUR GROUP\nChelch\nUC RIVERSIDE"
+          }
+        ],
+        "use_source_occurrences": false
+      },
+      "source": {
+        "texts": {
+          "caption": "Sunday, October 4th: Meet us at Bannockburn Village at 11:50 AM to check in before we take the RTA Route 1 bus to The Cheech Museum in Downtown Riverside. If you are new to the Riverside area or live on campus, these travel trainings are a great opportunity to navigate public transit, familiarize yourself with nearby amenities, meet new people and get involved off campus.\n\nFree Transportation & Free Admission 🚍🎨\nEveryone UCR associated can use their free RTA bus pass throughout Riverside County. The Cheech and Riverside Art Museum offers free admission on the first Sunday of the month from 12 PM to 5 PM. The Cheech Marin Center for Chicano Art & Culture will be hosting the IE Zine Fest 26', a free event, live music, zine displays, vendors and free zine workshop from 1 PM-4 PM.\n\n#ucr #downtownriverside #riversidetransit",
+          "slide_1_ocr": "RIDE TO\nThe\nTHE CHEECH\nM\nSunday, October 4th\nOctober 4th\nJoin us Sunday, October 4th, to take the RTA Route 1 bus to\nThe Cheech Museum in Downtown Riverside.\nWe will leave UCR at 12 PM from Bannockburn Village and\narrive in Downtown Riverside at 12:20 PM\nM\nThe Cheech and Riverside Art Museum offer free admission\non the first Sunday of the month from 12 PM to 5 PM.\nThe Cheech will be hosting IE Zine Fest 26' featuring live\nmusic, zine workshops & zine vendors! FREE 1 PM - 4 PM\nSCAN QR CODE\nFOR DETAILS &\nJOIN OUR GROUP\nChelch\nUC RIVERSIDE"
+        },
+        "origin": "instagram",
+        "posted_at": "2026-09-30T16:14:01+00:00",
+        "source_key": "instagram:post:3997715456455231193",
+        "source_occurrences": []
+      },
+      "status": "complete"
+    }
+  },
+  "food_sale": {
+    "record": {
+      "handle": "ucrnsa",
+      "caption": "COME CHOP BETTER FOOD O! we’re selling food from 10am-2pm today! we get jollof, puff puff, meat pie, and malt! we’re selling out fast if you like don’t hurry up! we will see yall soon! 🇳🇬",
+      "media_id": "3997747618335048613",
+      "permalink": "https://www.instagram.com/p/Dd62kckhkOl/",
+      "posted_at": "2026-09-30T17:19:37+00:00",
+      "owner_username": "ucrnsa"
+    },
+    "cached": {
+      "status": "ok",
+      "images": [
+        {
+          "index": 0,
+          "ocr_text": "\"you know NSA is selling\nfood right?\"\nTUBLIC\nUNIVERS\nFOUR YEAR PLAN\nRIVERSI",
+          "qr_urls": []
+        }
+      ]
+    },
+    "assessment": {
+      "result": {
+        "kind": "activity",
+        "reason": "The post advertises a food sale occurring today, September 30, 2026, with specific operating hours.",
+        "schedule": null,
+        "date_role": "occurrence",
+        "occurrences": [
+          {
+            "title": "Food Sale",
+            "all_day": false,
+            "ends_at": "2026-09-30T14:00:00-07:00",
+            "location": "",
+            "starts_at": "2026-09-30T10:00:00-07:00",
+            "date_evidence": [
+              {
+                "field": "caption",
+                "quote": "COME CHOP BETTER FOOD O! we’re selling food from 10am-2pm today! we get jollof, puff puff, meat pie, and malt! we’re selling out fast if you like don’t hurry up! we will see yall soon! 🇳🇬"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "caption",
+                "quote": "COME CHOP BETTER FOOD O! we’re selling food from 10am-2pm today! we get jollof, puff puff, meat pie, and malt! we’re selling out fast if you like don’t hurry up! we will see yall soon! 🇳🇬"
+              }
+            ],
+            "location_evidence": []
+          }
+        ],
+        "date_evidence": [
+          {
+            "field": "caption",
+            "quote": "COME CHOP BETTER FOOD O! we’re selling food from 10am-2pm today! we get jollof, puff puff, meat pie, and malt! we’re selling out fast if you like don’t hurry up! we will see yall soon! 🇳🇬"
+          }
+        ],
+        "activity_evidence": [
+          {
+            "field": "caption",
+            "quote": "COME CHOP BETTER FOOD O! we’re selling food from 10am-2pm today! we get jollof, puff puff, meat pie, and malt! we’re selling out fast if you like don’t hurry up! we will see yall soon! 🇳🇬"
+          }
+        ],
+        "use_source_occurrences": false
+      },
+      "source": {
+        "texts": {
+          "caption": "COME CHOP BETTER FOOD O! we’re selling food from 10am-2pm today! we get jollof, puff puff, meat pie, and malt! we’re selling out fast if you like don’t hurry up! we will see yall soon! 🇳🇬",
+          "slide_1_ocr": "\"you know NSA is selling\nfood right?\"\nTUBLIC\nUNIVERS\nFOUR YEAR PLAN\nRIVERSI"
+        },
+        "origin": "instagram",
+        "posted_at": "2026-09-30T17:19:37+00:00",
+        "source_key": "instagram:post:3997747618335048613",
+        "source_occurrences": []
+      },
+      "status": "complete"
+    }
+  },
+  "cmsp_link": {
+    "record": {
+      "handle": "cmsp_ucr",
+      "caption": "🩺 Interested in becoming a doctor? Join us for a virtual info session + student panel to learn about UCR’s California Medicine Scholars Program (CMSP) and the pathway from community college to medical school! 🎓✨\n\n📅 Monday, October 12\n⏰ 12–1 PM\n💻 Zoom | Register: tinyurl.com/UCRCMSP26",
+      "media_id": "3997735976310433623",
+      "permalink": "https://www.instagram.com/p/Dd6z7CFyGdX/",
+      "posted_at": "2026-09-30T16:56:50+00:00",
+      "owner_username": "chaffeycollegetransfercenter"
+    },
+    "cached": {
+      "status": "ok",
+      "images": [
+        {
+          "index": 0,
+          "ocr_text": "INTERESTED IN\nBECOMING A DOCTOR?\nJoin us for a virtual\ninfo session and\nstudent panel!\nUC\nRIVERSIDE\nSchool of Medicine\nLearn about UCR's California Medicine Scholars Program (CMSP), a pathway\nsupporting community college students on their journey to medical school.\nMonday, October 12\n12:00pm - 1:00pm\nStudents enrolled in CMSP will benefit from following services\nand activies throughout their journey to becoming a physician.\nPresented in collaboration with Chaffey College's Transfer and Career Center,\nExtended Opportunity Programs and Services (EOPS), & the Pre-Med Club.\nTransfer and Career Center\ntransfer.staff@chaffey.edu | (909) 652-6233\ncareercenter@chaffey.edu | MACC-203\nFollow Us!\n@chaffeycollegetransfercenter\n@chaffeycollegecareercenter\nZOOM REGISTRATION:\nTINYURL.COM/UCRCMSP26",
+          "qr_urls": []
+        }
+      ]
+    },
+    "assessment": {
+      "result": {
+        "kind": "activity",
+        "reason": "The source advertises a virtual info session and student panel for the California Medicine Scholars Program.",
+        "schedule": null,
+        "date_role": "occurrence",
+        "occurrences": [
+          {
+            "title": "Virtual Info Session + Student Panel: California Medicine Scholars Program",
+            "all_day": false,
+            "ends_at": "2026-10-12T13:00:00-07:00",
+            "location": "Zoom",
+            "starts_at": "2026-10-12T12:00:00-07:00",
+            "date_evidence": [
+              {
+                "field": "caption",
+                "quote": "🩺 Interested in becoming a doctor? Join us for a virtual info session + student panel to learn about UCR’s California Medicine Scholars Program (CMSP) and the pathway from community college to medical school! 🎓✨\n\n📅 Monday, October 12\n⏰ 12–1 PM\n💻 Zoom | Register: tinyurl.com/UCRCMSP26"
+              },
+              {
+                "field": "slide_1_ocr",
+                "quote": "INTERESTED IN\nBECOMING A DOCTOR?\nJoin us for a virtual\ninfo session and\nstudent panel!\nUC\nRIVERSIDE\nSchool of Medicine\nLearn about UCR's California Medicine Scholars Program (CMSP), a pathway\nsupporting community college students on their journey to medical school.\nMonday, October 12\n12:00pm - 1:00pm\nStudents enrolled in CMSP will benefit from following services\nand activies throughout their journey to becoming a physician.\nPresented in collaboration with Chaffey College's Transfer and Career Center,\nExtended Opportunity Programs and Services (EOPS), & the Pre-Med Club.\nTransfer and Career Center\ntransfer.staff@chaffey.edu | (909) 652-6233\ncareercenter@chaffey.edu | MACC-203\nFollow Us!\n@chaffeycollegetransfercenter\n@chaffeycollegecareercenter\nZOOM REGISTRATION:\nTINYURL.COM/UCRCMSP26"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "caption",
+                "quote": "🩺 Interested in becoming a doctor? Join us for a virtual info session + student panel to learn about UCR’s California Medicine Scholars Program (CMSP) and the pathway from community college to medical school! 🎓✨\n\n📅 Monday, October 12\n⏰ 12–1 PM\n💻 Zoom | Register: tinyurl.com/UCRCMSP26"
+              },
+              {
+                "field": "slide_1_ocr",
+                "quote": "INTERESTED IN\nBECOMING A DOCTOR?\nJoin us for a virtual\ninfo session and\nstudent panel!\nUC\nRIVERSIDE\nSchool of Medicine\nLearn about UCR's California Medicine Scholars Program (CMSP), a pathway\nsupporting community college students on their journey to medical school.\nMonday, October 12\n12:00pm - 1:00pm\nStudents enrolled in CMSP will benefit from following services\nand activies throughout their journey to becoming a physician.\nPresented in collaboration with Chaffey College's Transfer and Career Center,\nExtended Opportunity Programs and Services (EOPS), & the Pre-Med Club.\nTransfer and Career Center\ntransfer.staff@chaffey.edu | (909) 652-6233\ncareercenter@chaffey.edu | MACC-203\nFollow Us!\n@chaffeycollegetransfercenter\n@chaffeycollegecareercenter\nZOOM REGISTRATION:\nTINYURL.COM/UCRCMSP26"
+              }
+            ],
+            "location_evidence": [
+              {
+                "field": "caption",
+                "quote": "🩺 Interested in becoming a doctor? Join us for a virtual info session + student panel to learn about UCR’s California Medicine Scholars Program (CMSP) and the pathway from community college to medical school! 🎓✨\n\n📅 Monday, October 12\n⏰ 12–1 PM\n💻 Zoom | Register: tinyurl.com/UCRCMSP26"
+              },
+              {
+                "field": "slide_1_ocr",
+                "quote": "INTERESTED IN\nBECOMING A DOCTOR?\nJoin us for a virtual\ninfo session and\nstudent panel!\nUC\nRIVERSIDE\nSchool of Medicine\nLearn about UCR's California Medicine Scholars Program (CMSP), a pathway\nsupporting community college students on their journey to medical school.\nMonday, October 12\n12:00pm - 1:00pm\nStudents enrolled in CMSP will benefit from following services\nand activies throughout their journey to becoming a physician.\nPresented in collaboration with Chaffey College's Transfer and Career Center,\nExtended Opportunity Programs and Services (EOPS), & the Pre-Med Club.\nTransfer and Career Center\ntransfer.staff@chaffey.edu | (909) 652-6233\ncareercenter@chaffey.edu | MACC-203\nFollow Us!\n@chaffeycollegetransfercenter\n@chaffeycollegecareercenter\nZOOM REGISTRATION:\nTINYURL.COM/UCRCMSP26"
+              }
+            ]
+          }
+        ],
+        "date_evidence": [
+          {
+            "field": "caption",
+            "quote": "🩺 Interested in becoming a doctor? Join us for a virtual info session + student panel to learn about UCR’s California Medicine Scholars Program (CMSP) and the pathway from community college to medical school! 🎓✨\n\n📅 Monday, October 12\n⏰ 12–1 PM\n💻 Zoom | Register: tinyurl.com/UCRCMSP26"
+          },
+          {
+            "field": "slide_1_ocr",
+            "quote": "INTERESTED IN\nBECOMING A DOCTOR?\nJoin us for a virtual\ninfo session and\nstudent panel!\nUC\nRIVERSIDE\nSchool of Medicine\nLearn about UCR's California Medicine Scholars Program (CMSP), a pathway\nsupporting community college students on their journey to medical school.\nMonday, October 12\n12:00pm - 1:00pm\nStudents enrolled in CMSP will benefit from following services\nand activies throughout their journey to becoming a physician.\nPresented in collaboration with Chaffey College's Transfer and Career Center,\nExtended Opportunity Programs and Services (EOPS), & the Pre-Med Club.\nTransfer and Career Center\ntransfer.staff@chaffey.edu | (909) 652-6233\ncareercenter@chaffey.edu | MACC-203\nFollow Us!\n@chaffeycollegetransfercenter\n@chaffeycollegecareercenter\nZOOM REGISTRATION:\nTINYURL.COM/UCRCMSP26"
+          }
+        ],
+        "activity_evidence": [
+          {
+            "field": "caption",
+            "quote": "🩺 Interested in becoming a doctor? Join us for a virtual info session + student panel to learn about UCR’s California Medicine Scholars Program (CMSP) and the pathway from community college to medical school! 🎓✨\n\n📅 Monday, October 12\n⏰ 12–1 PM\n💻 Zoom | Register: tinyurl.com/UCRCMSP26"
+          },
+          {
+            "field": "slide_1_ocr",
+            "quote": "INTERESTED IN\nBECOMING A DOCTOR?\nJoin us for a virtual\ninfo session and\nstudent panel!\nUC\nRIVERSIDE\nSchool of Medicine\nLearn about UCR's California Medicine Scholars Program (CMSP), a pathway\nsupporting community college students on their journey to medical school.\nMonday, October 12\n12:00pm - 1:00pm\nStudents enrolled in CMSP will benefit from following services\nand activies throughout their journey to becoming a physician.\nPresented in collaboration with Chaffey College's Transfer and Career Center,\nExtended Opportunity Programs and Services (EOPS), & the Pre-Med Club.\nTransfer and Career Center\ntransfer.staff@chaffey.edu | (909) 652-6233\ncareercenter@chaffey.edu | MACC-203\nFollow Us!\n@chaffeycollegetransfercenter\n@chaffeycollegecareercenter\nZOOM REGISTRATION:\nTINYURL.COM/UCRCMSP26"
+          }
+        ],
+        "use_source_occurrences": false
+      },
+      "source": {
+        "texts": {
+          "caption": "🩺 Interested in becoming a doctor? Join us for a virtual info session + student panel to learn about UCR’s California Medicine Scholars Program (CMSP) and the pathway from community college to medical school! 🎓✨\n\n📅 Monday, October 12\n⏰ 12–1 PM\n💻 Zoom | Register: tinyurl.com/UCRCMSP26",
+          "slide_1_ocr": "INTERESTED IN\nBECOMING A DOCTOR?\nJoin us for a virtual\ninfo session and\nstudent panel!\nUC\nRIVERSIDE\nSchool of Medicine\nLearn about UCR's California Medicine Scholars Program (CMSP), a pathway\nsupporting community college students on their journey to medical school.\nMonday, October 12\n12:00pm - 1:00pm\nStudents enrolled in CMSP will benefit from following services\nand activies throughout their journey to becoming a physician.\nPresented in collaboration with Chaffey College's Transfer and Career Center,\nExtended Opportunity Programs and Services (EOPS), & the Pre-Med Club.\nTransfer and Career Center\ntransfer.staff@chaffey.edu | (909) 652-6233\ncareercenter@chaffey.edu | MACC-203\nFollow Us!\n@chaffeycollegetransfercenter\n@chaffeycollegecareercenter\nZOOM REGISTRATION:\nTINYURL.COM/UCRCMSP26"
+        },
+        "origin": "instagram",
+        "posted_at": "2026-09-30T16:56:50+00:00",
+        "source_key": "instagram:post:3997735976310433623",
+        "source_occurrences": []
+      },
+      "status": "complete"
+    }
+  },
+  "crf_conflict": {
+    "record": {
+      "handle": "ucr.crf",
+      "caption": "Ever wonder what kind of opportunities UCR has to offer?\nJoin us for the CRF Opportunities Workshop to learn what kind of high-impact programs are on campus!\n📅 Monday: October 05\n⏰ 10–11 AM\n📍 The UE, 2nd floor SSB\nBring your passion, enthusiasm, and some friends!\n🔗 RSVP using the QR code and the link in bio!\n#UCR #ucriverside #undergraduateresearch #research #ucrstudentsuccess chancellorsresearchfellowship",
+      "media_id": "3997847316316530679",
+      "permalink": "https://www.instagram.com/p/Dd7NPPjS6f3/",
+      "posted_at": "2026-09-30T20:39:15+00:00",
+      "owner_username": "ucr.crf"
+    },
+    "cached": {
+      "status": "ok",
+      "images": [
+        {
+          "index": 0,
+          "ocr_text": "OPPORTUNITIES\nWORKSHOP\nDiscover What's Possible at UCR!\nWondering What's Out There?\nCome and learn where to find opportunities and\nhow to get started!\nInterested in Research?\nFind out how to get involved!\nWant to Build Experience?\nExplore leadership and high-impact programs!\nRSVP Here!\nMonday\nOctober 5th, 2026\nTime\n3:00 PM 4:00 PM\nMonday\nStudent Services\nBuilding, 2nd Floor",
+          "qr_urls": [
+            "https://forms.gle/M6UNVLcp7BkjQtEK6"
+          ]
+        }
+      ]
+    },
+    "assessment": {
+      "result": {
+        "kind": "activity",
+        "reason": "The source advertises an Opportunities Workshop with a specific date, time, and location.",
+        "schedule": null,
+        "date_role": "occurrence",
+        "occurrences": [
+          {
+            "title": "CRF Opportunities Workshop",
+            "all_day": false,
+            "ends_at": "2026-10-05T16:00:00-07:00",
+            "location": "The UE, 2nd floor SSB",
+            "starts_at": "2026-10-05T15:00:00-07:00",
+            "date_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "OPPORTUNITIES\nWORKSHOP\nDiscover What's Possible at UCR!\nWondering What's Out There?\nCome and learn where to find opportunities and\nhow to get started!\nInterested in Research?\nFind out how to get involved!\nWant to Build Experience?\nExplore leadership and high-impact programs!\nRSVP Here!\nMonday\nOctober 5th, 2026\nTime\n3:00 PM 4:00 PM\nMonday\nStudent Services\nBuilding, 2nd Floor"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "caption",
+                "quote": "Ever wonder what kind of opportunities UCR has to offer?\nJoin us for the CRF Opportunities Workshop to learn what kind of high-impact programs are on campus!\n📅 Monday: October 05\n⏰ 10–11 AM\n📍 The UE, 2nd floor SSB\nBring your passion, enthusiasm, and some friends!\n🔗 RSVP using the QR code and the link in bio!\n#UCR #ucriverside #undergraduateresearch #research #ucrstudentsuccess chancellorsresearchfellowship"
+              }
+            ],
+            "location_evidence": [
+              {
+                "field": "caption",
+                "quote": "Ever wonder what kind of opportunities UCR has to offer?\nJoin us for the CRF Opportunities Workshop to learn what kind of high-impact programs are on campus!\n📅 Monday: October 05\n⏰ 10–11 AM\n📍 The UE, 2nd floor SSB\nBring your passion, enthusiasm, and some friends!\n🔗 RSVP using the QR code and the link in bio!\n#UCR #ucriverside #undergraduateresearch #research #ucrstudentsuccess chancellorsresearchfellowship"
+              },
+              {
+                "field": "slide_1_ocr",
+                "quote": "OPPORTUNITIES\nWORKSHOP\nDiscover What's Possible at UCR!\nWondering What's Out There?\nCome and learn where to find opportunities and\nhow to get started!\nInterested in Research?\nFind out how to get involved!\nWant to Build Experience?\nExplore leadership and high-impact programs!\nRSVP Here!\nMonday\nOctober 5th, 2026\nTime\n3:00 PM 4:00 PM\nMonday\nStudent Services\nBuilding, 2nd Floor"
+              }
+            ]
+          }
+        ],
+        "date_evidence": [
+          {
+            "field": "caption",
+            "quote": "Ever wonder what kind of opportunities UCR has to offer?\nJoin us for the CRF Opportunities Workshop to learn what kind of high-impact programs are on campus!\n📅 Monday: October 05\n⏰ 10–11 AM\n📍 The UE, 2nd floor SSB\nBring your passion, enthusiasm, and some friends!\n🔗 RSVP using the QR code and the link in bio!\n#UCR #ucriverside #undergraduateresearch #research #ucrstudentsuccess chancellorsresearchfellowship"
+          },
+          {
+            "field": "slide_1_ocr",
+            "quote": "OPPORTUNITIES\nWORKSHOP\nDiscover What's Possible at UCR!\nWondering What's Out There?\nCome and learn where to find opportunities and\nhow to get started!\nInterested in Research?\nFind out how to get involved!\nWant to Build Experience?\nExplore leadership and high-impact programs!\nRSVP Here!\nMonday\nOctober 5th, 2026\nTime\n3:00 PM 4:00 PM\nMonday\nStudent Services\nBuilding, 2nd Floor"
+          }
+        ],
+        "activity_evidence": [
+          {
+            "field": "caption",
+            "quote": "Ever wonder what kind of opportunities UCR has to offer?\nJoin us for the CRF Opportunities Workshop to learn what kind of high-impact programs are on campus!\n📅 Monday: October 05\n⏰ 10–11 AM\n📍 The UE, 2nd floor SSB\nBring your passion, enthusiasm, and some friends!\n🔗 RSVP using the QR code and the link in bio!\n#UCR #ucriverside #undergraduateresearch #research #ucrstudentsuccess chancellorsresearchfellowship"
+          },
+          {
+            "field": "slide_1_ocr",
+            "quote": "OPPORTUNITIES\nWORKSHOP\nDiscover What's Possible at UCR!\nWondering What's Out There?\nCome and learn where to find opportunities and\nhow to get started!\nInterested in Research?\nFind out how to get involved!\nWant to Build Experience?\nExplore leadership and high-impact programs!\nRSVP Here!\nMonday\nOctober 5th, 2026\nTime\n3:00 PM 4:00 PM\nMonday\nStudent Services\nBuilding, 2nd Floor"
+          }
+        ],
+        "use_source_occurrences": false
+      },
+      "source": {
+        "texts": {
+          "caption": "Ever wonder what kind of opportunities UCR has to offer?\nJoin us for the CRF Opportunities Workshop to learn what kind of high-impact programs are on campus!\n📅 Monday: October 05\n⏰ 10–11 AM\n📍 The UE, 2nd floor SSB\nBring your passion, enthusiasm, and some friends!\n🔗 RSVP using the QR code and the link in bio!\n#UCR #ucriverside #undergraduateresearch #research #ucrstudentsuccess chancellorsresearchfellowship",
+          "slide_1_ocr": "OPPORTUNITIES\nWORKSHOP\nDiscover What's Possible at UCR!\nWondering What's Out There?\nCome and learn where to find opportunities and\nhow to get started!\nInterested in Research?\nFind out how to get involved!\nWant to Build Experience?\nExplore leadership and high-impact programs!\nRSVP Here!\nMonday\nOctober 5th, 2026\nTime\n3:00 PM 4:00 PM\nMonday\nStudent Services\nBuilding, 2nd Floor"
+        },
+        "origin": "instagram",
+        "posted_at": "2026-09-30T20:39:15+00:00",
+        "source_key": "instagram:post:3997847316316530679",
+        "source_occurrences": []
+      },
+      "status": "complete"
+    }
+  },
+  "drag_workshop": {
+    "record": {
+      "handle": "ucrdragclub",
+      "caption": "the ✨OFFICIAL✨ drag club bootcamp is here ! at cherry pop, we’ll teach you all the inner workings of being a crew member and performer! RSVP and come to one of our workshops on Saturday 10/10 !!",
+      "media_id": "3997818050095226209",
+      "permalink": "https://www.instagram.com/p/Dd7GlXQkh1h/",
+      "posted_at": "2026-09-30T19:37:51+00:00",
+      "owner_username": "ucrdragclub"
+    },
+    "cached": {
+      "status": "ok",
+      "images": [
+        {
+          "index": 0,
+          "ocr_text": "UCR DRAG CLUB PENTLAND\nOCT.10 PRESENTS FOXHOLE\nCHERRY\nPOP\nRSVP\nA DRAG BEGINNER WORKSHOP ·\nscroll for more info ➡",
+          "qr_urls": [
+            "https://www.canvaqr.com/RGS1IMOELq"
+          ]
+        },
+        {
+          "index": 1,
+          "ocr_text": "SCHEDULE\n12:00 - Intro\nRSVP\n12:20 - Makeup Lesson\n1:20\n0\nCrew Chat\n150 Music Mixing\n0\n2:20\n0\nDance & Choreo\n320 - Sewing\n-\n400 Goodbyes",
+          "qr_urls": [
+            "https://www.canvaqr.com/RGS1IMOELq"
+          ]
+        }
+      ]
+    },
+    "assessment": {
+      "error": "GroundingRejected: Assessment failed validation after retry: Occurrence clock lacks source support: start 12:00:00 (occurrence 'Cherry Pop Drag Beginner Workshop')",
+      "source": {
+        "texts": {
+          "caption": "the ✨OFFICIAL✨ drag club bootcamp is here ! at cherry pop, we’ll teach you all the inner workings of being a crew member and performer! RSVP and come to one of our workshops on Saturday 10/10 !!",
+          "slide_1_ocr": "UCR DRAG CLUB PENTLAND\nOCT.10 PRESENTS FOXHOLE\nCHERRY\nPOP\nRSVP\nA DRAG BEGINNER WORKSHOP ·\nscroll for more info ➡",
+          "slide_2_ocr": "SCHEDULE\n12:00 - Intro\nRSVP\n12:20 - Makeup Lesson\n1:20\n0\nCrew Chat\n150 Music Mixing\n0\n2:20\n0\nDance & Choreo\n320 - Sewing\n-\n400 Goodbyes"
+        },
+        "origin": "instagram",
+        "posted_at": "2026-09-30T19:37:51+00:00",
+        "source_key": "instagram:post:3997818050095226209",
+        "source_occurrences": []
+      },
+      "status": "error",
+      "validation_attempts": [
+        {
+          "error": "Occurrence clock lacks source support: end 16:00:00; set ends_at=null when the source supplies no end time (occurrence 'Cherry Pop Drag Beginner Workshop')",
+          "response": {
+            "kind": "activity",
+            "reason": "The UCR Drag Club is hosting a drag beginner workshop titled 'Cherry Pop' on October 10th, 2026, with a detailed schedule of sessions provided.",
+            "schedule": null,
+            "date_role": "occurrence",
+            "occurrences": [
+              {
+                "title": "Cherry Pop Drag Beginner Workshop",
+                "all_day": false,
+                "ends_at": "2026-10-10T16:00:00-07:00",
+                "location": "Pentland",
+                "starts_at": "2026-10-10T12:00:00-07:00",
+                "date_evidence": [
+                  {
+                    "field": "caption"
+                  },
+                  {
+                    "field": "slide_1_ocr"
+                  },
+                  {
+                    "field": "slide_2_ocr"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "caption"
+                  },
+                  {
+                    "field": "slide_2_ocr"
+                  }
+                ],
+                "location_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ]
+              }
+            ],
+            "date_evidence": [
+              {
+                "field": "caption"
+              },
+              {
+                "field": "slide_1_ocr"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "caption"
+              },
+              {
+                "field": "slide_1_ocr"
+              }
+            ],
+            "use_source_occurrences": false
+          }
+        },
+        {
+          "error": "Occurrence clock lacks source support: start 12:00:00 (occurrence 'Cherry Pop Drag Beginner Workshop')",
+          "response": {
+            "kind": "activity",
+            "reason": "The UCR Drag Club is hosting a 'Cherry Pop' drag beginner workshop on October 10, 2026, at Pentland, with a schedule of sessions starting at 12:00.",
+            "schedule": null,
+            "date_role": "occurrence",
+            "occurrences": [
+              {
+                "title": "Cherry Pop Drag Beginner Workshop",
+                "all_day": false,
+                "ends_at": null,
+                "location": "Pentland",
+                "starts_at": "2026-10-10T12:00:00-07:00",
+                "date_evidence": [
+                  {
+                    "field": "caption"
+                  },
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "caption"
+                  },
+                  {
+                    "field": "slide_2_ocr"
+                  }
+                ],
+                "location_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ]
+              }
+            ],
+            "date_evidence": [
+              {
+                "field": "caption"
+              },
+              {
+                "field": "slide_1_ocr"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "caption"
+              },
+              {
+                "field": "slide_1_ocr"
+              }
+            ],
+            "use_source_occurrences": false
+          }
+        }
+      ]
+    }
+  },
+  "safe_ride": {
+    "record": {
+      "handle": "ucrhws",
+      "caption": "Highlanders🐻\n\nSafe Ride starts today, September 30th! UCRPD’s Highlanders Student Safety Team is here to get you there safely.\n\n🗓️ Monday - Friday\n📍Visit the HUB first floor Information Desk or call 951-827-5222 to request a ride.\n📌 Rider are available to designated drop-off locations.\n\nSwipe left to view the pick up zone and drop-off locations!",
+      "media_id": "3997678177263276640",
+      "permalink": "https://www.instagram.com/p/Dd6mx8iG9Jg/",
+      "posted_at": "2026-09-30T14:59:57+00:00",
+      "owner_username": "ucrpolicedept"
+    },
+    "cached": {
+      "status": "ok",
+      "images": [
+        {
+          "index": 0,
+          "ocr_text": "STARTING SEPTEMBER 30TH\nSAFE RIDE\nRides available to designated drop off locations\nMonday - Friday\n2:00PM 8:00PM\n-\nUCR\nB",
+          "qr_urls": []
+        },
+        {
+          "index": 1,
+          "ocr_text": "NEED A RIDE?\nCALL THE\nSAFETY TEAM:\n951-827-5222\nOR\nCHECK IN AT THE\nFIRST FLOOR HELP DESK\nAT THE HUB-HIGHLANDER\nUNION BUILDING.",
+          "qr_urls": []
+        },
+        {
+          "index": 2,
+          "ocr_text": "Lot 30\nNorth District 2\nDROP OFF LOCATIONS\nTST\nHUB Pick Up Zone\nDundee\nLot 14\nSchool of Business\nW\nE",
+          "qr_urls": []
+        }
+      ]
+    },
+    "assessment": {
+      "error": "GroundingRejected: Assessment failed validation after retry: Recurrence weekdays differ from the quoted schedule",
+      "source": {
+        "texts": {
+          "caption": "Highlanders🐻\n\nSafe Ride starts today, September 30th! UCRPD’s Highlanders Student Safety Team is here to get you there safely.\n\n🗓️ Monday - Friday\n📍Visit the HUB first floor Information Desk or call 951-827-5222 to request a ride.\n📌 Rider are available to designated drop-off locations.\n\nSwipe left to view the pick up zone and drop-off locations!",
+          "slide_1_ocr": "STARTING SEPTEMBER 30TH\nSAFE RIDE\nRides available to designated drop off locations\nMonday - Friday\n2:00PM 8:00PM\n-\nUCR\nB",
+          "slide_2_ocr": "NEED A RIDE?\nCALL THE\nSAFETY TEAM:\n951-827-5222\nOR\nCHECK IN AT THE\nFIRST FLOOR HELP DESK\nAT THE HUB-HIGHLANDER\nUNION BUILDING.",
+          "slide_3_ocr": "Lot 30\nNorth District 2\nDROP OFF LOCATIONS\nTST\nHUB Pick Up Zone\nDundee\nLot 14\nSchool of Business\nW\nE"
+        },
+        "origin": "instagram",
+        "posted_at": "2026-09-30T14:59:57+00:00",
+        "source_key": "instagram:post:3997678177263276640",
+        "source_occurrences": []
+      },
+      "status": "error",
+      "validation_attempts": [
+        {
+          "error": "Recurrence weekdays differ from the quoted schedule",
+          "response": {
+            "kind": "service_schedule",
+            "reason": "The source advertises the recurring operating hours for the Safe Ride service, including the start date, days of the week, and specific daily time windows.",
+            "schedule": {
+              "title": "Safe Ride",
+              "windows": [
+                {
+                  "end": "20:00",
+                  "start": "14:00"
+                }
+              ],
+              "last_day": "2026-09-30",
+              "location": "HUB first floor Information Desk",
+              "weekdays": [
+                0,
+                1,
+                2,
+                3,
+                4
+              ],
+              "first_day": "2026-09-30",
+              "location_evidence": [
+                {
+                  "field": "caption"
+                },
+                {
+                  "field": "slide_2_ocr"
+                }
+              ]
+            },
+            "date_role": "recurring_hours",
+            "occurrences": [],
+            "date_evidence": [
+              {
+                "field": "caption"
+              },
+              {
+                "field": "slide_1_ocr"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "caption"
+              },
+              {
+                "field": "slide_1_ocr"
+              }
+            ],
+            "use_source_occurrences": false
+          }
+        },
+        {
+          "error": "Recurrence weekdays differ from the quoted schedule",
+          "response": {
+            "kind": "service_schedule",
+            "reason": "The source advertises the recurring operating hours for the Safe Ride service, including the start date, days of the week, and specific daily time windows.",
+            "schedule": {
+              "title": "Safe Ride",
+              "windows": [
+                {
+                  "end": "20:00",
+                  "start": "14:00"
+                }
+              ],
+              "last_day": "2026-09-30",
+              "location": "HUB first floor Information Desk",
+              "weekdays": [
+                0,
+                1,
+                2,
+                3,
+                4
+              ],
+              "first_day": "2026-09-30",
+              "location_evidence": [
+                {
+                  "field": "caption"
+                },
+                {
+                  "field": "slide_2_ocr"
+                }
+              ]
+            },
+            "date_role": "recurring_hours",
+            "occurrences": [],
+            "date_evidence": [
+              {
+                "field": "caption"
+              },
+              {
+                "field": "slide_1_ocr"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "caption"
+              },
+              {
+                "field": "slide_1_ocr"
+              }
+            ],
+            "use_source_occurrences": false
+          }
+        }
+      ]
+    }
+  },
+  "college_food": {
+    "record": {
+      "handle": "ucrarts",
+      "caption": "All college students are welcome to join us for a night of art and entertainment tomorrow! Enjoy a special VR experience of The Great Picture, open galleries, music, and photography challenges and activities! Enjoy:\n\n-Music by DJ Devyn Dezray\n-Matcha from @bigmikeygs until supplies run out!\n-Screenprint totes with @rccadm\n-Draw to the beat with Jasvir Rababan \n-Surrealist zine-making with CCC Zine Club\n-Whimsymaxxing station (bedazzle your own matcha cup!)\n\nAlso featuring:\nUCR Art History Undergraduate Association @ucr_ahua\nUCR Art Factory @artfactory.ucr\nUCR Comedy Closet @comedyclosetatucr\n\n🗓️ October 1, 2026\n⏰ 6-9 p.m.\n🆓 Free event for all college students!\n🔗 Learn more by visiting the link in bio!",
+      "media_id": "3997769123296168627",
+      "permalink": "https://www.instagram.com/p/Dd67dYoF8qz/",
+      "posted_at": "2026-09-30T18:03:32+00:00",
+      "owner_username": "ucrarts"
+    },
+    "cached": {
+      "status": "ok",
+      "images": [
+        {
+          "index": 0,
+          "ocr_text": "What happens when you embrace the unexpected?\nOCT. 1, 2026 @ 6:00-9:00PM\nCOLLEGE NIGHT CHANCE\nFREE!\nENCOUNTERS\nMUSIC BY DJ DEVYN DEZRAY\nSURREALIST ZINE-MAKING W/ CCC ZINE CLUB\nSCREENPRINT TOTES W/RCC\nDRAW TO THE BEAT W/ JASVIR RABABAN\nBEDAZZLING STATION (WHILE SUPPLIES\n0\nLAST!)\nMATCHA AND SNACKS!!!\nCulver Center of the Arts\n3834 Main Street, Riverside, CA 92501",
+          "qr_urls": []
+        },
+        {
+          "index": 1,
+          "ocr_text": "696\nWenxin\nDOCENT\nOCENT",
+          "qr_urls": []
+        }
+      ]
+    },
+    "assessment": {
+      "result": {
+        "kind": "activity",
+        "reason": "The source advertises a specific college night event with art, music, and activities scheduled for October 1, 2026.",
+        "schedule": null,
+        "date_role": "occurrence",
+        "occurrences": [
+          {
+            "title": "College Night: Encounters",
+            "all_day": false,
+            "ends_at": "2026-10-01T21:00:00-07:00",
+            "location": "Culver Center of the Arts, 3834 Main Street, Riverside, CA 92501",
+            "starts_at": "2026-10-01T18:00:00-07:00",
+            "date_evidence": [
+              {
+                "field": "caption",
+                "quote": "All college students are welcome to join us for a night of art and entertainment tomorrow! Enjoy a special VR experience of The Great Picture, open galleries, music, and photography challenges and activities! Enjoy:\n\n-Music by DJ Devyn Dezray\n-Matcha from @bigmikeygs until supplies run out!\n-Screenprint totes with @rccadm\n-Draw to the beat with Jasvir Rababan \n-Surrealist zine-making with CCC Zine Club\n-Whimsymaxxing station (bedazzle your own matcha cup!)\n\nAlso featuring:\nUCR Art History Undergraduate Association @ucr_ahua\nUCR Art Factory @artfactory.ucr\nUCR Comedy Closet @comedyclosetatucr\n\n🗓️ October 1, 2026\n⏰ 6-9 p.m.\n🆓 Free event for all college students!\n🔗 Learn more by visiting the link in bio!"
+              },
+              {
+                "field": "slide_1_ocr",
+                "quote": "What happens when you embrace the unexpected?\nOCT. 1, 2026 @ 6:00-9:00PM\nCOLLEGE NIGHT CHANCE\nFREE!\nENCOUNTERS\nMUSIC BY DJ DEVYN DEZRAY\nSURREALIST ZINE-MAKING W/ CCC ZINE CLUB\nSCREENPRINT TOTES W/RCC\nDRAW TO THE BEAT W/ JASVIR RABABAN\nBEDAZZLING STATION (WHILE SUPPLIES\n0\nLAST!)\nMATCHA AND SNACKS!!!\nCulver Center of the Arts\n3834 Main Street, Riverside, CA 92501"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "caption",
+                "quote": "All college students are welcome to join us for a night of art and entertainment tomorrow! Enjoy a special VR experience of The Great Picture, open galleries, music, and photography challenges and activities! Enjoy:\n\n-Music by DJ Devyn Dezray\n-Matcha from @bigmikeygs until supplies run out!\n-Screenprint totes with @rccadm\n-Draw to the beat with Jasvir Rababan \n-Surrealist zine-making with CCC Zine Club\n-Whimsymaxxing station (bedazzle your own matcha cup!)\n\nAlso featuring:\nUCR Art History Undergraduate Association @ucr_ahua\nUCR Art Factory @artfactory.ucr\nUCR Comedy Closet @comedyclosetatucr\n\n🗓️ October 1, 2026\n⏰ 6-9 p.m.\n🆓 Free event for all college students!\n🔗 Learn more by visiting the link in bio!"
+              },
+              {
+                "field": "slide_1_ocr",
+                "quote": "What happens when you embrace the unexpected?\nOCT. 1, 2026 @ 6:00-9:00PM\nCOLLEGE NIGHT CHANCE\nFREE!\nENCOUNTERS\nMUSIC BY DJ DEVYN DEZRAY\nSURREALIST ZINE-MAKING W/ CCC ZINE CLUB\nSCREENPRINT TOTES W/RCC\nDRAW TO THE BEAT W/ JASVIR RABABAN\nBEDAZZLING STATION (WHILE SUPPLIES\n0\nLAST!)\nMATCHA AND SNACKS!!!\nCulver Center of the Arts\n3834 Main Street, Riverside, CA 92501"
+              }
+            ],
+            "location_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "What happens when you embrace the unexpected?\nOCT. 1, 2026 @ 6:00-9:00PM\nCOLLEGE NIGHT CHANCE\nFREE!\nENCOUNTERS\nMUSIC BY DJ DEVYN DEZRAY\nSURREALIST ZINE-MAKING W/ CCC ZINE CLUB\nSCREENPRINT TOTES W/RCC\nDRAW TO THE BEAT W/ JASVIR RABABAN\nBEDAZZLING STATION (WHILE SUPPLIES\n0\nLAST!)\nMATCHA AND SNACKS!!!\nCulver Center of the Arts\n3834 Main Street, Riverside, CA 92501"
+              }
+            ]
+          }
+        ],
+        "date_evidence": [
+          {
+            "field": "caption",
+            "quote": "All college students are welcome to join us for a night of art and entertainment tomorrow! Enjoy a special VR experience of The Great Picture, open galleries, music, and photography challenges and activities! Enjoy:\n\n-Music by DJ Devyn Dezray\n-Matcha from @bigmikeygs until supplies run out!\n-Screenprint totes with @rccadm\n-Draw to the beat with Jasvir Rababan \n-Surrealist zine-making with CCC Zine Club\n-Whimsymaxxing station (bedazzle your own matcha cup!)\n\nAlso featuring:\nUCR Art History Undergraduate Association @ucr_ahua\nUCR Art Factory @artfactory.ucr\nUCR Comedy Closet @comedyclosetatucr\n\n🗓️ October 1, 2026\n⏰ 6-9 p.m.\n🆓 Free event for all college students!\n🔗 Learn more by visiting the link in bio!"
+          },
+          {
+            "field": "slide_1_ocr",
+            "quote": "What happens when you embrace the unexpected?\nOCT. 1, 2026 @ 6:00-9:00PM\nCOLLEGE NIGHT CHANCE\nFREE!\nENCOUNTERS\nMUSIC BY DJ DEVYN DEZRAY\nSURREALIST ZINE-MAKING W/ CCC ZINE CLUB\nSCREENPRINT TOTES W/RCC\nDRAW TO THE BEAT W/ JASVIR RABABAN\nBEDAZZLING STATION (WHILE SUPPLIES\n0\nLAST!)\nMATCHA AND SNACKS!!!\nCulver Center of the Arts\n3834 Main Street, Riverside, CA 92501"
+          }
+        ],
+        "activity_evidence": [
+          {
+            "field": "caption",
+            "quote": "All college students are welcome to join us for a night of art and entertainment tomorrow! Enjoy a special VR experience of The Great Picture, open galleries, music, and photography challenges and activities! Enjoy:\n\n-Music by DJ Devyn Dezray\n-Matcha from @bigmikeygs until supplies run out!\n-Screenprint totes with @rccadm\n-Draw to the beat with Jasvir Rababan \n-Surrealist zine-making with CCC Zine Club\n-Whimsymaxxing station (bedazzle your own matcha cup!)\n\nAlso featuring:\nUCR Art History Undergraduate Association @ucr_ahua\nUCR Art Factory @artfactory.ucr\nUCR Comedy Closet @comedyclosetatucr\n\n🗓️ October 1, 2026\n⏰ 6-9 p.m.\n🆓 Free event for all college students!\n🔗 Learn more by visiting the link in bio!"
+          },
+          {
+            "field": "slide_1_ocr",
+            "quote": "What happens when you embrace the unexpected?\nOCT. 1, 2026 @ 6:00-9:00PM\nCOLLEGE NIGHT CHANCE\nFREE!\nENCOUNTERS\nMUSIC BY DJ DEVYN DEZRAY\nSURREALIST ZINE-MAKING W/ CCC ZINE CLUB\nSCREENPRINT TOTES W/RCC\nDRAW TO THE BEAT W/ JASVIR RABABAN\nBEDAZZLING STATION (WHILE SUPPLIES\n0\nLAST!)\nMATCHA AND SNACKS!!!\nCulver Center of the Arts\n3834 Main Street, Riverside, CA 92501"
+          }
+        ],
+        "use_source_occurrences": false
+      },
+      "source": {
+        "texts": {
+          "caption": "All college students are welcome to join us for a night of art and entertainment tomorrow! Enjoy a special VR experience of The Great Picture, open galleries, music, and photography challenges and activities! Enjoy:\n\n-Music by DJ Devyn Dezray\n-Matcha from @bigmikeygs until supplies run out!\n-Screenprint totes with @rccadm\n-Draw to the beat with Jasvir Rababan \n-Surrealist zine-making with CCC Zine Club\n-Whimsymaxxing station (bedazzle your own matcha cup!)\n\nAlso featuring:\nUCR Art History Undergraduate Association @ucr_ahua\nUCR Art Factory @artfactory.ucr\nUCR Comedy Closet @comedyclosetatucr\n\n🗓️ October 1, 2026\n⏰ 6-9 p.m.\n🆓 Free event for all college students!\n🔗 Learn more by visiting the link in bio!",
+          "slide_1_ocr": "What happens when you embrace the unexpected?\nOCT. 1, 2026 @ 6:00-9:00PM\nCOLLEGE NIGHT CHANCE\nFREE!\nENCOUNTERS\nMUSIC BY DJ DEVYN DEZRAY\nSURREALIST ZINE-MAKING W/ CCC ZINE CLUB\nSCREENPRINT TOTES W/RCC\nDRAW TO THE BEAT W/ JASVIR RABABAN\nBEDAZZLING STATION (WHILE SUPPLIES\n0\nLAST!)\nMATCHA AND SNACKS!!!\nCulver Center of the Arts\n3834 Main Street, Riverside, CA 92501",
+          "slide_2_ocr": "696\nWenxin\nDOCENT\nOCENT"
+        },
+        "origin": "instagram",
+        "posted_at": "2026-09-30T18:03:32+00:00",
+        "source_key": "instagram:post:3997769123296168627",
+        "source_occurrences": []
+      },
+      "status": "complete"
+    }
+  },
+  "hillel_dinner": {
+    "record": {
+      "handle": "ucr_hillel",
+      "caption": "Come and join us at our welcome back Shabbat! We’re having poke, desserts, and playing games at 6:30, we’d love for you to join us 🍣",
+      "media_id": "3997784000729909544",
+      "permalink": "https://www.instagram.com/p/Dd6-14UPwko/",
+      "posted_at": "2026-09-30T18:32:13+00:00",
+      "owner_username": "ucr_hillel"
+    },
+    "cached": {
+      "status": "ok",
+      "images": [
+        {
+          "index": 0,
+          "ocr_text": "Hillel\nWelcome Back\nSHABBAT\nDINNER\nPoke bowls, popsicles\nand great company at\nHillel's first Shabbat of\nthe year!\nFriday, Oct. 2\n6:30 PM\nSSC MPR#3\n1653 OBSESSO",
+          "qr_urls": []
+        }
+      ]
+    },
+    "assessment": {
+      "result": {
+        "kind": "activity",
+        "reason": "The source advertises a specific Shabbat dinner event with a date, time, and location.",
+        "schedule": null,
+        "date_role": "occurrence",
+        "occurrences": [
+          {
+            "title": "Welcome Back Shabbat Dinner",
+            "all_day": false,
+            "ends_at": null,
+            "location": "SSC MPR#3",
+            "starts_at": "2026-10-02T18:30:00-07:00",
+            "date_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "Hillel\nWelcome Back\nSHABBAT\nDINNER\nPoke bowls, popsicles\nand great company at\nHillel's first Shabbat of\nthe year!\nFriday, Oct. 2\n6:30 PM\nSSC MPR#3\n1653 OBSESSO"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "Hillel\nWelcome Back\nSHABBAT\nDINNER\nPoke bowls, popsicles\nand great company at\nHillel's first Shabbat of\nthe year!\nFriday, Oct. 2\n6:30 PM\nSSC MPR#3\n1653 OBSESSO"
+              }
+            ],
+            "location_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "Hillel\nWelcome Back\nSHABBAT\nDINNER\nPoke bowls, popsicles\nand great company at\nHillel's first Shabbat of\nthe year!\nFriday, Oct. 2\n6:30 PM\nSSC MPR#3\n1653 OBSESSO"
+              }
+            ]
+          }
+        ],
+        "date_evidence": [
+          {
+            "field": "slide_1_ocr",
+            "quote": "Hillel\nWelcome Back\nSHABBAT\nDINNER\nPoke bowls, popsicles\nand great company at\nHillel's first Shabbat of\nthe year!\nFriday, Oct. 2\n6:30 PM\nSSC MPR#3\n1653 OBSESSO"
+          }
+        ],
+        "activity_evidence": [
+          {
+            "field": "caption",
+            "quote": "Come and join us at our welcome back Shabbat! We’re having poke, desserts, and playing games at 6:30, we’d love for you to join us 🍣"
+          },
+          {
+            "field": "slide_1_ocr",
+            "quote": "Hillel\nWelcome Back\nSHABBAT\nDINNER\nPoke bowls, popsicles\nand great company at\nHillel's first Shabbat of\nthe year!\nFriday, Oct. 2\n6:30 PM\nSSC MPR#3\n1653 OBSESSO"
+          }
+        ],
+        "use_source_occurrences": false
+      },
+      "source": {
+        "texts": {
+          "caption": "Come and join us at our welcome back Shabbat! We’re having poke, desserts, and playing games at 6:30, we’d love for you to join us 🍣",
+          "slide_1_ocr": "Hillel\nWelcome Back\nSHABBAT\nDINNER\nPoke bowls, popsicles\nand great company at\nHillel's first Shabbat of\nthe year!\nFriday, Oct. 2\n6:30 PM\nSSC MPR#3\n1653 OBSESSO"
+        },
+        "origin": "instagram",
+        "posted_at": "2026-09-30T18:32:13+00:00",
+        "source_key": "instagram:post:3997784000729909544",
+        "source_occurrences": []
+      },
+      "status": "complete"
+    }
+  }
+}

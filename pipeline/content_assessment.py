@@ -193,6 +193,11 @@ its full date and clock: if the slide prints day numbers and the caption supplie
 the month/range, cite BOTH on that occurrence, not only at the top level.
 Do not assign activities to dates from ambiguous OCR reading order. Extract
 only clearly associated activities; if none are clear, return uncertain.
+When the caption and a flyer give conflicting clock ranges for the same dated
+occasion, return uncertain with no occurrences; do not choose one arbitrarily.
+For a mixed timeline, include independently supported activities AND explicit
+action cutoffs. Name each cutoff as a deadline rather than omitting it because
+the post also advertises activities.
 Activity evidence must describe the actual activity/action/service, not just a
 date. Date evidence must connect that activity/action to its dates. Never cite
 metadata (posted_at, audiences, origin) as activity evidence. Do not invent
@@ -604,6 +609,27 @@ def validate_occurrence(item: dict, source: dict, *, week_scoped: bool = False) 
         if end and not _clock_supported(end.time(), text):
             raise ValueError(f"Occurrence clock lacks source support: end {end.time()}; "
                              "set ends_at=null when the source supplies no end time")
+    # Do not resolve a caption/flyer disagreement by citing only one side or
+    # dropping the clock. Multi-date/multi-range fields remain ambiguous and
+    # cannot establish this narrowly identified single-session conflict.
+    from event_dates import evidence_dates, _OCR_TIME_RANGE_RE, _OCR_COMPACT_TIME_RANGE_RE, time_range
+    title_words = re.sub(r"\W+", " ", item["title"].casefold()).strip()
+    # Flyers may omit an acronym prefix ('CRF Opportunities Workshop'). Keep
+    # descriptive qualifiers: Biology and Chemistry Info Nights can differ.
+    unprefixed = re.sub(r"^[A-Z][A-Z0-9.-]{1,7}\s+", "", item["title"])
+    short_title = re.sub(r"\W+", " ", unprefixed.casefold()).strip()
+    printed_ranges = set()
+    for field_text in (source.get("texts") or {}).values():
+        named = re.sub(r"\W+", " ", field_text.casefold())
+        if short_title not in named or evidence_dates(field_text) != {(start.month, start.day)}:
+            continue
+        ranges = {pair for pattern in (_OCR_TIME_RANGE_RE, _OCR_COMPACT_TIME_RANGE_RE)
+                  for match in pattern.finditer(field_text) if (pair := time_range(match.group()))}
+        if len(ranges) == 1:
+            printed_ranges.update(ranges)
+    if len(printed_ranges) > 1:
+        raise ValueError("Conflicting source clock ranges for the same dated occasion; "
+                         "return uncertain rather than choosing a caption or flyer time")
     if start != _instant(item["starts_at"]):
         item["starts_at"] = start.isoformat()
     if end and (not item.get("ends_at") or end != _instant(item["ends_at"])):

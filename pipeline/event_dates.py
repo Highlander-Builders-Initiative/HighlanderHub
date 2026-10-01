@@ -208,7 +208,7 @@ def _bare_date_is_corroborated(text: str, span: tuple[int, int]) -> bool:
     start, end = span
     if re.search(r"\b(?:room|suite|building|price|cost|reading)\s*$", text[max(0, start-20):start], re.IGNORECASE):
         return False
-    if re.match(r"\s*(?:price|off|cups?|tbsp|tsp|inches)\b", text[end:], re.IGNORECASE):
+    if re.match(r"\s*(?:price|off|cups?|tbsp|tsp|inches|hours?|full|of)\b", text[end:], re.IGNORECASE):
         return False
     # Captions often give only an all-day date: "doing it again on 9/25".
     # Require slash notation here so "on 5.62" cannot turn a decimal into a day.
@@ -218,6 +218,18 @@ def _bare_date_is_corroborated(text: str, span: tuple[int, int]) -> bool:
         return True
     if _OCR_CLOCK_TIME_RE.search(text):
         return True
+
+    # A dated occasion ('Fall Recruitment 10/5') and a column of dates under
+    # 'GENERAL MEETING SCHEDULE' need no clock to establish their calendar day.
+    if "/" in text[start:end]:
+        before = text[:start].rsplit("\n", 1)[-1]
+        if re.search(r"\b(?:recruitment|meeting|mixer|social|workshop|orientation|"
+                     r"tabling|fair|deadline)\s*$", before, re.I):
+            return True
+        if (re.search(r"\b(?:meeting|event|recruitment)\s+(?:schedule|timeline)\b", text, re.I)
+                and re.fullmatch(r"\s*", before)
+                and len(re.findall(r"(?m)^\s*\d{1,2}/\d{1,2}\b", text)) >= 2):
+            return True
 
     for match in _OCR_NUMERIC_RANGE_RE.finditer(text):
         if match.start() <= start and end <= match.end() and all(

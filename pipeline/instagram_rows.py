@@ -28,10 +28,18 @@ _RSVP_WAIVED_BEFORE = re.compile(
 _RSVP_WAIVED_AFTER = re.compile(
     r"\s*(?:(?:is|are)\s+)?(?:not\s+(?:required|needed|necessary|mandatory)|optional|unnecessary"
     r"|(?:appreciated|encouraged|recommended)\s*,?\s*but\s+not\s+required)\b", re.I)
-_CAPTION_URL = re.compile(r"https?://[^\s<>\"')\]]+", re.I)
+_CAPTION_URL = re.compile(r"https?://[^\s<>\"')\]]+|\b(?:tinyurl\.com|bit\.ly|forms\.gle)/[\w-]+", re.I)
 # A direct meeting link ("ucr.zoom.us/j/949...") is how to join, not a
 # registration; a Zoom webinar's /webinar/register/ page still is one.
 _MEETING_JOIN_URL = re.compile(r"https?://(?:[\w-]+\.)*zoom\.us/j/", re.I)
+_SIGNUP_URL = re.compile(
+    r"https?://(?:docs\.google\.com/forms/|forms\.gle/|(?:[\w-]+\.)?forms\.office\.com/|"
+    r"(?:www\.)?(?:lu\.ma|eventbrite\.com|signupgenius\.com)/)|"
+    r"/(?:rsvp|register|registration|signup|sign-up|tickets?)(?:[/?#]|$)", re.I)
+# A separate fundraiser after a meeting does not turn the meeting into one.
+_FOLLOWUP_FUNDRAISER = re.compile(
+    r"(?:followed by (?:a |an |the )?[^.!?\n]*fundraiser[^.!?\n]*|"
+    r"[^\n.!?]*\b(?:fundraiser|funraiser)\s+after[^\n.!?]*|\bTBD\s+fundraiser)", re.I)
 # Gratitude addressed to people who already took part ("thank you for
 # participating", "thanks to everyone who came") recaps an occasion.
 _RECAP = re.compile(
@@ -104,6 +112,7 @@ def build_instagram_row(
     raw: dict, occurrence: dict, *, identity_handle: str, host_handle: str,
     account_meta: dict, text: str, image_url: str | None, qr_urls: Iterable,
     scraped_at: str, assessed_kind: str | None, session: str | None = None,
+    policy_text: str | None = None,
 ) -> dict | None:
     """Apply date, host privacy, classification and RSVP rules to an assessed post."""
     title = str(occurrence.get("title") or "").strip()
@@ -130,14 +139,21 @@ def build_instagram_row(
         return None
     description = str(occurrence.get("description") or "")
     tags = _clean_tags(occurrence.get("tags"))
-    content_kind = classify_content_kind("instagram", title=title, description=description,
-                                         tags=tags, ocr_text=text, assessed_kind=assessed_kind)
+    policy = policy_text if policy_text is not None else f"{description}\n{text}"
+    # Fundraising terms come from the title and the whole caption, never flyer
+    # fine print (see classify_content_kind). Only a sibling session of a
+    # multi-session post drops a fundraiser held after it; a post announcing
+    # 'our fundraiser after class' is that fundraiser.
+    followup = session is not None and not re.search(r"fundrais|\bsale\b|\bsell", title, re.I)
+    strip = (lambda value: _FOLLOWUP_FUNDRAISER.sub("", value)) if followup else (lambda value: value)
+    content_kind = classify_content_kind("instagram", title=title, description=strip(description),
+                                         tags=tags, ocr_text=strip(policy), assessed_kind=assessed_kind)
 
     destinations = {url for value in qr_urls if (url := normalize_rsvp_url(value))}
     rsvp_url = (
         (next(iter(destinations)) if len(destinations) == 1 else None)
         or normalize_rsvp_url(occurrence.get("rsvp_url"), text)
-        or _caption_rsvp_url(str(raw.get("caption") or ""))
+        or _caption_rsvp_url(policy if policy_text is not None else str(raw.get("caption") or ""))
     )
     if raw.get("handle") in _ANONYMIZED_HOST_HANDLES or host_handle in _ANONYMIZED_HOST_HANDLES:
         host, host_handle = "", None
@@ -145,7 +161,7 @@ def build_instagram_row(
         host = account_meta.get("label") or host_handle
     category = occurrence.get("category")
     if not isinstance(category, str) or category not in EVENT_CATEGORIES:
-        category = infer_category_from_text(title, f"{description}\n{text}",
+        category = infer_category_from_text(title, policy,
                                             host_type=account_meta.get("category"))
 
     return {
@@ -156,9 +172,9 @@ def build_instagram_row(
         "content_kind": content_kind, "tags": tags, "source": "instagram",
         "source_url": normalize_http_url(raw.get("permalink")),
         "image_url": normalize_http_url(image_url),
-        "has_free_food": detect_free_food(text, title, description, *tags) or title_offers_boba(title),
-        "rsvp_required": bool(rsvp_url and not _MEETING_JOIN_URL.match(rsvp_url))
+        "has_free_food": detect_free_food(policy, title) or title_offers_boba(title, policy),
+        "rsvp_required": bool(rsvp_url and _SIGNUP_URL.search(rsvp_url) and not _MEETING_JOIN_URL.match(rsvp_url))
                          or _bool_or_default(occurrence.get("rsvp_required"), False)
-                         or _requires_signup(text),
+                         or _requires_signup(policy),
         "rsvp_url": rsvp_url, "scraped_at": scraped_at,
     }

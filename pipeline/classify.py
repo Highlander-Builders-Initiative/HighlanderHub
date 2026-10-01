@@ -25,7 +25,7 @@ _STUDENT_ORIGINS = frozenset({"instagram", "manual"})
 
 _FUNDRAISER_TERMS = (
     "fundraiser", "fundraising", "donate", "donation", "proceeds",
-    "percentage night", "bake sale", "merch sale", "benefit night", "gofundme",
+    "percentage night", "bake sale", "food sale", "selling food", "merch sale", "benefit night", "gofundme",
 )
 
 # A board position named for fundraising ("Fundraising Chair", "VP of
@@ -67,6 +67,7 @@ def _mentions_fundraising(text: str, ocr_text: str = "") -> bool:
 _DEADLINE_TITLE_TERMS = (
     "deadline", "apply by", "register by", "closing date", "last day to",
     "applications due", "application due", "registration closes",
+    "documents due",
 )
 
 # A program you join, not an occasion you attend: multi-week academies,
@@ -202,15 +203,27 @@ _OPEN_AUDIENCE_PHRASES = (
     "general public", "everyone", "campus community", "all audiences",
 )
 
-# Free food is an independent attribute; preserve the existing caller contract.
+# Provision is required; naming a food or visiting a restaurant is insufficient.
+_FOOD_NOUN = (r"(?:food|pizza|snacks?|drinks?|beverages?|refreshments|breakfast|lunch|dinner|"
+              r"boba|tacos?|burgers?|hot dogs?|coffee|matcha|teas?|treats?|desserts?|"
+              r"popsicles?|poke(?: bowls?)?|kona ice|shaved ice|ice cream)")
 _FREE_FOOD_PATTERN = re.compile(
-    r"\b(free food|free pizza|free snacks|refreshments|free drinks|"
-    # "Pizza provided", "Food and drinks will be provided"
-    r"(?:food|pizza|snacks|drinks|breakfast|lunch|dinner)(?:\s+(?:&|and)\s+\w+)?"
-    r"\s+(?:(?:will\s+be|is|are)\s+)?provided|"
-    r"free (?:\S+ ){0,2}boba|free (?:kona ice|shaved ice|ice cream|teas?|treats))\b",
+    rf"\b(?:free\s+(?:(?!at\b|from\b|with\b|for\b|to\b|in\b|during\b)\S+\s+){{0,3}}?{_FOOD_NOUN}|refreshments|"
+    rf"{_FOOD_NOUN}(?:\s+(?:&|and)\s+\w+)?\s+(?:(?:will\s+be|is|are)\s+)?"
+    rf"(?:provided|served|available|while supplies last)|"
+    rf"(?:catering|serving|giving out|handing out)\s+(?:\w+\s+){{0,2}}?{_FOOD_NOUN}|"
+    # Not 'join us for dinner'/'enjoy dinner': that is how restaurant trips read.
+    rf"(?:there will be|come grab|we['’]re having)\s+"
+    rf"(?:(?:some|light)\s+)?{_FOOD_NOUN})\b",
     re.IGNORECASE,
 )
+_FOOD_NEGATED_BEFORE = re.compile(
+    r"\b(?:no|not|without|bring (?:your|their|our) own|(?:do|does) not (?:offer|provide)|"
+    r"(?:won['’]?t|will not) (?:have|provide|offer|be (?:providing|serving)))\s*$", re.I)
+_FOOD_NEGATED_AFTER = re.compile(
+    r"\s*(?:(?:is|are|will be)\s+)?(?:not (?:provided|available|free|included|guaranteed)|"
+    r"(?:will not|won['’]?t) be (?:provided|served|available)|"
+    r"(?:for|available for) (?:sale|purchase)|with (?:a |any )?purchase|costs?\b|(?:for\s+)?\$\s*\d|chats?\b)", re.I)
 # Boba is a club's usual treat, but "Boba Tea House" is a shop students pay
 # at, and a boba fundraiser ("fundy") sells it. Only a session's own title
 # says what that session offers; a sibling session's boba says nothing.
@@ -218,13 +231,28 @@ _BOBA_TITLE_PATTERN = re.compile(r"\bboba\b(?!\s+(?:tea\s+)?(?:house|shop|fundra
 
 
 def detect_free_food(*texts: str | None) -> bool:
-    """True when the supplied text blobs advertise free food."""
-    return bool(_FREE_FOOD_PATTERN.search(" ".join(text for text in texts if text)))
+    """An affirmative food offer, with local negation and sale/price vetoes.
+
+    Evaluate offers separately so 'no pizza, but free tacos' still counts, and
+    never join unrelated fields into a new phrase ('free admission' + 'boba').
+    """
+    for text in texts:
+        for clause in re.split(r"[;!?\n]|(?<!oz)(?<!\d)\.(?!\d)|\bbut\b", text or "", flags=re.I):
+            for match in _FREE_FOOD_PATTERN.finditer(clause):
+                if (_FOOD_NEGATED_BEFORE.search(clause[:match.start()])
+                        or _FOOD_NEGATED_AFTER.match(clause, match.end())):
+                    continue
+                return True
+    return False
 
 
-def title_offers_boba(title: str) -> bool:
+def title_offers_boba(title: str, text: str = "") -> bool:
     """A session titled for its boba ("Games & Boba"), not a shop trip or fundraiser."""
-    return bool(_BOBA_TITLE_PATTERN.search(title) and not _mentions_fundraising(title))
+    contradicted = re.search(r"\bboba\s+(?:\$\s*\d|for (?:sale|purchase)|not (?:provided|free))|"
+                            r"\b(?:no|without)\s+(?:free\s+)?boba\b", text, re.I)
+    return bool(_BOBA_TITLE_PATTERN.search(title) and not _mentions_fundraising(title) and not contradicted
+                and not re.search(r"\$\s*\d|\b(?:no|without)\s+(?:free\s+)?boba\b|"
+                                  r"\bboba\s+(?:for (?:sale|purchase)|not (?:provided|free))", title, re.I))
 
 
 def is_informational_notice(title: str, description: str = "", ocr_text: str = "") -> bool:

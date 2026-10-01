@@ -208,13 +208,63 @@ def assessment_occurrences(result: dict, source: dict) -> list[dict]:
 def _evidence_slides(result: dict, occurrence: dict) -> list[int]:
     """Zero-based indices of the slides cited as evidence, in slide order."""
     found: set[int] = set()
-    for evidence in (result.get("activity_evidence"), result.get("date_evidence"), result.get("location_evidence"),
-                     occurrence.get("activity_evidence"), occurrence.get("date_evidence"), occurrence.get("location_evidence")):
+    for evidence in (occurrence.get("activity_evidence"), occurrence.get("date_evidence"), occurrence.get("location_evidence")):
         for item in evidence or []:
             match = _SLIDE_FIELD.match(str((item or {}).get("field") or "")) if isinstance(item, dict) else None
             if match:
                 found.add(int(match.group(1)) - 1)
     return sorted(found)
+
+
+def _session_text(source: dict, occurrence: dict, occurrences: list[dict]) -> str:
+    """Policy evidence for this session, without sibling slides or captions.
+
+    Shared timeline fields are sliced only at printed dates or named sessions.
+    An ambiguous shared field supplies no badge/category evidence. The original
+    caption remains the displayed description and the assessment stays intact.
+    """
+    from event_dates import _scan_printed_dates
+
+    texts = source.get("texts") or {}
+    if len({item.get("title") for item in occurrences}) < 2:
+        return "\n".join(texts.values())
+    fields = {item["field"] for key in ("activity_evidence", "date_evidence", "location_evidence")
+              for item in occurrence.get(key) or [] if isinstance(item, dict) and item.get("field") in texts}
+    local = datetime.fromisoformat(occurrence["starts_at"].replace("Z", "+00:00")).astimezone(semantic.PACIFIC)
+    day = (local.month, local.day)
+    normalize = lambda value: re.sub(r"\W+", " ", value.casefold()).strip()
+    titles = {normalize(item["title"]) for item in occurrences}
+    own_title = normalize(occurrence["title"])
+    same_day = sum(datetime.fromisoformat(item["starts_at"].replace("Z", "+00:00")).astimezone(
+        semantic.PACIFIC).date() == local.date() for item in occurrences)
+    selected = []
+    for field in sorted(fields):
+        text = texts[field]
+        users = {item["title"] for item in occurrences if any(
+            citation.get("field") == field for key in ("activity_evidence", "date_evidence", "location_evidence")
+            for citation in item.get(key) or [] if isinstance(citation, dict))}
+        if len(users) == 1:
+            selected.append(text)
+            continue
+        lines = text.splitlines()
+        # A shared registration instruction ('Register by Monday, Oct. 5')
+        # applies to the advertised sessions. Session-named instructions stay
+        # with that session; 'RSVP to the fair' is not a global requirement.
+        selected.extend(line for line in lines if re.match(
+            r"\s*(?:please\s+)?(?:register|rsvp|sign[- ]?up)\s+(?:by|before|here|now)\b", line, re.I)
+            and not any(title in normalize(line) for title in titles))
+        anchors = []
+        for index, line in enumerate(lines):
+            dates = {(month, number) for _, month, number, _ in _scan_printed_dates(line)}
+            names = {title for title in titles if title and title in normalize(line)}
+            if dates or names:
+                belongs = (names == {own_title} if names else dates == {day} and same_day == 1)
+                anchors.append((index, belongs))
+        for position, (start, belongs) in enumerate(anchors):
+            if belongs:
+                end = anchors[position + 1][0] if position + 1 < len(anchors) else len(lines)
+                selected.append("\n".join(lines[start:end]))
+    return "\n".join(selected)
 
 
 def _session_keys(occurrences: list[dict]) -> list[str | None]:
@@ -270,8 +320,8 @@ def post_rows(record: dict, cached: dict, payload: dict, meta: dict, now: str) -
     slides = posts.ordered_slides(cached)
     by_index = {int(slide.get("index", position)): slide
                 for position, slide in enumerate(slides)}
-    ocr_text = "\n".join(str(slide.get("ocr_text") or "") for slide in slides)
     caption = str(record.get("caption") or "")
+    policy_source = post_source(record, cached)
 
     rows = []
     for occurrence, session in zip(occurrences, _session_keys(occurrences)):
@@ -286,12 +336,14 @@ def post_rows(record: dict, cached: dict, payload: dict, meta: dict, now: str) -
         # event has no cited slide, so the post's lead image represents it.
         cited = [index for index in _evidence_slides(result, occurrence) if index in by_index]
         flyer = by_index.get(cited[0]) if cited else (slides[0] if slides else {})
+        policy_text = _session_text(policy_source, occurrence, occurrences)
 
         row = build_instagram_row(
             record, {**occurrence, "description": caption}, identity_handle=owner, host_handle=owner,
             account_meta=meta.get(owner) or meta.get(record.get("handle")) or {},
-            text=f"{caption}\n{ocr_text}", image_url=(flyer or {}).get("image_url"),
-            qr_urls=[url for slide in slides for url in slide.get("qr_urls") or []],
+            text=policy_text, policy_text=policy_text, image_url=(flyer or {}).get("image_url"),
+            qr_urls=[url for slide in (slides if len(occurrences) == 1 else [by_index[i] for i in cited])
+                     for url in slide.get("qr_urls") or []],
             scraped_at=now, assessed_kind=result["kind"], session=session,
         )
         if row and row["content_kind"] in {"student_event", "student_deadline"}:
