@@ -69,6 +69,22 @@ Version 3 reopens saved first-slide extractions on the next normal extraction ru
 reuses their OCR, and reads the remaining saved images. This can increase OCR
 usage and reassess saved posts; it does not refresh their Instagram snapshots.
 
+### Reviewed OCR corrections
+
+When a saved flyer proves an OCR error, `assessed_events.record_review` accepts
+an attributed `ocr_corrections` mapping for existing `slide_N_ocr` fields. Keep
+the raw source and its fingerprint unchanged; validate the reviewed result and
+its citations against `assessment_source(payload)`. Publication uses the
+corrected text for date expansion and per-session policy checks. Caption
+overrides, unknown slides and empty corrections are rejected.
+
+The saved assessment carries the review across machines without another OCR
+or model request. A source-text change or explicit assessment refresh expires
+it. Inspect the actual flyer before recording a correction: joined text such
+as `10/211:59pm` cannot safely establish October 2 versus October 21 by itself.
+Saving a local review does not publish it; use the normal guarded publication
+path to update durable source support and event rows.
+
 ### Monthly Vision key switching
 
 Apply `supabase/migrations/20260921000000_vision_ocr_usage.sql` before running the

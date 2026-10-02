@@ -215,7 +215,7 @@ _FOOD_NOUN = (r"(?:food|pizza|snacks?|drinks?|beverages?|refreshments|breakfast|
 _FREE_FOOD_PATTERN = re.compile(
     rf"\b(?:free\s+(?:(?!at\b|from\b|with\b|for\b|to\b|in\b|during\b)\S+\s+){{0,3}}?{_FOOD_NOUN}|refreshments|"
     rf"{_FOOD_NOUN}(?:\s+(?:&|and)\s+\w+)?\s+(?:(?:will\s+be|is|are)\s+)?"
-    rf"(?:provided|served|available|while supplies last)|"
+    rf"(?:provided|served|included|available|while supplies last)|"
     rf"(?:catering|serving|giving out|handing out)\s+(?:\w+\s+){{0,2}}?{_FOOD_NOUN}|"
     # Not 'join us for dinner'/'enjoy dinner': that is how restaurant trips read.
     rf"(?:there will be|come grab|we['’]re having|we['’]ll have|we will have)\s+"
@@ -229,6 +229,10 @@ _FOOD_NEGATED_AFTER = re.compile(
     r"\s*(?:(?:is|are|will be)\s+)?(?:not (?:provided|available|free|included|guaranteed)|"
     r"(?:will not|won['’]?t) be (?:provided|served|available)|"
     r"(?:for|available for) (?:sale|purchase)|with (?:a |any )?purchase|costs?\b|(?:for\s+)?\$\s*\d|chats?\b)", re.I)
+# "Included" bundles food with something: a $15 ticket, a registration fee.
+# Only an unpriced clause makes it an offer ("PIZZA INCLUDED").
+_FOOD_BUNDLE_PRICED = re.compile(
+    r"\$\s*\d|\b(?:purchase|paid)\b|(?<!free )\b(?:tickets?|fees?|dues|admission|registration)\b", re.I)
 # Boba is a club's usual treat, but "Boba Tea House" is a shop students pay
 # at, and a boba fundraiser ("fundy") sells it. Only a session's own title
 # says what that session offers; a sibling session's boba says nothing.
@@ -245,7 +249,9 @@ def detect_free_food(*texts: str | None) -> bool:
         for clause in re.split(r"[;!?\n]|(?<!oz)(?<!\d)\.(?!\d)|\bbut\b", text or "", flags=re.I):
             for match in _FREE_FOOD_PATTERN.finditer(clause):
                 if (_FOOD_NEGATED_BEFORE.search(clause[:match.start()])
-                        or _FOOD_NEGATED_AFTER.match(clause, match.end())):
+                        or _FOOD_NEGATED_AFTER.match(clause, match.end())
+                        or (match.group().casefold().endswith("included")
+                            and _FOOD_BUNDLE_PRICED.search(clause))):
                     continue
                 return True
     return False

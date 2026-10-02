@@ -538,9 +538,16 @@ def _corrected_schedule(left: dict, right: dict) -> bool:
     ends = {_parse_instant(row.get('ends_at')) for row in (old, new)} - {None}
     corrected = re.search(r'\b(?:new official|updated|revised|corrected)\s+schedule\b',
                           str(new.get('description') or ''), re.I)
+    relocated = re.search(r'\b(?:(?:new|updated|revised|corrected)\s+(?:location|room|venue)'
+                          r'|(?:location|room|venue)\s+(?:update|change|correction))\b',
+                          str(new.get('description') or ''), re.I)
+    # "Sisterhood" and "Sisterhood Night" in the same explicitly relocated
+    # lineup keep their identity. Other title differences remain significant;
+    # session numbers also pass through the contradiction check above.
+    titles_match = a == b or (relocated and (a ^ b) == {'night'} and len(a & b) >= 2)
     provisional = re.search(r'\blocation\s+(?:will be|to be)\s+announced\b',
                             str(old.get('description') or ''), re.I)
-    return bool(len(a) >= 2 and a == b and len(ends) <= 1 and (corrected or provisional))
+    return bool(len(a) >= 2 and titles_match and len(ends) <= 1 and (corrected or relocated or provisional))
 
 
 def same_event(left: dict, right: dict) -> bool:
@@ -738,6 +745,10 @@ def prefer_repost_source(winner: dict, rows: list[dict], *, reviews: Reviews = R
     for key in ('source_url', 'description', 'image_url'):
         if key in source:
             merged[key] = source[key]
+    # A corrected venue travels with its source. An omitted venue, TBA or the
+    # host center's own name corrects nothing; merge_duplicates chose that.
+    if _place_words(source) and not _host_venue(source):
+        merged['location'] = source['location']
     return merged
 
 

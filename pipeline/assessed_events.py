@@ -59,18 +59,35 @@ def _save_assessment(payload: dict) -> dict:
     return payload
 
 
-def record_review(source: dict, result: dict, *, reviewer: str) -> dict:
+def assessment_source(payload: dict) -> dict:
+    """Apply attributed visual OCR corrections without changing the raw source."""
+    source = payload["source"]
+    corrections = payload.get("ocr_corrections") if payload.get("method") == "reviewed" else None
+    return {**source, "texts": {**source["texts"], **corrections}} if corrections else source
+
+
+def record_review(source: dict, result: dict, *, reviewer: str,
+                  ocr_corrections: dict[str, str] | None = None) -> dict:
     """Record an explicit source review without pretending a model ran.
 
     Reviewed decisions still validate, and expire when source text changes or a
-    refresh is explicitly requested. This is useful for curated regressions.
+    refresh is explicitly requested. Visual corrections retain the original
+    OCR and bind to its fingerprint, so another machine can replay the review
+    without replacing its extraction cache or making another model call.
     """
     if not reviewer.strip():
         raise ValueError("Review requires attribution")
-    return _save_assessment({"version": semantic.VERSION, "method": "reviewed", "reviewer": reviewer,
+    if ocr_corrections and any(not _SLIDE_FIELD.fullmatch(field) or field not in source["texts"]
+                               or not isinstance(text, str) or not text.strip()
+                               for field, text in ocr_corrections.items()):
+        raise ValueError("Visual corrections require existing slide OCR fields and nonempty text")
+    payload = {"version": semantic.VERSION, "method": "reviewed", "reviewer": reviewer,
                             "source_hash": semantic.fingerprint(source), "source": source,
-                            "assessed_at": datetime.now(timezone.utc).isoformat(), "status": "complete",
-                            "result": semantic.validate(result, source)})
+                            "assessed_at": datetime.now(timezone.utc).isoformat(), "status": "complete"}
+    if ocr_corrections:
+        payload["ocr_corrections"] = dict(ocr_corrections)
+    payload["result"] = semantic.validate(result, assessment_source(payload))
+    return _save_assessment(payload)
 
 
 def load_registry() -> dict[str, dict]:
@@ -243,7 +260,7 @@ def _session_text(source: dict, occurrence: dict, occurrences: list[dict]) -> st
         users = {item["title"] for item in occurrences if any(
             citation.get("field") == field for key in ("activity_evidence", "date_evidence", "location_evidence")
             for citation in item.get(key) or [] if isinstance(citation, dict))}
-        fundraising = re.compile(r"fundrais|\bfood sale\b", re.I)
+        fundraising = re.compile(r"fundrais|\b(?:food|bake) sale\b", re.I)
         separate_fundraiser = (field == "caption" and len(occurrences) > 1
                               and not re.search(r"fundrais|\bsale\b", occurrence["title"], re.I)
                               and fundraising.search(text))
@@ -322,7 +339,7 @@ def post_rows(record: dict, cached: dict, payload: dict, meta: dict, now: str) -
     if payload["status"] != "complete":
         return [], known
     result = payload["result"]
-    occurrences = assessment_occurrences(result, payload["source"])
+    occurrences = assessment_occurrences(result, assessment_source(payload))
     if not occurrences:
         return [], known
     if len(occurrences) > MAX_SESSIONS:
@@ -335,7 +352,7 @@ def post_rows(record: dict, cached: dict, payload: dict, meta: dict, now: str) -
     by_index = {int(slide.get("index", position)): slide
                 for position, slide in enumerate(slides)}
     caption = str(record.get("caption") or "")
-    policy_source = post_source(record, cached)
+    policy_source = assessment_source(payload) if payload.get("ocr_corrections") else post_source(record, cached)
 
     rows = []
     for occurrence, session in zip(occurrences, _session_keys(occurrences)):
@@ -622,10 +639,23 @@ def _withhold_reconciled(updates: list[dict], registry: dict, canonical: dict[st
         # reconciliation merged into it from these duplicates (free food, a
         # partner's signup, a missing end or image), or the merge is undone.
         # Hosts are left to reconciliation; publication does not write them.
-        update["rows"] = [
-            {key: value for key, value in merge_duplicates(row, [row, *withheld[row["id"]]]).items()
-             if key != "hosts"} if withheld.get(row["id"]) else row
-            for row in rows if row["id"] not in skipped]
+        merged_rows = []
+        for row in rows:
+            if row['id'] in skipped:
+                continue
+            duplicates = withheld.get(row['id']) or []
+            merged = merge_duplicates(row, [row, *duplicates]) if duplicates else row
+            # Several accepted reposts may spell the venue differently. Keep
+            # the established spelling only while a current repost still
+            # supplies it and this source's decision has not changed.
+            previous = canonical.get(row['id']) or {}
+            if (not merged.get('location') and previous.get('location')
+                    and update['assessment'] == (registry.get(update['source_key']) or {}).get('assessment')
+                    and any(other.get('location') == previous['location'] for other in duplicates)):
+                merged['location'] = previous['location']
+            merged_rows.append({key: value for key, value in merged.items() if key != 'hosts'}
+                               if duplicates else merged)
+        update['rows'] = merged_rows
         # Reapply source corrections from the saved announcements even when a
         # repeat was withheld, or past sessions no longer enter reconciliation.
         update['rows'] = [

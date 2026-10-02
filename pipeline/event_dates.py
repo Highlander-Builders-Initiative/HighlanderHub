@@ -105,13 +105,18 @@ def _labeled_date(text: str) -> tuple[int, int, int, tuple[int, int]] | None:
     labels = re.search(r"\bMONTH\s+DAY\s+YEAR\b", text, re.IGNORECASE)
     if not labels:
         return None
-    numbers = list(re.finditer(r"(?m)^\s*(\d{1,4})\s*$", text[max(0, labels.start()-100):labels.start()]))
+    # OCR may keep two tiles on one line ("11 07\n26"). Require an
+    # uninterrupted numeric block immediately before the three labels.
+    offset = max(0, labels.start() - 100)
+    block = re.search(r"(?m)^[ \t]*(\d{1,2}\s+\d{1,2}\s+\d{2}(?:\d{2})?)[ \t\r\n]*\Z",
+                      text[offset:labels.start()])
+    numbers = re.findall(r"\d+", block.group(1)) if block else []
     if len(numbers) != 3:
         return None
-    month, day, year = (int(m.group(1)) for m in numbers)
+    month, day, year = map(int, numbers)
     if year < 100:
         year += 2000
-    return month, day, year, (max(0, labels.start()-100), labels.end())
+    return month, day, year, (offset + block.start(), labels.end())
 
 
 def normalize_timestamptz(value: Any) -> str | None:
@@ -227,7 +232,7 @@ def _bare_date_is_corroborated(text: str, span: tuple[int, int]) -> bool:
         if re.search(r"\b(?:recruitment|meeting|mixer|social|workshop|orientation|"
                      r"tabling|fair|deadline)\s*$", before, re.I):
             return True
-        if (re.search(r"\b(?:meeting|event|recruitment)\s+(?:schedule|timeline)\b", text, re.I)
+        if (re.search(r"\b(?:meetings?|events?|recruitment)\s+(?:schedule|timeline)\b", text, re.I)
                 and re.fullmatch(r"\s*", before)
                 and len(re.findall(r"(?m)^\s*\d{1,2}/\d{1,2}\b", text)) >= 2):
             return True

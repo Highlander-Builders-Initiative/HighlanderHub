@@ -1,0 +1,1937 @@
+{
+  "rush_old": {
+    "record": {
+      "media_id": "3997454684177266985",
+      "handle": "lsv.ucr",
+      "owner_username": "lsv.ucr",
+      "caption": "Hello UCR family 😊take a study break and come check out our Sisterhood on Rush Week starting October 12 6pm in FSIC HUB 229. We are so excited to meet you!",
+      "posted_at": "2026-09-30T07:35:54+00:00",
+      "permalink": "https://www.instagram.com/p/Dd5z9sYG3kp/"
+    },
+    "cached": {
+      "status": "ok",
+      "images": [
+        {
+          "index": 0,
+          "ocr_text": "Rush LSU\nLatinic Societas unitas\n10/12 Info Night @ 6pm\nLocation: FSIC HUB 229\n10/14 Game Night @ 6pm\nLocation: FSIC HUB 229\n10/16 Sisterhood @ 6pm\nLocation: FSIC HUB 229\n10/19 Interviews\nTBA\nLSV",
+          "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/lsv.ucr/posts/3997454684177266985/825325837_18631558927002164_2223745210616177030_n.jpg",
+          "qr_urls": []
+        },
+        {
+          "index": 1,
+          "ocr_text": "4400910\nLatinic Societas Unitas\n2012\n2013\nUniversity of California, Riverside\n19016004\n000000000,\nSISTERS\nI'll be there for you\nYour BIG,\nLSV\nSV\nLSV\nLatinic Societas\nUnitas",
+          "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/lsv.ucr/posts/3997454684177266985/829188808_18631558948002164_3832001393040321977_n.jpg",
+          "qr_urls": []
+        },
+        {
+          "index": 2,
+          "ocr_text": "SISTERS\nLV\nbe there for you\n0000000\nLatinic Societas Unitas\n2012\n2013\nElniversity of Califorma, Riverside\n0000\nLSV\nLatinic\nSocietas Unitas\nNAN",
+          "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/lsv.ucr/posts/3997454684177266985/825325787_18631558963002164_2220691273793333176_n.jpg",
+          "qr_urls": []
+        }
+      ]
+    },
+    "assessment": {
+      "model": "gemini-3.1-flash-lite",
+      "result": {
+        "kind": "activity",
+        "reason": "The source advertises a series of specific events for 'Rush Week' including an Info Night, Game Night, and Sisterhood event, each with a date, time, and location.",
+        "schedule": null,
+        "date_role": "occurrence",
+        "occurrences": [
+          {
+            "title": "Rush LSU Info Night",
+            "all_day": false,
+            "ends_at": null,
+            "location": "FSIC HUB 229",
+            "starts_at": "2026-10-12T18:00:00-07:00",
+            "date_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "Rush LSU\nLatinic Societas unitas\n10/12 Info Night @ 6pm\nLocation: FSIC HUB 229\n10/14 Game Night @ 6pm\nLocation: FSIC HUB 229\n10/16 Sisterhood @ 6pm\nLocation: FSIC HUB 229\n10/19 Interviews\nTBA\nLSV"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "Rush LSU\nLatinic Societas unitas\n10/12 Info Night @ 6pm\nLocation: FSIC HUB 229\n10/14 Game Night @ 6pm\nLocation: FSIC HUB 229\n10/16 Sisterhood @ 6pm\nLocation: FSIC HUB 229\n10/19 Interviews\nTBA\nLSV"
+              }
+            ],
+            "location_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "Rush LSU\nLatinic Societas unitas\n10/12 Info Night @ 6pm\nLocation: FSIC HUB 229\n10/14 Game Night @ 6pm\nLocation: FSIC HUB 229\n10/16 Sisterhood @ 6pm\nLocation: FSIC HUB 229\n10/19 Interviews\nTBA\nLSV"
+              }
+            ]
+          },
+          {
+            "title": "Rush LSU Game Night",
+            "all_day": false,
+            "ends_at": null,
+            "location": "FSIC HUB 229",
+            "starts_at": "2026-10-14T18:00:00-07:00",
+            "date_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "Rush LSU\nLatinic Societas unitas\n10/12 Info Night @ 6pm\nLocation: FSIC HUB 229\n10/14 Game Night @ 6pm\nLocation: FSIC HUB 229\n10/16 Sisterhood @ 6pm\nLocation: FSIC HUB 229\n10/19 Interviews\nTBA\nLSV"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "Rush LSU\nLatinic Societas unitas\n10/12 Info Night @ 6pm\nLocation: FSIC HUB 229\n10/14 Game Night @ 6pm\nLocation: FSIC HUB 229\n10/16 Sisterhood @ 6pm\nLocation: FSIC HUB 229\n10/19 Interviews\nTBA\nLSV"
+              }
+            ],
+            "location_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "Rush LSU\nLatinic Societas unitas\n10/12 Info Night @ 6pm\nLocation: FSIC HUB 229\n10/14 Game Night @ 6pm\nLocation: FSIC HUB 229\n10/16 Sisterhood @ 6pm\nLocation: FSIC HUB 229\n10/19 Interviews\nTBA\nLSV"
+              }
+            ]
+          },
+          {
+            "title": "Rush LSU Sisterhood",
+            "all_day": false,
+            "ends_at": null,
+            "location": "FSIC HUB 229",
+            "starts_at": "2026-10-16T18:00:00-07:00",
+            "date_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "Rush LSU\nLatinic Societas unitas\n10/12 Info Night @ 6pm\nLocation: FSIC HUB 229\n10/14 Game Night @ 6pm\nLocation: FSIC HUB 229\n10/16 Sisterhood @ 6pm\nLocation: FSIC HUB 229\n10/19 Interviews\nTBA\nLSV"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "Rush LSU\nLatinic Societas unitas\n10/12 Info Night @ 6pm\nLocation: FSIC HUB 229\n10/14 Game Night @ 6pm\nLocation: FSIC HUB 229\n10/16 Sisterhood @ 6pm\nLocation: FSIC HUB 229\n10/19 Interviews\nTBA\nLSV"
+              }
+            ],
+            "location_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "Rush LSU\nLatinic Societas unitas\n10/12 Info Night @ 6pm\nLocation: FSIC HUB 229\n10/14 Game Night @ 6pm\nLocation: FSIC HUB 229\n10/16 Sisterhood @ 6pm\nLocation: FSIC HUB 229\n10/19 Interviews\nTBA\nLSV"
+              }
+            ]
+          }
+        ],
+        "date_evidence": [
+          {
+            "field": "slide_1_ocr",
+            "quote": "Rush LSU\nLatinic Societas unitas\n10/12 Info Night @ 6pm\nLocation: FSIC HUB 229\n10/14 Game Night @ 6pm\nLocation: FSIC HUB 229\n10/16 Sisterhood @ 6pm\nLocation: FSIC HUB 229\n10/19 Interviews\nTBA\nLSV"
+          }
+        ],
+        "activity_evidence": [
+          {
+            "field": "slide_1_ocr",
+            "quote": "Rush LSU\nLatinic Societas unitas\n10/12 Info Night @ 6pm\nLocation: FSIC HUB 229\n10/14 Game Night @ 6pm\nLocation: FSIC HUB 229\n10/16 Sisterhood @ 6pm\nLocation: FSIC HUB 229\n10/19 Interviews\nTBA\nLSV"
+          }
+        ],
+        "use_source_occurrences": false
+      },
+      "source": {
+        "texts": {
+          "caption": "Hello UCR family 😊take a study break and come check out our Sisterhood on Rush Week starting October 12 6pm in FSIC HUB 229. We are so excited to meet you!",
+          "slide_1_ocr": "Rush LSU\nLatinic Societas unitas\n10/12 Info Night @ 6pm\nLocation: FSIC HUB 229\n10/14 Game Night @ 6pm\nLocation: FSIC HUB 229\n10/16 Sisterhood @ 6pm\nLocation: FSIC HUB 229\n10/19 Interviews\nTBA\nLSV",
+          "slide_2_ocr": "4400910\nLatinic Societas Unitas\n2012\n2013\nUniversity of California, Riverside\n19016004\n000000000,\nSISTERS\nI'll be there for you\nYour BIG,\nLSV\nSV\nLSV\nLatinic Societas\nUnitas",
+          "slide_3_ocr": "SISTERS\nLV\nbe there for you\n0000000\nLatinic Societas Unitas\n2012\n2013\nElniversity of Califorma, Riverside\n0000\nLSV\nLatinic\nSocietas Unitas\nNAN"
+        },
+        "origin": "instagram",
+        "posted_at": "2026-09-30T07:35:54+00:00",
+        "source_key": "instagram:post:3997454684177266985",
+        "source_occurrences": []
+      },
+      "status": "complete",
+      "version": 8,
+      "assessed_at": "2026-09-30T14:58:14.691663+00:00",
+      "source_hash": "09087e24ba66678eae1fb13787380261db3de833974470acef671ecd49a804ae"
+    }
+  },
+  "rush_correction": {
+    "record": {
+      "media_id": "3998817400873372420",
+      "handle": "lsv.ucr",
+      "owner_username": "lsv.ucr",
+      "caption": "Updated location for Rush Week! New location HUB 101A. It has been great and fun meeting all the new interests 🤗 We hope to see you soon!! October 12 info night, October 14 game night, and October 16 sisterhood night 6pm for all events.",
+      "posted_at": "2026-10-02T04:53:21+00:00",
+      "permalink": "https://www.instagram.com/p/Dd-pz1MtUsE/"
+    },
+    "cached": {
+      "status": "ok",
+      "images": [
+        {
+          "index": 0,
+          "ocr_text": "Update: New location HUB 101A\nRush LSU\nLatinic Societas Unitas\n10/12 Info Night @ 6pm\nLocation: FSIC HUB 101A\n10/14 Game Night @ 6pm\nLocation: FSIC HUB 101A\n10/16 Sisterhood @ 6pm\nLocation: FSIC HUB 101A\nInsta: @lsv.ucr\nLSV",
+          "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/lsv.ucr/posts/3998817400873372420/830669239_18632230576002164_8133184449952096065_n.jpg",
+          "qr_urls": []
+        }
+      ]
+    },
+    "assessment": {
+      "model": "gemini-3.1-flash-lite",
+      "result": {
+        "kind": "activity",
+        "reason": "The post advertises three specific upcoming events for Rush Week with dates, times, and a confirmed location.",
+        "schedule": null,
+        "date_role": "occurrence",
+        "occurrences": [
+          {
+            "title": "Rush LSU Info Night",
+            "all_day": false,
+            "ends_at": null,
+            "location": "FSIC HUB 101A",
+            "starts_at": "2026-10-12T18:00:00-07:00",
+            "date_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "Update: New location HUB 101A\nRush LSU\nLatinic Societas Unitas\n10/12 Info Night @ 6pm\nLocation: FSIC HUB 101A\n10/14 Game Night @ 6pm\nLocation: FSIC HUB 101A\n10/16 Sisterhood @ 6pm\nLocation: FSIC HUB 101A\nInsta: @lsv.ucr\nLSV"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "Update: New location HUB 101A\nRush LSU\nLatinic Societas Unitas\n10/12 Info Night @ 6pm\nLocation: FSIC HUB 101A\n10/14 Game Night @ 6pm\nLocation: FSIC HUB 101A\n10/16 Sisterhood @ 6pm\nLocation: FSIC HUB 101A\nInsta: @lsv.ucr\nLSV"
+              }
+            ],
+            "location_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "Update: New location HUB 101A\nRush LSU\nLatinic Societas Unitas\n10/12 Info Night @ 6pm\nLocation: FSIC HUB 101A\n10/14 Game Night @ 6pm\nLocation: FSIC HUB 101A\n10/16 Sisterhood @ 6pm\nLocation: FSIC HUB 101A\nInsta: @lsv.ucr\nLSV"
+              }
+            ]
+          },
+          {
+            "title": "Rush LSU Game Night",
+            "all_day": false,
+            "ends_at": null,
+            "location": "FSIC HUB 101A",
+            "starts_at": "2026-10-14T18:00:00-07:00",
+            "date_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "Update: New location HUB 101A\nRush LSU\nLatinic Societas Unitas\n10/12 Info Night @ 6pm\nLocation: FSIC HUB 101A\n10/14 Game Night @ 6pm\nLocation: FSIC HUB 101A\n10/16 Sisterhood @ 6pm\nLocation: FSIC HUB 101A\nInsta: @lsv.ucr\nLSV"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "Update: New location HUB 101A\nRush LSU\nLatinic Societas Unitas\n10/12 Info Night @ 6pm\nLocation: FSIC HUB 101A\n10/14 Game Night @ 6pm\nLocation: FSIC HUB 101A\n10/16 Sisterhood @ 6pm\nLocation: FSIC HUB 101A\nInsta: @lsv.ucr\nLSV"
+              }
+            ],
+            "location_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "Update: New location HUB 101A\nRush LSU\nLatinic Societas Unitas\n10/12 Info Night @ 6pm\nLocation: FSIC HUB 101A\n10/14 Game Night @ 6pm\nLocation: FSIC HUB 101A\n10/16 Sisterhood @ 6pm\nLocation: FSIC HUB 101A\nInsta: @lsv.ucr\nLSV"
+              }
+            ]
+          },
+          {
+            "title": "Rush LSU Sisterhood Night",
+            "all_day": false,
+            "ends_at": null,
+            "location": "FSIC HUB 101A",
+            "starts_at": "2026-10-16T18:00:00-07:00",
+            "date_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "Update: New location HUB 101A\nRush LSU\nLatinic Societas Unitas\n10/12 Info Night @ 6pm\nLocation: FSIC HUB 101A\n10/14 Game Night @ 6pm\nLocation: FSIC HUB 101A\n10/16 Sisterhood @ 6pm\nLocation: FSIC HUB 101A\nInsta: @lsv.ucr\nLSV"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "Update: New location HUB 101A\nRush LSU\nLatinic Societas Unitas\n10/12 Info Night @ 6pm\nLocation: FSIC HUB 101A\n10/14 Game Night @ 6pm\nLocation: FSIC HUB 101A\n10/16 Sisterhood @ 6pm\nLocation: FSIC HUB 101A\nInsta: @lsv.ucr\nLSV"
+              }
+            ],
+            "location_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "Update: New location HUB 101A\nRush LSU\nLatinic Societas Unitas\n10/12 Info Night @ 6pm\nLocation: FSIC HUB 101A\n10/14 Game Night @ 6pm\nLocation: FSIC HUB 101A\n10/16 Sisterhood @ 6pm\nLocation: FSIC HUB 101A\nInsta: @lsv.ucr\nLSV"
+              }
+            ]
+          }
+        ],
+        "date_evidence": [
+          {
+            "field": "caption",
+            "quote": "Updated location for Rush Week! New location HUB 101A. It has been great and fun meeting all the new interests 🤗 We hope to see you soon!! October 12 info night, October 14 game night, and October 16 sisterhood night 6pm for all events."
+          },
+          {
+            "field": "slide_1_ocr",
+            "quote": "Update: New location HUB 101A\nRush LSU\nLatinic Societas Unitas\n10/12 Info Night @ 6pm\nLocation: FSIC HUB 101A\n10/14 Game Night @ 6pm\nLocation: FSIC HUB 101A\n10/16 Sisterhood @ 6pm\nLocation: FSIC HUB 101A\nInsta: @lsv.ucr\nLSV"
+          }
+        ],
+        "activity_evidence": [
+          {
+            "field": "caption",
+            "quote": "Updated location for Rush Week! New location HUB 101A. It has been great and fun meeting all the new interests 🤗 We hope to see you soon!! October 12 info night, October 14 game night, and October 16 sisterhood night 6pm for all events."
+          },
+          {
+            "field": "slide_1_ocr",
+            "quote": "Update: New location HUB 101A\nRush LSU\nLatinic Societas Unitas\n10/12 Info Night @ 6pm\nLocation: FSIC HUB 101A\n10/14 Game Night @ 6pm\nLocation: FSIC HUB 101A\n10/16 Sisterhood @ 6pm\nLocation: FSIC HUB 101A\nInsta: @lsv.ucr\nLSV"
+          }
+        ],
+        "use_source_occurrences": false
+      },
+      "source": {
+        "texts": {
+          "caption": "Updated location for Rush Week! New location HUB 101A. It has been great and fun meeting all the new interests 🤗 We hope to see you soon!! October 12 info night, October 14 game night, and October 16 sisterhood night 6pm for all events.",
+          "slide_1_ocr": "Update: New location HUB 101A\nRush LSU\nLatinic Societas Unitas\n10/12 Info Night @ 6pm\nLocation: FSIC HUB 101A\n10/14 Game Night @ 6pm\nLocation: FSIC HUB 101A\n10/16 Sisterhood @ 6pm\nLocation: FSIC HUB 101A\nInsta: @lsv.ucr\nLSV"
+        },
+        "origin": "instagram",
+        "posted_at": "2026-10-02T04:53:21+00:00",
+        "source_key": "instagram:post:3998817400873372420",
+        "source_occurrences": []
+      },
+      "status": "complete",
+      "version": 9,
+      "assessed_at": "2026-10-02T14:46:35.268285+00:00",
+      "source_hash": "e031a9e1b962e2667d9ed9d05cb4a76adc6f802bfe148685fe8c22f3ef13d59f"
+    }
+  },
+  "rush_repeat": {
+    "record": {
+      "media_id": "3998838083621807828",
+      "handle": "lsv.ucr",
+      "owner_username": "lsv.ucr",
+      "caption": "We are so excited to see all the new interests we have met these past couple of weeks and during the summer orientations ☀️⭐️ Rush Week October 12,14, and 16 @HUB 101A at 6:00pm.",
+      "posted_at": "2026-10-02T05:24:28+00:00",
+      "permalink": "https://www.instagram.com/p/Dd-ugzglObU/"
+    },
+    "cached": {
+      "status": "ok",
+      "images": [
+        {
+          "index": 0,
+          "ocr_text": "we excited to mee\nall at Rush Week!\nLEV SV\nlatinic Societas Unite\nnic Societas Un\nRush LSU\nLatinic Societas Unitas\nGame Nigh tem\nLSV\nLatinic Societas Unitas\nL<V",
+          "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/lsv.ucr/posts/3998838083621807828/830325099_18632237932002164_7889355857507983390_n.jpg",
+          "qr_urls": []
+        },
+        {
+          "index": 1,
+          "ocr_text": "Rush LSU\nLatinic Societas Unitas\n10/12 Info Night @ 6pm\nLocation: ESIC HUB 229\n10/14 Game Night @ 6pm\nLocation: FSIC HUB 229\n10/16 Sisterhood @ 6pm\nLocation: FSIC HUB 229\n10/19 Interviews\nTBA\nLSV\n4049919\nLatinic Societas Unitas\n2012 Ad 2013\nThuversity of California, Riverside\n60000\n1800400200\nLSV\nLSV\nLatinic Societas Unitas",
+          "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/lsv.ucr/posts/3998838083621807828/828467582_18632237950002164_7837959496049787697_n.jpg",
+          "qr_urls": []
+        },
+        {
+          "index": 2,
+          "ocr_text": "SV\nRush LSU\nLatinic Societas Unitas\n10/12 Info Night @ 6pm\nLocation ISK 229\n10 Local SC229\nNight @ 6pm\n10/16 Sisterhood @ 6pm\nLocation: FSIC HE H 229\n10/19 Interviews\nTBA\nL<V\n0000000\nLatinic Societas Unitas\n2012\n2013\nUniversity of California, Riverside\n0000000\n00000000\nRIES\nLSV\nLatinic Societas Unitas",
+          "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/lsv.ucr/posts/3998838083621807828/829188809_18632237995002164_5360797028961821656_n.jpg",
+          "qr_urls": []
+        },
+        {
+          "index": 3,
+          "ocr_text": "Rush LSU\nLatinic Societas unitas\n10/12 Info Night @ 6pm\nLocation: FSICHUB101A\n10/14 Game Night @ 6pm\nLocation: FSIC HUB 101A\n10/16 Sisterhood @ 6pm\nLocation: FSIC HUB 101A\nInsta: @lsv.ucr\nLSV",
+          "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/lsv.ucr/posts/3998838083621807828/829123019_18632237947002164_6485066519983707689_n.jpg",
+          "qr_urls": []
+        }
+      ]
+    },
+    "assessment": {
+      "model": "gemini-3.1-flash-lite",
+      "result": {
+        "kind": "activity",
+        "reason": "The source advertises a series of specific Rush Week events for Latinic Societas Unitas with dates, times, and locations.",
+        "schedule": null,
+        "date_role": "occurrence",
+        "occurrences": [
+          {
+            "title": "Rush LSU: Info Night",
+            "all_day": false,
+            "ends_at": null,
+            "location": "FSIC HUB 101A",
+            "starts_at": "2026-10-12T18:00:00-07:00",
+            "date_evidence": [
+              {
+                "field": "slide_4_ocr",
+                "quote": "Rush LSU\nLatinic Societas unitas\n10/12 Info Night @ 6pm\nLocation: FSICHUB101A\n10/14 Game Night @ 6pm\nLocation: FSIC HUB 101A\n10/16 Sisterhood @ 6pm\nLocation: FSIC HUB 101A\nInsta: @lsv.ucr\nLSV"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "slide_4_ocr",
+                "quote": "Rush LSU\nLatinic Societas unitas\n10/12 Info Night @ 6pm\nLocation: FSICHUB101A\n10/14 Game Night @ 6pm\nLocation: FSIC HUB 101A\n10/16 Sisterhood @ 6pm\nLocation: FSIC HUB 101A\nInsta: @lsv.ucr\nLSV"
+              }
+            ],
+            "location_evidence": [
+              {
+                "field": "slide_4_ocr",
+                "quote": "Rush LSU\nLatinic Societas unitas\n10/12 Info Night @ 6pm\nLocation: FSICHUB101A\n10/14 Game Night @ 6pm\nLocation: FSIC HUB 101A\n10/16 Sisterhood @ 6pm\nLocation: FSIC HUB 101A\nInsta: @lsv.ucr\nLSV"
+              }
+            ]
+          },
+          {
+            "title": "Rush LSU: Game Night",
+            "all_day": false,
+            "ends_at": null,
+            "location": "FSIC HUB 101A",
+            "starts_at": "2026-10-14T18:00:00-07:00",
+            "date_evidence": [
+              {
+                "field": "slide_4_ocr",
+                "quote": "Rush LSU\nLatinic Societas unitas\n10/12 Info Night @ 6pm\nLocation: FSICHUB101A\n10/14 Game Night @ 6pm\nLocation: FSIC HUB 101A\n10/16 Sisterhood @ 6pm\nLocation: FSIC HUB 101A\nInsta: @lsv.ucr\nLSV"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "slide_4_ocr",
+                "quote": "Rush LSU\nLatinic Societas unitas\n10/12 Info Night @ 6pm\nLocation: FSICHUB101A\n10/14 Game Night @ 6pm\nLocation: FSIC HUB 101A\n10/16 Sisterhood @ 6pm\nLocation: FSIC HUB 101A\nInsta: @lsv.ucr\nLSV"
+              }
+            ],
+            "location_evidence": [
+              {
+                "field": "slide_4_ocr",
+                "quote": "Rush LSU\nLatinic Societas unitas\n10/12 Info Night @ 6pm\nLocation: FSICHUB101A\n10/14 Game Night @ 6pm\nLocation: FSIC HUB 101A\n10/16 Sisterhood @ 6pm\nLocation: FSIC HUB 101A\nInsta: @lsv.ucr\nLSV"
+              }
+            ]
+          },
+          {
+            "title": "Rush LSU: Sisterhood",
+            "all_day": false,
+            "ends_at": null,
+            "location": "FSIC HUB 101A",
+            "starts_at": "2026-10-16T18:00:00-07:00",
+            "date_evidence": [
+              {
+                "field": "slide_4_ocr",
+                "quote": "Rush LSU\nLatinic Societas unitas\n10/12 Info Night @ 6pm\nLocation: FSICHUB101A\n10/14 Game Night @ 6pm\nLocation: FSIC HUB 101A\n10/16 Sisterhood @ 6pm\nLocation: FSIC HUB 101A\nInsta: @lsv.ucr\nLSV"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "slide_4_ocr",
+                "quote": "Rush LSU\nLatinic Societas unitas\n10/12 Info Night @ 6pm\nLocation: FSICHUB101A\n10/14 Game Night @ 6pm\nLocation: FSIC HUB 101A\n10/16 Sisterhood @ 6pm\nLocation: FSIC HUB 101A\nInsta: @lsv.ucr\nLSV"
+              }
+            ],
+            "location_evidence": [
+              {
+                "field": "slide_4_ocr",
+                "quote": "Rush LSU\nLatinic Societas unitas\n10/12 Info Night @ 6pm\nLocation: FSICHUB101A\n10/14 Game Night @ 6pm\nLocation: FSIC HUB 101A\n10/16 Sisterhood @ 6pm\nLocation: FSIC HUB 101A\nInsta: @lsv.ucr\nLSV"
+              }
+            ]
+          }
+        ],
+        "date_evidence": [
+          {
+            "field": "slide_2_ocr",
+            "quote": "Rush LSU\nLatinic Societas Unitas\n10/12 Info Night @ 6pm\nLocation: ESIC HUB 229\n10/14 Game Night @ 6pm\nLocation: FSIC HUB 229\n10/16 Sisterhood @ 6pm\nLocation: FSIC HUB 229\n10/19 Interviews\nTBA\nLSV\n4049919\nLatinic Societas Unitas\n2012 Ad 2013\nThuversity of California, Riverside\n60000\n1800400200\nLSV\nLSV\nLatinic Societas Unitas"
+          },
+          {
+            "field": "slide_4_ocr",
+            "quote": "Rush LSU\nLatinic Societas unitas\n10/12 Info Night @ 6pm\nLocation: FSICHUB101A\n10/14 Game Night @ 6pm\nLocation: FSIC HUB 101A\n10/16 Sisterhood @ 6pm\nLocation: FSIC HUB 101A\nInsta: @lsv.ucr\nLSV"
+          }
+        ],
+        "activity_evidence": [
+          {
+            "field": "slide_2_ocr",
+            "quote": "Rush LSU\nLatinic Societas Unitas\n10/12 Info Night @ 6pm\nLocation: ESIC HUB 229\n10/14 Game Night @ 6pm\nLocation: FSIC HUB 229\n10/16 Sisterhood @ 6pm\nLocation: FSIC HUB 229\n10/19 Interviews\nTBA\nLSV\n4049919\nLatinic Societas Unitas\n2012 Ad 2013\nThuversity of California, Riverside\n60000\n1800400200\nLSV\nLSV\nLatinic Societas Unitas"
+          },
+          {
+            "field": "slide_4_ocr",
+            "quote": "Rush LSU\nLatinic Societas unitas\n10/12 Info Night @ 6pm\nLocation: FSICHUB101A\n10/14 Game Night @ 6pm\nLocation: FSIC HUB 101A\n10/16 Sisterhood @ 6pm\nLocation: FSIC HUB 101A\nInsta: @lsv.ucr\nLSV"
+          }
+        ],
+        "use_source_occurrences": false
+      },
+      "source": {
+        "texts": {
+          "caption": "We are so excited to see all the new interests we have met these past couple of weeks and during the summer orientations ☀️⭐️ Rush Week October 12,14, and 16 @HUB 101A at 6:00pm.",
+          "slide_1_ocr": "we excited to mee\nall at Rush Week!\nLEV SV\nlatinic Societas Unite\nnic Societas Un\nRush LSU\nLatinic Societas Unitas\nGame Nigh tem\nLSV\nLatinic Societas Unitas\nL<V",
+          "slide_2_ocr": "Rush LSU\nLatinic Societas Unitas\n10/12 Info Night @ 6pm\nLocation: ESIC HUB 229\n10/14 Game Night @ 6pm\nLocation: FSIC HUB 229\n10/16 Sisterhood @ 6pm\nLocation: FSIC HUB 229\n10/19 Interviews\nTBA\nLSV\n4049919\nLatinic Societas Unitas\n2012 Ad 2013\nThuversity of California, Riverside\n60000\n1800400200\nLSV\nLSV\nLatinic Societas Unitas",
+          "slide_3_ocr": "SV\nRush LSU\nLatinic Societas Unitas\n10/12 Info Night @ 6pm\nLocation ISK 229\n10 Local SC229\nNight @ 6pm\n10/16 Sisterhood @ 6pm\nLocation: FSIC HE H 229\n10/19 Interviews\nTBA\nL<V\n0000000\nLatinic Societas Unitas\n2012\n2013\nUniversity of California, Riverside\n0000000\n00000000\nRIES\nLSV\nLatinic Societas Unitas",
+          "slide_4_ocr": "Rush LSU\nLatinic Societas unitas\n10/12 Info Night @ 6pm\nLocation: FSICHUB101A\n10/14 Game Night @ 6pm\nLocation: FSIC HUB 101A\n10/16 Sisterhood @ 6pm\nLocation: FSIC HUB 101A\nInsta: @lsv.ucr\nLSV"
+        },
+        "origin": "instagram",
+        "posted_at": "2026-10-02T05:24:28+00:00",
+        "source_key": "instagram:post:3998838083621807828",
+        "source_occurrences": []
+      },
+      "status": "complete",
+      "version": 9,
+      "assessed_at": "2026-10-02T14:46:37.882506+00:00",
+      "source_hash": "672deee056f932251ac99e87a30854d93fbe113fc0e2a0376b5b1743d34f77dd"
+    }
+  },
+  "qtpoc": {
+    "record": {
+      "media_id": "3993474436333855140",
+      "handle": "qtpoc.ucr",
+      "owner_username": "qtpoc.ucr",
+      "caption": "Fall 2026 Events coming soon… Stay tuned!! 💕🏳️‍🌈🏳️‍⚧️",
+      "posted_at": "2026-09-24T19:49:00+00:00",
+      "permalink": "https://www.instagram.com/p/Ddrq9dtSGGk/"
+    },
+    "cached": {
+      "status": "ok",
+      "images": [
+        {
+          "index": 0,
+          "ocr_text": "events schedule\nFALL 2026\nQTPOC\nUCR\n10/14 SPEED FRIENDING\n-\n10/28 DIA DE LOS MUERTOS\n11/18 GRATEFUL NIGHT",
+          "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/qtpoc.ucr/posts/3993474436333855140/820195995_18176100610447414_9215022276755851375_n.jpg",
+          "qr_urls": []
+        }
+      ]
+    },
+    "assessment": {
+      "error": "GroundingRejected: Assessment failed validation after retry: Occurrence start date lacks source support: 2026-10-14; cite a printed date or explicit relative date, never posted_at alone. Relative dates count from the local publication date, Thursday, September 24, 2026 (America/Los_Angeles), not the UTC date in posted_at. In this occurrence's date_evidence, cite both caption and slide when the month/range and day/time are split across fields; top-level citations do not supply occurrence evidence. Do not guess activity/date associations (occurrence 'SPEED FRIENDING')",
+      "model": "gemini-3.1-flash-lite",
+      "source": {
+        "texts": {
+          "caption": "Fall 2026 Events coming soon… Stay tuned!! 💕🏳️‍🌈🏳️‍⚧️",
+          "slide_1_ocr": "events schedule\nFALL 2026\nQTPOC\nUCR\n10/14 SPEED FRIENDING\n-\n10/28 DIA DE LOS MUERTOS\n11/18 GRATEFUL NIGHT"
+        },
+        "origin": "instagram",
+        "posted_at": "2026-09-24T19:49:00+00:00",
+        "source_key": "instagram:post:3993474436333855140",
+        "source_occurrences": []
+      },
+      "status": "error",
+      "version": 7,
+      "retryable": false,
+      "assessed_at": "2026-09-24T20:08:17.873764+00:00",
+      "source_hash": "a972bfc888b3f1ce8f3f3d462129e0c8830d78d3ed3e3f5edb8f5004b01efe85",
+      "validation_attempts": [
+        {
+          "error": "Occurrence start date lacks source support: 2026-10-14; cite a printed date or explicit relative date, never posted_at alone. Relative dates count from the local publication date, Thursday, September 24, 2026 (America/Los_Angeles), not the UTC date in posted_at. In this occurrence's date_evidence, cite both caption and slide when the month/range and day/time are split across fields; top-level citations do not supply occurrence evidence. Do not guess activity/date associations (occurrence 'SPEED FRIENDING')",
+          "response": {
+            "kind": "activity",
+            "reason": "The source lists specific upcoming events for Fall 2026 with associated dates.",
+            "schedule": null,
+            "date_role": "occurrence",
+            "occurrences": [
+              {
+                "title": "SPEED FRIENDING",
+                "all_day": true,
+                "ends_at": "2026-10-15T00:00:00-07:00",
+                "location": "",
+                "starts_at": "2026-10-14T00:00:00-07:00",
+                "date_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "location_evidence": []
+              },
+              {
+                "title": "DIA DE LOS MUERTOS",
+                "all_day": true,
+                "ends_at": "2026-10-29T00:00:00-07:00",
+                "location": "",
+                "starts_at": "2026-10-28T00:00:00-07:00",
+                "date_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "location_evidence": []
+              },
+              {
+                "title": "GRATEFUL NIGHT",
+                "all_day": true,
+                "ends_at": "2026-11-19T00:00:00-08:00",
+                "location": "",
+                "starts_at": "2026-11-18T00:00:00-08:00",
+                "date_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "location_evidence": []
+              }
+            ],
+            "date_evidence": [
+              {
+                "field": "slide_1_ocr"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "slide_1_ocr"
+              }
+            ],
+            "use_source_occurrences": false
+          }
+        },
+        {
+          "error": "Occurrence start date lacks source support: 2026-10-14; cite a printed date or explicit relative date, never posted_at alone. Relative dates count from the local publication date, Thursday, September 24, 2026 (America/Los_Angeles), not the UTC date in posted_at. In this occurrence's date_evidence, cite both caption and slide when the month/range and day/time are split across fields; top-level citations do not supply occurrence evidence. Do not guess activity/date associations (occurrence 'SPEED FRIENDING')",
+          "response": {
+            "kind": "activity",
+            "reason": "The source provides a list of specific upcoming events for Fall 2026 with associated dates.",
+            "schedule": null,
+            "date_role": "occurrence",
+            "occurrences": [
+              {
+                "title": "SPEED FRIENDING",
+                "all_day": true,
+                "ends_at": "2026-10-15T00:00:00-07:00",
+                "location": "",
+                "starts_at": "2026-10-14T00:00:00-07:00",
+                "date_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "location_evidence": []
+              },
+              {
+                "title": "DIA DE LOS MUERTOS",
+                "all_day": true,
+                "ends_at": "2026-10-29T00:00:00-07:00",
+                "location": "",
+                "starts_at": "2026-10-28T00:00:00-07:00",
+                "date_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "location_evidence": []
+              },
+              {
+                "title": "GRATEFUL NIGHT",
+                "all_day": true,
+                "ends_at": "2026-11-19T00:00:00-08:00",
+                "location": "",
+                "starts_at": "2026-11-18T00:00:00-08:00",
+                "date_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "location_evidence": []
+              }
+            ],
+            "date_evidence": [
+              {
+                "field": "slide_1_ocr"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "slide_1_ocr"
+              }
+            ],
+            "use_source_occurrences": false
+          }
+        }
+      ]
+    }
+  },
+  "homecoming": {
+    "record": {
+      "media_id": "3983454610698999617",
+      "handle": "ucrextension",
+      "owner_username": "ucrextension",
+      "caption": "Homecoming is just around the corner, and YOU'RE invited!\n\nJoin the Highlander community on Saturday, Nov. 7, for a day of campus activities, interactive booths, food, giveaways and more. Come experience the energy of UCR and celebrate what makes our community special!\n\n📅 Save the date and learn more: https://alumni.ucr.edu/homecoming\n\n#UCRPGE #UCRExtension #HigherEducation #UCRHomecoming #UCRiverside @ucriversideofficial",
+      "posted_at": "2026-09-11T00:00:25+00:00",
+      "permalink": "https://www.instagram.com/p/DdIEtz5mxdB/"
+    },
+    "cached": {
+      "status": "ok",
+      "images": [
+        {
+          "index": 0,
+          "ocr_text": "SAVE THE DATE\n11 07\n26\nMONTH\nDAY\nYEAR\nUNIVERSITY OF CALIFORNIA, RIVERSIDE\nHOMECOMING",
+          "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/ucrextension/posts/3983454610698999617/804305854_18584068996065965_6357596314520046540_n.jpg",
+          "qr_urls": []
+        }
+      ]
+    },
+    "assessment": {
+      "error": "GroundingRejected: Assessment failed validation after retry: Occurrence start date lacks source support: 2026-11-07; cite a printed date or explicit relative date, never posted_at alone (occurrence 'UCR Homecoming')",
+      "model": "gemini-3.1-flash-lite",
+      "source": {
+        "texts": {
+          "caption": "Homecoming is just around the corner, and YOU'RE invited!\n\nJoin the Highlander community on Saturday, Nov. 7, for a day of campus activities, interactive booths, food, giveaways and more. Come experience the energy of UCR and celebrate what makes our community special!\n\n📅 Save the date and learn more: https://alumni.ucr.edu/homecoming\n\n#UCRPGE #UCRExtension #HigherEducation #UCRHomecoming #UCRiverside @ucriversideofficial",
+          "slide_1_ocr": "SAVE THE DATE\n11 07\n26\nMONTH\nDAY\nYEAR\nUNIVERSITY OF CALIFORNIA, RIVERSIDE\nHOMECOMING"
+        },
+        "origin": "instagram",
+        "posted_at": "2026-09-11T00:00:25+00:00",
+        "source_key": "instagram:post:3983454610698999617",
+        "source_occurrences": []
+      },
+      "status": "error",
+      "version": 5,
+      "retryable": false,
+      "assessed_at": "2026-09-18T17:56:49.525834+00:00",
+      "source_hash": "4dd6cadecfba54c1306d20155695a06594b961230edef4ef5e4cb05c04ea9af3",
+      "validation_attempts": [
+        {
+          "error": "Occurrence offset disagrees with America/Los_Angeles: 2026-11-07T00:00:00-07:00 should use 2026-11-07T00:00:00-08:00 for that local date and clock (occurrence 'UCR Homecoming')",
+          "response": {
+            "kind": "activity",
+            "reason": "The source announces a specific Homecoming event on campus with activities, booths, and food.",
+            "schedule": null,
+            "date_role": "occurrence",
+            "occurrences": [
+              {
+                "title": "UCR Homecoming",
+                "all_day": true,
+                "ends_at": "2026-11-08T00:00:00-07:00",
+                "location": "University of California, Riverside",
+                "starts_at": "2026-11-07T00:00:00-07:00",
+                "date_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "caption"
+                  }
+                ],
+                "location_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ]
+              }
+            ],
+            "date_evidence": [
+              {
+                "field": "caption"
+              },
+              {
+                "field": "slide_1_ocr"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "caption"
+              },
+              {
+                "field": "slide_1_ocr"
+              }
+            ],
+            "use_source_occurrences": false
+          }
+        },
+        {
+          "error": "Occurrence start date lacks source support: 2026-11-07; cite a printed date or explicit relative date, never posted_at alone (occurrence 'UCR Homecoming')",
+          "response": {
+            "kind": "activity",
+            "reason": "The source announces a specific Homecoming event on campus with activities, booths, and food.",
+            "schedule": null,
+            "date_role": "occurrence",
+            "occurrences": [
+              {
+                "title": "UCR Homecoming",
+                "all_day": true,
+                "ends_at": "2026-11-08T00:00:00-08:00",
+                "location": "University of California, Riverside",
+                "starts_at": "2026-11-07T00:00:00-08:00",
+                "date_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "caption"
+                  }
+                ],
+                "location_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ]
+              }
+            ],
+            "date_evidence": [
+              {
+                "field": "caption"
+              },
+              {
+                "field": "slide_1_ocr"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "caption"
+              },
+              {
+                "field": "slide_1_ocr"
+              }
+            ],
+            "use_source_occurrences": false
+          }
+        }
+      ]
+    }
+  },
+  "cib_deadline": {
+    "record": {
+      "media_id": "3996368484489644951",
+      "handle": "creatives.in.business",
+      "owner_username": "creatives.in.business",
+      "caption": "APPS ARE NOW OPEN CREATIVES 😼!!!\n\nWhether you're returning for your second year or beginning with your first year, we so are excited for what we have in store for yall this quarter 🤭 SO....\n\nDONT MISS OUT AND APPLY TODAY 🫵\n(link is also in bio 😛)\n\n#ucr #ucrschoolofbusiness #studentlife #campuslife #creativesinbusiness",
+      "posted_at": "2026-09-28T19:37:49+00:00",
+      "permalink": "https://www.instagram.com/p/Dd18_aFkkuX/"
+    },
+    "cached": {
+      "status": "ok",
+      "images": [
+        {
+          "index": 0,
+          "ocr_text": "Creatives in Business\nCreative\nTable Talk\nPie in the Face\nFundraiser\nAmerica's Got Talent\nJaping\nХ\nUCLA Paramount\nCage Comp\nAPPLICATIONS OPEN!\nCloses: 10/211:59pm\nSwipe for\nmore ingfol",
+          "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/creatives.in.business/posts/3996368484489644951/825395007_17909081187540954_7211317304875928590_n.jpg",
+          "qr_urls": []
+        },
+        {
+          "index": 1,
+          "ocr_text": "FORNIA\nTY PARTNERS\nZHAJMAN ZWANG\nScan the QR code!\nCRAIG\nWABLE ENERGY REGIONAL CENTER\nAND RAYMOND LUI\nJoin Creatives in Business (C.I.B) in empowering students\nby creating a space for innovative leaders who want to\nexplore how creativity drives industry success!\nPositions Available:\n•\nMarketing\nIndustry Cannetons\n• Finance\n•\n•\nCreative Programming\nIndustry Relations &\nPartnerships\nPortata Building\nBranding Praefee",
+          "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/creatives.in.business/posts/3996368484489644951/827902799_17909081178540954_4373223539233757461_n.jpg",
+          "qr_urls": [
+            "https://forms.gle/LXkcwa7qBEpaTVdu7"
+          ]
+        }
+      ]
+    },
+    "assessment": {
+      "error": "GroundingRejected: Assessment failed validation after retry: Occurrence start date lacks source support: 2026-10-21; cite a printed date or explicit relative date, never posted_at alone. Relative dates count from the local publication date, Monday, September 28, 2026 (America/Los_Angeles), not the UTC date in posted_at; a weekday in an activity lineup for 'this week' falls in that date's week (Sunday first) and never before it. In this occurrence's date_evidence, cite both caption and slide when the month/range and day/time are split across fields; top-level citations do not supply occurrence evidence. Do not guess activity/date associations (occurrence 'Creatives in Business Application Deadline')",
+      "model": "gemini-3.1-flash-lite",
+      "source": {
+        "texts": {
+          "caption": "APPS ARE NOW OPEN CREATIVES 😼!!!\n\nWhether you're returning for your second year or beginning with your first year, we so are excited for what we have in store for yall this quarter 🤭 SO....\n\nDONT MISS OUT AND APPLY TODAY 🫵\n(link is also in bio 😛)\n\n#ucr #ucrschoolofbusiness #studentlife #campuslife #creativesinbusiness",
+          "slide_1_ocr": "Creatives in Business\nCreative\nTable Talk\nPie in the Face\nFundraiser\nAmerica's Got Talent\nJaping\nХ\nUCLA Paramount\nCage Comp\nAPPLICATIONS OPEN!\nCloses: 10/211:59pm\nSwipe for\nmore ingfol",
+          "slide_2_ocr": "FORNIA\nTY PARTNERS\nZHAJMAN ZWANG\nScan the QR code!\nCRAIG\nWABLE ENERGY REGIONAL CENTER\nAND RAYMOND LUI\nJoin Creatives in Business (C.I.B) in empowering students\nby creating a space for innovative leaders who want to\nexplore how creativity drives industry success!\nPositions Available:\n•\nMarketing\nIndustry Cannetons\n• Finance\n•\n•\nCreative Programming\nIndustry Relations &\nPartnerships\nPortata Building\nBranding Praefee"
+        },
+        "origin": "instagram",
+        "posted_at": "2026-09-28T19:37:49+00:00",
+        "source_key": "instagram:post:3996368484489644951",
+        "source_occurrences": []
+      },
+      "status": "error",
+      "version": 8,
+      "retryable": false,
+      "assessed_at": "2026-09-29T05:26:01.149417+00:00",
+      "source_hash": "cddb328cd986cae608ae8e6b49ed41d71db776dc7b38aac929f339697cee0d08",
+      "validation_attempts": [
+        {
+          "error": "Occurrence start date lacks source support: 2026-10-21; cite a printed date or explicit relative date, never posted_at alone. Relative dates count from the local publication date, Monday, September 28, 2026 (America/Los_Angeles), not the UTC date in posted_at; a weekday in an activity lineup for 'this week' falls in that date's week (Sunday first) and never before it. In this occurrence's date_evidence, cite both caption and slide when the month/range and day/time are split across fields; top-level citations do not supply occurrence evidence. Do not guess activity/date associations (occurrence 'Creatives in Business Application Deadline')",
+          "response": {
+            "kind": "deadline",
+            "reason": "The source explicitly states an application deadline for the Creatives in Business organization.",
+            "schedule": null,
+            "date_role": "cutoff",
+            "occurrences": [
+              {
+                "title": "Creatives in Business Application Deadline",
+                "all_day": false,
+                "ends_at": null,
+                "location": "",
+                "starts_at": "2026-10-21T23:59:00-07:00",
+                "date_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "location_evidence": []
+              }
+            ],
+            "date_evidence": [
+              {
+                "field": "slide_1_ocr"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "slide_1_ocr"
+              }
+            ],
+            "use_source_occurrences": false
+          }
+        },
+        {
+          "error": "Occurrence start date lacks source support: 2026-10-21; cite a printed date or explicit relative date, never posted_at alone. Relative dates count from the local publication date, Monday, September 28, 2026 (America/Los_Angeles), not the UTC date in posted_at; a weekday in an activity lineup for 'this week' falls in that date's week (Sunday first) and never before it. In this occurrence's date_evidence, cite both caption and slide when the month/range and day/time are split across fields; top-level citations do not supply occurrence evidence. Do not guess activity/date associations (occurrence 'Creatives in Business Application Deadline')",
+          "response": {
+            "kind": "deadline",
+            "reason": "The source explicitly states an application deadline for the Creatives in Business organization.",
+            "schedule": null,
+            "date_role": "cutoff",
+            "occurrences": [
+              {
+                "title": "Creatives in Business Application Deadline",
+                "all_day": false,
+                "ends_at": null,
+                "location": "",
+                "starts_at": "2026-10-21T23:59:00-07:00",
+                "date_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "location_evidence": []
+              }
+            ],
+            "date_evidence": [
+              {
+                "field": "slide_1_ocr"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "slide_1_ocr"
+              }
+            ],
+            "use_source_occurrences": false
+          }
+        }
+      ]
+    }
+  },
+  "ptc": {
+    "record": {
+      "media_id": "3997081416362028335",
+      "handle": "dgog.ucr",
+      "owner_username": "dgog.ucr",
+      "caption": "Hello Dgogers!\n\nHere are the upcoming training dates for our regular PTC events! You must attend one training to be able to participate in our upcoming experiments! If you have done training in the years before, think of this as a refresher :D \n\nReach out if you have any questions!",
+      "posted_at": "2026-09-29T19:14:17+00:00",
+      "permalink": "https://www.instagram.com/p/Dd4fF7oku0v/"
+    },
+    "cached": {
+      "status": "ok",
+      "images": [
+        {
+          "index": 0,
+          "ocr_text": "Upcoming PTC\nTraining\nOCT Orbach Library Room 308\n5\nMonday 1:00 pm - 2:00 pm\nOCT Orbach Library Room 308\n6\nTuesday 9:00 am - 10:00 am\nOCT Orbach Library Room 309\n7\nWednesday 5:00pm - 6:00 pm\nOCT Orbach Library Room 308\n8\nThursday 10:00 am - 11:00 am\nOCT Orbach Library Room 308\n9\nFriday 9:00 am - 10:00 am\n.",
+          "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/dgog.ucr/posts/3997081416362028335/825323522_18340527616280905_4170281330269300078_n.jpg",
+          "qr_urls": []
+        }
+      ]
+    },
+    "assessment": {
+      "error": "GroundingRejected: Assessment failed validation after retry: Occurrence start date lacks source support: 2026-10-05; cite a printed date or explicit relative date, never posted_at alone. Relative dates count from the local publication date, Tuesday, September 29, 2026 (America/Los_Angeles), not the UTC date in posted_at; a weekday in an activity lineup for 'this week' falls in that date's week (Sunday first) and never before it. In this occurrence's date_evidence, cite both caption and slide when the month/range and day/time are split across fields; top-level citations do not supply occurrence evidence. Do not guess activity/date associations (occurrence 'PTC Training')",
+      "model": "gemini-3.1-flash-lite",
+      "source": {
+        "texts": {
+          "caption": "Hello Dgogers!\n\nHere are the upcoming training dates for our regular PTC events! You must attend one training to be able to participate in our upcoming experiments! If you have done training in the years before, think of this as a refresher :D \n\nReach out if you have any questions!",
+          "slide_1_ocr": "Upcoming PTC\nTraining\nOCT Orbach Library Room 308\n5\nMonday 1:00 pm - 2:00 pm\nOCT Orbach Library Room 308\n6\nTuesday 9:00 am - 10:00 am\nOCT Orbach Library Room 309\n7\nWednesday 5:00pm - 6:00 pm\nOCT Orbach Library Room 308\n8\nThursday 10:00 am - 11:00 am\nOCT Orbach Library Room 308\n9\nFriday 9:00 am - 10:00 am\n."
+        },
+        "origin": "instagram",
+        "posted_at": "2026-09-29T19:14:17+00:00",
+        "source_key": "instagram:post:3997081416362028335",
+        "source_occurrences": []
+      },
+      "status": "error",
+      "version": 8,
+      "retryable": false,
+      "assessed_at": "2026-09-29T20:47:47.137568+00:00",
+      "source_hash": "18df82a62759ae44674504f4d9ad7240e9149f6ad98cb71122f5e4d5f4f66b65",
+      "validation_attempts": [
+        {
+          "error": "Occurrence start date lacks source support: 2026-10-05; cite a printed date or explicit relative date, never posted_at alone. Relative dates count from the local publication date, Tuesday, September 29, 2026 (America/Los_Angeles), not the UTC date in posted_at; a weekday in an activity lineup for 'this week' falls in that date's week (Sunday first) and never before it. In this occurrence's date_evidence, cite both caption and slide when the month/range and day/time are split across fields; top-level citations do not supply occurrence evidence. Do not guess activity/date associations (occurrence 'PTC Training')",
+          "response": {
+            "kind": "activity",
+            "reason": "The source advertises a series of training sessions for PTC events, which are attendable activities.",
+            "schedule": null,
+            "date_role": "occurrence",
+            "occurrences": [
+              {
+                "title": "PTC Training",
+                "all_day": false,
+                "ends_at": "2026-10-05T14:00:00-07:00",
+                "location": "Orbach Library Room 308",
+                "starts_at": "2026-10-05T13:00:00-07:00",
+                "date_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "location_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ]
+              },
+              {
+                "title": "PTC Training",
+                "all_day": false,
+                "ends_at": "2026-10-06T10:00:00-07:00",
+                "location": "Orbach Library Room 308",
+                "starts_at": "2026-10-06T09:00:00-07:00",
+                "date_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "location_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ]
+              },
+              {
+                "title": "PTC Training",
+                "all_day": false,
+                "ends_at": "2026-10-07T18:00:00-07:00",
+                "location": "Orbach Library Room 309",
+                "starts_at": "2026-10-07T17:00:00-07:00",
+                "date_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "location_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ]
+              },
+              {
+                "title": "PTC Training",
+                "all_day": false,
+                "ends_at": "2026-10-08T11:00:00-07:00",
+                "location": "Orbach Library Room 308",
+                "starts_at": "2026-10-08T10:00:00-07:00",
+                "date_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "location_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ]
+              },
+              {
+                "title": "PTC Training",
+                "all_day": false,
+                "ends_at": "2026-10-09T10:00:00-07:00",
+                "location": "Orbach Library Room 308",
+                "starts_at": "2026-10-09T09:00:00-07:00",
+                "date_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "location_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ]
+              }
+            ],
+            "date_evidence": [
+              {
+                "field": "slide_1_ocr"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "caption"
+              },
+              {
+                "field": "slide_1_ocr"
+              }
+            ],
+            "use_source_occurrences": false
+          }
+        },
+        {
+          "error": "Occurrence start date lacks source support: 2026-10-05; cite a printed date or explicit relative date, never posted_at alone. Relative dates count from the local publication date, Tuesday, September 29, 2026 (America/Los_Angeles), not the UTC date in posted_at; a weekday in an activity lineup for 'this week' falls in that date's week (Sunday first) and never before it. In this occurrence's date_evidence, cite both caption and slide when the month/range and day/time are split across fields; top-level citations do not supply occurrence evidence. Do not guess activity/date associations (occurrence 'PTC Training')",
+          "response": {
+            "kind": "activity",
+            "reason": "The source advertises a series of specific training sessions for PTC events, which are attendable activities.",
+            "schedule": null,
+            "date_role": "occurrence",
+            "occurrences": [
+              {
+                "title": "PTC Training",
+                "all_day": false,
+                "ends_at": "2026-10-05T14:00:00-07:00",
+                "location": "Orbach Library Room 308",
+                "starts_at": "2026-10-05T13:00:00-07:00",
+                "date_evidence": [
+                  {
+                    "field": "caption"
+                  },
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "location_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ]
+              },
+              {
+                "title": "PTC Training",
+                "all_day": false,
+                "ends_at": "2026-10-06T10:00:00-07:00",
+                "location": "Orbach Library Room 308",
+                "starts_at": "2026-10-06T09:00:00-07:00",
+                "date_evidence": [
+                  {
+                    "field": "caption"
+                  },
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "location_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ]
+              },
+              {
+                "title": "PTC Training",
+                "all_day": false,
+                "ends_at": "2026-10-07T18:00:00-07:00",
+                "location": "Orbach Library Room 309",
+                "starts_at": "2026-10-07T17:00:00-07:00",
+                "date_evidence": [
+                  {
+                    "field": "caption"
+                  },
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "location_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ]
+              },
+              {
+                "title": "PTC Training",
+                "all_day": false,
+                "ends_at": "2026-10-08T11:00:00-07:00",
+                "location": "Orbach Library Room 308",
+                "starts_at": "2026-10-08T10:00:00-07:00",
+                "date_evidence": [
+                  {
+                    "field": "caption"
+                  },
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "location_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ]
+              },
+              {
+                "title": "PTC Training",
+                "all_day": false,
+                "ends_at": "2026-10-09T10:00:00-07:00",
+                "location": "Orbach Library Room 308",
+                "starts_at": "2026-10-09T09:00:00-07:00",
+                "date_evidence": [
+                  {
+                    "field": "caption"
+                  },
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "location_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ]
+              }
+            ],
+            "date_evidence": [
+              {
+                "field": "caption"
+              },
+              {
+                "field": "slide_1_ocr"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "caption"
+              },
+              {
+                "field": "slide_1_ocr"
+              }
+            ],
+            "use_source_occurrences": false
+          }
+        }
+      ]
+    }
+  },
+  "bsib": {
+    "record": {
+      "media_id": "3996486914093968283",
+      "handle": "bsibucr",
+      "owner_username": "bsibucr",
+      "caption": "Happy Week One Scholars! 🌟 Join BSIB we have a packed week ahead! Starting off Wednesday with our bake sale located at the blue tents, then our first general body meeting of the year, and finishing the week off with a movie night in ASP Friday! We’re so excited for this year and we hope you are too!",
+      "posted_at": "2026-09-28T23:33:07+00:00",
+      "permalink": "https://www.instagram.com/p/Dd2X6yQEWub/"
+    },
+    "cached": {
+      "status": "ok",
+      "images": [
+        {
+          "index": 0,
+          "ocr_text": "bsibucr.org\n@bsibucr\nF\nBB\nWeek One",
+          "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/bsibucr/posts/3996486914093968283/829555578_17996935959042999_1294413696079284369_n.jpg",
+          "qr_urls": []
+        },
+        {
+          "index": 1,
+          "ocr_text": "BIB\nGENERAL BODY\nMEETING\nSEPTEMBER 30TH\nHUB 260\n> 6:00 PM - 7:00 PM\n@BSIBUCR",
+          "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/bsibucr/posts/3996486914093968283/829459152_17996935977042999_5350634787806792770_n.jpg",
+          "qr_urls": []
+        },
+        {
+          "index": 2,
+          "ocr_text": "BSIB\nBACK\nSCHOOL\nBAKE SALE\nBISCOFF BANANA\nPUDDING\nSEP 30, 2026\n11:00 AM-2:00PM\nBLUETENTS\n(BY THE BELL TOWER)",
+          "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/bsibucr/posts/3996486914093968283/829363157_17996935968042999_784227791393173074_n.jpg",
+          "qr_urls": []
+        },
+        {
+          "index": 3,
+          "ocr_text": "BSIB\nMOVI\nNICHT\nCOCTOBER 2\n6:00 PM - 9:00 PM\nASP LOBBY\n-71\nU\nes 16 10\nHABH\nHE\nS\nTT\nPIZZA INCLUDED\nFIRST COME FIRST\nSERVE",
+          "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/bsibucr/posts/3996486914093968283/827902801_17996936007042999_5852772752014258580_n.jpg",
+          "qr_urls": []
+        }
+      ]
+    },
+    "assessment": {
+      "error": "GroundingRejected: Assessment failed validation after retry: Occurrence start date lacks source support: 2026-10-02; cite a printed date or explicit relative date, never posted_at alone. Relative dates count from the local publication date, Monday, September 28, 2026 (America/Los_Angeles), not the UTC date in posted_at; a weekday in an activity lineup for 'this week' falls in that date's week (Sunday first) and never before it. In this occurrence's date_evidence, cite both caption and slide when the month/range and day/time are split across fields; top-level citations do not supply occurrence evidence. Do not guess activity/date associations (occurrence 'BSIB Movie Night')",
+      "model": "gemini-3.1-flash-lite",
+      "source": {
+        "texts": {
+          "caption": "Happy Week One Scholars! 🌟 Join BSIB we have a packed week ahead! Starting off Wednesday with our bake sale located at the blue tents, then our first general body meeting of the year, and finishing the week off with a movie night in ASP Friday! We’re so excited for this year and we hope you are too!",
+          "slide_1_ocr": "bsibucr.org\n@bsibucr\nF\nBB\nWeek One",
+          "slide_2_ocr": "BIB\nGENERAL BODY\nMEETING\nSEPTEMBER 30TH\nHUB 260\n> 6:00 PM - 7:00 PM\n@BSIBUCR",
+          "slide_3_ocr": "BSIB\nBACK\nSCHOOL\nBAKE SALE\nBISCOFF BANANA\nPUDDING\nSEP 30, 2026\n11:00 AM-2:00PM\nBLUETENTS\n(BY THE BELL TOWER)",
+          "slide_4_ocr": "BSIB\nMOVI\nNICHT\nCOCTOBER 2\n6:00 PM - 9:00 PM\nASP LOBBY\n-71\nU\nes 16 10\nHABH\nHE\nS\nTT\nPIZZA INCLUDED\nFIRST COME FIRST\nSERVE"
+        },
+        "origin": "instagram",
+        "posted_at": "2026-09-28T23:33:07+00:00",
+        "source_key": "instagram:post:3996486914093968283",
+        "source_occurrences": []
+      },
+      "status": "error",
+      "version": 8,
+      "retryable": false,
+      "assessed_at": "2026-09-29T05:25:42.474058+00:00",
+      "source_hash": "c92aa606e5019cc30027dc7e45e3b76bd12bfa43088eae8c6cdbe3b2573ae56b",
+      "validation_attempts": [
+        {
+          "error": "Occurrence start date lacks source support: 2026-10-02; cite a printed date or explicit relative date, never posted_at alone. Relative dates count from the local publication date, Monday, September 28, 2026 (America/Los_Angeles), not the UTC date in posted_at; a weekday in an activity lineup for 'this week' falls in that date's week (Sunday first) and never before it. In this occurrence's date_evidence, cite both caption and slide when the month/range and day/time are split across fields; top-level citations do not supply occurrence evidence. Do not guess activity/date associations (occurrence 'BSIB Movie Night')",
+          "response": {
+            "kind": "activity",
+            "reason": "The post advertises three specific upcoming student activities for the week: a bake sale, a general body meeting, and a movie night.",
+            "schedule": null,
+            "date_role": "occurrence",
+            "occurrences": [
+              {
+                "title": "BSIB Back School Bake Sale",
+                "all_day": false,
+                "ends_at": "2026-09-30T14:00:00-07:00",
+                "location": "Blue Tents (by the Bell Tower)",
+                "starts_at": "2026-09-30T11:00:00-07:00",
+                "date_evidence": [
+                  {
+                    "field": "slide_3_ocr"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "slide_3_ocr"
+                  }
+                ],
+                "location_evidence": [
+                  {
+                    "field": "slide_3_ocr"
+                  }
+                ]
+              },
+              {
+                "title": "BSIB General Body Meeting",
+                "all_day": false,
+                "ends_at": "2026-09-30T19:00:00-07:00",
+                "location": "HUB 260",
+                "starts_at": "2026-09-30T18:00:00-07:00",
+                "date_evidence": [
+                  {
+                    "field": "slide_2_ocr"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "slide_2_ocr"
+                  }
+                ],
+                "location_evidence": [
+                  {
+                    "field": "slide_2_ocr"
+                  }
+                ]
+              },
+              {
+                "title": "BSIB Movie Night",
+                "all_day": false,
+                "ends_at": "2026-10-02T21:00:00-07:00",
+                "location": "ASP Lobby",
+                "starts_at": "2026-10-02T18:00:00-07:00",
+                "date_evidence": [
+                  {
+                    "field": "slide_4_ocr"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "slide_4_ocr"
+                  }
+                ],
+                "location_evidence": [
+                  {
+                    "field": "slide_4_ocr"
+                  }
+                ]
+              }
+            ],
+            "date_evidence": [
+              {
+                "field": "caption"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "caption"
+              }
+            ],
+            "use_source_occurrences": false
+          }
+        },
+        {
+          "error": "Occurrence start date lacks source support: 2026-10-02; cite a printed date or explicit relative date, never posted_at alone. Relative dates count from the local publication date, Monday, September 28, 2026 (America/Los_Angeles), not the UTC date in posted_at; a weekday in an activity lineup for 'this week' falls in that date's week (Sunday first) and never before it. In this occurrence's date_evidence, cite both caption and slide when the month/range and day/time are split across fields; top-level citations do not supply occurrence evidence. Do not guess activity/date associations (occurrence 'BSIB Movie Night')",
+          "response": {
+            "kind": "activity",
+            "reason": "The post advertises three specific upcoming student activities for the week: a bake sale, a general body meeting, and a movie night.",
+            "schedule": null,
+            "date_role": "occurrence",
+            "occurrences": [
+              {
+                "title": "BSIB Back School Bake Sale",
+                "all_day": false,
+                "ends_at": "2026-09-30T14:00:00-07:00",
+                "location": "Blue Tents (by the Bell Tower)",
+                "starts_at": "2026-09-30T11:00:00-07:00",
+                "date_evidence": [
+                  {
+                    "field": "slide_3_ocr"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "slide_3_ocr"
+                  }
+                ],
+                "location_evidence": [
+                  {
+                    "field": "slide_3_ocr"
+                  }
+                ]
+              },
+              {
+                "title": "BSIB General Body Meeting",
+                "all_day": false,
+                "ends_at": "2026-09-30T19:00:00-07:00",
+                "location": "HUB 260",
+                "starts_at": "2026-09-30T18:00:00-07:00",
+                "date_evidence": [
+                  {
+                    "field": "slide_2_ocr"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "slide_2_ocr"
+                  }
+                ],
+                "location_evidence": [
+                  {
+                    "field": "slide_2_ocr"
+                  }
+                ]
+              },
+              {
+                "title": "BSIB Movie Night",
+                "all_day": false,
+                "ends_at": "2026-10-02T21:00:00-07:00",
+                "location": "ASP Lobby",
+                "starts_at": "2026-10-02T18:00:00-07:00",
+                "date_evidence": [
+                  {
+                    "field": "slide_4_ocr"
+                  },
+                  {
+                    "field": "caption"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "slide_4_ocr"
+                  }
+                ],
+                "location_evidence": [
+                  {
+                    "field": "slide_4_ocr"
+                  }
+                ]
+              }
+            ],
+            "date_evidence": [
+              {
+                "field": "caption"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "caption"
+              }
+            ],
+            "use_source_occurrences": false
+          }
+        }
+      ]
+    }
+  },
+  "winc": {
+    "record": {
+      "media_id": "3994209292559570992",
+      "handle": "wincucr",
+      "owner_username": "wincucr",
+      "caption": "Hello Wincies, \n\n🍂🍁Fall 2026 is officially here! 🍂🍁\n\nWe hope you all had an amazing summer! As we kick off a new quarter and a new academic year, we're excited to share our schedule of workshops and events that will be happening over the next 10 weeks! We are super excited to see you all again, and can't wait to see what this year has in store! ✨\n\nIn the meantime, save the dates 📅 and stay tuned for our event locations!\n\nHope to see you all soon! ♥\n\n#WomenInComputing #winc #ucr #bcoe",
+      "posted_at": "2026-09-25T20:07:53+00:00",
+      "permalink": "https://www.instagram.com/p/DduSDB5k9gw/"
+    },
+    "cached": {
+      "status": "ok",
+      "images": [
+        {
+          "index": 0,
+          "ocr_text": "EVENT SCHEDULE\nFALL 2026\nSept\n29\nTUES | 10:00AM - 11:00 AM\nResume\nWorkshop\nOct\nJU\n13\nTUES | 10:00 AM - 11:00 AM\nWomen in Tech\nWorkshop\nOct\n27\nTUES 10:00 AM - 11:00 AM\nFriendship\nBracelet\nMaking\n@WINCUCR\nW;",
+          "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/wincucr/posts/3994209292559570992/825322252_18357533434247526_6077825827852683076_n.jpg",
+          "qr_urls": []
+        },
+        {
+          "index": 1,
+          "ocr_text": "EVENT SCHEDULE\nFALL 2026\nNov\n17\nTUES | 10:00AM - 1:00 PM\nCOMPANY\nTOUR (TBD)\nNov\n24\nTUES | 10:00 AM - 11:00 AM\nVISION BOARD\nMAKING\nDec\n1\nFRI | 10:00 AM - 11:00 AM\nFINALS STUDY\nSESSION\n@WINCUCR\nW;",
+          "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/wincucr/posts/3994209292559570992/825324546_18357533443247526_1988075058964503357_n.jpg",
+          "qr_urls": []
+        }
+      ]
+    },
+    "assessment": {
+      "error": "GroundingRejected: Assessment failed validation after retry: Occurrence start date lacks source support: 2026-10-13; cite a printed date or explicit relative date, never posted_at alone. Relative dates count from the local publication date, Friday, September 25, 2026 (America/Los_Angeles), not the UTC date in posted_at. In this occurrence's date_evidence, cite both caption and slide when the month/range and day/time are split across fields; top-level citations do not supply occurrence evidence. Do not guess activity/date associations (occurrence 'Women in Tech Workshop')",
+      "model": "gemini-3.1-flash-lite",
+      "source": {
+        "texts": {
+          "caption": "Hello Wincies, \n\n🍂🍁Fall 2026 is officially here! 🍂🍁\n\nWe hope you all had an amazing summer! As we kick off a new quarter and a new academic year, we're excited to share our schedule of workshops and events that will be happening over the next 10 weeks! We are super excited to see you all again, and can't wait to see what this year has in store! ✨\n\nIn the meantime, save the dates 📅 and stay tuned for our event locations!\n\nHope to see you all soon! ♥\n\n#WomenInComputing #winc #ucr #bcoe",
+          "slide_1_ocr": "EVENT SCHEDULE\nFALL 2026\nSept\n29\nTUES | 10:00AM - 11:00 AM\nResume\nWorkshop\nOct\nJU\n13\nTUES | 10:00 AM - 11:00 AM\nWomen in Tech\nWorkshop\nOct\n27\nTUES 10:00 AM - 11:00 AM\nFriendship\nBracelet\nMaking\n@WINCUCR\nW;",
+          "slide_2_ocr": "EVENT SCHEDULE\nFALL 2026\nNov\n17\nTUES | 10:00AM - 1:00 PM\nCOMPANY\nTOUR (TBD)\nNov\n24\nTUES | 10:00 AM - 11:00 AM\nVISION BOARD\nMAKING\nDec\n1\nFRI | 10:00 AM - 11:00 AM\nFINALS STUDY\nSESSION\n@WINCUCR\nW;"
+        },
+        "origin": "instagram",
+        "posted_at": "2026-09-25T20:07:53+00:00",
+        "source_key": "instagram:post:3994209292559570992",
+        "source_occurrences": []
+      },
+      "status": "error",
+      "version": 7,
+      "retryable": false,
+      "assessed_at": "2026-09-26T04:37:54.233662+00:00",
+      "source_hash": "45268cd8b459cd3dd960393c2231da6b8bbc7a0cc4ad9d7f6f54e346fd85ec00",
+      "validation_attempts": [
+        {
+          "error": "Occurrence start date lacks source support: 2026-10-13; cite a printed date or explicit relative date, never posted_at alone. Relative dates count from the local publication date, Friday, September 25, 2026 (America/Los_Angeles), not the UTC date in posted_at. In this occurrence's date_evidence, cite both caption and slide when the month/range and day/time are split across fields; top-level citations do not supply occurrence evidence. Do not guess activity/date associations (occurrence 'Women in Tech Workshop')",
+          "response": {
+            "kind": "activity",
+            "reason": "The source provides a list of specific workshops and events with dates, times, and titles for the Fall 2026 quarter.",
+            "schedule": null,
+            "date_role": "occurrence",
+            "occurrences": [
+              {
+                "title": "Resume Workshop",
+                "all_day": false,
+                "ends_at": "2026-09-29T11:00:00-07:00",
+                "location": "",
+                "starts_at": "2026-09-29T10:00:00-07:00",
+                "date_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "location_evidence": []
+              },
+              {
+                "title": "Women in Tech Workshop",
+                "all_day": false,
+                "ends_at": "2026-10-13T11:00:00-07:00",
+                "location": "",
+                "starts_at": "2026-10-13T10:00:00-07:00",
+                "date_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "location_evidence": []
+              },
+              {
+                "title": "Friendship Bracelet Making",
+                "all_day": false,
+                "ends_at": "2026-10-27T11:00:00-07:00",
+                "location": "",
+                "starts_at": "2026-10-27T10:00:00-07:00",
+                "date_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "location_evidence": []
+              },
+              {
+                "title": "Company Tour",
+                "all_day": false,
+                "ends_at": "2026-11-17T13:00:00-08:00",
+                "location": "TBD",
+                "starts_at": "2026-11-17T10:00:00-08:00",
+                "date_evidence": [
+                  {
+                    "field": "slide_2_ocr"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "slide_2_ocr"
+                  }
+                ],
+                "location_evidence": [
+                  {
+                    "field": "slide_2_ocr"
+                  }
+                ]
+              },
+              {
+                "title": "Vision Board Making",
+                "all_day": false,
+                "ends_at": "2026-11-24T11:00:00-08:00",
+                "location": "",
+                "starts_at": "2026-11-24T10:00:00-08:00",
+                "date_evidence": [
+                  {
+                    "field": "slide_2_ocr"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "slide_2_ocr"
+                  }
+                ],
+                "location_evidence": []
+              },
+              {
+                "title": "Finals Study Session",
+                "all_day": false,
+                "ends_at": "2026-12-01T11:00:00-08:00",
+                "location": "",
+                "starts_at": "2026-12-01T10:00:00-08:00",
+                "date_evidence": [
+                  {
+                    "field": "slide_2_ocr"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "slide_2_ocr"
+                  }
+                ],
+                "location_evidence": []
+              }
+            ],
+            "date_evidence": [
+              {
+                "field": "slide_1_ocr"
+              },
+              {
+                "field": "slide_2_ocr"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "slide_1_ocr"
+              },
+              {
+                "field": "slide_2_ocr"
+              }
+            ],
+            "use_source_occurrences": false
+          }
+        },
+        {
+          "error": "Occurrence start date lacks source support: 2026-10-13; cite a printed date or explicit relative date, never posted_at alone. Relative dates count from the local publication date, Friday, September 25, 2026 (America/Los_Angeles), not the UTC date in posted_at. In this occurrence's date_evidence, cite both caption and slide when the month/range and day/time are split across fields; top-level citations do not supply occurrence evidence. Do not guess activity/date associations (occurrence 'Women in Tech Workshop')",
+          "response": {
+            "kind": "activity",
+            "reason": "The source provides a list of specific workshops and events with dates, times, and titles for the Fall 2026 quarter.",
+            "schedule": null,
+            "date_role": "occurrence",
+            "occurrences": [
+              {
+                "title": "Resume Workshop",
+                "all_day": false,
+                "ends_at": "2026-09-29T11:00:00-07:00",
+                "location": "",
+                "starts_at": "2026-09-29T10:00:00-07:00",
+                "date_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "location_evidence": []
+              },
+              {
+                "title": "Women in Tech Workshop",
+                "all_day": false,
+                "ends_at": "2026-10-13T11:00:00-07:00",
+                "location": "",
+                "starts_at": "2026-10-13T10:00:00-07:00",
+                "date_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "location_evidence": []
+              },
+              {
+                "title": "Friendship Bracelet Making",
+                "all_day": false,
+                "ends_at": "2026-10-27T11:00:00-07:00",
+                "location": "",
+                "starts_at": "2026-10-27T10:00:00-07:00",
+                "date_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "slide_1_ocr"
+                  }
+                ],
+                "location_evidence": []
+              },
+              {
+                "title": "Company Tour",
+                "all_day": false,
+                "ends_at": "2026-11-17T13:00:00-08:00",
+                "location": "TBD",
+                "starts_at": "2026-11-17T10:00:00-08:00",
+                "date_evidence": [
+                  {
+                    "field": "slide_2_ocr"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "slide_2_ocr"
+                  }
+                ],
+                "location_evidence": [
+                  {
+                    "field": "slide_2_ocr"
+                  }
+                ]
+              },
+              {
+                "title": "Vision Board Making",
+                "all_day": false,
+                "ends_at": "2026-11-24T11:00:00-08:00",
+                "location": "",
+                "starts_at": "2026-11-24T10:00:00-08:00",
+                "date_evidence": [
+                  {
+                    "field": "slide_2_ocr"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "slide_2_ocr"
+                  }
+                ],
+                "location_evidence": []
+              },
+              {
+                "title": "Finals Study Session",
+                "all_day": false,
+                "ends_at": "2026-12-01T11:00:00-08:00",
+                "location": "",
+                "starts_at": "2026-12-01T10:00:00-08:00",
+                "date_evidence": [
+                  {
+                    "field": "slide_2_ocr"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "slide_2_ocr"
+                  }
+                ],
+                "location_evidence": []
+              }
+            ],
+            "date_evidence": [
+              {
+                "field": "slide_1_ocr"
+              },
+              {
+                "field": "slide_2_ocr"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "slide_1_ocr"
+              },
+              {
+                "field": "slide_2_ocr"
+              }
+            ],
+            "use_source_occurrences": false
+          }
+        }
+      ]
+    }
+  },
+  "replay_venue": {
+    "rows": [
+      {
+        "id": "ig_ucrarts_p3986353709796873976",
+        "title": "Fall Reception",
+        "description": "Join us for our Fall Reception on Saturday, October 10, from 6–8 p.m. Free and open to the public.\n\nStep into five new exhibitions, enjoy light refreshments, and spend the evening wandering through galleries full of new work and good conversation. Bring friends, bring family, or just yourself, and celebrate the arts and fall with UCR ARTS!\n\nThis program is supported by the College of Humanities, Arts, and Social Sciences at UC Riverside, and by the City of Riverside.",
+        "starts_at": "2026-10-11T01:00:00+00:00",
+        "ends_at": "2026-10-11T03:00:00+00:00",
+        "all_day": false,
+        "location": "",
+        "host": "UCR Arts",
+        "host_handle": "ucrarts",
+        "category": "arts",
+        "content_kind": "student_event",
+        "tags": [],
+        "source": "instagram",
+        "source_url": "https://www.instagram.com/p/DdSX5QVgNb4/",
+        "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/ucrarts/posts/3986353709796873976/811405292_18624420556044255_7339866932730899803_n.jpg",
+        "has_free_food": true,
+        "rsvp_required": false,
+        "rsvp_url": null,
+        "scraped_at": "2026-10-02T19:31:02.540743+00:00"
+      },
+      {
+        "id": "ig_ucrarts_p3973247350387543800-20261011T0100Z",
+        "title": "Fall Reception",
+        "description": "Save the date! Come see our new exhibition Dispatches: The Photography of Douglas McCulloh opening September 12!\n\nJoin us as we celebrate this exhibition at our Fall Reception on Saturday, October 10, 6-8 p.m. Free and open to the public. RSVPs encouraged. \n\n🔗 Visit the link in bio to RSVP!\n\nExhibitions on view: \n-Dispatches: The Photography of Douglas McCulloh, 1990–2025, the first-ever retrospective of McCulloh’s nearly four-decade career.\n-A Solid Sense of Who You Are: Selections from the Museum Collection, pulled from McCulloh’s own essays, interests, and friendships.\n-The Great Picture: Revisiting the Legacy Project, the project that set the Guinness World Record for the world’s largest print photograph.\n-Won Ju Lim: The Vast Structure of Recollection, installations that turn the experience of memory into something you can physically walk through.\n-Heather Cleary: Thresholds, one striking photograph brought to life with miniature clay figures.",
+        "starts_at": "2026-10-11T01:00:00+00:00",
+        "ends_at": "2026-10-11T03:00:00+00:00",
+        "all_day": false,
+        "location": "UCR ARTS: California Museum of Photography",
+        "host": "UCR Arts",
+        "host_handle": "ucrarts",
+        "category": "arts",
+        "content_kind": "student_event",
+        "tags": [],
+        "source": "instagram",
+        "source_url": "https://www.instagram.com/p/Dcjz2n8nI74/",
+        "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/ucrarts/posts/3973247350387543800/785320002_18618285820044255_3747580503833168691_n.jpg",
+        "has_free_food": false,
+        "rsvp_required": true,
+        "rsvp_url": null,
+        "scraped_at": "2026-10-02T19:31:02.540743+00:00"
+      },
+      {
+        "id": "ig_ucrarts_p3997104578131130154",
+        "title": "Fall Reception",
+        "description": "You’re invited to join us as we celebrate five new exhibitions at our Fall Reception on Saturday, October 10, 6-8 p.m. Free and open to the public. RSVPs encouraged.\n\nWon Jum Lim: The Vast Structure of Recollection is among the exhibitions being celebrated. Memory is rarely a precise record of the past; rather, it is a creative act of reconstruction. This understanding of memory’s fluid nature is a hallmark of Marcel Proust’s writing, the source of the exhibition’s title and frequent inspiration for artist Won Ju Lim.\n\nBring friends, bring family, or just yourself, and celebrate the arts and fall with UCR ARTS!",
+        "starts_at": "2026-10-11T01:00:00+00:00",
+        "ends_at": "2026-10-11T03:00:00+00:00",
+        "all_day": false,
+        "location": "UCR ARTS, 3834 Main Street, Riverside, CA 92501",
+        "host": "UCR Arts",
+        "host_handle": "ucrarts",
+        "category": "other",
+        "content_kind": "student_event",
+        "tags": [],
+        "source": "instagram",
+        "source_url": "https://www.instagram.com/p/Dd4kW-tl_cq/",
+        "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/ucrarts/posts/3997104578131130154/825320803_18629506975044255_5756280801447261269_n.jpg",
+        "has_free_food": false,
+        "rsvp_required": false,
+        "rsvp_url": null,
+        "scraped_at": "2026-10-02T19:31:02.540743+00:00"
+      },
+      {
+        "id": "ig_ucrarts_p3987622104329221707",
+        "title": "Fall Reception",
+        "description": "Save the Date! Join us for our Fall Reception on Saturday, October 10, from 6–8 p.m. Free and open to the public. \n\nStep into five new exhibitions including Won Ju Lim: The Vast Structure of Recollection, which brings together three chapters of Lim’s artistic practice. The exhibition includes Proustian Bedrooms, That Sense of Complexity…, and a new site-specific installation. Created especially for this exhibition, a new installation investigates the physical and spectral traces of the gallery itself–a former turn-of-the-century Rouse’s department store–exploring the museum site as a repository for residues of the past.",
+        "starts_at": "2026-10-11T01:00:00+00:00",
+        "ends_at": "2026-10-11T03:00:00+00:00",
+        "all_day": false,
+        "location": "3834 Main Street Riverside, CA 92501",
+        "host": "UCR Arts",
+        "host_handle": "ucrarts",
+        "category": "arts",
+        "content_kind": "student_event",
+        "tags": [],
+        "source": "instagram",
+        "source_url": "https://www.instagram.com/p/DdW4S0zCfZL/",
+        "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/ucrarts/posts/3987622104329221707/813661169_18624979321044255_7366587608552383458_n.jpg",
+        "has_free_food": false,
+        "rsvp_required": false,
+        "rsvp_url": null,
+        "scraped_at": "2026-10-02T19:31:02.540743+00:00"
+      }
+    ],
+    "canonical": {
+      "id": "ig_ucrarts_p3986353709796873976",
+      "title": "Fall Reception",
+      "description": "Join us for our Fall Reception on Saturday, October 10, from 6–8 p.m. Free and open to the public.\n\nStep into five new exhibitions, enjoy light refreshments, and spend the evening wandering through galleries full of new work and good conversation. Bring friends, bring family, or just yourself, and celebrate the arts and fall with UCR ARTS!\n\nThis program is supported by the College of Humanities, Arts, and Social Sciences at UC Riverside, and by the City of Riverside.",
+      "starts_at": "2026-10-11T01:00:00+00:00",
+      "ends_at": "2026-10-11T03:00:00+00:00",
+      "location": "UCR ARTS: California Museum of Photography",
+      "host": "UCR Arts",
+      "host_handle": "ucrarts",
+      "category": "arts",
+      "tags": [],
+      "source": "instagram",
+      "source_url": "https://www.instagram.com/p/DdSX5QVgNb4/",
+      "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/ucrarts/posts/3986353709796873976/811405292_18624420556044255_7339866932730899803_n.jpg",
+      "rsvp_required": true,
+      "rsvp_url": null,
+      "scraped_at": "2026-10-02T14:46:19.643911+00:00",
+      "created_at": "2026-09-20T03:11:58.078043+00:00",
+      "updated_at": "2026-10-02T14:47:20.184865+00:00",
+      "is_locked": false,
+      "content_kind": "student_event",
+      "has_free_food": true,
+      "all_day": false,
+      "hosts": [],
+      "sort_at": "2026-10-11T01:00:00+00:00"
+    }
+  }
+}
