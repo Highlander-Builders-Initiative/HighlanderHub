@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { FallbackImage } from "@/components/ui/FallbackImage";
 import Link from "next/link";
 import { Masthead } from "@/components/layout/Masthead";
 import { Footer } from "@/components/layout/Footer";
@@ -65,7 +65,7 @@ export default async function HomePage() {
                 channel="website"
                 className="interactive-focus group inline-flex items-center gap-2 md:mr-8 lg:mr-16"
               >
-                <Image
+                <FallbackImage
                   src="/logo_icon.png"
                   alt=""
                   width={20}

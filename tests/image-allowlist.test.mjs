@@ -38,3 +38,10 @@ test("next/image remote patterns allow scraper-produced image hosts", () => {
     true
   );
 });
+
+test("optimized flyers stay cached long enough not to re-spend transformations", async () => {
+  const { default: nextConfig } = await import("../next.config.js");
+  // Supabase answers `cache-control: no-cache`, so this TTL alone decides how
+  // often Vercel re-optimizes each flyer variant.
+  assert.ok(nextConfig.images.minimumCacheTTL >= 30 * 24 * 60 * 60);
+});

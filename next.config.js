@@ -110,6 +110,11 @@ const nextConfig = {
     // 75 is the default for flyers. 90 is for the hero skyline, whose flat
     // facets and smooth sky band visibly at 75.
     qualities: [75, 90],
+    // Supabase serves flyers with `cache-control: no-cache`, so the optimized
+    // copies fell back to the 4-hour default and every expiry spent another
+    // Vercel transformation. Flyer paths never change (they carry the post id),
+    // so a long TTL is safe; a replaced public/ image needs a new filename.
+    minimumCacheTTL: 2678400, // 31 days
   },
 };
 

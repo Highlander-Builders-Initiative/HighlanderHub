@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import Image from "next/image";
+import { FallbackImage } from "@/components/ui/FallbackImage";
 import { FaInstagram } from "react-icons/fa";
 import { Masthead } from "@/components/layout/Masthead";
 import { Footer } from "@/components/layout/Footer";
@@ -231,7 +231,7 @@ export default async function AboutPage() {
               Built by HBI
             </h2>
             <div className="mt-4 flex max-w-md gap-4">
-              <Image
+              <FallbackImage
                 src="/logo_icon.png"
                 alt=""
                 width={40}

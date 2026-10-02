@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { FallbackImage } from "@/components/ui/FallbackImage";
 import type { CampusDaypart } from "@/lib/daylight";
 import daySkyline from "./campus-skyline-day.webp";
 import goldenSkyline from "./campus-skyline-golden.webp";
@@ -48,7 +48,7 @@ export function CampusSkyline({ daypart }: { daypart: CampusDaypart }) {
       aria-hidden
       className="skyline-root pointer-events-none absolute inset-x-0 bottom-0"
     >
-      <Image
+      <FallbackImage
         src={ART[daypart]}
         alt=""
         fill

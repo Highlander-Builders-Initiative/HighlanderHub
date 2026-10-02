@@ -348,6 +348,27 @@ test("loading placeholders shimmer and flyers fade in over them", () => {
   // Only browser-mounted flyers wait to fade in; server HTML paints at once.
   assert.match(image, /useSyncExternalStore\(\s*subscribe,\s*\(\) => true,\s*\(\) => false\s*\)/);
   assert.match(image, /opacity-0/);
+
+  // An optimizer refusal (e.g. a Vercel 402) retries the original file.
+  assert.match(image, /onError=\{\(\) => setOptimizerFailedSrc\(src\)\}/);
+  assert.match(image, /isOptimizableFlyerHost\(src\) && optimizerFailedSrc !== src/);
+});
+
+test("non-flyer optimized images fall back to their original file", () => {
+  const fallback = read("src/components/ui/FallbackImage.tsx");
+  assert.match(fallback, /unoptimized=\{optimizerFailed \|\| props\.unoptimized\}/);
+  assert.match(fallback, /onError=\{\(\) => setOptimizerFailed\(true\)\}/);
+
+  // Only the fallback wrappers may reach next/image directly.
+  for (const path of [
+    "src/components/home/CampusSkyline.tsx",
+    "src/app/page.tsx",
+    "src/app/about/page.tsx",
+  ]) {
+    const source = read(path);
+    assert.doesNotMatch(source, /from "next\/image"/);
+    assert.match(source, /<FallbackImage/);
+  }
 });
 
 test("app routes expose 500-level error boundaries", () => {

@@ -72,6 +72,11 @@ export function EventFlyerImage({
   const shownKey = `${sizes ?? width ?? ""} ${src}`;
   const fadesIn = useFadesIn(shownKey);
   const [shownSrc, setShownSrc] = useState<string | null>(null);
+  // The optimizer can refuse a flyer the host still serves (Vercel answers 402
+  // once the plan's transformations run out), so retry the original once.
+  const [optimizerFailedSrc, setOptimizerFailedSrc] = useState<string | null>(
+    null
+  );
   const previewSrc = useSyncExternalStore(
     subscribe,
     () => loadedFlyers.get(src) ?? null,
@@ -98,7 +103,7 @@ export function EventFlyerImage({
     onLoad?.(img);
   };
 
-  if (isOptimizableFlyerHost(src)) {
+  if (isOptimizableFlyerHost(src) && optimizerFailedSrc !== src) {
     return (
       <Image
         src={src}
@@ -112,7 +117,7 @@ export function EventFlyerImage({
         priority={priority}
         loading={loadingAttr}
         onLoad={(event) => handleLoad(event.currentTarget)}
-        onError={onError}
+        onError={() => setOptimizerFailedSrc(src)}
       />
     );
   }
