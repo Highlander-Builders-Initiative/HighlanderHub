@@ -58,6 +58,11 @@ _PRICE_PATTERN = re.compile(r"\$\s?\d")
 
 def _mentions_fundraising(text: str, ocr_text: str = "") -> bool:
     text = _FUNDRAISING_ROLE_PATTERN.sub(" ", text.casefold())
+    # Giving blood is participation in a drive, not a monetary fundraiser.
+    # Keep unrelated requests for money in the same announcement detectable.
+    text = re.sub(r"\b(?:donat(?:e|ing)\s+blood|blood\s+donations?)\b", " ", text)
+    if re.search(r"\bblood\s+drive\b", text):
+        text = re.sub(r"\bdonations\s+for\s+citations\b", " ", text)
     if any(term in text for term in _FUNDRAISER_TERMS):
         return True
     return bool(_CAUSE_PATTERN.search(text)
@@ -213,8 +218,8 @@ _FREE_FOOD_PATTERN = re.compile(
     rf"(?:provided|served|available|while supplies last)|"
     rf"(?:catering|serving|giving out|handing out)\s+(?:\w+\s+){{0,2}}?{_FOOD_NOUN}|"
     # Not 'join us for dinner'/'enjoy dinner': that is how restaurant trips read.
-    rf"(?:there will be|come grab|we['’]re having)\s+"
-    rf"(?:(?:some|light)\s+)?{_FOOD_NOUN})\b",
+    rf"(?:there will be|come grab|we['’]re having|we['’]ll have|we will have)\s+"
+    rf"(?:(?:some|light)\s+|music,\s*)?{_FOOD_NOUN})\b",
     re.IGNORECASE,
 )
 _FOOD_NEGATED_BEFORE = re.compile(

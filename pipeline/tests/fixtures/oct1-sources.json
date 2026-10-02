@@ -1,0 +1,1273 @@
+{
+  "ama_networking": {
+    "record": {
+      "media_id": "3998675011985063092",
+      "handle": "amaucr",
+      "owner_username": "amaucr",
+      "caption": "Your AMA journey starts here ★\n\nKick off Fall Recruitment with Getting to Know AMA + Speed Networking! Meet our members, make connections, and discover what AMA is all about.\n\n★ October 5 | 6:30–8:30 PM\n★ Pentland FG\n\n🍦 Support AMA at our Yogurtland fundraiser! Show the cashier this flyer when you order to support our org.\n\nRSVP through the link in our bio. We’ll see you there! ★",
+      "posted_at": "2026-10-02T00:00:29+00:00",
+      "permalink": "https://www.instagram.com/p/Dd-JbzNmby0/"
+    },
+    "cached": {
+      "status": "ok",
+      "images": [
+        {
+          "index": 0,
+          "qr_urls": [],
+          "ocr_text": "DIN1\nAMA\nGET TO KNOW AMA\nOct 5 6:30-8:30 PM\nPENTLAND FG",
+          "image_url": "https://example.org/3998675011985063092-0.jpg"
+        },
+        {
+          "index": 1,
+          "qr_urls": [],
+          "ocr_text": "*PLEASE PRESENT THIS FLYER TO THE CASHIER*\nFundraiser\n\"AMA\") & Yogurtland\"\nMonday, October 5th\n1242 University Ave, Riverside\nSHUTTLING WILL BE PROVIDED\nYog\na\n9pm - 10:30pm\n20% of total purchase will be\ndonated to AMA\nYeourtfood\nD\nJeourtland",
+          "image_url": "https://example.org/3998675011985063092-1.jpg"
+        }
+      ]
+    },
+    "assessment": {
+      "model": "gemini-3.1-flash-lite",
+      "result": {
+        "kind": "activity",
+        "reason": "The source advertises two distinct events: a 'Getting to Know AMA' networking session and a Yogurtland fundraiser, both occurring on October 5th, 2026.",
+        "schedule": null,
+        "date_role": "occurrence",
+        "occurrences": [
+          {
+            "title": "Getting to Know AMA + Speed Networking",
+            "all_day": false,
+            "ends_at": "2026-10-05T20:30:00-07:00",
+            "location": "Pentland FG",
+            "starts_at": "2026-10-05T18:30:00-07:00",
+            "date_evidence": [
+              {
+                "field": "caption",
+                "quote": "Your AMA journey starts here ★\n\nKick off Fall Recruitment with Getting to Know AMA + Speed Networking! Meet our members, make connections, and discover what AMA is all about.\n\n★ October 5 | 6:30–8:30 PM\n★ Pentland FG\n\n🍦 Support AMA at our Yogurtland fundraiser! Show the cashier this flyer when you order to support our org.\n\nRSVP through the link in our bio. We’ll see you there! ★"
+              },
+              {
+                "field": "slide_1_ocr",
+                "quote": "DIN1\nAMA\nGET TO KNOW AMA\nOct 5 6:30-8:30 PM\nPENTLAND FG"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "caption",
+                "quote": "Your AMA journey starts here ★\n\nKick off Fall Recruitment with Getting to Know AMA + Speed Networking! Meet our members, make connections, and discover what AMA is all about.\n\n★ October 5 | 6:30–8:30 PM\n★ Pentland FG\n\n🍦 Support AMA at our Yogurtland fundraiser! Show the cashier this flyer when you order to support our org.\n\nRSVP through the link in our bio. We’ll see you there! ★"
+              },
+              {
+                "field": "slide_1_ocr",
+                "quote": "DIN1\nAMA\nGET TO KNOW AMA\nOct 5 6:30-8:30 PM\nPENTLAND FG"
+              }
+            ],
+            "location_evidence": [
+              {
+                "field": "caption",
+                "quote": "Your AMA journey starts here ★\n\nKick off Fall Recruitment with Getting to Know AMA + Speed Networking! Meet our members, make connections, and discover what AMA is all about.\n\n★ October 5 | 6:30–8:30 PM\n★ Pentland FG\n\n🍦 Support AMA at our Yogurtland fundraiser! Show the cashier this flyer when you order to support our org.\n\nRSVP through the link in our bio. We’ll see you there! ★"
+              },
+              {
+                "field": "slide_1_ocr",
+                "quote": "DIN1\nAMA\nGET TO KNOW AMA\nOct 5 6:30-8:30 PM\nPENTLAND FG"
+              }
+            ]
+          },
+          {
+            "title": "AMA Yogurtland Fundraiser",
+            "all_day": false,
+            "ends_at": "2026-10-05T22:30:00-07:00",
+            "location": "1242 University Ave, Riverside",
+            "starts_at": "2026-10-05T21:00:00-07:00",
+            "date_evidence": [
+              {
+                "field": "caption",
+                "quote": "Your AMA journey starts here ★\n\nKick off Fall Recruitment with Getting to Know AMA + Speed Networking! Meet our members, make connections, and discover what AMA is all about.\n\n★ October 5 | 6:30–8:30 PM\n★ Pentland FG\n\n🍦 Support AMA at our Yogurtland fundraiser! Show the cashier this flyer when you order to support our org.\n\nRSVP through the link in our bio. We’ll see you there! ★"
+              },
+              {
+                "field": "slide_2_ocr",
+                "quote": "*PLEASE PRESENT THIS FLYER TO THE CASHIER*\nFundraiser\n\"AMA\") & Yogurtland\"\nMonday, October 5th\n1242 University Ave, Riverside\nSHUTTLING WILL BE PROVIDED\nYog\na\n9pm - 10:30pm\n20% of total purchase will be\ndonated to AMA\nYeourtfood\nD\nJeourtland"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "caption",
+                "quote": "Your AMA journey starts here ★\n\nKick off Fall Recruitment with Getting to Know AMA + Speed Networking! Meet our members, make connections, and discover what AMA is all about.\n\n★ October 5 | 6:30–8:30 PM\n★ Pentland FG\n\n🍦 Support AMA at our Yogurtland fundraiser! Show the cashier this flyer when you order to support our org.\n\nRSVP through the link in our bio. We’ll see you there! ★"
+              },
+              {
+                "field": "slide_2_ocr",
+                "quote": "*PLEASE PRESENT THIS FLYER TO THE CASHIER*\nFundraiser\n\"AMA\") & Yogurtland\"\nMonday, October 5th\n1242 University Ave, Riverside\nSHUTTLING WILL BE PROVIDED\nYog\na\n9pm - 10:30pm\n20% of total purchase will be\ndonated to AMA\nYeourtfood\nD\nJeourtland"
+              }
+            ],
+            "location_evidence": [
+              {
+                "field": "slide_2_ocr",
+                "quote": "*PLEASE PRESENT THIS FLYER TO THE CASHIER*\nFundraiser\n\"AMA\") & Yogurtland\"\nMonday, October 5th\n1242 University Ave, Riverside\nSHUTTLING WILL BE PROVIDED\nYog\na\n9pm - 10:30pm\n20% of total purchase will be\ndonated to AMA\nYeourtfood\nD\nJeourtland"
+              }
+            ]
+          }
+        ],
+        "date_evidence": [
+          {
+            "field": "caption",
+            "quote": "Your AMA journey starts here ★\n\nKick off Fall Recruitment with Getting to Know AMA + Speed Networking! Meet our members, make connections, and discover what AMA is all about.\n\n★ October 5 | 6:30–8:30 PM\n★ Pentland FG\n\n🍦 Support AMA at our Yogurtland fundraiser! Show the cashier this flyer when you order to support our org.\n\nRSVP through the link in our bio. We’ll see you there! ★"
+          },
+          {
+            "field": "slide_1_ocr",
+            "quote": "DIN1\nAMA\nGET TO KNOW AMA\nOct 5 6:30-8:30 PM\nPENTLAND FG"
+          },
+          {
+            "field": "slide_2_ocr",
+            "quote": "*PLEASE PRESENT THIS FLYER TO THE CASHIER*\nFundraiser\n\"AMA\") & Yogurtland\"\nMonday, October 5th\n1242 University Ave, Riverside\nSHUTTLING WILL BE PROVIDED\nYog\na\n9pm - 10:30pm\n20% of total purchase will be\ndonated to AMA\nYeourtfood\nD\nJeourtland"
+          }
+        ],
+        "activity_evidence": [
+          {
+            "field": "caption",
+            "quote": "Your AMA journey starts here ★\n\nKick off Fall Recruitment with Getting to Know AMA + Speed Networking! Meet our members, make connections, and discover what AMA is all about.\n\n★ October 5 | 6:30–8:30 PM\n★ Pentland FG\n\n🍦 Support AMA at our Yogurtland fundraiser! Show the cashier this flyer when you order to support our org.\n\nRSVP through the link in our bio. We’ll see you there! ★"
+          },
+          {
+            "field": "slide_1_ocr",
+            "quote": "DIN1\nAMA\nGET TO KNOW AMA\nOct 5 6:30-8:30 PM\nPENTLAND FG"
+          },
+          {
+            "field": "slide_2_ocr",
+            "quote": "*PLEASE PRESENT THIS FLYER TO THE CASHIER*\nFundraiser\n\"AMA\") & Yogurtland\"\nMonday, October 5th\n1242 University Ave, Riverside\nSHUTTLING WILL BE PROVIDED\nYog\na\n9pm - 10:30pm\n20% of total purchase will be\ndonated to AMA\nYeourtfood\nD\nJeourtland"
+          }
+        ],
+        "use_source_occurrences": false
+      },
+      "source": {
+        "texts": {
+          "caption": "Your AMA journey starts here ★\n\nKick off Fall Recruitment with Getting to Know AMA + Speed Networking! Meet our members, make connections, and discover what AMA is all about.\n\n★ October 5 | 6:30–8:30 PM\n★ Pentland FG\n\n🍦 Support AMA at our Yogurtland fundraiser! Show the cashier this flyer when you order to support our org.\n\nRSVP through the link in our bio. We’ll see you there! ★",
+          "slide_1_ocr": "DIN1\nAMA\nGET TO KNOW AMA\nOct 5 6:30-8:30 PM\nPENTLAND FG",
+          "slide_2_ocr": "*PLEASE PRESENT THIS FLYER TO THE CASHIER*\nFundraiser\n\"AMA\") & Yogurtland\"\nMonday, October 5th\n1242 University Ave, Riverside\nSHUTTLING WILL BE PROVIDED\nYog\na\n9pm - 10:30pm\n20% of total purchase will be\ndonated to AMA\nYeourtfood\nD\nJeourtland"
+        },
+        "origin": "instagram",
+        "posted_at": "2026-10-02T00:00:29+00:00",
+        "source_key": "instagram:post:3998675011985063092",
+        "source_occurrences": []
+      },
+      "status": "complete",
+      "version": 8,
+      "assessed_at": "2026-10-02T05:00:48.449275+00:00",
+      "source_hash": "64543bb83c75593c4e00ea4810ca9ca4db9e9142f14536531462a47d58008612"
+    }
+  },
+  "blood_drive": {
+    "record": {
+      "media_id": "3998648181021502001",
+      "handle": "ucrtaps",
+      "owner_username": "ucrtaps",
+      "caption": "Save a life by donating blood!  Sign-up for the Donations for Citations Blood Drive!  Register for a time slot during the 3-day period Oct. 28-30th.  We'll have music, snacks, and free giveaways.  Schedule an appointment online or just walk-in.  https://ow.ly/fTif50ZTLAp",
+      "posted_at": "2026-10-01T23:07:17+00:00",
+      "permalink": "https://www.instagram.com/p/Dd-DVW7jGox/"
+    },
+    "cached": {
+      "status": "ok",
+      "images": [
+        {
+          "index": 0,
+          "qr_urls": [
+            "https://bit.ly/4dkRQOr?r=qr"
+          ],
+          "ocr_text": "WILD BY NATURE...\nBLOOD\nTYPE:\nHERO\nHero by choice!\nDONATIONS\nFOR CITATIONS\nBLOOD DRIVE",
+          "image_url": "https://example.org/3998648181021502001-0.jpg"
+        }
+      ]
+    },
+    "assessment": {
+      "model": "gemini-3.1-flash-lite",
+      "result": {
+        "kind": "activity",
+        "reason": "The source advertises a 3-day blood drive event with specific dates, music, snacks, and giveaways.",
+        "schedule": null,
+        "date_role": "occurrence",
+        "occurrences": [
+          {
+            "title": "Donations for Citations Blood Drive",
+            "all_day": true,
+            "ends_at": "2026-10-31T00:00:00-07:00",
+            "location": "",
+            "starts_at": "2026-10-28T00:00:00-07:00",
+            "date_evidence": [
+              {
+                "field": "caption",
+                "quote": "Save a life by donating blood!  Sign-up for the Donations for Citations Blood Drive!  Register for a time slot during the 3-day period Oct. 28-30th.  We'll have music, snacks, and free giveaways.  Schedule an appointment online or just walk-in.  https://ow.ly/fTif50ZTLAp"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "caption",
+                "quote": "Save a life by donating blood!  Sign-up for the Donations for Citations Blood Drive!  Register for a time slot during the 3-day period Oct. 28-30th.  We'll have music, snacks, and free giveaways.  Schedule an appointment online or just walk-in.  https://ow.ly/fTif50ZTLAp"
+              }
+            ],
+            "location_evidence": []
+          }
+        ],
+        "date_evidence": [
+          {
+            "field": "caption",
+            "quote": "Save a life by donating blood!  Sign-up for the Donations for Citations Blood Drive!  Register for a time slot during the 3-day period Oct. 28-30th.  We'll have music, snacks, and free giveaways.  Schedule an appointment online or just walk-in.  https://ow.ly/fTif50ZTLAp"
+          }
+        ],
+        "activity_evidence": [
+          {
+            "field": "caption",
+            "quote": "Save a life by donating blood!  Sign-up for the Donations for Citations Blood Drive!  Register for a time slot during the 3-day period Oct. 28-30th.  We'll have music, snacks, and free giveaways.  Schedule an appointment online or just walk-in.  https://ow.ly/fTif50ZTLAp"
+          },
+          {
+            "field": "slide_1_ocr",
+            "quote": "WILD BY NATURE...\nBLOOD\nTYPE:\nHERO\nHero by choice!\nDONATIONS\nFOR CITATIONS\nBLOOD DRIVE"
+          }
+        ],
+        "use_source_occurrences": false
+      },
+      "source": {
+        "texts": {
+          "caption": "Save a life by donating blood!  Sign-up for the Donations for Citations Blood Drive!  Register for a time slot during the 3-day period Oct. 28-30th.  We'll have music, snacks, and free giveaways.  Schedule an appointment online or just walk-in.  https://ow.ly/fTif50ZTLAp",
+          "slide_1_ocr": "WILD BY NATURE...\nBLOOD\nTYPE:\nHERO\nHero by choice!\nDONATIONS\nFOR CITATIONS\nBLOOD DRIVE"
+        },
+        "origin": "instagram",
+        "posted_at": "2026-10-01T23:07:17+00:00",
+        "source_key": "instagram:post:3998648181021502001",
+        "source_occurrences": []
+      },
+      "status": "complete",
+      "version": 8,
+      "assessed_at": "2026-10-02T05:01:54.975457+00:00",
+      "source_hash": "64d67bf1448332b2185b3231e5d749d126620654198abe599e106929ac326044"
+    }
+  },
+  "dinner_next_week": {
+    "record": {
+      "media_id": "3998548264248855005",
+      "handle": "sm.ucr",
+      "owner_username": "sm.ucr",
+      "caption": "YAYYYY DINNER FOR FIVE🍔🌮🍕\n\nWe will be having DINNER FOR FIVE NEXT WEEK ON TUESDAY in place of our Large Group!! We would love to spend this time to meet and get to know you guys more🤗 \n\nYou will be randomly assigned to a group with our members and other newcomers! Your group leader will contact you once assigned so please be on the lookout🧚‍♀️ ALSO we will be meeting @ LOT15 around 7PM unless further notice is given😛\n\nIf you guys are interested, please fill out the FORM located in our LINKTREE🌱🔗\n\nCANT WAIT TO MEET YOU ALL🩷🩷🩷🩷🩷",
+      "posted_at": "2026-10-01T19:54:54+00:00",
+      "permalink": "https://www.instagram.com/p/Dd9snYLzsnd/"
+    },
+    "cached": {
+      "status": "ok",
+      "images": [
+        {
+          "index": 0,
+          "qr_urls": [],
+          "ocr_text": "Are you coming to\nDINNER FOR FIVE?\nEDIA\nURCES\nEOUL\nCOLPE",
+          "image_url": "https://example.org/3998548264248855005-0.jpg"
+        }
+      ]
+    },
+    "assessment": {
+      "error": "GroundingRejected: Assessment failed validation after retry: Occurrence start date lacks source support: 2026-10-06; cite a printed date or explicit relative date, never posted_at alone. Relative dates count from the local publication date, Thursday, October 1, 2026 (America/Los_Angeles), not the UTC date in posted_at; a weekday in an activity lineup for 'this week' falls in that date's week (Sunday first) and never before it. In this occurrence's date_evidence, cite both caption and slide when the month/range and day/time are split across fields; top-level citations do not supply occurrence evidence. Do not guess activity/date associations (occurrence 'DINNER FOR FIVE')",
+      "model": "gemini-3.1-flash-lite",
+      "source": {
+        "texts": {
+          "caption": "YAYYYY DINNER FOR FIVE🍔🌮🍕\n\nWe will be having DINNER FOR FIVE NEXT WEEK ON TUESDAY in place of our Large Group!! We would love to spend this time to meet and get to know you guys more🤗 \n\nYou will be randomly assigned to a group with our members and other newcomers! Your group leader will contact you once assigned so please be on the lookout🧚‍♀️ ALSO we will be meeting @ LOT15 around 7PM unless further notice is given😛\n\nIf you guys are interested, please fill out the FORM located in our LINKTREE🌱🔗\n\nCANT WAIT TO MEET YOU ALL🩷🩷🩷🩷🩷",
+          "slide_1_ocr": "Are you coming to\nDINNER FOR FIVE?\nEDIA\nURCES\nEOUL\nCOLPE"
+        },
+        "origin": "instagram",
+        "posted_at": "2026-10-01T19:54:54+00:00",
+        "source_key": "instagram:post:3998548264248855005",
+        "source_occurrences": []
+      },
+      "status": "error",
+      "version": 8,
+      "retryable": false,
+      "assessed_at": "2026-10-01T22:41:03.834700+00:00",
+      "source_hash": "6d161c03407db72b9979b780d68432e2cb634d75fba09a9e6590cad5dc123410",
+      "validation_attempts": [
+        {
+          "error": "Occurrence start date lacks source support: 2026-10-06; cite a printed date or explicit relative date, never posted_at alone. Relative dates count from the local publication date, Thursday, October 1, 2026 (America/Los_Angeles), not the UTC date in posted_at; a weekday in an activity lineup for 'this week' falls in that date's week (Sunday first) and never before it. In this occurrence's date_evidence, cite both caption and slide when the month/range and day/time are split across fields; top-level citations do not supply occurrence evidence. Do not guess activity/date associations (occurrence 'DINNER FOR FIVE')",
+          "response": {
+            "kind": "activity",
+            "reason": "The post advertises a specific social dinner event occurring next week on Tuesday.",
+            "schedule": null,
+            "date_role": "occurrence",
+            "occurrences": [
+              {
+                "title": "DINNER FOR FIVE",
+                "all_day": false,
+                "ends_at": null,
+                "location": "LOT15",
+                "starts_at": "2026-10-06T19:00:00-07:00",
+                "date_evidence": [
+                  {
+                    "field": "caption"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "caption"
+                  }
+                ],
+                "location_evidence": [
+                  {
+                    "field": "caption"
+                  }
+                ]
+              }
+            ],
+            "date_evidence": [
+              {
+                "field": "caption"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "caption"
+              },
+              {
+                "field": "slide_1_ocr"
+              }
+            ],
+            "use_source_occurrences": false
+          }
+        },
+        {
+          "error": "Occurrence start date lacks source support: 2026-10-06; cite a printed date or explicit relative date, never posted_at alone. Relative dates count from the local publication date, Thursday, October 1, 2026 (America/Los_Angeles), not the UTC date in posted_at; a weekday in an activity lineup for 'this week' falls in that date's week (Sunday first) and never before it. In this occurrence's date_evidence, cite both caption and slide when the month/range and day/time are split across fields; top-level citations do not supply occurrence evidence. Do not guess activity/date associations (occurrence 'DINNER FOR FIVE')",
+          "response": {
+            "kind": "activity",
+            "reason": "The post advertises a specific social dinner event occurring next week on Tuesday.",
+            "schedule": null,
+            "date_role": "occurrence",
+            "occurrences": [
+              {
+                "title": "DINNER FOR FIVE",
+                "all_day": false,
+                "ends_at": null,
+                "location": "LOT15",
+                "starts_at": "2026-10-06T19:00:00-07:00",
+                "date_evidence": [
+                  {
+                    "field": "caption"
+                  }
+                ],
+                "activity_evidence": [
+                  {
+                    "field": "caption"
+                  }
+                ],
+                "location_evidence": [
+                  {
+                    "field": "caption"
+                  }
+                ]
+              }
+            ],
+            "date_evidence": [
+              {
+                "field": "caption"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "caption"
+              },
+              {
+                "field": "slide_1_ocr"
+              }
+            ],
+            "use_source_occurrences": false
+          }
+        }
+      ]
+    }
+  },
+  "lmsa_member": {
+    "record": {
+      "media_id": "3997974167617812124",
+      "handle": "lmsaucr",
+      "owner_username": "lmsaucr",
+      "caption": "Hola UCR undergraduates! LMSA+ General Member Applications will open WEDNESDAY SEPTEMBER 30th! 🙌\n\nWant to get more involved with LMSA+ this year? Apply now to join our familia and take part in amazing events! 📄\n\n🗓️Applications are open September 30th - October 14th @ 11:59pm \n📍All UCR undergraduates are encouraged to apply\n📲 Find the link in our linktree \n\nFeel free to DM us with any questions! We cannot wait to welcome you all to LMSA+ 🌟",
+      "posted_at": "2026-10-01T00:48:01+00:00",
+      "permalink": "https://www.instagram.com/p/Dd7qFLCDDac/"
+    },
+    "cached": {
+      "status": "ok",
+      "images": [
+        {
+          "index": 0,
+          "qr_urls": [],
+          "ocr_text": "UCR LMSA+ PRESENTS\nEDICAL\nLATINO\nL\nSTUDENT\nMS\nSA NO\nGeneral Member\nApplication\nNOW\nOPEN\nAPPLICATIONS CLOSE\nWEDNESDAY, OCTOBER 14 AT 11:59PM\nApplication can be found in the linktree in our bio!",
+          "image_url": "https://example.org/3997974167617812124-0.jpg"
+        },
+        {
+          "index": 1,
+          "qr_urls": [],
+          "ocr_text": "UCR LMSA+ PRESENTS\nDICAL S\nMEDICAL\nLATINO\nSTUDENT\nASSOCIATION\nGeneral Membership\nRequirements\n00:00:19\nSage\n• Must attend at least 1 GENERAL MEETING per\nquarter\n• Must participate in at least 2 EVENTS per\nquarter\n-\nSocials/Volunteer Events/ Workshops/\nPresentations\nNo show after RSVP = 1 strike\n3 strikes= membership revoked\n• Must participate in at least 1 FUNDRAISER\nper quarter\n•\nMissing 1 requirement without prior notice at\nbeginning of quarter = 1 strike",
+          "image_url": "https://example.org/3997974167617812124-1.jpg"
+        }
+      ]
+    },
+    "assessment": {
+      "model": "gemini-3.1-flash-lite",
+      "result": {
+        "kind": "application",
+        "reason": "The source advertises an application window for general membership in the Latino Medical Student Association (LMSA+).",
+        "schedule": null,
+        "date_role": "application_window",
+        "occurrences": [],
+        "date_evidence": [
+          {
+            "field": "caption",
+            "quote": "Hola UCR undergraduates! LMSA+ General Member Applications will open WEDNESDAY SEPTEMBER 30th! 🙌\n\nWant to get more involved with LMSA+ this year? Apply now to join our familia and take part in amazing events! 📄\n\n🗓️Applications are open September 30th - October 14th @ 11:59pm \n📍All UCR undergraduates are encouraged to apply\n📲 Find the link in our linktree \n\nFeel free to DM us with any questions! We cannot wait to welcome you all to LMSA+ 🌟"
+          },
+          {
+            "field": "slide_1_ocr",
+            "quote": "UCR LMSA+ PRESENTS\nEDICAL\nLATINO\nL\nSTUDENT\nMS\nSA NO\nGeneral Member\nApplication\nNOW\nOPEN\nAPPLICATIONS CLOSE\nWEDNESDAY, OCTOBER 14 AT 11:59PM\nApplication can be found in the linktree in our bio!"
+          }
+        ],
+        "activity_evidence": [
+          {
+            "field": "caption",
+            "quote": "Hola UCR undergraduates! LMSA+ General Member Applications will open WEDNESDAY SEPTEMBER 30th! 🙌\n\nWant to get more involved with LMSA+ this year? Apply now to join our familia and take part in amazing events! 📄\n\n🗓️Applications are open September 30th - October 14th @ 11:59pm \n📍All UCR undergraduates are encouraged to apply\n📲 Find the link in our linktree \n\nFeel free to DM us with any questions! We cannot wait to welcome you all to LMSA+ 🌟"
+          },
+          {
+            "field": "slide_1_ocr",
+            "quote": "UCR LMSA+ PRESENTS\nEDICAL\nLATINO\nL\nSTUDENT\nMS\nSA NO\nGeneral Member\nApplication\nNOW\nOPEN\nAPPLICATIONS CLOSE\nWEDNESDAY, OCTOBER 14 AT 11:59PM\nApplication can be found in the linktree in our bio!"
+          }
+        ],
+        "use_source_occurrences": false
+      },
+      "source": {
+        "texts": {
+          "caption": "Hola UCR undergraduates! LMSA+ General Member Applications will open WEDNESDAY SEPTEMBER 30th! 🙌\n\nWant to get more involved with LMSA+ this year? Apply now to join our familia and take part in amazing events! 📄\n\n🗓️Applications are open September 30th - October 14th @ 11:59pm \n📍All UCR undergraduates are encouraged to apply\n📲 Find the link in our linktree \n\nFeel free to DM us with any questions! We cannot wait to welcome you all to LMSA+ 🌟",
+          "slide_1_ocr": "UCR LMSA+ PRESENTS\nEDICAL\nLATINO\nL\nSTUDENT\nMS\nSA NO\nGeneral Member\nApplication\nNOW\nOPEN\nAPPLICATIONS CLOSE\nWEDNESDAY, OCTOBER 14 AT 11:59PM\nApplication can be found in the linktree in our bio!",
+          "slide_2_ocr": "UCR LMSA+ PRESENTS\nDICAL S\nMEDICAL\nLATINO\nSTUDENT\nASSOCIATION\nGeneral Membership\nRequirements\n00:00:19\nSage\n• Must attend at least 1 GENERAL MEETING per\nquarter\n• Must participate in at least 2 EVENTS per\nquarter\n-\nSocials/Volunteer Events/ Workshops/\nPresentations\nNo show after RSVP = 1 strike\n3 strikes= membership revoked\n• Must participate in at least 1 FUNDRAISER\nper quarter\n•\nMissing 1 requirement without prior notice at\nbeginning of quarter = 1 strike"
+        },
+        "origin": "instagram",
+        "posted_at": "2026-10-01T00:48:01+00:00",
+        "source_key": "instagram:post:3997974167617812124",
+        "source_occurrences": []
+      },
+      "status": "complete",
+      "version": 8,
+      "assessed_at": "2026-10-01T15:35:54.217186+00:00",
+      "source_hash": "6c7a90f55669a29eb64a377d242a8fc1fcbeb938a2bea9e7ce58327534b6a847"
+    }
+  },
+  "lmsa_mentor": {
+    "record": {
+      "media_id": "3998591843365472092",
+      "handle": "lmsaucr",
+      "owner_username": "lmsaucr",
+      "caption": "Hola UCR undergraduates! LMSA+ Mentorship Applications will open today and close on THURSDAY October 15th! 🙌\n\nLooking for guidance on your pre-health journey or an opportunity to extend support to underclassmen? Apply to be either a mentor or mentee this school year! 📄\n\n🗓️Applications are open October 1st - October 15th @ 11:59pm \n📍All UCR undergraduates are encouraged to apply\n📲 Find the link in our linktree \n\nFeel free to DM us with any questions! We’re excited to see everyone’s professional relationships grow! 🌟",
+      "posted_at": "2026-10-01T21:15:14+00:00",
+      "permalink": "https://www.instagram.com/p/Dd92hiZksdc/"
+    },
+    "cached": {
+      "status": "ok",
+      "images": [
+        {
+          "index": 0,
+          "qr_urls": [],
+          "ocr_text": "UCR LMSA+\nMentorship\n→ Applications\nNOW OPEN\nDEADLINE: OCTOBER 15TH AT\n11:59PM\nFind the Application in our linktree\nMEDICAL\nLATINO\nSTUDENT\nLMSA\nASSOCIATION",
+          "image_url": "https://example.org/3998591843365472092-0.jpg"
+        },
+        {
+          "index": 1,
+          "qr_urls": [
+            "https://linktr.ee/lmsaucrmentorship"
+          ],
+          "ocr_text": "MENTORSHIP PROGRAMS\nUNDERGRADUATE MENTORSHIP PROGRAM:\n1st and 2nd years are matched with a\n3rd or 4th year to guide them through\ntheir UCR journey!\nMEDICAL STUDENT MENTORSHIP PROGRAM:\nApplications Here:\nロロ\n回\n3rd and 4th year undergrads are\ninvited to apply to match with\ncurrent medical students!\nMEDICAL\nLATINO\nSTUDENT\nLMSA\nASSOCIATIO",
+          "image_url": "https://example.org/3998591843365472092-1.jpg"
+        }
+      ]
+    },
+    "assessment": {
+      "model": "gemini-3.1-flash-lite",
+      "result": {
+        "kind": "application",
+        "reason": "The source advertises an application window for the LMSA+ Mentorship Program, specifying both the opening and closing dates for applications.",
+        "schedule": null,
+        "date_role": "application_window",
+        "occurrences": [],
+        "date_evidence": [
+          {
+            "field": "caption",
+            "quote": "Hola UCR undergraduates! LMSA+ Mentorship Applications will open today and close on THURSDAY October 15th! 🙌\n\nLooking for guidance on your pre-health journey or an opportunity to extend support to underclassmen? Apply to be either a mentor or mentee this school year! 📄\n\n🗓️Applications are open October 1st - October 15th @ 11:59pm \n📍All UCR undergraduates are encouraged to apply\n📲 Find the link in our linktree \n\nFeel free to DM us with any questions! We’re excited to see everyone’s professional relationships grow! 🌟"
+          },
+          {
+            "field": "slide_1_ocr",
+            "quote": "UCR LMSA+\nMentorship\n→ Applications\nNOW OPEN\nDEADLINE: OCTOBER 15TH AT\n11:59PM\nFind the Application in our linktree\nMEDICAL\nLATINO\nSTUDENT\nLMSA\nASSOCIATION"
+          }
+        ],
+        "activity_evidence": [
+          {
+            "field": "caption",
+            "quote": "Hola UCR undergraduates! LMSA+ Mentorship Applications will open today and close on THURSDAY October 15th! 🙌\n\nLooking for guidance on your pre-health journey or an opportunity to extend support to underclassmen? Apply to be either a mentor or mentee this school year! 📄\n\n🗓️Applications are open October 1st - October 15th @ 11:59pm \n📍All UCR undergraduates are encouraged to apply\n📲 Find the link in our linktree \n\nFeel free to DM us with any questions! We’re excited to see everyone’s professional relationships grow! 🌟"
+          },
+          {
+            "field": "slide_1_ocr",
+            "quote": "UCR LMSA+\nMentorship\n→ Applications\nNOW OPEN\nDEADLINE: OCTOBER 15TH AT\n11:59PM\nFind the Application in our linktree\nMEDICAL\nLATINO\nSTUDENT\nLMSA\nASSOCIATION"
+          },
+          {
+            "field": "slide_2_ocr",
+            "quote": "MENTORSHIP PROGRAMS\nUNDERGRADUATE MENTORSHIP PROGRAM:\n1st and 2nd years are matched with a\n3rd or 4th year to guide them through\ntheir UCR journey!\nMEDICAL STUDENT MENTORSHIP PROGRAM:\nApplications Here:\nロロ\n回\n3rd and 4th year undergrads are\ninvited to apply to match with\ncurrent medical students!\nMEDICAL\nLATINO\nSTUDENT\nLMSA\nASSOCIATIO"
+          }
+        ],
+        "use_source_occurrences": false
+      },
+      "source": {
+        "texts": {
+          "caption": "Hola UCR undergraduates! LMSA+ Mentorship Applications will open today and close on THURSDAY October 15th! 🙌\n\nLooking for guidance on your pre-health journey or an opportunity to extend support to underclassmen? Apply to be either a mentor or mentee this school year! 📄\n\n🗓️Applications are open October 1st - October 15th @ 11:59pm \n📍All UCR undergraduates are encouraged to apply\n📲 Find the link in our linktree \n\nFeel free to DM us with any questions! We’re excited to see everyone’s professional relationships grow! 🌟",
+          "slide_1_ocr": "UCR LMSA+\nMentorship\n→ Applications\nNOW OPEN\nDEADLINE: OCTOBER 15TH AT\n11:59PM\nFind the Application in our linktree\nMEDICAL\nLATINO\nSTUDENT\nLMSA\nASSOCIATION",
+          "slide_2_ocr": "MENTORSHIP PROGRAMS\nUNDERGRADUATE MENTORSHIP PROGRAM:\n1st and 2nd years are matched with a\n3rd or 4th year to guide them through\ntheir UCR journey!\nMEDICAL STUDENT MENTORSHIP PROGRAM:\nApplications Here:\nロロ\n回\n3rd and 4th year undergrads are\ninvited to apply to match with\ncurrent medical students!\nMEDICAL\nLATINO\nSTUDENT\nLMSA\nASSOCIATIO"
+        },
+        "origin": "instagram",
+        "posted_at": "2026-10-01T21:15:14+00:00",
+        "source_key": "instagram:post:3998591843365472092",
+        "source_occurrences": []
+      },
+      "status": "complete",
+      "version": 8,
+      "assessed_at": "2026-10-01T22:40:44.988803+00:00",
+      "source_hash": "80365886d7937b35758a72422cbef9662acd2ecdf342d33091a472759ae71a4e"
+    }
+  },
+  "room_update": {
+    "record": {
+      "media_id": "3998644895170370327",
+      "handle": "ucrhub_programs",
+      "owner_username": "ucrhub_programs",
+      "caption": "[room & time update!] \n\ndo you ♡ your computer? ｡°✩₊˚⊹ 💻₊˚⊹✩°｡\n\njoin us NEXT Tuesday, October 6th in HUB 269 from 4:30-6:30 PM for a hyperpop listening party!‧₊˚♪ 𝄞₊ ♫ ˚⊹\n\npull up enjoy FREE snacks while you customize your own 3D printed headphone and charger holders! 🎧🎼\n\n𓏲ּ𝄢⋆｡°✩ tell us your FAV artists + music videos you wanna see in the comments!! ✩°｡⋆𝄢𓏲ּ\n\n♬⋆.˚ R’Card or SID required\n♬⋆.˚ Open to all UCR undergraduate + graduate students\n♬⋆.˚ While supplies last!\n\n₊˚⊹♡₊˚⊹♫₊˚⊹♡₊˚⊹♫₊˚⊹♡₊˚⊹♫₊˚⊹♡₊˚⊹\na huge special thanks to UCR Creat’R Lab (@ucr_library_makerspace) for helping bring our digital creations to life! ૮ ˶ᵔ ᵕ ᵔ˶ ა 💿₊˚⊹",
+      "posted_at": "2026-10-01T23:00:38+00:00",
+      "permalink": "https://www.instagram.com/p/Dd-ClivjxsX/"
+    },
+    "cached": {
+      "status": "ok",
+      "images": [
+        {
+          "index": 0,
+          "qr_urls": [],
+          "ocr_text": "my computer\na hyperpop 10. 6. 2026\nlistening party\n01101001 01101101\n0000 01111001\n0100000 01100110\n10 01101111 01110110 01100001\n01101011 01100101\n00\n00000\n11111111\n10000\n100000 01101001 01101101\n200/00100000 01111001\nLL 2014\n110106 00100000 0110010\n1101001\n800\n000000\n01101011 1100101\n0\nHUB 355 & 4:30PM-6:30PM\nD\n01101110 01101111 011101\n01100001\n01110111 01101000 0110\n01101111 01110101 001\n61101100 011100\n01110111 011\n01101001 01\n011\n01101111 011\n001\n01101100 011\n011\n01110101 011\n01110111 01101000 0110\n0010000001110111 0110\n01101111 01110101 00100\n01101100 01110011 0010\n0111\n01110111 01101000 01\n00100000 01110111 0110\n01101111 01110101 0010\n101100 01110011 001\n01:\n01101110 01101111 011\nUC RIVERSIDE 110\nHighlander Union Building",
+          "image_url": "https://example.org/3998644895170370327-0.jpg"
+        }
+      ]
+    },
+    "assessment": {
+      "model": "gemini-3.1-flash-lite",
+      "result": {
+        "kind": "uncertain",
+        "reason": "The source provides conflicting information regarding the location of the event. The caption specifies 'HUB 269', while the slide_1_ocr specifies 'HUB 355'. Per instructions, when information is conflicting, the event is uncertain.",
+        "schedule": null,
+        "date_role": "uncertain",
+        "occurrences": [],
+        "date_evidence": [
+          {
+            "field": "caption",
+            "quote": "[room & time update!] \n\ndo you ♡ your computer? ｡°✩₊˚⊹ 💻₊˚⊹✩°｡\n\njoin us NEXT Tuesday, October 6th in HUB 269 from 4:30-6:30 PM for a hyperpop listening party!‧₊˚♪ 𝄞₊ ♫ ˚⊹\n\npull up enjoy FREE snacks while you customize your own 3D printed headphone and charger holders! 🎧🎼\n\n𓏲ּ𝄢⋆｡°✩ tell us your FAV artists + music videos you wanna see in the comments!! ✩°｡⋆𝄢𓏲ּ\n\n♬⋆.˚ R’Card or SID required\n♬⋆.˚ Open to all UCR undergraduate + graduate students\n♬⋆.˚ While supplies last!\n\n₊˚⊹♡₊˚⊹♫₊˚⊹♡₊˚⊹♫₊˚⊹♡₊˚⊹♫₊˚⊹♡₊˚⊹\na huge special thanks to UCR Creat’R Lab (@ucr_library_makerspace) for helping bring our digital creations to life! ૮ ˶ᵔ ᵕ ᵔ˶ ა 💿₊˚⊹"
+          }
+        ],
+        "activity_evidence": [
+          {
+            "field": "caption",
+            "quote": "[room & time update!] \n\ndo you ♡ your computer? ｡°✩₊˚⊹ 💻₊˚⊹✩°｡\n\njoin us NEXT Tuesday, October 6th in HUB 269 from 4:30-6:30 PM for a hyperpop listening party!‧₊˚♪ 𝄞₊ ♫ ˚⊹\n\npull up enjoy FREE snacks while you customize your own 3D printed headphone and charger holders! 🎧🎼\n\n𓏲ּ𝄢⋆｡°✩ tell us your FAV artists + music videos you wanna see in the comments!! ✩°｡⋆𝄢𓏲ּ\n\n♬⋆.˚ R’Card or SID required\n♬⋆.˚ Open to all UCR undergraduate + graduate students\n♬⋆.˚ While supplies last!\n\n₊˚⊹♡₊˚⊹♫₊˚⊹♡₊˚⊹♫₊˚⊹♡₊˚⊹♫₊˚⊹♡₊˚⊹\na huge special thanks to UCR Creat’R Lab (@ucr_library_makerspace) for helping bring our digital creations to life! ૮ ˶ᵔ ᵕ ᵔ˶ ა 💿₊˚⊹"
+          }
+        ],
+        "use_source_occurrences": false
+      },
+      "source": {
+        "texts": {
+          "caption": "[room & time update!] \n\ndo you ♡ your computer? ｡°✩₊˚⊹ 💻₊˚⊹✩°｡\n\njoin us NEXT Tuesday, October 6th in HUB 269 from 4:30-6:30 PM for a hyperpop listening party!‧₊˚♪ 𝄞₊ ♫ ˚⊹\n\npull up enjoy FREE snacks while you customize your own 3D printed headphone and charger holders! 🎧🎼\n\n𓏲ּ𝄢⋆｡°✩ tell us your FAV artists + music videos you wanna see in the comments!! ✩°｡⋆𝄢𓏲ּ\n\n♬⋆.˚ R’Card or SID required\n♬⋆.˚ Open to all UCR undergraduate + graduate students\n♬⋆.˚ While supplies last!\n\n₊˚⊹♡₊˚⊹♫₊˚⊹♡₊˚⊹♫₊˚⊹♡₊˚⊹♫₊˚⊹♡₊˚⊹\na huge special thanks to UCR Creat’R Lab (@ucr_library_makerspace) for helping bring our digital creations to life! ૮ ˶ᵔ ᵕ ᵔ˶ ა 💿₊˚⊹",
+          "slide_1_ocr": "my computer\na hyperpop 10. 6. 2026\nlistening party\n01101001 01101101\n0000 01111001\n0100000 01100110\n10 01101111 01110110 01100001\n01101011 01100101\n00\n00000\n11111111\n10000\n100000 01101001 01101101\n200/00100000 01111001\nLL 2014\n110106 00100000 0110010\n1101001\n800\n000000\n01101011 1100101\n0\nHUB 355 & 4:30PM-6:30PM\nD\n01101110 01101111 011101\n01100001\n01110111 01101000 0110\n01101111 01110101 001\n61101100 011100\n01110111 011\n01101001 01\n011\n01101111 011\n001\n01101100 011\n011\n01110101 011\n01110111 01101000 0110\n0010000001110111 0110\n01101111 01110101 00100\n01101100 01110011 0010\n0111\n01110111 01101000 01\n00100000 01110111 0110\n01101111 01110101 0010\n101100 01110011 001\n01:\n01101110 01101111 011\nUC RIVERSIDE 110\nHighlander Union Building"
+        },
+        "origin": "instagram",
+        "posted_at": "2026-10-01T23:00:38+00:00",
+        "source_key": "instagram:post:3998644895170370327",
+        "source_occurrences": []
+      },
+      "status": "complete",
+      "version": 8,
+      "assessed_at": "2026-10-02T05:01:44.469298+00:00",
+      "source_hash": "c58c18424263eca7f1dbc47618eb8ad81013f70bd26726c5ae046e01aa4dd6c4"
+    }
+  },
+  "hearts_agenda": {
+    "record": {
+      "media_id": "3998580330990808365",
+      "handle": "ucrhearts",
+      "owner_username": "ucrhearts",
+      "caption": "Happy Fall 2026! We're kicking off the new quarter with a Vital Signs Workshop. \n\nWe'll be learning how to take heart rate, temperature, and blood pressure. We hope to see you there! \n\n#ucr #ucrhearts #club #organization #vitals",
+      "posted_at": "2026-10-01T20:52:22+00:00",
+      "permalink": "https://www.instagram.com/p/Dd9z6Aqki0t/"
+    },
+    "cached": {
+      "status": "ok",
+      "images": [
+        {
+          "index": 0,
+          "qr_urls": [],
+          "ocr_text": "AND\nROTATIO\nHEARTS AT\nUCR\nFirst General Meeting\nTuesday, October 6th, 2026\n7-8PM\nDundee A1107\nVital Signs Workshop!\nLearn how to take vitals (heart rate, temperature,\nand blood pressure based on case studies), make new\nconnections, and gain pre-health experience!\nQucrhearts",
+          "image_url": "https://example.org/3998580330990808365-0.jpg"
+        }
+      ]
+    },
+    "assessment": {
+      "model": "gemini-3.1-flash-lite",
+      "result": {
+        "kind": "activity",
+        "reason": "The source advertises a specific workshop and a general meeting with clear dates, times, and locations.",
+        "schedule": null,
+        "date_role": "occurrence",
+        "occurrences": [
+          {
+            "title": "HEARTS at UCR First General Meeting",
+            "all_day": false,
+            "ends_at": "2026-10-06T20:00:00-07:00",
+            "location": "Dundee A1107",
+            "starts_at": "2026-10-06T19:00:00-07:00",
+            "date_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "AND\nROTATIO\nHEARTS AT\nUCR\nFirst General Meeting\nTuesday, October 6th, 2026\n7-8PM\nDundee A1107\nVital Signs Workshop!\nLearn how to take vitals (heart rate, temperature,\nand blood pressure based on case studies), make new\nconnections, and gain pre-health experience!\nQucrhearts"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "AND\nROTATIO\nHEARTS AT\nUCR\nFirst General Meeting\nTuesday, October 6th, 2026\n7-8PM\nDundee A1107\nVital Signs Workshop!\nLearn how to take vitals (heart rate, temperature,\nand blood pressure based on case studies), make new\nconnections, and gain pre-health experience!\nQucrhearts"
+              }
+            ],
+            "location_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "AND\nROTATIO\nHEARTS AT\nUCR\nFirst General Meeting\nTuesday, October 6th, 2026\n7-8PM\nDundee A1107\nVital Signs Workshop!\nLearn how to take vitals (heart rate, temperature,\nand blood pressure based on case studies), make new\nconnections, and gain pre-health experience!\nQucrhearts"
+              }
+            ]
+          },
+          {
+            "title": "Vital Signs Workshop",
+            "all_day": false,
+            "ends_at": "2026-10-06T20:00:00-07:00",
+            "location": "Dundee A1107",
+            "starts_at": "2026-10-06T19:00:00-07:00",
+            "date_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "AND\nROTATIO\nHEARTS AT\nUCR\nFirst General Meeting\nTuesday, October 6th, 2026\n7-8PM\nDundee A1107\nVital Signs Workshop!\nLearn how to take vitals (heart rate, temperature,\nand blood pressure based on case studies), make new\nconnections, and gain pre-health experience!\nQucrhearts"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "AND\nROTATIO\nHEARTS AT\nUCR\nFirst General Meeting\nTuesday, October 6th, 2026\n7-8PM\nDundee A1107\nVital Signs Workshop!\nLearn how to take vitals (heart rate, temperature,\nand blood pressure based on case studies), make new\nconnections, and gain pre-health experience!\nQucrhearts"
+              }
+            ],
+            "location_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "AND\nROTATIO\nHEARTS AT\nUCR\nFirst General Meeting\nTuesday, October 6th, 2026\n7-8PM\nDundee A1107\nVital Signs Workshop!\nLearn how to take vitals (heart rate, temperature,\nand blood pressure based on case studies), make new\nconnections, and gain pre-health experience!\nQucrhearts"
+              }
+            ]
+          }
+        ],
+        "date_evidence": [
+          {
+            "field": "slide_1_ocr",
+            "quote": "AND\nROTATIO\nHEARTS AT\nUCR\nFirst General Meeting\nTuesday, October 6th, 2026\n7-8PM\nDundee A1107\nVital Signs Workshop!\nLearn how to take vitals (heart rate, temperature,\nand blood pressure based on case studies), make new\nconnections, and gain pre-health experience!\nQucrhearts"
+          }
+        ],
+        "activity_evidence": [
+          {
+            "field": "slide_1_ocr",
+            "quote": "AND\nROTATIO\nHEARTS AT\nUCR\nFirst General Meeting\nTuesday, October 6th, 2026\n7-8PM\nDundee A1107\nVital Signs Workshop!\nLearn how to take vitals (heart rate, temperature,\nand blood pressure based on case studies), make new\nconnections, and gain pre-health experience!\nQucrhearts"
+          }
+        ],
+        "use_source_occurrences": false
+      },
+      "source": {
+        "texts": {
+          "caption": "Happy Fall 2026! We're kicking off the new quarter with a Vital Signs Workshop. \n\nWe'll be learning how to take heart rate, temperature, and blood pressure. We hope to see you there! \n\n#ucr #ucrhearts #club #organization #vitals",
+          "slide_1_ocr": "AND\nROTATIO\nHEARTS AT\nUCR\nFirst General Meeting\nTuesday, October 6th, 2026\n7-8PM\nDundee A1107\nVital Signs Workshop!\nLearn how to take vitals (heart rate, temperature,\nand blood pressure based on case studies), make new\nconnections, and gain pre-health experience!\nQucrhearts"
+        },
+        "origin": "instagram",
+        "posted_at": "2026-10-01T20:52:22+00:00",
+        "source_key": "instagram:post:3998580330990808365",
+        "source_occurrences": []
+      },
+      "status": "complete",
+      "version": 8,
+      "assessed_at": "2026-10-01T22:42:20.602476+00:00",
+      "source_hash": "df39f65770d62aad21a34fb232b0369e920bc4cd85af71ec112d5379c46189b5"
+    }
+  },
+  "rosehack": {
+    "record": {
+      "media_id": "3998706351673582617",
+      "handle": "rosehackucr",
+      "owner_username": "rosehackucr",
+      "caption": "Registration is not open yet. Here is what you can do in the meantime 🌱\n1. Join the Discord — registration news, teammates, workshop updates, and\nany questions you have before or throughout the hackathon. Link in bio.\n2. Come find us on campus this quarter. We would rather answer your\nquestions in person than over DM.\n3. Send this to the person you would want next to you at 2 AM. You do not\nneed a team to register, but the best ones usually start in a group chat.\nRoseHack '27 · January 30–31, 2027 · UC Riverside\n#RoseHack #UCRiverside #UCR #WomenInTech #Hackathon #WomenInSTEM",
+      "posted_at": "2026-10-02T01:02:45+00:00",
+      "permalink": "https://www.instagram.com/p/Dd-Qj2kmiQZ/"
+    },
+    "cached": {
+      "status": "ok",
+      "images": [
+        {
+          "index": 0,
+          "qr_urls": [],
+          "ocr_text": "ROSEHACK '27\nSOW NOW ⚫ BLOOMS JANUARY\nThree\nways\nto get in early.\nBefore registration even opens\nPacket of three. Plant this week, and you will be first in\nline when registration opens this fall.\nSwipe",
+          "image_url": "https://example.org/3998706351673582617-0.jpg"
+        },
+        {
+          "index": 1,
+          "qr_urls": [],
+          "ocr_text": "ROSEHACK '27\nPACKET 01 THE DISCORD\nWhere everything\nhappens first.\nHardiest variety thrives year-round\nRegistration news before anyone else\nTeammates, if you do not have one yet\nWorkshop updates all weekend\nAny question you have, before or during\nLink in our bio",
+          "image_url": "https://example.org/3998706351673582617-1.jpg"
+        },
+        {
+          "index": 2,
+          "qr_urls": [],
+          "ocr_text": "ROSEHACK '27\nPACKET 02 COME SAY HI\nFind us on\ncampus.\nBest grown in person\nWomen in Computing meets through the quarter, and\nwe would rather answer your questions face to face\nthan over DM. Bring the friend who thinks this is not\nfor them.\nMeeting times posted to our stories",
+          "image_url": "https://example.org/3998706351673582617-2.jpg"
+        },
+        {
+          "index": 3,
+          "qr_urls": [],
+          "ocr_text": "ROSEHACK '27\nPACKET 03 BRING SOMEONE\nThe best teams\nstart in the\ngroup chat.\nCross-pollinates well\nYou do not need a team to register and plenty of\npeople come alone. But if you already know who you\nwould want next to you at 2 AM, send them this now.\nJanuary 30-31, 2027 UC Riverside",
+          "image_url": "https://example.org/3998706351673582617-3.jpg"
+        }
+      ]
+    },
+    "assessment": {
+      "model": "gemini-3.1-flash-lite",
+      "result": {
+        "kind": "announcement",
+        "reason": "The source provides information about an upcoming hackathon and general ways to engage with the organization, but does not advertise a specific, attendable event occurrence or a defined service schedule with hours. The hackathon dates are program duration, and registration is explicitly stated as not yet open.",
+        "schedule": null,
+        "date_role": "none",
+        "occurrences": [],
+        "date_evidence": [
+          {
+            "field": "caption",
+            "quote": "Registration is not open yet. Here is what you can do in the meantime 🌱\n1. Join the Discord — registration news, teammates, workshop updates, and\nany questions you have before or throughout the hackathon. Link in bio.\n2. Come find us on campus this quarter. We would rather answer your\nquestions in person than over DM.\n3. Send this to the person you would want next to you at 2 AM. You do not\nneed a team to register, but the best ones usually start in a group chat.\nRoseHack '27 · January 30–31, 2027 · UC Riverside\n#RoseHack #UCRiverside #UCR #WomenInTech #Hackathon #WomenInSTEM"
+          },
+          {
+            "field": "slide_4_ocr",
+            "quote": "ROSEHACK '27\nPACKET 03 BRING SOMEONE\nThe best teams\nstart in the\ngroup chat.\nCross-pollinates well\nYou do not need a team to register and plenty of\npeople come alone. But if you already know who you\nwould want next to you at 2 AM, send them this now.\nJanuary 30-31, 2027 UC Riverside"
+          }
+        ],
+        "activity_evidence": [
+          {
+            "field": "caption",
+            "quote": "Registration is not open yet. Here is what you can do in the meantime 🌱\n1. Join the Discord — registration news, teammates, workshop updates, and\nany questions you have before or throughout the hackathon. Link in bio.\n2. Come find us on campus this quarter. We would rather answer your\nquestions in person than over DM.\n3. Send this to the person you would want next to you at 2 AM. You do not\nneed a team to register, but the best ones usually start in a group chat.\nRoseHack '27 · January 30–31, 2027 · UC Riverside\n#RoseHack #UCRiverside #UCR #WomenInTech #Hackathon #WomenInSTEM"
+          },
+          {
+            "field": "slide_1_ocr",
+            "quote": "ROSEHACK '27\nSOW NOW ⚫ BLOOMS JANUARY\nThree\nways\nto get in early.\nBefore registration even opens\nPacket of three. Plant this week, and you will be first in\nline when registration opens this fall.\nSwipe"
+          }
+        ],
+        "use_source_occurrences": false
+      },
+      "source": {
+        "texts": {
+          "caption": "Registration is not open yet. Here is what you can do in the meantime 🌱\n1. Join the Discord — registration news, teammates, workshop updates, and\nany questions you have before or throughout the hackathon. Link in bio.\n2. Come find us on campus this quarter. We would rather answer your\nquestions in person than over DM.\n3. Send this to the person you would want next to you at 2 AM. You do not\nneed a team to register, but the best ones usually start in a group chat.\nRoseHack '27 · January 30–31, 2027 · UC Riverside\n#RoseHack #UCRiverside #UCR #WomenInTech #Hackathon #WomenInSTEM",
+          "slide_1_ocr": "ROSEHACK '27\nSOW NOW ⚫ BLOOMS JANUARY\nThree\nways\nto get in early.\nBefore registration even opens\nPacket of three. Plant this week, and you will be first in\nline when registration opens this fall.\nSwipe",
+          "slide_2_ocr": "ROSEHACK '27\nPACKET 01 THE DISCORD\nWhere everything\nhappens first.\nHardiest variety thrives year-round\nRegistration news before anyone else\nTeammates, if you do not have one yet\nWorkshop updates all weekend\nAny question you have, before or during\nLink in our bio",
+          "slide_3_ocr": "ROSEHACK '27\nPACKET 02 COME SAY HI\nFind us on\ncampus.\nBest grown in person\nWomen in Computing meets through the quarter, and\nwe would rather answer your questions face to face\nthan over DM. Bring the friend who thinks this is not\nfor them.\nMeeting times posted to our stories",
+          "slide_4_ocr": "ROSEHACK '27\nPACKET 03 BRING SOMEONE\nThe best teams\nstart in the\ngroup chat.\nCross-pollinates well\nYou do not need a team to register and plenty of\npeople come alone. But if you already know who you\nwould want next to you at 2 AM, send them this now.\nJanuary 30-31, 2027 UC Riverside"
+        },
+        "origin": "instagram",
+        "posted_at": "2026-10-02T01:02:45+00:00",
+        "source_key": "instagram:post:3998706351673582617",
+        "source_occurrences": []
+      },
+      "status": "complete",
+      "version": 8,
+      "assessed_at": "2026-10-02T05:01:12.393926+00:00",
+      "source_hash": "763dc8af283b09dbee649b1e577801471ef8f659fa798eadec2a1ac0f592c259"
+    }
+  },
+  "business_deadlines": {
+    "record": {
+      "media_id": "3998637682720739173",
+      "handle": "ucrundergradbusiness",
+      "owner_username": "ucrundergradbusiness",
+      "caption": "Whether you’re an incoming freshman or a returning business student, we put together a complete guide to help you get familiar with important information from Undergraduate Business Programs! 🐻💙🌟\n\n📌 Pro Tip: Save this post so you don’t miss key dates and drop-in advising!",
+      "posted_at": "2026-10-01T22:46:19+00:00",
+      "permalink": "https://www.instagram.com/p/Dd-A8loD49l/"
+    },
+    "cached": {
+      "status": "ok",
+      "images": [
+        {
+          "index": 0,
+          "qr_urls": [],
+          "ocr_text": "UC RIVERSIDE School of\nBusiness\nA. GARY ANDERSON GRADUATE SCHOOL OF MANAGEMENT\nUndergraduate\nBusiness Programs\nRESOURCES\nFall 2026 - INFO, ADVISING, KEY DATES\nSCHOOL OF BUSINESS\nSwipe to learn more",
+          "image_url": "https://example.org/3998637682720739173-0.jpg"
+        },
+        {
+          "index": 1,
+          "qr_urls": [],
+          "ocr_text": "School of\nUC RIVERSIDE Business\nA. GARY ANDERSON GRADUATE SCHOOL OF MANAGEMENT\nUNDERGRADUATE\nPROGRAMS SUITE\n2nd Floor SBB\nUC RIVERSIDE",
+          "image_url": "https://example.org/3998637682720739173-1.jpg"
+        },
+        {
+          "index": 2,
+          "qr_urls": [],
+          "ocr_text": "School of\nUC RIVERSIDE Business\nA. GARY ANDERSON GRADUATE SCHOOL OF MANAGEMENT\nUNDERGRADUATE\nBUSINESS NEWSLETTER\nKeep an eye on your UCR inbox during Weeks\n2, 5, and 9 of the Fall quarter for the latest\nupdates, key dates, and opportunities.",
+          "image_url": "https://example.org/3998637682720739173-2.jpg"
+        },
+        {
+          "index": 3,
+          "qr_urls": [],
+          "ocr_text": "FALL 2026 DROP-IN HOURS\nDrop-in hours are subject to change.\nWEEK O\nSEP 21-SEP 25\nTHU: 9AM-11AM & 2PM-4PM\nWEEK 2\nOCT 5-OCT 9\nTUES: 10AM-11:30AM\nWED: 2PM-3:30PM\nTHU: 2PM-3:30PM\nWEEK 4\nOCT 19-OCT 23\nTUES: 10AM-11:30AM\nWED: 2PM-3:30PM\nWEEK 1\nSEP 28-OCT 2\nMON: 9AM-11AM & 2PM-4PM\nTUES: 9AM-11AM & 2PM-4PM\nWED: 2PM-4PM\nTHU: 9AM-11AM & 2PM-4PM\nWEEK 3\nOCT 12-OCT 16\nTUES: 10AM-11:30AM\nWED: 2PM-3:30PM\nTHU: 2PM-3:30PM\nWEEK 5\nOCT 26 - OCT 30\nTUES: 10AM-11:30AM\nWED: 2PM-3:30PM\nTHU: 2PM-3:30PM\nTHU: 2PM-3:30PM\nIf you are a NON-BUS Student and cannot access drop-in\nplease email ugradbusiness@ucr.edu for assistance.\nInclude your netID and SID in the email.",
+          "image_url": "https://example.org/3998637682720739173-3.jpg"
+        },
+        {
+          "index": 4,
+          "qr_urls": [],
+          "ocr_text": "FALL 2026 DROP-IN HOURS\nDrop-in hours are subject to change.\nWEEK 6\nNOV 2- NOV 6\nMON: 9AM-11AM & 2PM-4PM\nTUES: 9AM-11AM & 2PM-4PM\nWED: 2PM-4PM\nTHU: 9AM-11AM & 2PM-4PM\nWEEK 8\nNOV 16- NOV 20\nMON: 9AM-11AM & 2PM-4PM\nTUES: 9AM-11AM & 2PM-4PM\nWED: 2PM-4PM\nTHU: 9AM-11AM & 2PM-4PM\nWEEK 10\nNOV 30-DEC 4\nTUES: 10AM-11:30AM\nWED: 2PM-3:30PM\nTHU: 2PM-3:30PM\nWEEK 7\nNOV 9- NOV 13\nMON: 9AM-11AM & 2PM-4PM\nTUES: 9AM-11AM & 2PM-4PM\nTHU: 9AM-11AM & 2PM-4PM\nWEEK 9\nNOV 23- NOV 27\nMON: 9AM-11AM & 2PM-4PM\nTUES: 9AM-11AM & 2PM-4PM\nWED: 2PM-4PM\nFINALS WEEK\nDEC 7 -DEC 11\nTUES: 10AM-11:30AM\nWED: 2PM-3:30PM\nTHU: 2PM-3:30PM\nIf you are a NON-BUS Student and cannot access drop-in\nplease email ugradbusiness@ucr.edu for assistance.\nInclude your netID and SID in the email.",
+          "image_url": "https://example.org/3998637682720739173-4.jpg"
+        },
+        {
+          "index": 5,
+          "qr_urls": [],
+          "ocr_text": "WANT TO SCHEDULE AN\nAPPOINTMENT?\nYou may schedule an individual appointment with any advisor\nusing the Slate Student Success Portal. For more information and\nto book an appointment go to\nbusiness.ucr.edu/undergraduate/advising.\nUNDERGRADUATE BUSINESS ACADEMIC ADVISORS\nSamuel Anich\nAcademic Advisor\nBUUN\nKarina Antunez Brito\nAcademic Advisor\nA - FELZ\nMarissa Forzisi\nAcademic Advisor\nFEMA - LIRZ\nAlex Lozano\nAcademic Advisor\nLISA - PEDZ\nBrooke Tabata\nAcademic Advisor\nPEEA - TANZ\nJackelin Orellana\nAssistant Director\nTAOA - Z",
+          "image_url": "https://example.org/3998637682720739173-5.jpg"
+        },
+        {
+          "index": 6,
+          "qr_urls": [],
+          "ocr_text": "KEY DATES FALL 2026\nLast Day to add or drop courses without a \"W\" and to\nrequest part time fee waivers\nOctober 9, 2026\nLast day to withdraw from a course (without a fee)\nOctober 16, 2026\nLast day to withdraw from a course ($4 fee)\nNovember 6, 2026\nVeteran's Day Holiday\nNovember 11, 2026\nLast Day of Instruction / Last day to withdraw from\nUCR for the full term\nDecember 4, 2026\nThanksgiving Holiday\nNovember 26-27, 2026\nFinal Examinations\nDecember 5-11, 2026\nFall Quarter Ends\nDecember 11, 2026\nGrades available on R'Web\nJanuary 4, 2027",
+          "image_url": "https://example.org/3998637682720739173-6.jpg"
+        }
+      ]
+    },
+    "assessment": {
+      "model": "gemini-3.1-flash-lite",
+      "result": {
+        "kind": "announcement",
+        "reason": "The source provides a complex, non-uniform schedule of drop-in hours that vary by week throughout the quarter, making it impossible to represent as a single recurring schedule or a set of simple occurrences without ambiguity or error.",
+        "schedule": null,
+        "date_role": "none",
+        "occurrences": [],
+        "date_evidence": [
+          {
+            "field": "slide_4_ocr",
+            "quote": "FALL 2026 DROP-IN HOURS\nDrop-in hours are subject to change.\nWEEK O\nSEP 21-SEP 25\nTHU: 9AM-11AM & 2PM-4PM\nWEEK 2\nOCT 5-OCT 9\nTUES: 10AM-11:30AM\nWED: 2PM-3:30PM\nTHU: 2PM-3:30PM\nWEEK 4\nOCT 19-OCT 23\nTUES: 10AM-11:30AM\nWED: 2PM-3:30PM\nWEEK 1\nSEP 28-OCT 2\nMON: 9AM-11AM & 2PM-4PM\nTUES: 9AM-11AM & 2PM-4PM\nWED: 2PM-4PM\nTHU: 9AM-11AM & 2PM-4PM\nWEEK 3\nOCT 12-OCT 16\nTUES: 10AM-11:30AM\nWED: 2PM-3:30PM\nTHU: 2PM-3:30PM\nWEEK 5\nOCT 26 - OCT 30\nTUES: 10AM-11:30AM\nWED: 2PM-3:30PM\nTHU: 2PM-3:30PM\nTHU: 2PM-3:30PM\nIf you are a NON-BUS Student and cannot access drop-in\nplease email ugradbusiness@ucr.edu for assistance.\nInclude your netID and SID in the email."
+          },
+          {
+            "field": "slide_5_ocr",
+            "quote": "FALL 2026 DROP-IN HOURS\nDrop-in hours are subject to change.\nWEEK 6\nNOV 2- NOV 6\nMON: 9AM-11AM & 2PM-4PM\nTUES: 9AM-11AM & 2PM-4PM\nWED: 2PM-4PM\nTHU: 9AM-11AM & 2PM-4PM\nWEEK 8\nNOV 16- NOV 20\nMON: 9AM-11AM & 2PM-4PM\nTUES: 9AM-11AM & 2PM-4PM\nWED: 2PM-4PM\nTHU: 9AM-11AM & 2PM-4PM\nWEEK 10\nNOV 30-DEC 4\nTUES: 10AM-11:30AM\nWED: 2PM-3:30PM\nTHU: 2PM-3:30PM\nWEEK 7\nNOV 9- NOV 13\nMON: 9AM-11AM & 2PM-4PM\nTUES: 9AM-11AM & 2PM-4PM\nTHU: 9AM-11AM & 2PM-4PM\nWEEK 9\nNOV 23- NOV 27\nMON: 9AM-11AM & 2PM-4PM\nTUES: 9AM-11AM & 2PM-4PM\nWED: 2PM-4PM\nFINALS WEEK\nDEC 7 -DEC 11\nTUES: 10AM-11:30AM\nWED: 2PM-3:30PM\nTHU: 2PM-3:30PM\nIf you are a NON-BUS Student and cannot access drop-in\nplease email ugradbusiness@ucr.edu for assistance.\nInclude your netID and SID in the email."
+          }
+        ],
+        "activity_evidence": [
+          {
+            "field": "slide_4_ocr",
+            "quote": "FALL 2026 DROP-IN HOURS\nDrop-in hours are subject to change.\nWEEK O\nSEP 21-SEP 25\nTHU: 9AM-11AM & 2PM-4PM\nWEEK 2\nOCT 5-OCT 9\nTUES: 10AM-11:30AM\nWED: 2PM-3:30PM\nTHU: 2PM-3:30PM\nWEEK 4\nOCT 19-OCT 23\nTUES: 10AM-11:30AM\nWED: 2PM-3:30PM\nWEEK 1\nSEP 28-OCT 2\nMON: 9AM-11AM & 2PM-4PM\nTUES: 9AM-11AM & 2PM-4PM\nWED: 2PM-4PM\nTHU: 9AM-11AM & 2PM-4PM\nWEEK 3\nOCT 12-OCT 16\nTUES: 10AM-11:30AM\nWED: 2PM-3:30PM\nTHU: 2PM-3:30PM\nWEEK 5\nOCT 26 - OCT 30\nTUES: 10AM-11:30AM\nWED: 2PM-3:30PM\nTHU: 2PM-3:30PM\nTHU: 2PM-3:30PM\nIf you are a NON-BUS Student and cannot access drop-in\nplease email ugradbusiness@ucr.edu for assistance.\nInclude your netID and SID in the email."
+          },
+          {
+            "field": "slide_5_ocr",
+            "quote": "FALL 2026 DROP-IN HOURS\nDrop-in hours are subject to change.\nWEEK 6\nNOV 2- NOV 6\nMON: 9AM-11AM & 2PM-4PM\nTUES: 9AM-11AM & 2PM-4PM\nWED: 2PM-4PM\nTHU: 9AM-11AM & 2PM-4PM\nWEEK 8\nNOV 16- NOV 20\nMON: 9AM-11AM & 2PM-4PM\nTUES: 9AM-11AM & 2PM-4PM\nWED: 2PM-4PM\nTHU: 9AM-11AM & 2PM-4PM\nWEEK 10\nNOV 30-DEC 4\nTUES: 10AM-11:30AM\nWED: 2PM-3:30PM\nTHU: 2PM-3:30PM\nWEEK 7\nNOV 9- NOV 13\nMON: 9AM-11AM & 2PM-4PM\nTUES: 9AM-11AM & 2PM-4PM\nTHU: 9AM-11AM & 2PM-4PM\nWEEK 9\nNOV 23- NOV 27\nMON: 9AM-11AM & 2PM-4PM\nTUES: 9AM-11AM & 2PM-4PM\nWED: 2PM-4PM\nFINALS WEEK\nDEC 7 -DEC 11\nTUES: 10AM-11:30AM\nWED: 2PM-3:30PM\nTHU: 2PM-3:30PM\nIf you are a NON-BUS Student and cannot access drop-in\nplease email ugradbusiness@ucr.edu for assistance.\nInclude your netID and SID in the email."
+          }
+        ],
+        "use_source_occurrences": false
+      },
+      "source": {
+        "texts": {
+          "caption": "Whether you’re an incoming freshman or a returning business student, we put together a complete guide to help you get familiar with important information from Undergraduate Business Programs! 🐻💙🌟\n\n📌 Pro Tip: Save this post so you don’t miss key dates and drop-in advising!",
+          "slide_1_ocr": "UC RIVERSIDE School of\nBusiness\nA. GARY ANDERSON GRADUATE SCHOOL OF MANAGEMENT\nUndergraduate\nBusiness Programs\nRESOURCES\nFall 2026 - INFO, ADVISING, KEY DATES\nSCHOOL OF BUSINESS\nSwipe to learn more",
+          "slide_2_ocr": "School of\nUC RIVERSIDE Business\nA. GARY ANDERSON GRADUATE SCHOOL OF MANAGEMENT\nUNDERGRADUATE\nPROGRAMS SUITE\n2nd Floor SBB\nUC RIVERSIDE",
+          "slide_3_ocr": "School of\nUC RIVERSIDE Business\nA. GARY ANDERSON GRADUATE SCHOOL OF MANAGEMENT\nUNDERGRADUATE\nBUSINESS NEWSLETTER\nKeep an eye on your UCR inbox during Weeks\n2, 5, and 9 of the Fall quarter for the latest\nupdates, key dates, and opportunities.",
+          "slide_4_ocr": "FALL 2026 DROP-IN HOURS\nDrop-in hours are subject to change.\nWEEK O\nSEP 21-SEP 25\nTHU: 9AM-11AM & 2PM-4PM\nWEEK 2\nOCT 5-OCT 9\nTUES: 10AM-11:30AM\nWED: 2PM-3:30PM\nTHU: 2PM-3:30PM\nWEEK 4\nOCT 19-OCT 23\nTUES: 10AM-11:30AM\nWED: 2PM-3:30PM\nWEEK 1\nSEP 28-OCT 2\nMON: 9AM-11AM & 2PM-4PM\nTUES: 9AM-11AM & 2PM-4PM\nWED: 2PM-4PM\nTHU: 9AM-11AM & 2PM-4PM\nWEEK 3\nOCT 12-OCT 16\nTUES: 10AM-11:30AM\nWED: 2PM-3:30PM\nTHU: 2PM-3:30PM\nWEEK 5\nOCT 26 - OCT 30\nTUES: 10AM-11:30AM\nWED: 2PM-3:30PM\nTHU: 2PM-3:30PM\nTHU: 2PM-3:30PM\nIf you are a NON-BUS Student and cannot access drop-in\nplease email ugradbusiness@ucr.edu for assistance.\nInclude your netID and SID in the email.",
+          "slide_5_ocr": "FALL 2026 DROP-IN HOURS\nDrop-in hours are subject to change.\nWEEK 6\nNOV 2- NOV 6\nMON: 9AM-11AM & 2PM-4PM\nTUES: 9AM-11AM & 2PM-4PM\nWED: 2PM-4PM\nTHU: 9AM-11AM & 2PM-4PM\nWEEK 8\nNOV 16- NOV 20\nMON: 9AM-11AM & 2PM-4PM\nTUES: 9AM-11AM & 2PM-4PM\nWED: 2PM-4PM\nTHU: 9AM-11AM & 2PM-4PM\nWEEK 10\nNOV 30-DEC 4\nTUES: 10AM-11:30AM\nWED: 2PM-3:30PM\nTHU: 2PM-3:30PM\nWEEK 7\nNOV 9- NOV 13\nMON: 9AM-11AM & 2PM-4PM\nTUES: 9AM-11AM & 2PM-4PM\nTHU: 9AM-11AM & 2PM-4PM\nWEEK 9\nNOV 23- NOV 27\nMON: 9AM-11AM & 2PM-4PM\nTUES: 9AM-11AM & 2PM-4PM\nWED: 2PM-4PM\nFINALS WEEK\nDEC 7 -DEC 11\nTUES: 10AM-11:30AM\nWED: 2PM-3:30PM\nTHU: 2PM-3:30PM\nIf you are a NON-BUS Student and cannot access drop-in\nplease email ugradbusiness@ucr.edu for assistance.\nInclude your netID and SID in the email.",
+          "slide_6_ocr": "WANT TO SCHEDULE AN\nAPPOINTMENT?\nYou may schedule an individual appointment with any advisor\nusing the Slate Student Success Portal. For more information and\nto book an appointment go to\nbusiness.ucr.edu/undergraduate/advising.\nUNDERGRADUATE BUSINESS ACADEMIC ADVISORS\nSamuel Anich\nAcademic Advisor\nBUUN\nKarina Antunez Brito\nAcademic Advisor\nA - FELZ\nMarissa Forzisi\nAcademic Advisor\nFEMA - LIRZ\nAlex Lozano\nAcademic Advisor\nLISA - PEDZ\nBrooke Tabata\nAcademic Advisor\nPEEA - TANZ\nJackelin Orellana\nAssistant Director\nTAOA - Z",
+          "slide_7_ocr": "KEY DATES FALL 2026\nLast Day to add or drop courses without a \"W\" and to\nrequest part time fee waivers\nOctober 9, 2026\nLast day to withdraw from a course (without a fee)\nOctober 16, 2026\nLast day to withdraw from a course ($4 fee)\nNovember 6, 2026\nVeteran's Day Holiday\nNovember 11, 2026\nLast Day of Instruction / Last day to withdraw from\nUCR for the full term\nDecember 4, 2026\nThanksgiving Holiday\nNovember 26-27, 2026\nFinal Examinations\nDecember 5-11, 2026\nFall Quarter Ends\nDecember 11, 2026\nGrades available on R'Web\nJanuary 4, 2027"
+        },
+        "origin": "instagram",
+        "posted_at": "2026-10-01T22:46:19+00:00",
+        "source_key": "instagram:post:3998637682720739173",
+        "source_occurrences": []
+      },
+      "status": "complete",
+      "version": 8,
+      "assessed_at": "2026-10-02T05:01:56.761780+00:00",
+      "source_hash": "d8cf053241004652fd2e4d5cd8cbfbb368ba3191914e35464a1b93323b84023b"
+    }
+  },
+  "bsib_calendar": {
+    "record": {
+      "media_id": "3994144107382943814",
+      "handle": "bsibucr",
+      "owner_username": "bsibucr",
+      "caption": "AND WE’RE BACK! 📈 Starting off the year right with amazing events in store. Check out what BSIB has planned for this fall quarter! Save the dates and come hang with us!",
+      "posted_at": "2026-09-25T18:20:18+00:00",
+      "permalink": "https://www.instagram.com/p/DduDOdeR7BG/"
+    },
+    "cached": {
+      "status": "ok",
+      "images": [
+        {
+          "index": 0,
+          "qr_urls": [],
+          "ocr_text": "BSIB\nFALL 2026\nEVENT CALENDAR\nWEEK 1\nFIRST GENERAL BODY\nMEETING\nSEP 30 HUB 269. 6-7 PM\nWEEK 3\nWEEK 1\nMOVIE NIGHT\nOCT 2 ASP LORB\nJEOPARDY NIGHT\nOCT 14 HUB 260 6-8 PM\n•\nWEEK 5\nPROFESSIONAL\nDEVELOPMENT W NSA\nOCT 29\nHUB 268 6-7 PM\nFUNDRAISERS:\nWEEK 8\nGUEST SPEAKER EVENT\nNOV 18 SCC 112. 6-7 PM\nWEEK 1\nWEEK 2\nWEEK 6\nBAKE SALE\n10AM-2PM",
+          "image_url": "https://example.org/bsib.jpg"
+        }
+      ]
+    },
+    "assessment": {
+      "model": "gemini-3.1-flash-lite",
+      "result": {
+        "kind": "activity",
+        "reason": "The source provides a calendar of specific events with dates, times, and locations for the fall quarter.",
+        "schedule": null,
+        "date_role": "occurrence",
+        "occurrences": [
+          {
+            "title": "First General Body Meeting",
+            "all_day": false,
+            "ends_at": "2026-09-30T19:00:00-07:00",
+            "location": "HUB 269",
+            "starts_at": "2026-09-30T18:00:00-07:00",
+            "date_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "BSIB\nFALL 2026\nEVENT CALENDAR\nWEEK 1\nFIRST GENERAL BODY\nMEETING\nSEP 30 HUB 269. 6-7 PM\nWEEK 3\nWEEK 1\nMOVIE NIGHT\nOCT 2 ASP LORB\nJEOPARDY NIGHT\nOCT 14 HUB 260 6-8 PM\n•\nWEEK 5\nPROFESSIONAL\nDEVELOPMENT W NSA\nOCT 29\nHUB 268 6-7 PM\nFUNDRAISERS:\nWEEK 8\nGUEST SPEAKER EVENT\nNOV 18 SCC 112. 6-7 PM\nWEEK 1\nWEEK 2\nWEEK 6\nBAKE SALE\n10AM-2PM"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "BSIB\nFALL 2026\nEVENT CALENDAR\nWEEK 1\nFIRST GENERAL BODY\nMEETING\nSEP 30 HUB 269. 6-7 PM\nWEEK 3\nWEEK 1\nMOVIE NIGHT\nOCT 2 ASP LORB\nJEOPARDY NIGHT\nOCT 14 HUB 260 6-8 PM\n•\nWEEK 5\nPROFESSIONAL\nDEVELOPMENT W NSA\nOCT 29\nHUB 268 6-7 PM\nFUNDRAISERS:\nWEEK 8\nGUEST SPEAKER EVENT\nNOV 18 SCC 112. 6-7 PM\nWEEK 1\nWEEK 2\nWEEK 6\nBAKE SALE\n10AM-2PM"
+              }
+            ],
+            "location_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "BSIB\nFALL 2026\nEVENT CALENDAR\nWEEK 1\nFIRST GENERAL BODY\nMEETING\nSEP 30 HUB 269. 6-7 PM\nWEEK 3\nWEEK 1\nMOVIE NIGHT\nOCT 2 ASP LORB\nJEOPARDY NIGHT\nOCT 14 HUB 260 6-8 PM\n•\nWEEK 5\nPROFESSIONAL\nDEVELOPMENT W NSA\nOCT 29\nHUB 268 6-7 PM\nFUNDRAISERS:\nWEEK 8\nGUEST SPEAKER EVENT\nNOV 18 SCC 112. 6-7 PM\nWEEK 1\nWEEK 2\nWEEK 6\nBAKE SALE\n10AM-2PM"
+              }
+            ]
+          },
+          {
+            "title": "Movie Night",
+            "all_day": true,
+            "ends_at": "2026-10-03T00:00:00-07:00",
+            "location": "ASP LORB",
+            "starts_at": "2026-10-02T00:00:00-07:00",
+            "date_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "BSIB\nFALL 2026\nEVENT CALENDAR\nWEEK 1\nFIRST GENERAL BODY\nMEETING\nSEP 30 HUB 269. 6-7 PM\nWEEK 3\nWEEK 1\nMOVIE NIGHT\nOCT 2 ASP LORB\nJEOPARDY NIGHT\nOCT 14 HUB 260 6-8 PM\n•\nWEEK 5\nPROFESSIONAL\nDEVELOPMENT W NSA\nOCT 29\nHUB 268 6-7 PM\nFUNDRAISERS:\nWEEK 8\nGUEST SPEAKER EVENT\nNOV 18 SCC 112. 6-7 PM\nWEEK 1\nWEEK 2\nWEEK 6\nBAKE SALE\n10AM-2PM"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "BSIB\nFALL 2026\nEVENT CALENDAR\nWEEK 1\nFIRST GENERAL BODY\nMEETING\nSEP 30 HUB 269. 6-7 PM\nWEEK 3\nWEEK 1\nMOVIE NIGHT\nOCT 2 ASP LORB\nJEOPARDY NIGHT\nOCT 14 HUB 260 6-8 PM\n•\nWEEK 5\nPROFESSIONAL\nDEVELOPMENT W NSA\nOCT 29\nHUB 268 6-7 PM\nFUNDRAISERS:\nWEEK 8\nGUEST SPEAKER EVENT\nNOV 18 SCC 112. 6-7 PM\nWEEK 1\nWEEK 2\nWEEK 6\nBAKE SALE\n10AM-2PM"
+              }
+            ],
+            "location_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "BSIB\nFALL 2026\nEVENT CALENDAR\nWEEK 1\nFIRST GENERAL BODY\nMEETING\nSEP 30 HUB 269. 6-7 PM\nWEEK 3\nWEEK 1\nMOVIE NIGHT\nOCT 2 ASP LORB\nJEOPARDY NIGHT\nOCT 14 HUB 260 6-8 PM\n•\nWEEK 5\nPROFESSIONAL\nDEVELOPMENT W NSA\nOCT 29\nHUB 268 6-7 PM\nFUNDRAISERS:\nWEEK 8\nGUEST SPEAKER EVENT\nNOV 18 SCC 112. 6-7 PM\nWEEK 1\nWEEK 2\nWEEK 6\nBAKE SALE\n10AM-2PM"
+              }
+            ]
+          },
+          {
+            "title": "Jeopardy Night",
+            "all_day": false,
+            "ends_at": "2026-10-14T20:00:00-07:00",
+            "location": "HUB 260",
+            "starts_at": "2026-10-14T18:00:00-07:00",
+            "date_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "BSIB\nFALL 2026\nEVENT CALENDAR\nWEEK 1\nFIRST GENERAL BODY\nMEETING\nSEP 30 HUB 269. 6-7 PM\nWEEK 3\nWEEK 1\nMOVIE NIGHT\nOCT 2 ASP LORB\nJEOPARDY NIGHT\nOCT 14 HUB 260 6-8 PM\n•\nWEEK 5\nPROFESSIONAL\nDEVELOPMENT W NSA\nOCT 29\nHUB 268 6-7 PM\nFUNDRAISERS:\nWEEK 8\nGUEST SPEAKER EVENT\nNOV 18 SCC 112. 6-7 PM\nWEEK 1\nWEEK 2\nWEEK 6\nBAKE SALE\n10AM-2PM"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "BSIB\nFALL 2026\nEVENT CALENDAR\nWEEK 1\nFIRST GENERAL BODY\nMEETING\nSEP 30 HUB 269. 6-7 PM\nWEEK 3\nWEEK 1\nMOVIE NIGHT\nOCT 2 ASP LORB\nJEOPARDY NIGHT\nOCT 14 HUB 260 6-8 PM\n•\nWEEK 5\nPROFESSIONAL\nDEVELOPMENT W NSA\nOCT 29\nHUB 268 6-7 PM\nFUNDRAISERS:\nWEEK 8\nGUEST SPEAKER EVENT\nNOV 18 SCC 112. 6-7 PM\nWEEK 1\nWEEK 2\nWEEK 6\nBAKE SALE\n10AM-2PM"
+              }
+            ],
+            "location_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "BSIB\nFALL 2026\nEVENT CALENDAR\nWEEK 1\nFIRST GENERAL BODY\nMEETING\nSEP 30 HUB 269. 6-7 PM\nWEEK 3\nWEEK 1\nMOVIE NIGHT\nOCT 2 ASP LORB\nJEOPARDY NIGHT\nOCT 14 HUB 260 6-8 PM\n•\nWEEK 5\nPROFESSIONAL\nDEVELOPMENT W NSA\nOCT 29\nHUB 268 6-7 PM\nFUNDRAISERS:\nWEEK 8\nGUEST SPEAKER EVENT\nNOV 18 SCC 112. 6-7 PM\nWEEK 1\nWEEK 2\nWEEK 6\nBAKE SALE\n10AM-2PM"
+              }
+            ]
+          },
+          {
+            "title": "Professional Development w NSA",
+            "all_day": false,
+            "ends_at": "2026-10-29T19:00:00-07:00",
+            "location": "HUB 268",
+            "starts_at": "2026-10-29T18:00:00-07:00",
+            "date_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "BSIB\nFALL 2026\nEVENT CALENDAR\nWEEK 1\nFIRST GENERAL BODY\nMEETING\nSEP 30 HUB 269. 6-7 PM\nWEEK 3\nWEEK 1\nMOVIE NIGHT\nOCT 2 ASP LORB\nJEOPARDY NIGHT\nOCT 14 HUB 260 6-8 PM\n•\nWEEK 5\nPROFESSIONAL\nDEVELOPMENT W NSA\nOCT 29\nHUB 268 6-7 PM\nFUNDRAISERS:\nWEEK 8\nGUEST SPEAKER EVENT\nNOV 18 SCC 112. 6-7 PM\nWEEK 1\nWEEK 2\nWEEK 6\nBAKE SALE\n10AM-2PM"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "BSIB\nFALL 2026\nEVENT CALENDAR\nWEEK 1\nFIRST GENERAL BODY\nMEETING\nSEP 30 HUB 269. 6-7 PM\nWEEK 3\nWEEK 1\nMOVIE NIGHT\nOCT 2 ASP LORB\nJEOPARDY NIGHT\nOCT 14 HUB 260 6-8 PM\n•\nWEEK 5\nPROFESSIONAL\nDEVELOPMENT W NSA\nOCT 29\nHUB 268 6-7 PM\nFUNDRAISERS:\nWEEK 8\nGUEST SPEAKER EVENT\nNOV 18 SCC 112. 6-7 PM\nWEEK 1\nWEEK 2\nWEEK 6\nBAKE SALE\n10AM-2PM"
+              }
+            ],
+            "location_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "BSIB\nFALL 2026\nEVENT CALENDAR\nWEEK 1\nFIRST GENERAL BODY\nMEETING\nSEP 30 HUB 269. 6-7 PM\nWEEK 3\nWEEK 1\nMOVIE NIGHT\nOCT 2 ASP LORB\nJEOPARDY NIGHT\nOCT 14 HUB 260 6-8 PM\n•\nWEEK 5\nPROFESSIONAL\nDEVELOPMENT W NSA\nOCT 29\nHUB 268 6-7 PM\nFUNDRAISERS:\nWEEK 8\nGUEST SPEAKER EVENT\nNOV 18 SCC 112. 6-7 PM\nWEEK 1\nWEEK 2\nWEEK 6\nBAKE SALE\n10AM-2PM"
+              }
+            ]
+          },
+          {
+            "title": "Guest Speaker Event",
+            "all_day": false,
+            "ends_at": "2026-11-18T19:00:00-08:00",
+            "location": "SCC 112",
+            "starts_at": "2026-11-18T18:00:00-08:00",
+            "date_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "BSIB\nFALL 2026\nEVENT CALENDAR\nWEEK 1\nFIRST GENERAL BODY\nMEETING\nSEP 30 HUB 269. 6-7 PM\nWEEK 3\nWEEK 1\nMOVIE NIGHT\nOCT 2 ASP LORB\nJEOPARDY NIGHT\nOCT 14 HUB 260 6-8 PM\n•\nWEEK 5\nPROFESSIONAL\nDEVELOPMENT W NSA\nOCT 29\nHUB 268 6-7 PM\nFUNDRAISERS:\nWEEK 8\nGUEST SPEAKER EVENT\nNOV 18 SCC 112. 6-7 PM\nWEEK 1\nWEEK 2\nWEEK 6\nBAKE SALE\n10AM-2PM"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "BSIB\nFALL 2026\nEVENT CALENDAR\nWEEK 1\nFIRST GENERAL BODY\nMEETING\nSEP 30 HUB 269. 6-7 PM\nWEEK 3\nWEEK 1\nMOVIE NIGHT\nOCT 2 ASP LORB\nJEOPARDY NIGHT\nOCT 14 HUB 260 6-8 PM\n•\nWEEK 5\nPROFESSIONAL\nDEVELOPMENT W NSA\nOCT 29\nHUB 268 6-7 PM\nFUNDRAISERS:\nWEEK 8\nGUEST SPEAKER EVENT\nNOV 18 SCC 112. 6-7 PM\nWEEK 1\nWEEK 2\nWEEK 6\nBAKE SALE\n10AM-2PM"
+              }
+            ],
+            "location_evidence": [
+              {
+                "field": "slide_1_ocr",
+                "quote": "BSIB\nFALL 2026\nEVENT CALENDAR\nWEEK 1\nFIRST GENERAL BODY\nMEETING\nSEP 30 HUB 269. 6-7 PM\nWEEK 3\nWEEK 1\nMOVIE NIGHT\nOCT 2 ASP LORB\nJEOPARDY NIGHT\nOCT 14 HUB 260 6-8 PM\n•\nWEEK 5\nPROFESSIONAL\nDEVELOPMENT W NSA\nOCT 29\nHUB 268 6-7 PM\nFUNDRAISERS:\nWEEK 8\nGUEST SPEAKER EVENT\nNOV 18 SCC 112. 6-7 PM\nWEEK 1\nWEEK 2\nWEEK 6\nBAKE SALE\n10AM-2PM"
+              }
+            ]
+          }
+        ],
+        "date_evidence": [
+          {
+            "field": "slide_1_ocr",
+            "quote": "BSIB\nFALL 2026\nEVENT CALENDAR\nWEEK 1\nFIRST GENERAL BODY\nMEETING\nSEP 30 HUB 269. 6-7 PM\nWEEK 3\nWEEK 1\nMOVIE NIGHT\nOCT 2 ASP LORB\nJEOPARDY NIGHT\nOCT 14 HUB 260 6-8 PM\n•\nWEEK 5\nPROFESSIONAL\nDEVELOPMENT W NSA\nOCT 29\nHUB 268 6-7 PM\nFUNDRAISERS:\nWEEK 8\nGUEST SPEAKER EVENT\nNOV 18 SCC 112. 6-7 PM\nWEEK 1\nWEEK 2\nWEEK 6\nBAKE SALE\n10AM-2PM"
+          }
+        ],
+        "activity_evidence": [
+          {
+            "field": "slide_1_ocr",
+            "quote": "BSIB\nFALL 2026\nEVENT CALENDAR\nWEEK 1\nFIRST GENERAL BODY\nMEETING\nSEP 30 HUB 269. 6-7 PM\nWEEK 3\nWEEK 1\nMOVIE NIGHT\nOCT 2 ASP LORB\nJEOPARDY NIGHT\nOCT 14 HUB 260 6-8 PM\n•\nWEEK 5\nPROFESSIONAL\nDEVELOPMENT W NSA\nOCT 29\nHUB 268 6-7 PM\nFUNDRAISERS:\nWEEK 8\nGUEST SPEAKER EVENT\nNOV 18 SCC 112. 6-7 PM\nWEEK 1\nWEEK 2\nWEEK 6\nBAKE SALE\n10AM-2PM"
+          }
+        ],
+        "use_source_occurrences": false
+      },
+      "source": {
+        "texts": {
+          "caption": "AND WE’RE BACK! 📈 Starting off the year right with amazing events in store. Check out what BSIB has planned for this fall quarter! Save the dates and come hang with us!",
+          "slide_1_ocr": "BSIB\nFALL 2026\nEVENT CALENDAR\nWEEK 1\nFIRST GENERAL BODY\nMEETING\nSEP 30 HUB 269. 6-7 PM\nWEEK 3\nWEEK 1\nMOVIE NIGHT\nOCT 2 ASP LORB\nJEOPARDY NIGHT\nOCT 14 HUB 260 6-8 PM\n•\nWEEK 5\nPROFESSIONAL\nDEVELOPMENT W NSA\nOCT 29\nHUB 268 6-7 PM\nFUNDRAISERS:\nWEEK 8\nGUEST SPEAKER EVENT\nNOV 18 SCC 112. 6-7 PM\nWEEK 1\nWEEK 2\nWEEK 6\nBAKE SALE\n10AM-2PM"
+        },
+        "origin": "instagram",
+        "posted_at": "2026-09-25T18:20:18+00:00",
+        "source_key": "instagram:post:3994144107382943814",
+        "source_occurrences": []
+      },
+      "status": "complete",
+      "version": 7,
+      "assessed_at": "2026-09-25T20:32:26.737519+00:00",
+      "source_hash": "1fb7be4a5f2ca6644b0c86d5a22e353c88fc24964fb4648621a72618be673e28"
+    }
+  },
+  "cecert_offerings": {
+    "record": {
+      "media": [
+        {
+          "index": 0,
+          "is_video": false,
+          "image_url": "https://example.com/cecert.jpg",
+          "media_key": "833274274_18636023092061855_532986207385803094_n"
+        },
+        {
+          "index": 1,
+          "is_video": false,
+          "image_url": "https://example.com/cecert.jpg",
+          "media_key": "830695235_18636023071061855_1815116861051386913_n"
+        },
+        {
+          "index": 2,
+          "is_video": false,
+          "image_url": "https://example.com/cecert.jpg",
+          "media_key": "833935653_18636023080061855_2276423514675179136_n"
+        }
+      ],
+      "handle": "ucrcecert",
+      "caption": "Your next opportunity could be waiting at CE-CERT 👀\n\nStop by our Open House Resource Fair on October 6 to meet organizations from across UCR, industry, government and the community. You don’t have to join a lab tour to come by the Resource Fair. Stop in, meet our participating organizations, grab some giveaways, check out activities and learn about internships, careers, student organizations, sustainability programs and other resources.\n\nJoining us:\n\n• South Coast Air Quality Management District\n• UCR Career Center\n• Inland Regional Energy Network (I-REN)\n• UCR Engineers Without Borders\n• UCR Society of Women Engineers\n• Inland Empire Regional K-16 Education Collaborative\n• RCAC\n• UCR Professional and Global Education Division\n• UCR Office of Sustainability\n• California Air Resources Board\n• Riverside County Office of Economic Development\n\nThe Resource Fair will be set up from 9 a.m.–3:30 p.m.\n\nCome for the Resource Fair, stay for a tour, or just stop by and see what’s happening at CE-CERT.\n\n📅 October 6, 2026\n📍 CE-CERT\nFree and open to the public\n\nLearn more at the link in our bio.\n\n#UCR #UCRiverside #CECERT #UCREngineering #OpenHouse #ResourceFair #Riverside",
+      "media_id": "3998524108526330626",
+      "typename": "GraphSidecar",
+      "has_video": false,
+      "permalink": "https://www.instagram.com/p/Dd9nH3ajCMC/",
+      "posted_at": "2026-10-01T19:02:20+00:00",
+      "shortcode": "Dd9nH3ajCMC",
+      "fetched_at": "2026-10-01T22:29:52.991020+00:00",
+      "owner_userid": 1819133854,
+      "owner_username": "ucrcecert",
+      "caption_mentions": []
+    },
+    "cached": {
+      "media_id": "3998524108526330626",
+      "handle": "ucrcecert",
+      "status": "ok",
+      "fingerprint": "cedf3e843c7b8e9645f72bab42edfc05ecb420c035097ad619d00b2a2497fd1e",
+      "extraction_version": 3,
+      "caption": "Your next opportunity could be waiting at CE-CERT 👀\n\nStop by our Open House Resource Fair on October 6 to meet organizations from across UCR, industry, government and the community. You don’t have to join a lab tour to come by the Resource Fair. Stop in, meet our participating organizations, grab some giveaways, check out activities and learn about internships, careers, student organizations, sustainability programs and other resources.\n\nJoining us:\n\n• South Coast Air Quality Management District\n• UCR Career Center\n• Inland Regional Energy Network (I-REN)\n• UCR Engineers Without Borders\n• UCR Society of Women Engineers\n• Inland Empire Regional K-16 Education Collaborative\n• RCAC\n• UCR Professional and Global Education Division\n• UCR Office of Sustainability\n• California Air Resources Board\n• Riverside County Office of Economic Development\n\nThe Resource Fair will be set up from 9 a.m.–3:30 p.m.\n\nCome for the Resource Fair, stay for a tour, or just stop by and see what’s happening at CE-CERT.\n\n📅 October 6, 2026\n📍 CE-CERT\nFree and open to the public\n\nLearn more at the link in our bio.\n\n#UCR #UCRiverside #CECERT #UCREngineering #OpenHouse #ResourceFair #Riverside",
+      "images": [
+        {
+          "index": 0,
+          "qr_urls": [],
+          "ocr_text": "YOUR NEXT\nOPPORTUNITY\nUCR CE-CERT\nFENGINEERING\nCOULD START HERE NEE\nANOLOGY\nBOLD\nHEARTS.\nBRILLIANT\nMINDS\nRIVERSID\nUCRECENT\nABLE\nATIVE\nUCR'S largest research\ncenter tackling society's\nmost pressing\nenvironmental challenges\nin air quality, climate\nchange, energy, and\ntransportation.\nERTA\nSIGN UP FOR OUR\nQUARTERLY\nNEWSLETTER\nMIME\nOCTOBER 6, 2026\nFREE AND OPEN TO THE PUBLIC\nLEARN\nFREE GIV\nFOLLO\nME\nFOR A",
+          "image_url": "https://example.com/cecert.jpg",
+          "media_key": "833274274_18636023092061855_532986207385803094_n",
+          "qr_scan_version": 1
+        },
+        {
+          "index": 1,
+          "qr_urls": [],
+          "ocr_text": "CON\nVISIT THE\nRESOURCE FAIR\nOCTOBER 6, 2026\nFREE AND OPEN TO THE PUBLIC\nLR 2\nME'A DAY\nMEET 12+ CAMPUS, INDUSTRY,\nAND COMMUNITY PARTNERS\nExplore internships, careers, students organizations,\nworkforce programs, sustainability resources, and more!\nThank You to Our 2026 Sponsors!\nNational Center\nfor Sustainable\nTransportation\nUC RIVERSIDE\nResearch and Economic\nDevelopment\nCenter for\nEfficient\nMobility\nA USDOT University Transportation Center\nINLAND EMPIRE REGIONAL\nK-16 EDUCATION COLLABORATIVE\nEDISON",
+          "image_url": "https://example.com/cecert.jpg",
+          "media_key": "830695235_18636023071061855_1815116861051386913_n",
+          "qr_scan_version": 1
+        },
+        {
+          "index": 2,
+          "qr_urls": [],
+          "ocr_text": "UCR College of Engineering -\nCenter for Environmental\nResearch and Technology\nJOIN US ON OCTOBER 6TH FOR OUR OPEN HOUSE\nChoose a Session to Attend:\nMORNING SESSION\n9:00 - 9:30 AM - Check-in + Resource Fair\n9:30 - 11:30 AM - Guided Tours\n- OR -\nAFTERNOON SESSION\n1:00-1:30 PM - Check-in + Resource Fair\n1:30-3:30 PM - Guided Tours\nThank You to Our 2026 Sponsors!\nNational Center\nfor Sustainable\nTransportation\nUC RIVERSIDE\nResearch and Economic\nDevelopment\nCenter for\nEfficient\nMobility\nA USDOT University Transportation Center\nINLAND EMPIRE REGIONAL\nK-16 EDUCATION COLLABORATIVE\nEDISON",
+          "image_url": "https://example.com/cecert.jpg",
+          "media_key": "833935653_18636023080061855_2276423514675179136_n",
+          "qr_scan_version": 1
+        }
+      ],
+      "result": null,
+      "extracted_at": "2026-10-01T22:37:59.042162+00:00",
+      "created_at": "2026-10-01T22:37:59.082816+00:00",
+      "updated_at": "2026-10-01T22:37:59.082816+00:00"
+    },
+    "assessment": {
+      "model": "gemini-3.1-flash-lite",
+      "result": {
+        "kind": "activity",
+        "reason": "The caption explicitly keeps the resource fair open 9 AM–3:30 PM independently of the two registered tour sessions.",
+        "schedule": null,
+        "date_role": "occurrence",
+        "occurrences": [
+          {
+            "title": "CE-CERT Open House Resource Fair",
+            "all_day": false,
+            "ends_at": "2026-10-06T15:30:00-07:00",
+            "location": "CE-CERT",
+            "starts_at": "2026-10-06T09:00:00-07:00",
+            "date_evidence": [
+              {
+                "field": "caption",
+                "quote": "Your next opportunity could be waiting at CE-CERT 👀\n\nStop by our Open House Resource Fair on October 6 to meet organizations from across UCR, industry, government and the community. You don’t have to join a lab tour to come by the Resource Fair. Stop in, meet our participating organizations, grab some giveaways, check out activities and learn about internships, careers, student organizations, sustainability programs and other resources.\n\nJoining us:\n\n• South Coast Air Quality Management District\n• UCR Career Center\n• Inland Regional Energy Network (I-REN)\n• UCR Engineers Without Borders\n• UCR Society of Women Engineers\n• Inland Empire Regional K-16 Education Collaborative\n• RCAC\n• UCR Professional and Global Education Division\n• UCR Office of Sustainability\n• California Air Resources Board\n• Riverside County Office of Economic Development\n\nThe Resource Fair will be set up from 9 a.m.–3:30 p.m.\n\nCome for the Resource Fair, stay for a tour, or just stop by and see what’s happening at CE-CERT.\n\n📅 October 6, 2026\n📍 CE-CERT\nFree and open to the public\n\nLearn more at the link in our bio.\n\n#UCR #UCRiverside #CECERT #UCREngineering #OpenHouse #ResourceFair #Riverside"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "caption",
+                "quote": "Your next opportunity could be waiting at CE-CERT 👀\n\nStop by our Open House Resource Fair on October 6 to meet organizations from across UCR, industry, government and the community. You don’t have to join a lab tour to come by the Resource Fair. Stop in, meet our participating organizations, grab some giveaways, check out activities and learn about internships, careers, student organizations, sustainability programs and other resources.\n\nJoining us:\n\n• South Coast Air Quality Management District\n• UCR Career Center\n• Inland Regional Energy Network (I-REN)\n• UCR Engineers Without Borders\n• UCR Society of Women Engineers\n• Inland Empire Regional K-16 Education Collaborative\n• RCAC\n• UCR Professional and Global Education Division\n• UCR Office of Sustainability\n• California Air Resources Board\n• Riverside County Office of Economic Development\n\nThe Resource Fair will be set up from 9 a.m.–3:30 p.m.\n\nCome for the Resource Fair, stay for a tour, or just stop by and see what’s happening at CE-CERT.\n\n📅 October 6, 2026\n📍 CE-CERT\nFree and open to the public\n\nLearn more at the link in our bio.\n\n#UCR #UCRiverside #CECERT #UCREngineering #OpenHouse #ResourceFair #Riverside"
+              }
+            ],
+            "location_evidence": [
+              {
+                "field": "caption",
+                "quote": "Your next opportunity could be waiting at CE-CERT 👀\n\nStop by our Open House Resource Fair on October 6 to meet organizations from across UCR, industry, government and the community. You don’t have to join a lab tour to come by the Resource Fair. Stop in, meet our participating organizations, grab some giveaways, check out activities and learn about internships, careers, student organizations, sustainability programs and other resources.\n\nJoining us:\n\n• South Coast Air Quality Management District\n• UCR Career Center\n• Inland Regional Energy Network (I-REN)\n• UCR Engineers Without Borders\n• UCR Society of Women Engineers\n• Inland Empire Regional K-16 Education Collaborative\n• RCAC\n• UCR Professional and Global Education Division\n• UCR Office of Sustainability\n• California Air Resources Board\n• Riverside County Office of Economic Development\n\nThe Resource Fair will be set up from 9 a.m.–3:30 p.m.\n\nCome for the Resource Fair, stay for a tour, or just stop by and see what’s happening at CE-CERT.\n\n📅 October 6, 2026\n📍 CE-CERT\nFree and open to the public\n\nLearn more at the link in our bio.\n\n#UCR #UCRiverside #CECERT #UCREngineering #OpenHouse #ResourceFair #Riverside"
+              }
+            ]
+          },
+          {
+            "title": "CE-CERT Open House Morning Session",
+            "all_day": false,
+            "ends_at": "2026-10-06T11:30:00-07:00",
+            "location": "CE-CERT",
+            "starts_at": "2026-10-06T09:00:00-07:00",
+            "date_evidence": [
+              {
+                "field": "slide_3_ocr",
+                "quote": "UCR College of Engineering -\nCenter for Environmental\nResearch and Technology\nJOIN US ON OCTOBER 6TH FOR OUR OPEN HOUSE\nChoose a Session to Attend:\nMORNING SESSION\n9:00 - 9:30 AM - Check-in + Resource Fair\n9:30 - 11:30 AM - Guided Tours\n- OR -\nAFTERNOON SESSION\n1:00-1:30 PM - Check-in + Resource Fair\n1:30-3:30 PM - Guided Tours\nThank You to Our 2026 Sponsors!\nNational Center\nfor Sustainable\nTransportation\nUC RIVERSIDE\nResearch and Economic\nDevelopment\nCenter for\nEfficient\nMobility\nA USDOT University Transportation Center\nINLAND EMPIRE REGIONAL\nK-16 EDUCATION COLLABORATIVE\nEDISON"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "slide_3_ocr",
+                "quote": "UCR College of Engineering -\nCenter for Environmental\nResearch and Technology\nJOIN US ON OCTOBER 6TH FOR OUR OPEN HOUSE\nChoose a Session to Attend:\nMORNING SESSION\n9:00 - 9:30 AM - Check-in + Resource Fair\n9:30 - 11:30 AM - Guided Tours\n- OR -\nAFTERNOON SESSION\n1:00-1:30 PM - Check-in + Resource Fair\n1:30-3:30 PM - Guided Tours\nThank You to Our 2026 Sponsors!\nNational Center\nfor Sustainable\nTransportation\nUC RIVERSIDE\nResearch and Economic\nDevelopment\nCenter for\nEfficient\nMobility\nA USDOT University Transportation Center\nINLAND EMPIRE REGIONAL\nK-16 EDUCATION COLLABORATIVE\nEDISON"
+              }
+            ],
+            "location_evidence": [
+              {
+                "field": "caption",
+                "quote": "Your next opportunity could be waiting at CE-CERT 👀\n\nStop by our Open House Resource Fair on October 6 to meet organizations from across UCR, industry, government and the community. You don’t have to join a lab tour to come by the Resource Fair. Stop in, meet our participating organizations, grab some giveaways, check out activities and learn about internships, careers, student organizations, sustainability programs and other resources.\n\nJoining us:\n\n• South Coast Air Quality Management District\n• UCR Career Center\n• Inland Regional Energy Network (I-REN)\n• UCR Engineers Without Borders\n• UCR Society of Women Engineers\n• Inland Empire Regional K-16 Education Collaborative\n• RCAC\n• UCR Professional and Global Education Division\n• UCR Office of Sustainability\n• California Air Resources Board\n• Riverside County Office of Economic Development\n\nThe Resource Fair will be set up from 9 a.m.–3:30 p.m.\n\nCome for the Resource Fair, stay for a tour, or just stop by and see what’s happening at CE-CERT.\n\n📅 October 6, 2026\n📍 CE-CERT\nFree and open to the public\n\nLearn more at the link in our bio.\n\n#UCR #UCRiverside #CECERT #UCREngineering #OpenHouse #ResourceFair #Riverside"
+              }
+            ]
+          },
+          {
+            "title": "CE-CERT Open House Afternoon Session",
+            "all_day": false,
+            "ends_at": "2026-10-06T15:30:00-07:00",
+            "location": "CE-CERT",
+            "starts_at": "2026-10-06T13:00:00-07:00",
+            "date_evidence": [
+              {
+                "field": "slide_3_ocr",
+                "quote": "UCR College of Engineering -\nCenter for Environmental\nResearch and Technology\nJOIN US ON OCTOBER 6TH FOR OUR OPEN HOUSE\nChoose a Session to Attend:\nMORNING SESSION\n9:00 - 9:30 AM - Check-in + Resource Fair\n9:30 - 11:30 AM - Guided Tours\n- OR -\nAFTERNOON SESSION\n1:00-1:30 PM - Check-in + Resource Fair\n1:30-3:30 PM - Guided Tours\nThank You to Our 2026 Sponsors!\nNational Center\nfor Sustainable\nTransportation\nUC RIVERSIDE\nResearch and Economic\nDevelopment\nCenter for\nEfficient\nMobility\nA USDOT University Transportation Center\nINLAND EMPIRE REGIONAL\nK-16 EDUCATION COLLABORATIVE\nEDISON"
+              }
+            ],
+            "activity_evidence": [
+              {
+                "field": "slide_3_ocr",
+                "quote": "UCR College of Engineering -\nCenter for Environmental\nResearch and Technology\nJOIN US ON OCTOBER 6TH FOR OUR OPEN HOUSE\nChoose a Session to Attend:\nMORNING SESSION\n9:00 - 9:30 AM - Check-in + Resource Fair\n9:30 - 11:30 AM - Guided Tours\n- OR -\nAFTERNOON SESSION\n1:00-1:30 PM - Check-in + Resource Fair\n1:30-3:30 PM - Guided Tours\nThank You to Our 2026 Sponsors!\nNational Center\nfor Sustainable\nTransportation\nUC RIVERSIDE\nResearch and Economic\nDevelopment\nCenter for\nEfficient\nMobility\nA USDOT University Transportation Center\nINLAND EMPIRE REGIONAL\nK-16 EDUCATION COLLABORATIVE\nEDISON"
+              }
+            ],
+            "location_evidence": [
+              {
+                "field": "caption",
+                "quote": "Your next opportunity could be waiting at CE-CERT 👀\n\nStop by our Open House Resource Fair on October 6 to meet organizations from across UCR, industry, government and the community. You don’t have to join a lab tour to come by the Resource Fair. Stop in, meet our participating organizations, grab some giveaways, check out activities and learn about internships, careers, student organizations, sustainability programs and other resources.\n\nJoining us:\n\n• South Coast Air Quality Management District\n• UCR Career Center\n• Inland Regional Energy Network (I-REN)\n• UCR Engineers Without Borders\n• UCR Society of Women Engineers\n• Inland Empire Regional K-16 Education Collaborative\n• RCAC\n• UCR Professional and Global Education Division\n• UCR Office of Sustainability\n• California Air Resources Board\n• Riverside County Office of Economic Development\n\nThe Resource Fair will be set up from 9 a.m.–3:30 p.m.\n\nCome for the Resource Fair, stay for a tour, or just stop by and see what’s happening at CE-CERT.\n\n📅 October 6, 2026\n📍 CE-CERT\nFree and open to the public\n\nLearn more at the link in our bio.\n\n#UCR #UCRiverside #CECERT #UCREngineering #OpenHouse #ResourceFair #Riverside"
+              }
+            ]
+          }
+        ],
+        "date_evidence": [
+          {
+            "field": "caption",
+            "quote": "Your next opportunity could be waiting at CE-CERT 👀\n\nStop by our Open House Resource Fair on October 6 to meet organizations from across UCR, industry, government and the community. You don’t have to join a lab tour to come by the Resource Fair. Stop in, meet our participating organizations, grab some giveaways, check out activities and learn about internships, careers, student organizations, sustainability programs and other resources.\n\nJoining us:\n\n• South Coast Air Quality Management District\n• UCR Career Center\n• Inland Regional Energy Network (I-REN)\n• UCR Engineers Without Borders\n• UCR Society of Women Engineers\n• Inland Empire Regional K-16 Education Collaborative\n• RCAC\n• UCR Professional and Global Education Division\n• UCR Office of Sustainability\n• California Air Resources Board\n• Riverside County Office of Economic Development\n\nThe Resource Fair will be set up from 9 a.m.–3:30 p.m.\n\nCome for the Resource Fair, stay for a tour, or just stop by and see what’s happening at CE-CERT.\n\n📅 October 6, 2026\n📍 CE-CERT\nFree and open to the public\n\nLearn more at the link in our bio.\n\n#UCR #UCRiverside #CECERT #UCREngineering #OpenHouse #ResourceFair #Riverside"
+          },
+          {
+            "field": "slide_3_ocr",
+            "quote": "UCR College of Engineering -\nCenter for Environmental\nResearch and Technology\nJOIN US ON OCTOBER 6TH FOR OUR OPEN HOUSE\nChoose a Session to Attend:\nMORNING SESSION\n9:00 - 9:30 AM - Check-in + Resource Fair\n9:30 - 11:30 AM - Guided Tours\n- OR -\nAFTERNOON SESSION\n1:00-1:30 PM - Check-in + Resource Fair\n1:30-3:30 PM - Guided Tours\nThank You to Our 2026 Sponsors!\nNational Center\nfor Sustainable\nTransportation\nUC RIVERSIDE\nResearch and Economic\nDevelopment\nCenter for\nEfficient\nMobility\nA USDOT University Transportation Center\nINLAND EMPIRE REGIONAL\nK-16 EDUCATION COLLABORATIVE\nEDISON"
+          }
+        ],
+        "activity_evidence": [
+          {
+            "field": "caption",
+            "quote": "Your next opportunity could be waiting at CE-CERT 👀\n\nStop by our Open House Resource Fair on October 6 to meet organizations from across UCR, industry, government and the community. You don’t have to join a lab tour to come by the Resource Fair. Stop in, meet our participating organizations, grab some giveaways, check out activities and learn about internships, careers, student organizations, sustainability programs and other resources.\n\nJoining us:\n\n• South Coast Air Quality Management District\n• UCR Career Center\n• Inland Regional Energy Network (I-REN)\n• UCR Engineers Without Borders\n• UCR Society of Women Engineers\n• Inland Empire Regional K-16 Education Collaborative\n• RCAC\n• UCR Professional and Global Education Division\n• UCR Office of Sustainability\n• California Air Resources Board\n• Riverside County Office of Economic Development\n\nThe Resource Fair will be set up from 9 a.m.–3:30 p.m.\n\nCome for the Resource Fair, stay for a tour, or just stop by and see what’s happening at CE-CERT.\n\n📅 October 6, 2026\n📍 CE-CERT\nFree and open to the public\n\nLearn more at the link in our bio.\n\n#UCR #UCRiverside #CECERT #UCREngineering #OpenHouse #ResourceFair #Riverside"
+          },
+          {
+            "field": "slide_3_ocr",
+            "quote": "UCR College of Engineering -\nCenter for Environmental\nResearch and Technology\nJOIN US ON OCTOBER 6TH FOR OUR OPEN HOUSE\nChoose a Session to Attend:\nMORNING SESSION\n9:00 - 9:30 AM - Check-in + Resource Fair\n9:30 - 11:30 AM - Guided Tours\n- OR -\nAFTERNOON SESSION\n1:00-1:30 PM - Check-in + Resource Fair\n1:30-3:30 PM - Guided Tours\nThank You to Our 2026 Sponsors!\nNational Center\nfor Sustainable\nTransportation\nUC RIVERSIDE\nResearch and Economic\nDevelopment\nCenter for\nEfficient\nMobility\nA USDOT University Transportation Center\nINLAND EMPIRE REGIONAL\nK-16 EDUCATION COLLABORATIVE\nEDISON"
+          }
+        ],
+        "use_source_occurrences": false
+      },
+      "source": {
+        "texts": {
+          "caption": "Your next opportunity could be waiting at CE-CERT 👀\n\nStop by our Open House Resource Fair on October 6 to meet organizations from across UCR, industry, government and the community. You don’t have to join a lab tour to come by the Resource Fair. Stop in, meet our participating organizations, grab some giveaways, check out activities and learn about internships, careers, student organizations, sustainability programs and other resources.\n\nJoining us:\n\n• South Coast Air Quality Management District\n• UCR Career Center\n• Inland Regional Energy Network (I-REN)\n• UCR Engineers Without Borders\n• UCR Society of Women Engineers\n• Inland Empire Regional K-16 Education Collaborative\n• RCAC\n• UCR Professional and Global Education Division\n• UCR Office of Sustainability\n• California Air Resources Board\n• Riverside County Office of Economic Development\n\nThe Resource Fair will be set up from 9 a.m.–3:30 p.m.\n\nCome for the Resource Fair, stay for a tour, or just stop by and see what’s happening at CE-CERT.\n\n📅 October 6, 2026\n📍 CE-CERT\nFree and open to the public\n\nLearn more at the link in our bio.\n\n#UCR #UCRiverside #CECERT #UCREngineering #OpenHouse #ResourceFair #Riverside",
+          "slide_1_ocr": "YOUR NEXT\nOPPORTUNITY\nUCR CE-CERT\nFENGINEERING\nCOULD START HERE NEE\nANOLOGY\nBOLD\nHEARTS.\nBRILLIANT\nMINDS\nRIVERSID\nUCRECENT\nABLE\nATIVE\nUCR'S largest research\ncenter tackling society's\nmost pressing\nenvironmental challenges\nin air quality, climate\nchange, energy, and\ntransportation.\nERTA\nSIGN UP FOR OUR\nQUARTERLY\nNEWSLETTER\nMIME\nOCTOBER 6, 2026\nFREE AND OPEN TO THE PUBLIC\nLEARN\nFREE GIV\nFOLLO\nME\nFOR A",
+          "slide_2_ocr": "CON\nVISIT THE\nRESOURCE FAIR\nOCTOBER 6, 2026\nFREE AND OPEN TO THE PUBLIC\nLR 2\nME'A DAY\nMEET 12+ CAMPUS, INDUSTRY,\nAND COMMUNITY PARTNERS\nExplore internships, careers, students organizations,\nworkforce programs, sustainability resources, and more!\nThank You to Our 2026 Sponsors!\nNational Center\nfor Sustainable\nTransportation\nUC RIVERSIDE\nResearch and Economic\nDevelopment\nCenter for\nEfficient\nMobility\nA USDOT University Transportation Center\nINLAND EMPIRE REGIONAL\nK-16 EDUCATION COLLABORATIVE\nEDISON",
+          "slide_3_ocr": "UCR College of Engineering -\nCenter for Environmental\nResearch and Technology\nJOIN US ON OCTOBER 6TH FOR OUR OPEN HOUSE\nChoose a Session to Attend:\nMORNING SESSION\n9:00 - 9:30 AM - Check-in + Resource Fair\n9:30 - 11:30 AM - Guided Tours\n- OR -\nAFTERNOON SESSION\n1:00-1:30 PM - Check-in + Resource Fair\n1:30-3:30 PM - Guided Tours\nThank You to Our 2026 Sponsors!\nNational Center\nfor Sustainable\nTransportation\nUC RIVERSIDE\nResearch and Economic\nDevelopment\nCenter for\nEfficient\nMobility\nA USDOT University Transportation Center\nINLAND EMPIRE REGIONAL\nK-16 EDUCATION COLLABORATIVE\nEDISON"
+        },
+        "origin": "instagram",
+        "posted_at": "2026-10-01T19:02:20+00:00",
+        "source_key": "instagram:post:3998524108526330626",
+        "source_occurrences": []
+      },
+      "status": "complete",
+      "version": 9,
+      "assessed_at": "2026-10-01T22:42:08.383077+00:00",
+      "source_hash": "bf80cd24e33042cbfb237a83630a1f5bd80bf6b8f947b618eb664c400858af10",
+      "method": "reviewed",
+      "reviewer": "Codex source-backed October 1 audit",
+      "review_note": "The caption explicitly keeps the resource fair open 9 AM–3:30 PM independently of the two registered tour sessions."
+    }
+  }
+}

@@ -29,6 +29,7 @@ _MONTHS = {
     "september": 9,
     "oct": 10,
     "october": 10,
+    "oet": 10,  # OCR c/e confusion, verified on the Tau Beta Pi Oct. 6 flyer.
     "nov": 11,
     "november": 11,
     "dec": 12,
@@ -39,7 +40,7 @@ _OCR_DATE_RE = re.compile(
     r"\b("
     r"jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|"
     r"jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?|tember)?|oct(?:ober)?|"
-    r"nov(?:ember)?|dec(?:ember)?"
+    r"nov(?:ember)?|dec(?:ember)?|oet"
     r")(?:\.\s*|\s+)(\d{1,2})(?:st|nd|rd|th)?\b",
     re.IGNORECASE,
 )

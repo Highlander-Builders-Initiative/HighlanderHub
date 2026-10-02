@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import logging
 import re
+import unicodedata
 from datetime import datetime, timezone, timedelta
 from typing import NamedTuple
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
@@ -223,9 +224,14 @@ def _strip_host_prefix(words: list[str], row: dict) -> tuple[list[str], bool]:
     return (min(matches, key=len), True) if matches else (words, False)
 
 
+def _title_text(value: str) -> str:
+    return ''.join(char for char in unicodedata.normalize('NFKD', value.casefold())
+                   if not unicodedata.combining(char))
+
+
 def _title_form(row: dict, other: dict) -> tuple[set[str], bool]:
     """Normalize titles using aliases corroborated by host/account metadata."""
-    words = re.findall(r'[a-z0-9]+', str(row.get('title') or '').casefold())
+    words = re.findall(r'[a-z0-9]+', _title_text(str(row.get('title') or '')))
     if row.get('content_kind') == 'student_deadline' and 'review' in words:
         # Preserve the program identity wherever it occurs in a paraphrase.
         # "First review of applications for X" and "X first review date"
@@ -263,8 +269,11 @@ def _teaser_titles(a: set[str], b: set[str], left: dict, right: dict) -> bool:
 
 
 def _title_phrase_in_description(title_row: dict, description_row: dict) -> bool:
-    title = ' '.join(re.findall(r'[a-z0-9]+', str(title_row.get('title') or '').casefold()))
-    description = ' '.join(re.findall(r'[a-z0-9]+', str(description_row.get('description') or '').casefold()))
+    title = ' '.join(re.findall(r'[a-z0-9]+', _title_text(str(title_row.get('title') or ''))))
+    start = _parse_instant(title_row.get('starts_at'))
+    if start:
+        title = ' '.join(re.sub(rf'\b{start.astimezone(PACIFIC_TZ).year}\b', '', title).split())
+    description = ' '.join(re.findall(r'[a-z0-9]+', _title_text(str(description_row.get('description') or ''))))
     return len(title.split()) >= 2 and bool(re.search(rf'\b{re.escape(title)}\b', description))
 
 
@@ -297,7 +306,7 @@ def _same_slot(left: dict, right: dict) -> bool:
 
 
 def _slot_title_words(row: dict) -> set[str]:
-    words = re.findall(r'[a-z0-9]+', str(row.get('title') or '').casefold())
+    words = re.findall(r'[a-z0-9]+', _title_text(str(row.get('title') or '')))
     return {word for word in words if len(word) > 1} - _GENERIC_WORDS - _TITLE_NOISE
 
 
@@ -416,7 +425,12 @@ def _contradicting_titles(left: dict, right: dict) -> bool:
     titles = [str(row.get('title') or '').casefold() for row in (left, right)]
     start = _parse_instant(left.get('starts_at'))
     year = str(start.astimezone(PACIFIC_TZ).year) if start else ''
-    if any(y != year for title in titles for y in re.findall(r'\b20\d\d\b', title)):
+    years = [set(re.findall(r'\b20\d\d\b', title)) for title in titles]
+    # A Fall 2027 application can close in November 2026. Its program year
+    # must agree between titles, but need not equal the cutoff's year.
+    deadline = all(row.get('content_kind') == 'student_deadline' for row in (left, right))
+    if (bool(years[0] and years[1] and years[0] != years[1]) if deadline
+            else any(y != year for values in years for y in values)):
         return True
     sequences = [{a or b for a, b in _SEQUENCE.findall(title)} for title in titles]
     editions = [set(_EDITION.findall(title)) for title in titles]
@@ -485,6 +499,50 @@ def _summary_detail_match(summary: dict, detailed: dict) -> bool:
             and len(distinctive) >= (1 if _same_account(summary, detailed) else 2))
 
 
+def _numbered_repeat(left: dict, right: dict, place: str) -> bool:
+    """A schedule labels 'Day 1' or '#1'; its matching reminder omits it."""
+    if not _same_account(left, right) or place == 'conflicting':
+        return False
+    titles = [str(row.get('title') or '').casefold() for row in (left, right)]
+    sequences = [{a or b for a, b in _SEQUENCE.findall(title)} for title in titles]
+    if bool(sequences[0]) == bool(sequences[1]):
+        return False
+    decoration = re.compile(r'^\s*day\s+\d+\s*:|#\s*\d+')
+    stripped = [row | {'title': decoration.sub('', title)} for row, title in zip((left, right), titles)]
+    if _contradicting_titles(*stripped):
+        return False
+    forms = [{('talk' if w == 'talks' else w) for w in _title_form(row, other)[0]}
+             for row, other in (stripped, stripped[::-1])]
+    if not forms[0] or forms[0] != forms[1]:
+        return False
+    starts = [_parse_instant(row.get('starts_at')) for row in (left, right)]
+    if starts[0].astimezone(PACIFIC_TZ).date() != starts[1].astimezone(PACIFIC_TZ).date():
+        return False
+    if _date_only(left) != _date_only(right):
+        return True
+    ends = {_parse_instant(row.get('ends_at')) for row in (left, right)} - {None}
+    return starts[0] == starts[1] and len(ends) <= 1
+
+
+def _corrected_schedule(left: dict, right: dict) -> bool:
+    """An explicitly revised schedule replaces its own provisional venue."""
+    if (not _same_account(left, right) or not _session_row(left) or not _session_row(right)
+            or not _specific_slot(left) or not _specific_slot(right)
+            or _parse_instant(left.get('starts_at')) != _parse_instant(right.get('starts_at'))
+            or _contradicting_titles(left, right)):
+        return False
+    old, new = sorted((left, right), key=lambda row: max(map(int, _source_media(row)), default=0))
+    if not _source_media(old) or max(map(int, _source_media(new))) <= max(map(int, _source_media(old))):
+        return False
+    a, b = (_title_form(row, other)[0] - {'session'} for row, other in ((old, new), (new, old)))
+    ends = {_parse_instant(row.get('ends_at')) for row in (old, new)} - {None}
+    corrected = re.search(r'\b(?:new official|updated|revised|corrected)\s+schedule\b',
+                          str(new.get('description') or ''), re.I)
+    provisional = re.search(r'\blocation\s+(?:will be|to be)\s+announced\b',
+                            str(old.get('description') or ''), re.I)
+    return bool(len(a) >= 2 and a == b and len(ends) <= 1 and (corrected or provisional))
+
+
 def same_event(left: dict, right: dict) -> bool:
     """Match corroborated announcements using shared title, owner and place rules."""
     start, other_start = (_parse_instant(r.get('starts_at')) for r in (left, right))
@@ -494,11 +552,24 @@ def same_event(left: dict, right: dict) -> bool:
     # start. They are still different events.
     if _sibling_sessions(left, right):
         return False
+    # An open house can offer a continuous resource fair and separately
+    # registered tour sessions. Sharing the venue and first start is not a
+    # reason to replace the fair's hours with the morning tour's hours.
+    titles = [str(row.get('title') or '').casefold() for row in (left, right)]
+    for fair, tour in (titles, titles[::-1]):
+        if ('resource fair' in fair and 'resource fair' not in tour
+                and ('guided tour' in tour or ('open house' in tour
+                     and re.search(r'\b(?:morning|afternoon)\s+session\b', tour)))):
+            return False
     # A feed row and a retired story reshare are one post. The two parses may
     # disagree on room or end time.
     if start == other_start and (_source_media(left) & _source_media(right)):
         return True
     place = _same_place(left, right)
+    if _numbered_repeat(left, right, place) or _corrected_schedule(left, right):
+        return True
+    if _contradicting_titles(left, right):
+        return False
     if _same_slot_event(left, right, place) or (start != other_start and _corrected_deadline(left, right)):
         return True
     # Patterns from the admin's September 26 review decisions.
@@ -537,6 +608,8 @@ def same_event(left: dict, right: dict) -> bool:
             (place == 'same' and len(distinctive) >= 3)
             or (same_account and not _place_words(teaser) and len(distinctive) >= 2
                 and teaser_words <= (b if teaser is left else a))))
+        quoted = quoted or (same_account and not _place_words(teaser) and len(distinctive) >= 2
+                            and _title_phrase_in_description(timed, teaser))
         return bool(quoted or (
             len(common) >= (2 if exact_repeat else 3) and distinctive
             and _teaser_titles(a, b, left, right)

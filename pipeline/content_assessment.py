@@ -21,7 +21,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 # Recorded for provenance; policy changes currently do not invalidate caches.
-VERSION = 8
+VERSION = 9
 MAX_OCCURRENCES = 100
 MODEL = "gemini-3.1-flash-lite"
 # Google recommends 1.0 for Gemini 3, but cached refusals assume a repeat call
@@ -166,9 +166,14 @@ other occasion is activity/occurrence. This takes precedence over background
 program details. A 'Fellowship Application Workshop' is a workshop, even if it
 explains how to apply and mentions fellowship credits/stipends. Extract the
 occasion's date and time; never classify its date as an application window.
-2. An explicit action cutoff ('applications due', 'apply by', 'deadline') is
+2. An explicit action cutoff ('applications due', 'apply by', 'deadline', or
+'applications close') is
 deadline/cutoff, even when the same flyer describes the program and its term.
 Extract the cutoff as a deadline occurrence, not the program's start/end dates.
+An application window with a printed closing deadline still publishes that
+cutoff. Do not hide it under application/application_window.
+Separate independent actions that share a deadline ('add/drop courses and
+request part-time fee waivers') into distinct cutoff occurrences.
 3. Otherwise, a pitch for an academy, fellowship, internship, cohort, or
 course-based program is application content, even without 'apply now' wording.
 A curriculum, course credits or placement requirements distinguish enrollment
@@ -194,10 +199,23 @@ the month/range, cite BOTH on that occurrence, not only at the top level.
 Do not assign activities to dates from ambiguous OCR reading order. Extract
 only clearly associated activities; if none are clear, return uncertain.
 When the caption and a flyer give conflicting clock ranges for the same dated
-occasion, return uncertain with no occurrences; do not choose one arbitrarily.
+occasion, omit that occasion; return uncertain with no occurrences if none
+remain. Do not choose a clock arbitrarily.
+An explicit correction in the caption ('room & time update', 'new official
+schedule') supersedes the corresponding older flyer details. Use the corrected
+caption for those fields; an unlabelled disagreement remains uncertain.
+An agenda item inside a meeting ('First General Meeting: Vital Signs Workshop')
+is one occasion with a combined title, not two simultaneous occurrences.
+Preserve independently attendable offerings: a resource fair explicitly open
+9 AM–3:30 PM stays one continuous fair even if the same carousel offers two
+registered open-house tour sessions. The tour timetable does not split the
+fair's hours or rename the tour sessions as resource fairs.
 For a mixed timeline, include independently supported activities AND explicit
 action cutoffs. Name each cutoff as a deadline rather than omitting it because
 the post also advertises activities.
+An unrelated complex service schedule does not hide clearly printed deadlines
+elsewhere in the carousel. Omit an unresolved session while retaining other
+independently supported sessions in the post.
 Activity evidence must describe the actual activity/action/service, not just a
 date. Date evidence must connect that activity/action to its dates. Never cite
 metadata (posted_at, audiences, origin) as activity evidence. Do not invent
@@ -255,6 +273,10 @@ Monday', 'Mondays', 'weekly', 'we meet Monday through Friday') stays unbounded,
 an academic week number ('Week 1', 'Week 3 of fall') is never resolved to
 dates, service hours are never dated this way, and a recap of a past week is
 an announcement.
+An activity explicitly scheduled for 'next week on Tuesday' uses that weekday
+in the next calendar week, counted from Sunday. A bare weekday or 'next Tuesday'
+without an explicit week remains ambiguous. Never infer AM/PM when neither the
+caption nor the flyer supplies it; return uncertain for ambiguous clocks.
 
 Announcements, uncertain content and applications have no public occurrences:
 return occurrences=[], schedule=null, use_source_occurrences=false. Their dates
@@ -364,6 +386,8 @@ _THIS_WEEKDAY = re.compile(
 # A lineup scoped to one week: "this week", "the routes for the week". Not "the
 # week of Oct 5" (another week, dated on its own) or an academic "Week 3".
 _THIS_WEEK = re.compile(r"\b(?:this|for\s+the)\s+week\b(?!\s+of\b)(?!\s*\d)", re.I)
+# "Next week on Tuesday (and Thursday)": the clause up to its sentence end.
+_NEXT_WEEK_ON = re.compile(r"\bnext\s+week\s+(?:on\s+)?(?=mon|tue|wed|thu|fri|sat|sun)[^.!?\n]*", re.I)
 
 
 def _named_weekdays(text: str) -> set[int]:
@@ -476,6 +500,12 @@ def _day_supported(day: date, text: str, source: dict, *, week_scoped: bool = Fa
         if week_scoped and _THIS_WEEK.search(text) and day >= reference:
             week_start = reference - timedelta(days=(reference.weekday() + 1) % 7)
             if day <= week_start + timedelta(days=6) and day.weekday() in _named_weekdays(text):
+                return True
+        # Only the weekdays in the 'next week on ...' clause itself: a standing
+        # 'every Monday' elsewhere in the caption names no week.
+        next_week = reference - timedelta(days=(reference.weekday() + 1) % 7) + timedelta(days=7)
+        for match in (_NEXT_WEEK_ON.finditer(text) if week_scoped else ()):
+            if next_week <= day <= next_week + timedelta(days=6) and day.weekday() in _named_weekdays(match.group()):
                 return True
     return False
 
@@ -619,15 +649,30 @@ def validate_occurrence(item: dict, source: dict, *, week_scoped: bool = False) 
     unprefixed = re.sub(r"^[A-Z][A-Z0-9.-]{1,7}\s+", "", item["title"])
     short_title = re.sub(r"\W+", " ", unprefixed.casefold()).strip()
     printed_ranges = set()
-    for field_text in (source.get("texts") or {}).values():
-        named = re.sub(r"\W+", " ", field_text.casefold())
-        if short_title not in named or evidence_dates(field_text) != {(start.month, start.day)}:
-            continue
-        ranges = {pair for pattern in (_OCR_TIME_RANGE_RE, _OCR_COMPACT_TIME_RANGE_RE)
-                  for match in pattern.finditer(field_text) if (pair := time_range(match.group()))}
-        if len(ranges) == 1:
-            printed_ranges.update(ranges)
-    if len(printed_ranges) > 1:
+    caption_ranges = set()
+    for field, field_text in (source.get("texts") or {}).items():
+        # A monthly caption has several ranges, but its separately headed
+        # paragraphs still identify individual occasions and their clocks.
+        for fragment in [field_text, *re.split(r"\n\s*\n", field_text)]:
+            named = re.sub(r"\W+", " ", fragment.casefold())
+            if short_title not in named or evidence_dates(fragment) != {(start.month, start.day)}:
+                continue
+            ranges = {pair for pattern in (_OCR_TIME_RANGE_RE, _OCR_COMPACT_TIME_RANGE_RE)
+                      for match in pattern.finditer(fragment) if (pair := time_range(match.group()))}
+            if len(ranges) == 1:
+                printed_ranges.update(ranges)
+                if field == "caption":
+                    caption_ranges.update(ranges)
+    caption = (source.get("texts") or {}).get("caption", "")
+    corrected = re.search(r"\b(?:(?:room\s*(?:&|and)\s*time|time|schedule)\s+(?:update|correction)"
+                          r"|(?:new official|updated|revised|corrected)\s+schedule)\b", caption, re.I)
+    caption_cited = any(citation.get("field") == "caption" for citation in item.get("date_evidence") or [])
+    follows_correction = bool(corrected and caption_cited and not item["all_day"]
+                              and len(caption_ranges) == 1
+                              and any((start.hour, start.minute) == clocks[0]
+                                      and (end is None or (end.hour, end.minute) == clocks[1])
+                                      for clocks in caption_ranges))
+    if len(printed_ranges) > 1 and not follows_correction:
         raise ValueError("Conflicting source clock ranges for the same dated occasion; "
                          "return uncertain rather than choosing a caption or flyer time")
     if start != _instant(item["starts_at"]):
@@ -691,6 +736,17 @@ def validate(result: Any, source: dict) -> dict:
              "service_schedule": {"recurring_hours", "occurrence"}, "announcement": {"observance", "notice_period", "none"}, "uncertain": set(DATE_ROLES)}
     if role not in roles[kind]:
         raise ValueError("Content kind and date role disagree")
+    if kind == "application":
+        from event_dates import evidence_dates
+        for text in (source.get("texts") or {}).values():
+            # The date is on the cutoff's own line, or on the next line when
+            # the heading ends its line ('APPLICATIONS CLOSE' / 'Oct 14').
+            # 'Due on a rolling basis' does not date the next line's session,
+            # and 'applications closed Sept 28' is already past.
+            for cutoff in re.finditer(r"\b(?:deadlines?|applications?\s+(?:are\s+)?(?:due|closes?)|apply\s+by)\b"
+                                      r"(?:[ \t]*:?[ \t]*\n[^\n!?]{0,100}|[^\n!?]{0,100})", text, re.I):
+                if evidence_dates(cutoff.group()):
+                    raise ValueError("An explicit dated application cutoff requires kind=deadline, date_role=cutoff and a supported occurrence")
     publishable = kind in {"activity", "deadline", "service_schedule"}
     evidence_text(result["activity_evidence"], source, required=publishable, activity=True)
     if role in {"application_window", "program_duration"} and not result["date_evidence"]:

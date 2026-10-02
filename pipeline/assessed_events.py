@@ -243,7 +243,20 @@ def _session_text(source: dict, occurrence: dict, occurrences: list[dict]) -> st
         users = {item["title"] for item in occurrences if any(
             citation.get("field") == field for key in ("activity_evidence", "date_evidence", "location_evidence")
             for citation in item.get(key) or [] if isinstance(citation, dict))}
+        fundraising = re.compile(r"fundrais|\bfood sale\b", re.I)
+        separate_fundraiser = (field == "caption" and len(occurrences) > 1
+                              and not re.search(r"fundrais|\bsale\b", occurrence["title"], re.I)
+                              and fundraising.search(text))
         if len(users) == 1:
+            if separate_fundraiser:
+                # The caption is otherwise this session's own: keep its date,
+                # venue and offers ('Free pizza'), even when they never repeat
+                # the title. Drop the sibling fundraiser's paragraphs, and its
+                # lines within a paragraph that names this session.
+                parts = [part for part in re.split(r"\n\s*\n", text)
+                         if not fundraising.search(part) or own_title in normalize(part)]
+                text = "\n\n".join("\n".join(line for line in part.splitlines() if not fundraising.search(line))
+                                   for part in parts)
             selected.append(text)
             continue
         lines = text.splitlines()
@@ -251,14 +264,15 @@ def _session_text(source: dict, occurrence: dict, occurrences: list[dict]) -> st
         # applies to the advertised sessions. Session-named instructions stay
         # with that session; 'RSVP to the fair' is not a global requirement.
         selected.extend(line for line in lines if re.match(
-            r"\s*(?:please\s+)?(?:register|rsvp|sign[- ]?up)\s+(?:by|before|here|now)\b", line, re.I)
+            r"\s*(?:please\s+)?(?:register|rsvp|sign[- ]?up)\s+(?:by|before|here|now|through|via|using|at)\b", line, re.I)
             and not any(title in normalize(line) for title in titles))
         anchors = []
         for index, line in enumerate(lines):
             dates = {(month, number) for _, month, number, _ in _scan_printed_dates(line)}
             names = {title for title in titles if title and title in normalize(line)}
-            if dates or names:
-                belongs = (names == {own_title} if names else dates == {day} and same_day == 1)
+            other_fundraiser = separate_fundraiser and fundraising.search(line)
+            if dates or names or other_fundraiser:
+                belongs = not other_fundraiser and (names == {own_title} if names else dates == {day} and same_day == 1)
                 anchors.append((index, belongs))
         for position, (start, belongs) in enumerate(anchors):
             if belongs:
@@ -345,6 +359,8 @@ def post_rows(record: dict, cached: dict, payload: dict, meta: dict, now: str) -
             qr_urls=[url for slide in (slides if len(occurrences) == 1 else [by_index[i] for i in cited])
                      for url in slide.get("qr_urls") or []],
             scraped_at=now, assessed_kind=result["kind"], session=session,
+            classification_text=_session_text({'texts': {'caption': caption}}, occurrence, occurrences)
+                                if session is not None else None,
         )
         if row and row["content_kind"] in {"student_event", "student_deadline"}:
             rows.append(row)

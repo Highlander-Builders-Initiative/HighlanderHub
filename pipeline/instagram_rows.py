@@ -113,6 +113,7 @@ def build_instagram_row(
     account_meta: dict, text: str, image_url: str | None, qr_urls: Iterable,
     scraped_at: str, assessed_kind: str | None, session: str | None = None,
     policy_text: str | None = None,
+    classification_text: str | None = None,
 ) -> dict | None:
     """Apply date, host privacy, classification and RSVP rules to an assessed post."""
     title = str(occurrence.get("title") or "").strip()
@@ -140,13 +141,15 @@ def build_instagram_row(
     description = str(occurrence.get("description") or "")
     tags = _clean_tags(occurrence.get("tags"))
     policy = policy_text if policy_text is not None else f"{description}\n{text}"
-    # Fundraising terms come from the title and the whole caption, never flyer
-    # fine print (see classify_content_kind). Only a sibling session of a
+    # Fundraising terms come from the title and caption, scoped to the session
+    # when supplied, never flyer fine print (see classify_content_kind). A
+    # sibling session of a
     # multi-session post drops a fundraiser held after it; a post announcing
     # 'our fundraiser after class' is that fundraiser.
     followup = session is not None and not re.search(r"fundrais|\bsale\b|\bsell", title, re.I)
     strip = (lambda value: _FOLLOWUP_FUNDRAISER.sub("", value)) if followup else (lambda value: value)
-    content_kind = classify_content_kind("instagram", title=title, description=strip(description),
+    classification_description = classification_text if classification_text is not None else description
+    content_kind = classify_content_kind("instagram", title=title, description=strip(classification_description),
                                          tags=tags, ocr_text=strip(policy), assessed_kind=assessed_kind)
 
     destinations = {url for value in qr_urls if (url := normalize_rsvp_url(value))}
