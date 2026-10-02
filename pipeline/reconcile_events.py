@@ -550,6 +550,32 @@ def _corrected_schedule(left: dict, right: dict) -> bool:
     return bool(len(a) >= 2 and titles_match and len(ends) <= 1 and (corrected or relocated or provisional))
 
 
+_CHECK_IN_WINDOW = timedelta(minutes=15)
+
+
+def _check_in_offset(left: dict, right: dict, place: str) -> bool:
+    """One outing posted twice: once at its check-in, once at its departure.
+
+    UCR TAPS's flyer post says 'meet us at Bannockburn Village at 11:50 AM to
+    check in'; its monthly carousel says 'we will leave UCR at 12 PM' for the
+    same Ride to The Cheech. One account, the same venue and the same specific
+    signup link, with starts minutes apart on one day, name one occasion even
+    when the titles are worded differently. Sessions of one post never match,
+    and nor do different ends.
+    """
+    if (place != 'same' or not _same_account(left, right) or not _specific_slot(left)
+            or not _specific_slot(right) or _contradicting_titles(left, right)):
+        return False
+    rsvp = _rsvp_identity(left.get('rsvp_url'))
+    if not rsvp or rsvp != _rsvp_identity(right.get('rsvp_url')):
+        return False
+    start, other_start = (_parse_instant(row.get('starts_at')) for row in (left, right))
+    ends = {_parse_instant(row.get('ends_at')) for row in (left, right)} - {None}
+    if start == other_start or abs(start - other_start) > _CHECK_IN_WINDOW or len(ends) > 1:
+        return False
+    return bool((_title_form(left, right)[0] & _title_form(right, left)[0]) - _GENERIC_WORDS)
+
+
 def same_event(left: dict, right: dict) -> bool:
     """Match corroborated announcements using shared title, owner and place rules."""
     start, other_start = (_parse_instant(r.get('starts_at')) for r in (left, right))
@@ -581,7 +607,7 @@ def same_event(left: dict, right: dict) -> bool:
         return True
     # Patterns from the admin's September 26 review decisions.
     if (_schedule_superseded(left, right) or _same_multiday_span(left, right, place)
-            or _quoted_story(left, right, place)):
+            or _quoted_story(left, right, place) or _check_in_offset(left, right, place)):
         return True
     if place == 'conflicting':
         return False
@@ -891,10 +917,12 @@ def plan(rows: list[dict], tombstones: list[dict] = (), *, now: datetime | None 
         if _summary_group_conflict(joined) or reviews.judged_distinct(joined):
             matches = []
         # Two related date-only teasers must not bridge incompatible sessions.
-        # A corrected deadline replaces its old date rather than bridging it.
+        # A corrected deadline replaces its old date rather than bridging it,
+        # and a check-in time and its departure are one outing.
         timed = [r for r in [row, *(r for group in matches for r in group)] if not _untimed(r)]
         if len({_parse_instant(r.get('starts_at')) for r in timed}) > 1 and not all(
-                _corrected_deadline(a, b) for i, a in enumerate(timed) for b in timed[i + 1:]
+                _corrected_deadline(a, b) or _check_in_offset(a, b, _same_place(a, b))
+                for i, a in enumerate(timed) for b in timed[i + 1:]
                 if a.get('starts_at') != b.get('starts_at')):
             matches = []
         if matches:

@@ -21,7 +21,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 # Recorded for provenance; policy changes currently do not invalidate caches.
-VERSION = 9
+VERSION = 10
 MAX_OCCURRENCES = 100
 MODEL = "gemini-3.1-flash-lite"
 # Google recommends 1.0 for Gemini 3, but cached refusals assume a repeat call
@@ -206,6 +206,12 @@ schedule') supersedes the corresponding older flyer details. Use the corrected
 caption for those fields; an unlabelled disagreement remains uncertain.
 An agenda item inside a meeting ('First General Meeting: Vital Signs Workshop')
 is one occasion with a combined title, not two simultaneous occurrences.
+A trip, outing or group ride to another place is one occurrence: the trip,
+with its own meeting place and time. What is happening at the destination (a
+festival, exhibit, show or free-admission hours the trip goes to) is not a
+second occurrence, even when the caption describes it or a slide reproduces
+its flyer. 'Ride to The Cheech' with 'The Cheech will be hosting IE Zine Fest'
+is one trip, never a separate Zine Fest listing.
 Preserve independently attendable offerings: a resource fair explicitly open
 9 AM–3:30 PM stays one continuous fair even if the same carousel offers two
 registered open-house tour sessions. The tour timetable does not split the
