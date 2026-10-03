@@ -21,7 +21,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 # Recorded for provenance; policy changes currently do not invalidate caches.
-VERSION = 10
+VERSION = 11
 MAX_OCCURRENCES = 100
 MODEL = "gemini-3.1-flash-lite"
 # Google recommends 1.0 for Gemini 3, but cached refusals assume a repeat call
@@ -159,6 +159,15 @@ Distinguish an occasion from content publication or ordinary availability:
   occurrences remain valid for independently established occasions such as a
   festival, exhibition, or special sale. Decide what is advertised before
   converting its dates into timestamps; correct citations alone are insufficient.
+  A dated club social or meeting is still an occasion when its clock is absent;
+  use date-only boundaries instead of inventing a clock or rejecting the activity.
+- A list of dates beside AM and PM session times can offer BOTH windows on EACH
+  date. Do not assign the AM window to early dates and PM to later dates merely
+  because OCR interleaves columns. If the associations are unclear, omit those
+  sessions instead of guessing. Likewise, a theme such as 'PJ night' can describe
+  another session rather than announce an additional event.
+- 'Check Canvas for the location' or 'location info shared via email' describes
+  where to find a venue, not the venue or an online event. Leave location empty.
 
 For program-related sources, apply these rules IN ORDER to the advertised action:
 1. A separately advertised orientation, info session, workshop, graduation or
@@ -410,7 +419,7 @@ def _named_weekdays(text: str) -> set[int]:
 
 
 def _day_supported(day: date, text: str, source: dict, *, week_scoped: bool = False) -> bool:
-    from event_dates import evidence_dates, weekday_range_dates, _scan_printed_dates, _labeled_date, _OCR_DATE_RE, _MONTHS
+    from event_dates import evidence_dates, weekday_range_dates, _scan_printed_dates, _labeled_date, _OCR_DATE_RE, _MONTHS, _KOREAN_DATE_RE
 
     # Recognize ISO dates as well as human-readable flyer dates.
     iso_days = re.findall(r"\b\d{4}-\d{2}-\d{2}\b", text)
@@ -444,6 +453,8 @@ def _day_supported(day: date, text: str, source: dict, *, week_scoped: bool = Fa
             range_years.add(int(match[4]))
     if (day.month, day.day) in days:
         years = range_years
+        years.update(int(m['year']) for m in _KOREAN_DATE_RE.finditer(text)
+                     if m['year'] and (int(m['month']), int(m['day'])) == (day.month, day.day))
         labeled = _labeled_date(text)
         if labeled and labeled[:2] == (day.month, day.day):
             years.add(labeled[2])
@@ -559,6 +570,14 @@ _LOCATION_INFERENCE = re.compile(
 
 
 def _check_location(location: str, cited: str) -> None:
+    name = _plain(location).strip()
+    if name and re.search(
+        r"\b(?:location|venue)(?:\s+info(?:rmation)?)?\s*:?\s*"
+        r"(?:check|see|(?:will be\s+)?shared\s+(?:via|on|in))\s+"
+        + re.escape(name) + r"(?!\w)", _plain(cited), re.I
+    ):
+        raise ValueError(f"Location {location!r} names where to find the venue; "
+                         "use an empty location until an actual venue is supplied")
     for match in _LOCATION_INFERENCE.finditer(_plain(location)):
         if not re.search(rf"\b{re.escape(match.group())}\b", cited, re.I):
             raise ValueError(f"Location {location!r} contains reasoning ({match.group()!r}), not a printed "

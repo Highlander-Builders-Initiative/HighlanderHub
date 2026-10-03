@@ -74,6 +74,11 @@ _OCR_CLOCK_TIME_RE = re.compile(
 
 _OCR_EXPLICIT_YEAR_RE = re.compile(r"\s*,?\s*(?:19|20)\d{2}\b")
 
+_KOREAN_DATE_RE = re.compile(
+    r"(?<!\d)(?:(?P<year>(?:19|20)\d{2})년\s*)?"
+    r"(?P<month>\d{1,2})월\s*(?P<day>\d{1,2})일(?!\d)"
+)
+
 _OCR_TIME_RANGE_RE = re.compile(
     r"\b(\d{1,2})(?::(\d{2}))?\s*([ap]\.?m\.?)"
     r"(?:\s*(?:[-–—]|to)\s*|\s+)"
@@ -168,6 +173,8 @@ def _scan_printed_dates(text: str) -> Iterator[tuple[str, int, int, tuple[int, i
     if labeled:
         month, day, _, span = labeled
         yield _LABELED, month, day, span
+    for match in _KOREAN_DATE_RE.finditer(text):
+        yield _MONTH_NAME, int(match['month']), int(match['day']), match.span()
     for match in _OCR_DATE_RE.finditer(text):
         yield (
             _MONTH_NAME,
@@ -214,8 +221,16 @@ def _bare_date_is_corroborated(text: str, span: tuple[int, int]) -> bool:
     start, end = span
     if re.search(r"\b(?:room|suite|building|price|cost|reading)\s*$", text[max(0, start-20):start], re.IGNORECASE):
         return False
-    if re.match(r"\s*(?:price|off|cups?|tbsp|tsp|inches|hours?|full|of)\b", text[end:], re.IGNORECASE):
+    if re.match(r"\s*(?:price|off|cups?|tbsp|tsp|inches|hours?|full)\b|[ \t]*of\b", text[end:], re.IGNORECASE):
         return False
+    if re.match(r"\s*of\b", text[end:], re.I):
+        # OCR interleaves 'Psychology TUESDAY 11/17' / 'of gratitude'. A
+        # directly labeled weekday/date is stronger than the next title line;
+        # ordinary multiline fractions ('1/2\nof milk') remain excluded.
+        before = text[:start].rsplit("\n", 1)[-1]
+        if not any(re.fullmatch(r"[ \t,().]*", before[m.end():])
+                   for m in _OCR_WEEKDAY_RE.finditer(before)):
+            return False
     # Captions often give only an all-day date: "doing it again on 9/25".
     # Require slash notation here so "on 5.62" cannot turn a decimal into a day.
     if "/" in text[start:end] and re.search(
@@ -229,6 +244,9 @@ def _bare_date_is_corroborated(text: str, span: tuple[int, int]) -> bool:
     # 'GENERAL MEETING SCHEDULE' need no clock to establish their calendar day.
     if "/" in text[start:end]:
         before = text[:start].rsplit("\n", 1)[-1]
+        if re.search(r"\b(?:apps?|applications?|submissions?|forms?)\s+(?:are\s+)?"
+                     r"(?:due|close[sd]?)\s*:?[ \t]*$", before, re.I):
+            return True
         if re.search(r"\b(?:recruitment|meeting|mixer|social|workshop|orientation|"
                      r"tabling|fair|deadline)\s*$", before, re.I):
             return True

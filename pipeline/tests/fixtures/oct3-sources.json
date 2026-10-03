@@ -1,0 +1,450 @@
+{
+  "asme": {
+    "source": {
+      "texts": {
+        "caption": "That's a wrap on our first HCR meeting of the 2026-2027 academic year! More info will be coming soon.",
+        "slide_1_ocr": "Who We Are\nHighlander Combat Robotics\nA project under ASME\n5th year as a team\nOur main goals:\no Build robots that will destroy\no Teach Students Engineering\nASME UCR\nWho We Are\nHighlander Comb\nA project under ASME\n9th year as a tea\nBuildshots that w\nTeach Students Engg\nASMEIUCR\n32",
+        "slide_2_ocr": "Team Structure\nInternal Team:\nBeginner-friendly (don't\nneed any CAD, 3D\nmodeling experience)\nLow barrier of entry\n(free)\nWill be grouped in small\nteams of 2-4 + a mentor\n•2 competitions within\nUCR\nExternal Team:\n• Experience in CAD, 3D\nprinting is beneficial\n•Going to 2-3 competitions\nthroughout the year\n(outside of UCR)\n•Apps due 10/9! (Have a\nformal interview process)\n$30 member dues\nSHARACY",
+        "slide_3_ocr": "Things to"
+      },
+      "origin": "instagram",
+      "posted_at": "2026-10-02T20:57:04+00:00",
+      "source_key": "instagram:post:3999307478911296321",
+      "source_occurrences": []
+    },
+    "result": {
+      "kind": "deadline",
+      "reason": "The source explicitly states an application deadline for the External Team.",
+      "schedule": null,
+      "date_role": "cutoff",
+      "occurrences": [
+        {
+          "title": "External Team Application Deadline",
+          "all_day": true,
+          "ends_at": null,
+          "location": "",
+          "starts_at": "2026-10-09T23:59:59-07:00",
+          "date_evidence": [
+            {
+              "field": "slide_2_ocr"
+            }
+          ],
+          "activity_evidence": [
+            {
+              "field": "slide_2_ocr"
+            }
+          ],
+          "location_evidence": []
+        }
+      ],
+      "date_evidence": [
+        {
+          "field": "slide_2_ocr"
+        }
+      ],
+      "activity_evidence": [
+        {
+          "field": "slide_2_ocr"
+        }
+      ],
+      "use_source_occurrences": false
+    }
+  },
+  "rbrains": {
+    "source": {
+      "texts": {
+        "caption": "Welcome back, R’Besties! 🍁\n\nWe’re so excited for all the events we have planned for you this quarter! 🧠🤎 From social gatherings and professional development opportunities to engaging discussions and community-building events, we can’t wait to spend fall with our amazing r’brains & behavior family.\n\nSwipe through our fall quarter schedule to see what we have in store and be sure to mark your calendars so you don’t miss out on any of the fun!\n\nWe’re looking forward to seeing both familiar and new faces at our upcoming events. 🤎🍂\n\n#rbrainsandbehavior #ucriverside #ucr",
+        "slide_1_ocr": "R'BRAINS & BEHAVIOR\nFall Schedule\nMEET THE\nBOARD\n*FOOD WILL BE PROVIDED*\nTHURSDAY 10/01\n7:00-8:00 PM\nHUB RM 355\nConnect with TUESDAY 10/13\nRBrains\nPSYCH OR\nTREAT\n6:30PM-7:30PM\nINTN 1002\nTUESDAY 10/27\n6:30PM-8:00PM\nSSC LAWN\nSWIPE FOR MORE\nUNIVERSITY OF CALIFORNIA RIVERSIDE\nR'BRAINS\n& Behavior\nESTABLISHED IN 2022",
+        "slide_2_ocr": "R'BRAINS & BEHAVIOR\nFall Schedule\nPSYCHOLOGY\nOF COMFORT &\nRELAXATION\nTUESDAY 11/03\n6:30PM-7:30PM\nINTN 1002\nPsychology TUESDAY 11/17\nof gratitude\nCOFFEE &\nCRAM\n6:30PM-7:30PM\nINTN 1002\nTUESDAY 12/01\n6:30PM-7:30PM\nINTN 1002\nPJ\nNIGHT!\nCAN'T WAIT TO\nSEE YOU ALL!\nUNIVERSITY OF CALIFORNIA RIVERSIDE\nR'BRAINS\n& Behavior\nESTABLISHED IN 2022"
+      },
+      "origin": "instagram",
+      "posted_at": "2026-10-02T19:34:19+00:00",
+      "source_key": "instagram:post:3999265822970317676",
+      "source_occurrences": []
+    },
+    "result": {
+      "kind": "activity",
+      "reason": "The source lists specific upcoming student organization events for the fall quarter. Events occurring after the publication date of October 2, 2026, are extracted as individual occurrences.",
+      "schedule": null,
+      "date_role": "occurrence",
+      "occurrences": [
+        {
+          "title": "Psych or Treat",
+          "all_day": false,
+          "ends_at": "2026-10-13T19:30:00-07:00",
+          "location": "INTN 1002",
+          "starts_at": "2026-10-13T18:30:00-07:00",
+          "date_evidence": [
+            {
+              "field": "slide_1_ocr"
+            }
+          ],
+          "activity_evidence": [
+            {
+              "field": "slide_1_ocr"
+            }
+          ],
+          "location_evidence": [
+            {
+              "field": "slide_1_ocr"
+            }
+          ]
+        },
+        {
+          "title": "R'Brains & Behavior Event",
+          "all_day": false,
+          "ends_at": "2026-10-27T20:00:00-07:00",
+          "location": "SSC LAWN",
+          "starts_at": "2026-10-27T18:30:00-07:00",
+          "date_evidence": [
+            {
+              "field": "slide_1_ocr"
+            }
+          ],
+          "activity_evidence": [
+            {
+              "field": "slide_1_ocr"
+            }
+          ],
+          "location_evidence": [
+            {
+              "field": "slide_1_ocr"
+            }
+          ]
+        },
+        {
+          "title": "Psychology of Comfort & Relaxation",
+          "all_day": false,
+          "ends_at": "2026-11-03T19:30:00-08:00",
+          "location": "INTN 1002",
+          "starts_at": "2026-11-03T18:30:00-08:00",
+          "date_evidence": [
+            {
+              "field": "slide_2_ocr"
+            }
+          ],
+          "activity_evidence": [
+            {
+              "field": "slide_2_ocr"
+            }
+          ],
+          "location_evidence": [
+            {
+              "field": "slide_2_ocr"
+            }
+          ]
+        },
+        {
+          "title": "Psychology of Gratitude",
+          "all_day": false,
+          "ends_at": "2026-11-17T19:30:00-08:00",
+          "location": "INTN 1002",
+          "starts_at": "2026-11-17T18:30:00-08:00",
+          "date_evidence": [
+            {
+              "field": "slide_2_ocr"
+            }
+          ],
+          "activity_evidence": [
+            {
+              "field": "slide_2_ocr"
+            }
+          ],
+          "location_evidence": [
+            {
+              "field": "slide_2_ocr"
+            }
+          ]
+        },
+        {
+          "title": "Coffee & Cram",
+          "all_day": false,
+          "ends_at": "2026-11-17T19:30:00-08:00",
+          "location": "INTN 1002",
+          "starts_at": "2026-11-17T18:30:00-08:00",
+          "date_evidence": [
+            {
+              "field": "slide_2_ocr"
+            }
+          ],
+          "activity_evidence": [
+            {
+              "field": "slide_2_ocr"
+            }
+          ],
+          "location_evidence": [
+            {
+              "field": "slide_2_ocr"
+            }
+          ]
+        },
+        {
+          "title": "PJ Night!",
+          "all_day": false,
+          "ends_at": "2026-12-01T19:30:00-08:00",
+          "location": "INTN 1002",
+          "starts_at": "2026-12-01T18:30:00-08:00",
+          "date_evidence": [
+            {
+              "field": "slide_2_ocr"
+            }
+          ],
+          "activity_evidence": [
+            {
+              "field": "slide_2_ocr"
+            }
+          ],
+          "location_evidence": [
+            {
+              "field": "slide_2_ocr"
+            }
+          ]
+        }
+      ],
+      "date_evidence": [
+        {
+          "field": "slide_1_ocr"
+        },
+        {
+          "field": "slide_2_ocr"
+        }
+      ],
+      "activity_evidence": [
+        {
+          "field": "slide_1_ocr"
+        },
+        {
+          "field": "slide_2_ocr"
+        }
+      ],
+      "use_source_occurrences": false
+    }
+  },
+  "hanwave": {
+    "source": {
+      "texts": {
+        "caption": "🌊 2026 HanWave FALL MT🌊\n\n한 학년을 시작하며, 2026 HanWave MT에 여러분을 초대합니다! 🎉\n\n📅 일시: 10월 9일(금) ~ 10월 10일(토), 1박 2일\n🚌 픽업 시간: 10월 9일(금) 오후 5시\n📍 픽업 장소: UCR Parking Lot 1\n\n💵 참가비\n\n• Regular: $50\n• Freshman: $35\n\n참석을 원하시는 분들은 bio에있는 RSVP를 작성해주세요!\n\n💡 궁금한 점이 있다면 언제든 편하게 문의해 주세요.",
+        "slide_1_ocr": "당신을 초대합니다\nHANWAVE\npresents\n#\nFALL\n#\nMT❤\n일시\n2026. 10. 09. 10.10\n참가비\nUCR Parking Lot 1 @ 5pm\nFreshman : $35\nRegular $50\n대상\n신&편입생, 재학생, 교환학생\n참가방법\nGOOGLE FORM LINK IN BIO\n@ucr_hanwave"
+      },
+      "origin": "instagram",
+      "posted_at": "2026-10-03T03:16:25+00:00",
+      "source_key": "instagram:post:3999498131515060262",
+      "source_occurrences": []
+    },
+    "result": {
+      "kind": "activity",
+      "reason": "The source advertises a two-day membership training (MT) event. As a multi-day activity, it is represented as an all-day occurrence spanning the two dates.",
+      "schedule": null,
+      "date_role": "occurrence",
+      "occurrences": [
+        {
+          "title": "2026 HanWave FALL MT",
+          "all_day": true,
+          "ends_at": "2026-10-11T00:00:00-07:00",
+          "location": "UCR Parking Lot 1",
+          "starts_at": "2026-10-09T00:00:00-07:00",
+          "date_evidence": [
+            {
+              "field": "caption"
+            },
+            {
+              "field": "slide_1_ocr"
+            }
+          ],
+          "activity_evidence": [
+            {
+              "field": "caption"
+            }
+          ],
+          "location_evidence": [
+            {
+              "field": "caption"
+            },
+            {
+              "field": "slide_1_ocr"
+            }
+          ]
+        }
+      ],
+      "date_evidence": [
+        {
+          "field": "caption"
+        },
+        {
+          "field": "slide_1_ocr"
+        }
+      ],
+      "activity_evidence": [
+        {
+          "field": "caption"
+        },
+        {
+          "field": "slide_1_ocr"
+        }
+      ],
+      "use_source_occurrences": false
+    }
+  },
+  "location_pointer": {
+    "source": {
+      "texts": {
+        "caption": "Hello MSP Scholars! ✨ \n\nWondering what it takes to prepare for medical school beyond the classroom? Join us for an engaging Fireside Chat with Jasmine G. as she shares her personal experiences navigating the pre-med journey and developing the skills and competencies that help prepare future physicians. 🩺\n\nInspired by the AAMC’s Premed Competencies for Entering Medical Students, this conversation will explore lessons learned, challenges along the way, and the importance of growth, communication, teamwork, and service in becoming a future healthcare professional.\n\nWhether you’re just beginning your pre-med journey or preparing for your next steps, this is a great opportunity to gain insight, reflect on your own experiences, and connect with fellow MSP scholars! You can find the event’s location in our MSP Canvas. \n\nDate: Thursday, October 8, 2026\nTime: 3:30-4:30 pm\nLocation: Check MSP Canvas",
+        "slide_1_ocr": "Fireside\nChat\nwith\nJasmine Gwizdala\nOCTOBER 8TH, 2026\n3:30PM-4:30PM\nUC RIVERSID\nSchool of Medicine\nJOIN US FOR AN INVITING FIRESIDE CHAT\nWITH PATHWAY ALUM JASMINE GWIZDALA,\n4TH-YEAR, UCR SOM MEDICAL STUDENT.\nUCR School of Medicine\nPATHWAY PROGRAMS\n*Location info shared via MSP Canvas"
+      },
+      "origin": "instagram",
+      "posted_at": "2026-10-03T00:55:31+00:00",
+      "source_key": "instagram:post:3999425634723775630",
+      "source_occurrences": []
+    },
+    "result": {
+      "kind": "activity",
+      "reason": "The post advertises a specific Fireside Chat event with a date, time, and location.",
+      "schedule": null,
+      "date_role": "occurrence",
+      "occurrences": [
+        {
+          "title": "Fireside Chat with Jasmine Gwizdala",
+          "all_day": false,
+          "ends_at": "2026-10-08T16:30:00-07:00",
+          "location": "MSP Canvas",
+          "starts_at": "2026-10-08T15:30:00-07:00",
+          "date_evidence": [
+            {
+              "field": "caption"
+            },
+            {
+              "field": "slide_1_ocr"
+            }
+          ],
+          "activity_evidence": [
+            {
+              "field": "caption"
+            },
+            {
+              "field": "slide_1_ocr"
+            }
+          ],
+          "location_evidence": [
+            {
+              "field": "caption"
+            },
+            {
+              "field": "slide_1_ocr"
+            }
+          ]
+        }
+      ],
+      "date_evidence": [
+        {
+          "field": "caption"
+        },
+        {
+          "field": "slide_1_ocr"
+        }
+      ],
+      "activity_evidence": [
+        {
+          "field": "caption"
+        },
+        {
+          "field": "slide_1_ocr"
+        }
+      ],
+      "use_source_occurrences": false
+    }
+  },
+  "volleyball": [
+    {
+      "id": "ig_ucr_mcvb_p3993419347687353937-20261004T2300Z",
+      "title": "Tryouts Day 1",
+      "description": "THE TIME HAS OFFICIALLY COME FOR UCRMCVB TRYOUTS 💯🔥\n\nThink you got what it takes to join the UCR Men’s Club Vball? Come prove it 👀😛\n\nPre-Tryouts and Tryouts are coming up, so make sure to SAVE THESE DATES and BRING YOUR A-GAME!\n\n📆 PRE-TRYOUTS — SEPT 29\n📆 TRYOUTS DAY 1 — OCT 4\n🔒 TRYOUTS DAY 2 — OCT 6 (INVITE ONLY)\n🔒 TRYOUTS DAY 3 — OCT 11 (INVITE ONLY)\n\n⚠️ ALL PLAYERS MUST REGISTER THROUGH DOSPORTEASY & COMPLETE TRYOUTS APPLICATION — LINK IN BIO\n\n*Show up 10–15 minutes early so that you can check-in and warm up\n\nSEE Y’ALL THERE 🫡🏐\n\nQuestions? DM us @UCR_MCVB",
+      "starts_at": "2026-10-04T23:00:00+00:00",
+      "ends_at": "2026-10-05T01:00:00+00:00",
+      "location": "Lower Courts",
+      "host": "Men's Club Volleyball at UCR",
+      "host_handle": "ucr_mcvb",
+      "content_kind": "student_event",
+      "all_day": false,
+      "is_locked": false,
+      "source_url": "https://www.instagram.com/p/Ddreb0aE65R/",
+      "source": "instagram"
+    },
+    {
+      "id": "ig_ucr_mcvb_p3999489577974304748-20261004T2300Z",
+      "title": "UCR Men's Club Volleyball Tryouts",
+      "description": "FEELING THIRSTY?! 🥵😎 WE GOT YOU.\n\nCome quench your thirst with UCRMCVB by getting drinks @ our FUNDY, R&B Tea House, right after Tryouts on Sunday, October 4, from 6:30 to 7:45 PM!\n\nFUNDY INFO:\n♦️ Limited Shuttling Available 🚗 \n♦️Show flyer to cashier before ordering drinks\n♦️Chat with us! Don’t grab your drinks and disappear.\n\nTryouts are on October 4th from 4-6 PM, so don’t forget to:\n🔹Fill out Dosportseasy and tryout form (Link in Bio)\n🔹Bring your R’Card (No R’Card = No Tryout)\n🔹Arrive 10-15 minutes early to check-in and warm up\n\nLOOKIN FORWARD TO SEEING YOU ALL @ TRYOUTS AND THE R&B FUNDY!",
+      "starts_at": "2026-10-04T23:00:00+00:00",
+      "ends_at": "2026-10-05T01:00:00+00:00",
+      "location": "",
+      "host": "Men's Club Volleyball at UCR",
+      "host_handle": "ucr_mcvb",
+      "content_kind": "student_event",
+      "all_day": false,
+      "is_locked": false,
+      "source_url": "https://www.instagram.com/p/DeBCpS6CQ_s/",
+      "source": "instagram"
+    }
+  ],
+  "pse": [
+    {
+      "id": "ig_ucrpse_p3997892115576749484-20261007T0200Z",
+      "title": "Guest Speaker",
+      "description": "❕NEW OFFICIAL SCHEDULE❕\n- Come meet the org and learn more about Pi Sigma Epsilon Night 1\n- We will be having @summerfieldteabar join us for Night 2 plus special guests speakers…\n- Hang out and have some BBQ with the Bros for Night 3\n\nInterest form in bio. See you soon! ⭐️",
+      "starts_at": "2026-10-07T02:00:00+00:00",
+      "ends_at": null,
+      "location": "Pentland Foxhole",
+      "host": "Pi Sigma Epsilon at UCR",
+      "host_handle": "ucrpse",
+      "content_kind": "student_event",
+      "all_day": false,
+      "is_locked": false,
+      "source_url": "https://www.instagram.com/p/Dd7XbKHSX2s/",
+      "source": "instagram"
+    },
+    {
+      "id": "ig_ucrpse_p3999361905763054109-20261007T0200Z",
+      "title": "Guest Speaker + Networking",
+      "description": "❕NEW OFFICIAL SCHEDULE❕\n\nMonday 10.5: Info Night \n⏱️7:00 PM\n📍North District A1002\n❕with @drinkryse \n👔 Attire: Casual\n\nTuesday 10.6: Guest Speaker + Networking\n⏱️7:00 PM\n📍North District A1002\n❕with @summerfieldteabar \n👔 Attire: Professional\n\nWednesday 10.7: BBQ with the Bros\n⏱️7:00 PM\n📍Lot 15\n❕Hot Dogs and Burgers! \n👔 Attire: Casual\n\nThursday Applications are DUE 10:00 PM ❕❕❕\nFriday and Saturday interviews are invite only through emails.",
+      "starts_at": "2026-10-07T02:00:00+00:00",
+      "ends_at": null,
+      "location": "North District A1002",
+      "host": "Pi Sigma Epsilon at UCR",
+      "host_handle": "ucrpse",
+      "content_kind": "student_event",
+      "all_day": false,
+      "is_locked": false,
+      "source_url": "https://www.instagram.com/p/DeAlna5PHId/",
+      "source": "instagram"
+    }
+  ],
+  "pse_earlier": [
+    {
+      "id": "ig_ucrpse_p3995937187540986297-20261007T0200Z",
+      "title": "Guest Speaker Session",
+      "description": "Recruitment Week starts NEXT WEEK!! \nCome out to meet our members, sit in with a special guest speaker, and have some BBQ with the bros! \n\nInterest Form in Bio.",
+      "starts_at": "2026-10-07T02:00:00+00:00",
+      "ends_at": null,
+      "location": "Glen Mor J315",
+      "host": "Pi Sigma Epsilon at UCR",
+      "host_handle": "ucrpse",
+      "content_kind": "student_event",
+      "source": "instagram",
+      "source_url": "https://www.instagram.com/p/Dd0a7NgJ2m5/",
+      "all_day": false
+    },
+    {
+      "id": "ig_ucrpse_p3999361905763054109-20261007T0200Z",
+      "title": "Guest Speaker + Networking",
+      "description": "❕NEW OFFICIAL SCHEDULE❕\n\nMonday 10.5: Info Night \n⏱️7:00 PM\n📍North District A1002\n❕with @drinkryse \n👔 Attire: Casual\n\nTuesday 10.6: Guest Speaker + Networking\n⏱️7:00 PM\n📍North District A1002\n❕with @summerfieldteabar \n👔 Attire: Professional\n\nWednesday 10.7: BBQ with the Bros\n⏱️7:00 PM\n📍Lot 15\n❕Hot Dogs and Burgers! \n👔 Attire: Casual\n\nThursday Applications are DUE 10:00 PM ❕❕❕\nFriday and Saturday interviews are invite only through emails.",
+      "starts_at": "2026-10-07T02:00:00+00:00",
+      "ends_at": null,
+      "location": "North District A1002",
+      "host": "Pi Sigma Epsilon at UCR",
+      "host_handle": "ucrpse",
+      "content_kind": "student_event",
+      "source": "instagram",
+      "source_url": "https://www.instagram.com/p/DeAlna5PHId/",
+      "all_day": false
+    }
+  ]
+}

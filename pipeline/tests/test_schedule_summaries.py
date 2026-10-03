@@ -123,10 +123,10 @@ class ScheduleRepublicationTests(unittest.TestCase):
             'instagram:post:3987699302558500071': {'event_ids': [self.detailed['id']]},
         }
 
-    def published(self, *, extra_rows=(), updates=None, live=None):
+    def published(self, *, extra_rows=(), updates=None, live=None, reviews=None):
         context = live if live is not None else {r['id']: r for r in [self.detailed, *extra_rows]}
         kept = publication._withhold_reconciled(copy.deepcopy(updates or [self.update]),
-                                               self.registry, context)
+                                               self.registry, context, reviews=reviews)
         return [row['id'] for update in kept for row in update['rows']]
 
     def test_merged_occurrence_stays_merged_while_siblings_keep_publishing(self):
@@ -149,6 +149,18 @@ class ScheduleRepublicationTests(unittest.TestCase):
         self.assertIn(self.summary['id'], self.published(extra_rows=[other]))
         fresh = {'source_key': 'instagram:post:999', 'assessment': {}, 'rows': [other]}
         self.assertIn(self.summary['id'], self.published(updates=[self.update, fresh]))
+
+    def test_reviewed_merge_resolves_ambiguity_without_suppressing_sibling_sessions(self):
+        from reconcile_events import Reviews
+
+        other = competitor(self.detailed, location='The Barn')
+        reviews = Reviews({self.summary['id']: self.detailed['id']})
+        self.assertEqual([self.sibling['id']], self.published(extra_rows=[other], reviews=reviews))
+        # A missing survivor or changed source still needs fresh publication.
+        self.assertIn(self.summary['id'], self.published(live={}, reviews=reviews))
+        update = copy.deepcopy(self.update)
+        update['assessment']['result']['reason'] = 'The schedule changed.'
+        self.assertIn(self.summary['id'], self.published(updates=[update], extra_rows=[other], reviews=reviews))
 
     def test_publication_reads_competitors_even_if_they_were_not_previously_merged(self):
         other = competitor(self.detailed, location='The Barn')

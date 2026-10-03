@@ -507,7 +507,7 @@ def _numbered_repeat(left: dict, right: dict, place: str) -> bool:
     sequences = [{a or b for a, b in _SEQUENCE.findall(title)} for title in titles]
     if bool(sequences[0]) == bool(sequences[1]):
         return False
-    decoration = re.compile(r'^\s*day\s+\d+\s*:|#\s*\d+')
+    decoration = re.compile(r'\bday\s+\d+\s*:?|#\s*\d+')
     stripped = [row | {'title': decoration.sub('', title)} for row, title in zip((left, right), titles)]
     if _contradicting_titles(*stripped):
         return False
@@ -544,7 +544,8 @@ def _corrected_schedule(left: dict, right: dict) -> bool:
     # "Sisterhood" and "Sisterhood Night" in the same explicitly relocated
     # lineup keep their identity. Other title differences remain significant;
     # session numbers also pass through the contradiction check above.
-    titles_match = a == b or (relocated and (a ^ b) == {'night'} and len(a & b) >= 2)
+    titles_match = (a == b or (relocated and (a ^ b) == {'night'} and len(a & b) >= 2)
+                    or (corrected and (a ^ b) == {'networking'} and len(a & b) >= 2))
     provisional = re.search(r'\blocation\s+(?:will be|to be)\s+announced\b',
                             str(old.get('description') or ''), re.I)
     return bool(len(a) >= 2 and titles_match and len(ends) <= 1 and (corrected or relocated or provisional))

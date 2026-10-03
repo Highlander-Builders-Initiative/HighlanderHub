@@ -209,11 +209,11 @@ _OPEN_AUDIENCE_PHRASES = (
 )
 
 # Provision is required; naming a food or visiting a restaurant is insufficient.
-_FOOD_NOUN = (r"(?:food|pizza|snacks?|drinks?|beverages?|refreshments|breakfast|lunch|dinner|"
+_FOOD_NOUN = (r"(?:food|pizza|snacks?|drinks?|beverages?|refreshments|breakfast|brunch|lunch|dinner|"
               r"boba|tacos?|burgers?|hot dogs?|coffee|matcha|teas?|treats?|desserts?|"
-              r"popsicles?|poke(?: bowls?)?|kona ice|shaved ice|ice cream)")
+              r"popsicles?|poke(?: bowls?)?|kona ice|el pollo loco|michis de la baja|shaved ice|ice cream)")
 _FREE_FOOD_PATTERN = re.compile(
-    rf"\b(?:free\s+(?:(?!at\b|from\b|with\b|for\b|to\b|in\b|during\b)\S+\s+){{0,3}}?{_FOOD_NOUN}|refreshments|"
+    rf"\b(?:free(?:\s*:\s*|\s+)(?:(?!at\b|from\b|with\b|for\b|to\b|in\b|during\b)\S+\s+){{0,3}}?{_FOOD_NOUN}|refreshments|"
     rf"{_FOOD_NOUN}(?:\s+(?:&|and)\s+\w+)?\s+(?:(?:will\s+be|is|are)\s+)?"
     rf"(?:provided|served|included|available|while supplies last)|"
     rf"(?:catering|serving|giving out|handing out)\s+(?:\w+\s+){{0,2}}?{_FOOD_NOUN}|"
@@ -233,6 +233,12 @@ _FOOD_NEGATED_AFTER = re.compile(
 # Only an unpriced clause makes it an offer ("PIZZA INCLUDED").
 _FOOD_BUNDLE_PRICED = re.compile(
     r"\$\s*\d|\b(?:purchase|paid)\b|(?<!free )\b(?:tickets?|fees?|dues|admission|registration)\b", re.I)
+# Elsewhere in the paragraph, only the occasion's own price applies; raffle
+# tickets and membership fees are not admission.
+_ADMISSION_PRICE = re.compile(
+    r"\$\s*\d+(?:\.\d{1,2})?\s+(?:at\s+the\s+door|entry|admission|tickets?)\b|"
+    r"(?<!raffle )(?<!membership )\b(?:admission|entry|tickets?|cover|registration|fee)\s*:?\s*"
+    r"(?:(?:is|costs?)\s+)?\$\s*\d", re.I)
 # Boba is a club's usual treat, but "Boba Tea House" is a shop students pay
 # at, and a boba fundraiser ("fundy") sells it. Only a session's own title
 # says what that session offers; a sibling session's boba says nothing.
@@ -246,14 +252,15 @@ def detect_free_food(*texts: str | None) -> bool:
     never join unrelated fields into a new phrase ('free admission' + 'boba').
     """
     for text in texts:
-        for clause in re.split(r"[;!?\n]|(?<!oz)(?<!\d)\.(?!\d)|\bbut\b", text or "", flags=re.I):
-            for match in _FREE_FOOD_PATTERN.finditer(clause):
-                if (_FOOD_NEGATED_BEFORE.search(clause[:match.start()])
-                        or _FOOD_NEGATED_AFTER.match(clause, match.end())
-                        or (match.group().casefold().endswith("included")
-                            and _FOOD_BUNDLE_PRICED.search(clause))):
-                    continue
-                return True
+        for paragraph in re.split(r"\n\s*\n", text or ""):
+            for clause in re.split(r"[;!?\n]|(?<!oz)(?<!\d)\.(?!\d)|\bbut\b", paragraph, flags=re.I):
+                for match in _FREE_FOOD_PATTERN.finditer(clause):
+                    if (_FOOD_NEGATED_BEFORE.search(clause[:match.start()])
+                            or _FOOD_NEGATED_AFTER.match(clause, match.end())
+                            or (match.group().casefold().endswith("included")
+                                and (_FOOD_BUNDLE_PRICED.search(clause) or _ADMISSION_PRICE.search(paragraph)))):
+                        continue
+                    return True
     return False
 
 

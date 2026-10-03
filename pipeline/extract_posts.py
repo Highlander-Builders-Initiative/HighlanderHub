@@ -10,6 +10,7 @@ module writes. Nothing here decides whether a post is an event.
 from __future__ import annotations
 
 import hashlib
+import io
 import json
 import logging
 import re
@@ -33,6 +34,8 @@ log = logging.getLogger("pipeline.extract_posts")
 # becoming readable, a different OCR engine, a different slide decomposition.
 # A bump invalidates post extractions.
 EXTRACTION_VERSION = 3
+# Match the event-flyers bucket; downloads/OCR can accept larger originals.
+MAX_FLYER_BYTES = 5 * 1024 * 1024
 
 # Retain unsupported_media for reading legacy caches, but reopen those skips:
 # carousel length no longer prevents reading every slide.
@@ -197,6 +200,19 @@ def _upload_flyer(record: dict[str, Any], media_key: str, image: bytes) -> str |
     try:
         from db import client
 
+        if len(image) > MAX_FLYER_BYTES:
+            from PIL import Image, ImageOps
+
+            with Image.open(io.BytesIO(image)) as original:
+                flyer = ImageOps.exif_transpose(original).convert("RGB")
+                flyer.thumbnail((2560, 2560))
+                while True:
+                    output = io.BytesIO()
+                    flyer.save(output, format="JPEG", quality=90, optimize=True)
+                    image = output.getvalue()
+                    if len(image) <= MAX_FLYER_BYTES:
+                        break
+                    flyer.thumbnail((max(1, flyer.width // 2), max(1, flyer.height // 2)))
         bucket = client().storage.from_(DURABLE_FLYER_BUCKET)
         bucket.upload(
             path,

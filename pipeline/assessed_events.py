@@ -619,7 +619,9 @@ def _withhold_reconciled(updates: list[dict], registry: dict, canonical: dict[st
     for canonical_id, candidates in pending.items():
         group = [canonical[canonical_id]]
         # A session that could belong to several listings joins the first.
-        candidates = [row for row in candidates if row["id"] not in skipped | ambiguous]
+        # A saved review resolves ambiguity for its selected survivor only.
+        candidates = [row for row in candidates if row["id"] not in skipped
+                      and (row["id"] not in ambiguous or reviews.kept(row["id"]) == canonical_id)]
         while joined := [row for row in candidates
                          if reviews.kept(row["id"]) in {member["id"] for member in group}
                          or (any(same_event(row, member) for member in group)
