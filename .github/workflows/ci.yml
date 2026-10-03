@@ -53,7 +53,7 @@ jobs:
         run: npm ci
 
       - name: Audit JavaScript dependencies
-        run: npm audit --audit-level=moderate
+        run: node scripts/audit-dependencies.mjs
 
       - name: Lint
         run: npm run lint
