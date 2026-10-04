@@ -166,6 +166,9 @@ Distinguish an occasion from content publication or ordinary availability:
   because OCR interleaves columns. If the associations are unclear, omit those
   sessions instead of guessing. Likewise, a theme such as 'PJ night' can describe
   another session rather than announce an additional event.
+- A call for volunteers, vendors, performers or tablers at an occasion offers
+  that role, not attendance. Title it for the role ('R'Garden Fall Festival
+  Volunteers') with the role's printed hours, never the occasion's bare name.
 - 'Check Canvas for the location' or 'location info shared via email' describes
   where to find a venue, not the venue or an online event. Leave location empty.
 
