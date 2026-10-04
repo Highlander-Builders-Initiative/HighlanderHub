@@ -20,6 +20,7 @@ from instagram_rows import POST_EVENT_ID
 log = logging.getLogger("pipeline.reconcile_events")
 _GENERIC_WORDS = frozenset("first second third general body meeting club weekly monthly annual fall winter spring summer welcome back workshop session orientation open house social event ucr uc riverside university california of at the and for to a an".split())
 _TITLE_NOISE = frozenset("the of at and for to a an annual save date".split())
+_SEASONS = frozenset("fall winter spring summer quarter".split())
 _TITLE_QUALIFIERS = frozenset("network celebration ucr uc riverside university california".split())
 _EVENT_NOUNS = frozenset("conference fair celebration party reception".split())
 # Words that name how a work is presented, not which work: "Joel Mejia Smith:
@@ -101,10 +102,12 @@ _PLACE_NOISE = frozenset('the and at of ucr uc riverside university california c
                          'tba tbd announced determined room rm by near invite only socal'.split())
 _VIRTUAL_WORDS = frozenset('zoom online virtual remote webinar discord'.split())
 # One campus venue written several ways: "SSC 114", "SSC114", "Student
-# Success Center 114"; "Pentland Bear Cave" and "Pentland Bearcave".
+# Success Center 114"; "Pentland Bear Cave" and "Pentland Bearcave";
+# "Student Recreation Center", "Rec Center" and "SRC".
 _VENUE_SPELLINGS = (
     (r'https?://\S+', lambda m: ' zoom ' if 'zoom.' in m.group(0) else ' '),
     (r'\bstudent success center\b', 'ssc'),
+    (r'\b(?:student\s+)?rec(?:reation)?\s+center\b', 'src'),
     (r'\bwinston chung(?: hall)?\b', 'wch'),
     (r'\bhighlander union(?: building)?\b', 'hub'),
     (r'\bbell\s*tower\b', 'belltower'),
@@ -339,6 +342,51 @@ def _same_slot_event(left: dict, right: dict, place: str) -> bool:
     return bool(words and words <= other and not ((other - words) & _own_name_words(long)))
 
 
+def _unnumbered_repeat(left: dict, right: dict, place: str) -> bool:
+    """One account's occasion at one start and venue, numbered by one post only.
+
+    Elite Healthcare Hospice's October calendar lists "GM#1 - Intro to Hospice"
+    and "Night at the Rec!" ("4PM-PM": OCR lost the end); its earlier timeline
+    lists "First Member Meeting" and "Night at the SRC" at the same starts and
+    venues. HBS's schedule says "Professional Night"; its own post says
+    "Recruitment Day 3: Professional Night". An account holds one occasion in
+    one venue at one start, so a session number only one title carries and an
+    end only one post prints do not separate them. Different numbers, years
+    or editions, different rooms and different ends still do.
+    """
+    if (place != 'same' or not _same_account(left, right) or not _specific_slot(left)
+            or not _specific_slot(right) or not _shared_venue(left, right)
+            or _parse_instant(left.get('starts_at')) != _parse_instant(right.get('starts_at'))
+            or _contradicting_titles(left, right, numbered_once=True)):
+        return False
+    return len({_parse_instant(row.get('ends_at')) for row in (left, right)} - {None}) <= 1
+
+
+_LATIN = frozenset('latin latinx latine latino latina latinos latinas'.split())
+
+
+def _shared_occasion_name(left: dict, right: dict, place: str) -> bool:
+    """One named occasion relayed by different accounts at one slot and venue.
+
+    Chicano Student Programs' "Latinx Heritage Soccer Night", Athletics'
+    "MSOC: Highlanders Game (Latin Heritage Night)" and the team's "Latin
+    Heritage Night: UCR Men's Soccer vs. UC San Diego" all start at 7 PM at the
+    UCR Soccer Stadium. Neither title contains the other, so _same_slot_event
+    cannot match them; three shared distinctive words can. A club's own part
+    in a larger occasion ("UCRaas Performance ... at SAF Night Market") is a
+    separate listing, as is a pair whose ends disagree.
+    """
+    if (place != 'same' or _same_account(left, right) or left.get('content_kind') != 'student_event'
+            or not _specific_slot(left) or not _specific_slot(right) or not _shared_venue(left, right)
+            or _parse_instant(left.get('starts_at')) != _parse_instant(right.get('starts_at'))
+            or len({_parse_instant(row.get('ends_at')) for row in (left, right)} - {None}) > 1
+            or any(re.search(r'\S\s+at\s+\S', str(row.get('title') or ''), re.I) for row in (left, right))):
+        return False
+    words = [{'latin' if word in _LATIN else word for word in _slot_title_words(row)} for row in (left, right)]
+    common = words[0] & words[1] - _own_name_words(left) - _own_name_words(right)
+    return len(common) >= 3
+
+
 def _schedule_superseded(left: dict, right: dict) -> bool:
     """A schedule post's entry and the account's later post for that occasion.
 
@@ -419,9 +467,14 @@ _SEQUENCE = re.compile(r'\b(?:session|part|day|round|week|vol|no)\.?\s*#?\s*(\d+
 _EDITION = re.compile(r'\b(\d+)(?:st|nd|rd|th)\s+annual\b')
 
 
-def _contradicting_titles(left: dict, right: dict) -> bool:
+def _contradicting_titles(left: dict, right: dict, *, numbered_once: bool = False) -> bool:
     """Titles that name different occurrences: another year ("Silent Disglo
-    2027"), session ("Session 2", "GM #4") or edition ("13th Annual")."""
+    2027"), session ("Session 2", "GM #4") or edition ("13th Annual").
+
+    With numbered_once, a meeting or schedule-day label ("GM#1", "Recruitment
+    Day 3") that only one title carries is not a contradiction. Different
+    numbers still are, and so is a session, part or round of a named occasion
+    ("Silent Disglo Session 2")."""
     titles = [str(row.get('title') or '').casefold() for row in (left, right)]
     start = _parse_instant(left.get('starts_at'))
     year = str(start.astimezone(PACIFIC_TZ).year) if start else ''
@@ -434,7 +487,11 @@ def _contradicting_titles(left: dict, right: dict) -> bool:
         return True
     sequences = [{a or b for a, b in _SEQUENCE.findall(title)} for title in titles]
     editions = [set(_EDITION.findall(title)) for title in titles]
-    return sequences[0] != sequences[1] or bool(editions[0] and editions[1] and editions[0] != editions[1])
+    labels = [{match.group(1) or match.group(2) for match in _SEQUENCE.finditer(title)
+               if not re.match(r'(?:session|part|round|week|vol|no)\b', match.group(0))} for title in titles]
+    numbered = sequences[0] != sequences[1] and not (
+        numbered_once and not (sequences[0] and sequences[1]) and labels == sequences)
+    return numbered or bool(editions[0] and editions[1] and editions[0] != editions[1])
 
 
 def _corrected_deadline(left: dict, right: dict) -> bool:
@@ -600,11 +657,13 @@ def same_event(left: dict, right: dict) -> bool:
     if start == other_start and (_source_media(left) & _source_media(right)):
         return True
     place = _same_place(left, right)
-    if _numbered_repeat(left, right, place) or _corrected_schedule(left, right):
+    if (_numbered_repeat(left, right, place) or _corrected_schedule(left, right)
+            or _unnumbered_repeat(left, right, place)):
         return True
     if _contradicting_titles(left, right):
         return False
-    if _same_slot_event(left, right, place) or (start != other_start and _corrected_deadline(left, right)):
+    if (_same_slot_event(left, right, place) or _shared_occasion_name(left, right, place)
+            or (start != other_start and _corrected_deadline(left, right))):
         return True
     # Patterns from the admin's September 26 review decisions.
     if (_schedule_superseded(left, right) or _same_multiday_span(left, right, place)
@@ -633,7 +692,13 @@ def same_event(left: dict, right: dict) -> bool:
                          and re.search(r'\bsave\s+the\s+date\b', str(teaser.get('description') or ''), re.I)
                          and len(distinctive) >= 2)
         # Only exact normalized repeats may use the two-word teaser threshold.
-        exact_repeat = same_account and a == b and bool(distinctive)
+        # A deadline's season qualifier names no other cutoff: AXO's "Fall
+        # recruitment registration deadline" at 5 PM and its "Recruitment
+        # registration deadline" that day close one registration.
+        seasonless = ((lambda words: words - _SEASONS) if left.get('content_kind') == 'student_deadline'
+                      and not (a & _SEASONS and b & _SEASONS) else None)
+        exact_repeat = same_account and bool(distinctive) and (
+            a == b or bool(seasonless and seasonless(a) == seasonless(b)))
         # The timed announcement quotes the teaser's whole title: the teaser
         # named this occasion before its time (and possibly venue) was out.
         # Another account also needs the same venue and a distinctive name.
@@ -646,7 +711,7 @@ def same_event(left: dict, right: dict) -> bool:
                             and _title_phrase_in_description(timed, teaser))
         return bool(quoted or (
             len(common) >= (2 if exact_repeat else 3) and distinctive
-            and _teaser_titles(a, b, left, right)
+            and _teaser_titles(*((seasonless(a), seasonless(b)) if seasonless else (a, b)), left, right)
             and (place == 'same' or venue_pending or exact_repeat)
             and (same_host or credited or shared_rsvp)))
     ends = {_parse_instant(r.get('ends_at')) for r in (left, right)} - {None}

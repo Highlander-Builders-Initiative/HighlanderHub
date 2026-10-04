@@ -199,6 +199,17 @@ def _source_is_past(source: dict, prior: dict | None, now: str) -> bool:
 # specific image. Keeping each slide in its own field is what makes activity,
 # date, and location evidence attributable to the slide that actually printed it.
 _SLIDE_FIELD = re.compile(r"^slide_(\d+)_ocr$")
+# Labels of a member profile card: "HOBBIES", "FUN FACT", "FAVORITE ARTISTS",
+# "Major:". A slide carrying two of them introduces a person; its hobbies
+# ("Volleyball, pickleball", "rock climbing") are not the advertised activity.
+_PROFILE_LABEL = re.compile(
+    r"^\W*(hobbies|fun\s*fact|favou?rite\s+(?:artists?|foods?|songs?|movies?|animals?|bible\s+verse|"
+    r"verse|accessory|street\s+food)|major|pronouns|career\s+aspiration|life\s+song|transferred\s+from)\b",
+    re.I | re.M)
+
+
+def _member_profile(text: str) -> bool:
+    return len({re.sub(r"\W+", "", match.group(1).casefold()) for match in _PROFILE_LABEL.finditer(text)}) >= 2
 
 
 def post_source(record: dict, cached: dict) -> dict:
@@ -368,6 +379,9 @@ def post_rows(record: dict, cached: dict, payload: dict, meta: dict, now: str) -
         cited = [index for index in _evidence_slides(result, occurrence) if index in by_index]
         flyer = by_index.get(cited[0]) if cited else (slides[0] if slides else {})
         policy_text = _session_text(policy_source, occurrence, occurrences)
+        category_source = {**policy_source, "texts": {
+            field: text for field, text in (policy_source.get("texts") or {}).items()
+            if not (_SLIDE_FIELD.match(field) and _member_profile(text))}}
 
         row = build_instagram_row(
             record, {**occurrence, "description": caption}, identity_handle=owner, host_handle=owner,
@@ -378,6 +392,7 @@ def post_rows(record: dict, cached: dict, payload: dict, meta: dict, now: str) -
             scraped_at=now, assessed_kind=result["kind"], session=session,
             classification_text=_session_text({'texts': {'caption': caption}}, occurrence, occurrences)
                                 if session is not None else None,
+            category_text=_session_text(category_source, occurrence, occurrences),
         )
         if row and row["content_kind"] in {"student_event", "student_deadline"}:
             rows.append(row)

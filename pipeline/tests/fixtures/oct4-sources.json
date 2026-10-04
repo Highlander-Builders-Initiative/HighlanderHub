@@ -1,0 +1,714 @@
+{
+ "hospice": [
+  {
+   "id": "ig_ucrhospice_p3997709651247947020-20261006T2300Z",
+   "title": "Night at the SRC",
+   "description": "Fall Recruitment Timeline for newcomers! Come visit us at tabling to know more or join us for our first member meeting followed by a boba fundraiser😋 Don’t forget to fill out the interest form (link in bio) to get updates and receive emails with important info!!!",
+   "starts_at": "2026-10-06T23:00:00+00:00",
+   "ends_at": "2026-10-07T01:00:00+00:00",
+   "all_day": false,
+   "location": "Student Recreation Center",
+   "host": "Elite Healthcare Hospice at UCR",
+   "host_handle": "ucrhospice",
+   "hosts": [],
+   "content_kind": "student_event",
+   "source": "instagram",
+   "source_url": "https://www.instagram.com/p/Dd6t789yN0M/",
+   "rsvp_url": null,
+   "rsvp_required": false,
+   "has_free_food": false,
+   "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/ucrhospice/posts/3997709651247947020/830594395_17942834667428018_1705356971717745450_n.jpg",
+   "is_locked": true,
+   "category": "other",
+   "tags": []
+  },
+  {
+   "id": "ig_ucrhospice_p4000352121005704152-20261006T2300Z",
+   "title": "Night at the Rec!",
+   "description": "october with EHH 🧡\n\nwe have so many exciting events coming up this month, with plenty of ways to get involved, connect with patients and get to know more about elite healthcare hospice! \n\n🚨 interested in becoming a member and volunteering with us for patient visits? join us for our FIRST GENERAL MEETING on October 16! this is your LAST chance to begin the Fall onboarding process. after onboarding closes, patient/group visits are for members only 🚨\n\nsave the dates & we hope to see you throughout the month <3",
+   "starts_at": "2026-10-06T23:00:00+00:00",
+   "ends_at": null,
+   "all_day": false,
+   "location": "SRC @UCR",
+   "host": "Elite Healthcare Hospice at UCR",
+   "host_handle": "ucrhospice",
+   "hosts": [],
+   "content_kind": "student_event",
+   "source": "instagram",
+   "source_url": "https://www.instagram.com/p/DeEGw8tBoPY/",
+   "rsvp_url": null,
+   "rsvp_required": false,
+   "has_free_food": false,
+   "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/ucrhospice/posts/4000352121005704152/833412280_17943580815428018_8821248234049026598_n.jpg",
+   "is_locked": false,
+   "category": "other",
+   "tags": []
+  },
+  {
+   "id": "ig_ucrhospice_p3997709651247947020-20261017T0200Z",
+   "title": "First Member Meeting",
+   "description": "Fall Recruitment Timeline for newcomers! Come visit us at tabling to know more or join us for our first member meeting followed by a boba fundraiser😋 Don’t forget to fill out the interest form (link in bio) to get updates and receive emails with important info!!!",
+   "starts_at": "2026-10-17T02:00:00+00:00",
+   "ends_at": "2026-10-17T03:00:00+00:00",
+   "all_day": false,
+   "location": "HUB 367",
+   "host": "Elite Healthcare Hospice at UCR",
+   "host_handle": "ucrhospice",
+   "hosts": [],
+   "content_kind": "student_event",
+   "source": "instagram",
+   "source_url": "https://www.instagram.com/p/Dd6t789yN0M/",
+   "rsvp_url": null,
+   "rsvp_required": false,
+   "has_free_food": false,
+   "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/ucrhospice/posts/3997709651247947020/830594395_17942834667428018_1705356971717745450_n.jpg",
+   "is_locked": true,
+   "category": "get_involved",
+   "tags": []
+  },
+  {
+   "id": "ig_ucrhospice_p4000352121005704152-20261017T0200Z",
+   "title": "GM#1 - Intro to Hospice",
+   "description": "october with EHH 🧡\n\nwe have so many exciting events coming up this month, with plenty of ways to get involved, connect with patients and get to know more about elite healthcare hospice! \n\n🚨 interested in becoming a member and volunteering with us for patient visits? join us for our FIRST GENERAL MEETING on October 16! this is your LAST chance to begin the Fall onboarding process. after onboarding closes, patient/group visits are for members only 🚨\n\nsave the dates & we hope to see you throughout the month <3",
+   "starts_at": "2026-10-17T02:00:00+00:00",
+   "ends_at": "2026-10-17T03:00:00+00:00",
+   "all_day": false,
+   "location": "HUB 367 @UCR",
+   "host": "Elite Healthcare Hospice at UCR",
+   "host_handle": "ucrhospice",
+   "hosts": [],
+   "content_kind": "student_event",
+   "source": "instagram",
+   "source_url": "https://www.instagram.com/p/DeEGw8tBoPY/",
+   "rsvp_url": null,
+   "rsvp_required": false,
+   "has_free_food": false,
+   "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/ucrhospice/posts/4000352121005704152/833412280_17943580815428018_8821248234049026598_n.jpg",
+   "is_locked": false,
+   "category": "get_involved",
+   "tags": []
+  }
+ ],
+ "latin": [
+  {
+   "id": "ig_csp_ucr_p3997158916647708287-20261008T0200Z",
+   "title": "Latinx Heritage Soccer Night",
+   "description": "Happy first week familia!!✨\n\nAs we begin this new academic year. Chicano Student Programs invites you to our Chicana/o/x & Latina/o/x Mes De Herencia events that will take place starting next week!!✨🥳🤗\nWhether you are a student, faculty, staff or community member we will love to see you in our events!!💙💛\n\nHope to see you there!!✨❤️‍🩹",
+   "starts_at": "2026-10-08T02:00:00+00:00",
+   "ends_at": "2026-10-08T03:30:00+00:00",
+   "all_day": false,
+   "location": "UCR Soccer Stadium",
+   "host": "UCR Chicano Student Programs",
+   "host_handle": "csp_ucr",
+   "hosts": [],
+   "content_kind": "student_event",
+   "source": "instagram",
+   "source_url": "https://www.instagram.com/p/Dd4wttZkmZ_/",
+   "rsvp_url": null,
+   "rsvp_required": false,
+   "has_free_food": false,
+   "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/csp_ucr/posts/3997158916647708287/828776487_18629043970059928_2301858385032389531_n.jpg",
+   "is_locked": false,
+   "category": "sports",
+   "tags": []
+  },
+  {
+   "id": "ig_ucriversideofficial_p4000006574642497376-20261008T0200Z",
+   "title": "MSOC: Highlanders Game (Latin Heritage Night)",
+   "description": "If you’re not at a Highlanders game, you’re missing the main event! 🐻🔥 #FOMO\n\nCheck out these upcoming games... and don’t forget: UCR students are FREE at home with R’Card! 🎟️✨ \n\nCan’t make it in person? Highlander fans can now watch UCR worldwide! 🌍 All home games are streaming internationally on bigwest.org/watch & Disney+ International 📺\n\n🗓️ Upcoming Schedule: \n🏐 WVB: TODAY | 4 p.m. 📍 SRC Arena\n⚽ WSOC: TODAY | 7:00 p.m.📍UCR Soccer Stadium\n⚽ MSOC: Wed., Oct. 7 | 7:00 p.m.📍UCR Soccer Stadium (Latin Heritage Night) 🎉\n🏐 WVB: Fri., Oct. 9 | 6:00 p.m.📍SRC Arena\n⚽ MSOC: Sat., Oct. 10 | 7:00 p.m. @ California Baptist University (Cross Town Showdown) ⚔️\n🏃 XC: Sat., Oct. 17 | 📍Ag/Ops Cross Country Course (Highlander Invitational) 🏃‍♂️💨\n\nFull schedule at gohighlanders.com\n\n#ucr #UCRiverside #UCRAthletics #GoHighlanders",
+   "starts_at": "2026-10-08T02:00:00+00:00",
+   "ends_at": null,
+   "all_day": false,
+   "location": "UCR Soccer Stadium",
+   "host": "UCR",
+   "host_handle": "ucriversideofficial",
+   "hosts": [],
+   "content_kind": "student_event",
+   "source": "instagram",
+   "source_url": "https://www.instagram.com/p/DeC4Mlkywdg/",
+   "rsvp_url": null,
+   "rsvp_required": false,
+   "has_free_food": false,
+   "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/ucrvolleyball/posts/4000006574642497376/834273365_18635573500000591_5889934915241820162_n.jpg",
+   "is_locked": false,
+   "category": "other",
+   "tags": []
+  },
+  {
+   "id": "ig_ucrmsoccer_p4000308180839201313",
+   "title": "Latin Heritage Night: UCR Men's Soccer vs. UC San Diego",
+   "description": "Join us on this special night as the Highlanders take on UC San Diego from the UCR Soccer Stadium. \n\n📍 UCR Men’s Soccer\n\n📅  Wednesday, October 7\n\n⏰ 7PM\n\n⚽️ UCR vs UC San Diego",
+   "starts_at": "2026-10-08T02:00:00+00:00",
+   "ends_at": null,
+   "all_day": false,
+   "location": "UCR Soccer Stadium",
+   "host": "UCR Men's Soccer",
+   "host_handle": "ucrmsoccer",
+   "hosts": [],
+   "content_kind": "student_event",
+   "source": "instagram",
+   "source_url": "https://www.instagram.com/p/DeD8xiPAnoh/",
+   "rsvp_url": null,
+   "rsvp_required": false,
+   "has_free_food": false,
+   "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/csp_ucr/posts/4000308180839201313/838578851_18642995599031516_6341350416387220725_n.jpg",
+   "is_locked": false,
+   "category": "sports",
+   "tags": []
+  }
+ ],
+ "saf": [
+  {
+   "id": "ig_ucraas__p3996435756414937621",
+   "title": "UCRaas Performance and Chip Chaat Sale at SAF Night Market",
+   "description": "It’s that time of the year again!! Watch us perform at SAF Night Market this Friday October 2nd at 6:30pm!! We will be there 6-8 selling Chip Chaat so make sure to stop by to learn more about UCRaas and our upcoming tryout info ✨🪩",
+   "starts_at": "2026-10-03T01:00:00+00:00",
+   "ends_at": "2026-10-03T03:00:00+00:00",
+   "all_day": false,
+   "location": "North District B Courtyard",
+   "host": "UCRaas Collegiate Indian Folk Dance Team at UCR",
+   "host_handle": "ucraas_",
+   "hosts": [],
+   "content_kind": "student_event",
+   "source": "instagram",
+   "source_url": "https://www.instagram.com/p/Dd2MSV8yCoV/",
+   "rsvp_url": null,
+   "rsvp_required": false,
+   "has_free_food": false,
+   "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/ucraas/posts/3996435756414937621/825326763_18592360843066402_1517090197825797163_n.jpg",
+   "is_locked": false,
+   "category": "other",
+   "tags": []
+  },
+  {
+   "id": "ig_ucrabhinaya_p3997256413822568951",
+   "title": "SAF Night Market",
+   "description": "SAF Night Market is just around the corner! Meet our board at SAF’s annual Market Night! \n\n📍 North District B Courtyard\n🗓️ Friday, Oct 2nd\n⏰ 6–8 PM\n\nCome grab some pani puri, watch us perform, and get to know the board before recruitment! Can’t wait to see you there!!",
+   "starts_at": "2026-10-03T01:00:00+00:00",
+   "ends_at": "2026-10-03T03:00:00+00:00",
+   "all_day": false,
+   "location": "North District B Courtyard",
+   "host": "Abhinaya at UCR",
+   "host_handle": "ucrabhinaya",
+   "hosts": [
+    {
+     "host": "Abhinaya at UCR",
+     "host_handle": "ucrabhinaya"
+    },
+    {
+     "host": "Project RISHI at UCR",
+     "host_handle": "ucrprishi"
+    },
+    {
+     "host": "Sikh Collegiate Federation at UCR",
+     "host_handle": "scf.ucr"
+    }
+   ],
+   "content_kind": "student_event",
+   "source": "instagram",
+   "source_url": "https://www.instagram.com/p/Dd5G4euC8n3/",
+   "rsvp_url": "https://docs.google.com/forms/u/1/d/1E_r2AAq0ZtnczWhh7eh0vFv-g1-U8Qgn_zPW64Ac_54/edit?usp=drivesdk",
+   "rsvp_required": true,
+   "has_free_food": false,
+   "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/ucrabhinaya/posts/3997256413822568951/827548752_18218626096347850_1743002163479334886_n.jpg",
+   "is_locked": false,
+   "category": "get_involved",
+   "tags": []
+  }
+ ],
+ "axo": [
+  {
+   "id": "ig_axo_ucr_p3996524679574615719",
+   "title": "Fall recruitment registration deadline",
+   "description": "Just the trailer… see you 10.01 🎬💋\n\nDon’t forget to register for Fall recruitment using the link in our bio ! Registration closes on October 5th at 5pm⭐️💕\n\n#recruitment #alphachiomega #axo #ucr",
+   "starts_at": "2026-10-06T00:00:00+00:00",
+   "ends_at": null,
+   "all_day": false,
+   "location": "",
+   "host": "Alpha Chi Omega at UCR",
+   "host_handle": "axo_ucr",
+   "hosts": [],
+   "content_kind": "student_deadline",
+   "source": "instagram",
+   "source_url": "https://www.instagram.com/p/Dd2ggWGIHan/",
+   "rsvp_url": null,
+   "rsvp_required": true,
+   "has_free_food": false,
+   "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/axo_ucr/posts/3996524679574615719/825277152_18624460750019222_1112247899121465812_n.jpg",
+   "is_locked": false,
+   "category": "get_involved",
+   "tags": []
+  },
+  {
+   "id": "ig_axo_ucr_p3998555043409798376",
+   "title": "Recruitment registration deadline",
+   "description": "ALPHA CHI’S 2026 RECRUITMENT VIDEO 💖✨\n\nA little glimpse into the sisterhood we’re so lucky to call ours. These are just a few of the countless moments, memories, laughs, and friendships that make Alpha Chi feel like home. There’s so much more than we could ever fit into one video, but we hope this gives you a little look into what makes our sisterhood so special. 💌\n\nReminder: Recruitment registration closes October 5th! Register through the link in our bio!!we can’t wait to meet you MC ‘26! ❤️💚\n\n#ucr #alphachiomega #recruitment",
+   "starts_at": "2026-10-05T07:00:00+00:00",
+   "ends_at": "2026-10-06T07:00:00+00:00",
+   "all_day": true,
+   "location": "",
+   "host": "Alpha Chi Omega at UCR",
+   "host_handle": "axo_ucr",
+   "hosts": [],
+   "content_kind": "student_deadline",
+   "source": "instagram",
+   "source_url": "https://www.instagram.com/p/Dd9uKBxSaTo/",
+   "rsvp_url": null,
+   "rsvp_required": true,
+   "has_free_food": false,
+   "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/axo_ucr/posts/3998555043409798376/831183949_18625330477019222_837872753139830405_n.jpg",
+   "is_locked": false,
+   "category": "get_involved",
+   "tags": []
+  }
+ ],
+ "csa_rgl": {
+  "record": {
+   "media": [
+    {
+     "index": 0,
+     "is_video": false,
+     "image_url": "https://instagram.fcok17-1.fna.fbcdn.net/v/t51.82787-15/836198162_18645078433033865_9100415863667607878_n.jpg?se=7&stp=dst-jpg_e35_tt6&efg=eyJ2ZW5jb2RlX3RhZyI6ImltYWdlX3VybGdlbi4xMDgwLnNkci5yZWd1bGFyX3Bob3RvLmMyIn0&_nc_ht=instagram.fcok17-1.fna.fbcdn.net&_nc_cat=105&_nc_oc=Q6cZ2gG0vWpLJ9JU6DnOgBYvKwO2DsUKkiym0zESNn_K0KJvaxbKg51O070ho5xxVeWp6Uc&_nc_ohc=L-8RvFYL9SkQ7kNvwFyIYfU&_nc_gid=e75vufqVf88mqvMPA-CipQ&edm=APU89FABAAAA&ccb=7-5&oh=00_AQM3q2LbyS_tnw2u1pJP-YZUcPe-s-EcueCc7WRtc61E_w&oe=6AC79DF5&_nc_sid=bc0c2c",
+     "media_key": "836198162_18645078433033865_9100415863667607878_n"
+    },
+    {
+     "index": 1,
+     "is_video": false,
+     "image_url": "https://instagram.fcok17-1.fna.fbcdn.net/v/t51.82787-15/833462051_18645078481033865_2913416357908593166_n.jpg?se=7&stp=dst-jpg_e35_tt6&efg=eyJ2ZW5jb2RlX3RhZyI6ImltYWdlX3VybGdlbi4xMDgwLnNkci5yZWd1bGFyX3Bob3RvLmMyIn0&_nc_ht=instagram.fcok17-1.fna.fbcdn.net&_nc_cat=105&_nc_oc=Q6cZ2gG0vWpLJ9JU6DnOgBYvKwO2DsUKkiym0zESNn_K0KJvaxbKg51O070ho5xxVeWp6Uc&_nc_ohc=I3lwMih47DEQ7kNvwEjSye1&_nc_gid=e75vufqVf88mqvMPA-CipQ&edm=APU89FABAAAA&ccb=7-5&oh=00_AQN913PPFtxqj2MgS8F8R_wO-BZi2MnSOiKztiUnQQ5IbA&oe=6AC794A9&_nc_sid=bc0c2c",
+     "media_key": "833462051_18645078481033865_2913416357908593166_n"
+    },
+    {
+     "index": 2,
+     "is_video": false,
+     "image_url": "https://instagram.fcok17-1.fna.fbcdn.net/v/t51.82787-15/831424392_18645078505033865_1514270947111874840_n.jpg?se=7&stp=dst-jpg_e35_tt6&efg=eyJ2ZW5jb2RlX3RhZyI6ImltYWdlX3VybGdlbi4xMDgwLnNkci5yZWd1bGFyX3Bob3RvLmMyIn0&_nc_ht=instagram.fcok17-1.fna.fbcdn.net&_nc_cat=105&_nc_oc=Q6cZ2gG0vWpLJ9JU6DnOgBYvKwO2DsUKkiym0zESNn_K0KJvaxbKg51O070ho5xxVeWp6Uc&_nc_ohc=GjfhmM3_c1MQ7kNvwF7REsI&_nc_gid=e75vufqVf88mqvMPA-CipQ&edm=APU89FABAAAA&ccb=7-5&oh=00_AQPxgeLWB6LFiWRtvgfabMzn75VI6StBeWs7lpckeP8oqg&oe=6AC7A0FB&_nc_sid=bc0c2c",
+     "media_key": "831424392_18645078505033865_1514270947111874840_n"
+    },
+    {
+     "index": 3,
+     "is_video": false,
+     "image_url": "https://instagram.fcok17-1.fna.fbcdn.net/v/t51.82787-15/833935989_18645078472033865_4806459117823561130_n.jpg?se=7&stp=dst-jpg_e35_tt6&efg=eyJ2ZW5jb2RlX3RhZyI6ImltYWdlX3VybGdlbi4xMDgwLnNkci5yZWd1bGFyX3Bob3RvLmMyIn0&_nc_ht=instagram.fcok17-1.fna.fbcdn.net&_nc_cat=105&_nc_oc=Q6cZ2gG0vWpLJ9JU6DnOgBYvKwO2DsUKkiym0zESNn_K0KJvaxbKg51O070ho5xxVeWp6Uc&_nc_ohc=QIM5XrgOvIcQ7kNvwG11iJ3&_nc_gid=e75vufqVf88mqvMPA-CipQ&edm=APU89FABAAAA&ccb=7-5&oh=00_AQNNyt3aU8AF53cEUBgIrHNewpM_piR5aDQin4l8A21LdQ&oe=6AC7C320&_nc_sid=bc0c2c",
+     "media_key": "833935989_18645078472033865_4806459117823561130_n"
+    },
+    {
+     "index": 4,
+     "is_video": false,
+     "image_url": "https://instagram.fcok17-1.fna.fbcdn.net/v/t51.82787-15/833241353_18645078448033865_7759130907281219612_n.jpg?se=7&stp=dst-jpg_e35_tt6&efg=eyJ2ZW5jb2RlX3RhZyI6ImltYWdlX3VybGdlbi4xMDgwLnNkci5yZWd1bGFyX3Bob3RvLmMyIn0&_nc_ht=instagram.fcok17-1.fna.fbcdn.net&_nc_cat=105&_nc_oc=Q6cZ2gG0vWpLJ9JU6DnOgBYvKwO2DsUKkiym0zESNn_K0KJvaxbKg51O070ho5xxVeWp6Uc&_nc_ohc=xVlv1p-xOsIQ7kNvwEuXZSx&_nc_gid=e75vufqVf88mqvMPA-CipQ&edm=APU89FABAAAA&ccb=7-5&oh=00_AQPG3O1z8A5LTAz_fZPXNAy-kB84g2wWMW2jpJew5ECtMQ&oe=6AC7B5EC&_nc_sid=bc0c2c",
+     "media_key": "833241353_18645078448033865_7759130907281219612_n"
+    },
+    {
+     "index": 5,
+     "is_video": false,
+     "image_url": "https://instagram.fcok17-1.fna.fbcdn.net/v/t51.82787-15/834179389_18645078523033865_5433900034632670140_n.jpg?se=7&stp=dst-jpg_e35_tt6&efg=eyJ2ZW5jb2RlX3RhZyI6ImltYWdlX3VybGdlbi4xMDgwLnNkci5yZWd1bGFyX3Bob3RvLmMyIn0&_nc_ht=instagram.fcok17-1.fna.fbcdn.net&_nc_cat=105&_nc_oc=Q6cZ2gG0vWpLJ9JU6DnOgBYvKwO2DsUKkiym0zESNn_K0KJvaxbKg51O070ho5xxVeWp6Uc&_nc_ohc=lgKMy42aMbQQ7kNvwEue0SO&_nc_gid=e75vufqVf88mqvMPA-CipQ&edm=APU89FABAAAA&ccb=7-5&oh=00_AQMQlVvlAQq7Iz_I3lr2ajVAqO1KAHhy18eKvUEzoJ97_Q&oe=6AC7B187&_nc_sid=bc0c2c",
+     "media_key": "834179389_18645078523033865_5433900034632670140_n"
+    },
+    {
+     "index": 6,
+     "is_video": false,
+     "image_url": "https://instagram.fcok17-1.fna.fbcdn.net/v/t51.82787-15/836261497_18645078463033865_7646233071837241607_n.jpg?se=7&stp=dst-jpg_e35_tt6&efg=eyJ2ZW5jb2RlX3RhZyI6ImltYWdlX3VybGdlbi4xMDgwLnNkci5yZWd1bGFyX3Bob3RvLmMyIn0&_nc_ht=instagram.fcok17-1.fna.fbcdn.net&_nc_cat=105&_nc_oc=Q6cZ2gG0vWpLJ9JU6DnOgBYvKwO2DsUKkiym0zESNn_K0KJvaxbKg51O070ho5xxVeWp6Uc&_nc_ohc=fDYRJUiSN9gQ7kNvwExH_nF&_nc_gid=e75vufqVf88mqvMPA-CipQ&edm=APU89FABAAAA&ccb=7-5&oh=00_AQMmnYrDo5xkyZKaaWHHRDgRW5ZLiHJk5bRJkNgpzHbEag&oe=6AC7A8BE&_nc_sid=bc0c2c",
+     "media_key": "836261497_18645078463033865_7646233071837241607_n"
+    }
+   ],
+   "handle": "ucrcsa",
+   "caption": "MEET THE FAMS: RGL EDITION\nUCR CSA RGL Meet The Fams\nTuesday, October 6 | 7PM - 8PM\nRivera Arches\n_____________________________________________\n\nIt’s time to meet our RGL Fam Heads 🦁!! Come to Rivera Arches Tuesday, October 6th @ 7:00 PM and get ready to race for rewards 😱 Don’t miss out on your chance to see if RGL clicks with you!!\n\nIf you have any questions or concerns, feel free to message @maryy.ng and @kyrives._ , for more information!\n\n_____________________________________________\n\nThe Chinese Student Association (CSA) at UC Riverside is a social, cultural, and service oriented organization that strives to promote Chinese American culture throughout the UCR and Riverside communities. We provide various opportunities and events throughout the year that allow students to develop leadership skills and also provide a social outlet for students with similar backgrounds and interests. Our organization is a great way to meet lifelong friends and create fond memories that will contribute to a successful college experience and beyond!",
+   "media_id": "4000040907944636207",
+   "typename": "GraphSidecar",
+   "has_video": false,
+   "permalink": "https://www.instagram.com/p/DeDAAM9Ei8v/",
+   "posted_at": "2026-10-03T21:14:16+00:00",
+   "shortcode": "DeDAAM9Ei8v",
+   "fetched_at": "2026-10-04T05:02:01.669305+00:00",
+   "owner_userid": 1615969864,
+   "owner_username": "ucrcsa",
+   "caption_mentions": [
+    "maryy.ng",
+    "kyrives._"
+   ]
+  },
+  "cached": {
+   "media_id": "4000040907944636207",
+   "handle": "ucrcsa",
+   "status": "ok",
+   "fingerprint": "25d71f598c4760bbe6de836201b841834dc701e97ba6c24b80a3eb7f36942e8c",
+   "extraction_version": 3,
+   "caption": "MEET THE FAMS: RGL EDITION\nUCR CSA RGL Meet The Fams\nTuesday, October 6 | 7PM - 8PM\nRivera Arches\n_____________________________________________\n\nIt’s time to meet our RGL Fam Heads 🦁!! Come to Rivera Arches Tuesday, October 6th @ 7:00 PM and get ready to race for rewards 😱 Don’t miss out on your chance to see if RGL clicks with you!!\n\nIf you have any questions or concerns, feel free to message @maryy.ng and @kyrives._ , for more information!\n\n_____________________________________________\n\nThe Chinese Student Association (CSA) at UC Riverside is a social, cultural, and service oriented organization that strives to promote Chinese American culture throughout the UCR and Riverside communities. We provide various opportunities and events throughout the year that allow students to develop leadership skills and also provide a social outlet for students with similar backgrounds and interests. Our organization is a great way to meet lifelong friends and create fond memories that will contribute to a successful college experience and beyond!",
+   "images": [
+    {
+     "index": 0,
+     "qr_urls": [],
+     "ocr_text": "MEET\nTHE\nFAMS\nRGL FAM HEADS\nUSA\nC\n0 0003554562' 0",
+     "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/ucrcsa/posts/4000040907944636207/836198162_18645078433033865_9100415863667607878_n.jpg",
+     "media_key": "836198162_18645078433033865_9100415863667607878_n",
+     "qr_scan_version": 1
+    },
+    {
+     "index": 1,
+     "qr_urls": [],
+     "ocr_text": "ETHAN PHO\nHOBBIES\nGym, rock climbing, exploring\ncafes, cooking\nFAVORITE ARTISTS\nJoji, Daniel Caesar, Tame\nImpala, Post Malone\nFAVORITE FOODS\nSweet potato, steak, noodles\n70% steak, not\nFUN FACT\nCON\ntriste annu POLE NOM\nI speak Canto, I do research on NO\norganic chemistry, I enjoy\ncooking\nORE\nChiesa di S. Mar\nRESENTER 79\nANNE DA\nDE\nMil\nosto 20\n48\nconati\n2016\nUCRCSA\nAPU\nnella Chies Ma\nA",
+     "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/ucrcsa/posts/4000040907944636207/833462051_18645078481033865_2913416357908593166_n.jpg",
+     "media_key": "833462051_18645078481033865_2913416357908593166_n",
+     "qr_scan_version": 1
+    },
+    {
+     "index": 2,
+     "qr_urls": [],
+     "ocr_text": "BRADLEY\nGM\nИ\n84\n100 1,90\nittut\noisid\nsno\nU\nR\nC\n6\n910\nSu\nA\nfracture\nCHEN\nDIA\nHOBBIES\nGroup gaming nights, working\nout, swimming, hiking, sunset\nviews, spontaneous hangouts,\ncooking\nFAVORITE ARTISTS\nPink Floyd, Gunna, Billy Joel,\nFreddie Gibbs, Tory Lanez\nFAVORITE FOODS\nPasta, bbq, steak, seafood\nHOT VID FUN FACT\nHAND 912 honob\nDi 9/910qin DC/marvel fanatic\nHonor JAV\ncoM 2 ib papid",
+     "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/ucrcsa/posts/4000040907944636207/831424392_18645078505033865_1514270947111874840_n.jpg",
+     "media_key": "831424392_18645078505033865_1514270947111874840_n",
+     "qr_scan_version": 1
+    },
+    {
+     "index": 3,
+     "qr_urls": [],
+     "ocr_text": "TUSCAN LEE\nHOBBIES\nGym, working, cello although I don't\nplay anymore, volunteering at hospice.\nFAVORITE ARTISTS\nDPR IAN, brb., Rocco, Malcolm\nTodd, Hotel Ugly, Hojean, Ateez,\nSKZ, Clairo\nFAVORITE FOODS\nBuldak noodles, shin noodles,\nmicrowaved eggwhites,\nmicrowaves croissants, soboro\ndon, keto bread, canned tunala cara\nwith kewpie mayo, tuna ra\nsandwhich, turkey sandwhich,\ncostco mixed vegetables with\nmixed\nhot honey dry seasoning. OLE NO\ntriste annuOLE\nFUN FACT nipotele la\nCard EN\nI have two cats but im\nallergic, I'm an EMT.\nma\n16 all\nIP\nARI\nUCRCSA",
+     "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/ucrcsa/posts/4000040907944636207/833935989_18645078472033865_4806459117823561130_n.jpg",
+     "media_key": "833935989_18645078472033865_4806459117823561130_n",
+     "qr_scan_version": 1
+    },
+    {
+     "index": 4,
+     "qr_urls": [],
+     "ocr_text": "HOBBIES\nISABEL\nSkating, making drinks, drawing,\nvideo games\nFAVORITE ARTISTS\nDance Gavin Dance, Pierce the\nVeil, Orange Dog Club, Mat\nMaltese, Joost, Zazen Boys\nFAVORITE FOODS\nKonjac jelly, anything spicy,\nhot pot\nFURL\nFUN FACT\nla ca\nSI\nOLEN\nI'm the middle child\nle donno d triste annu\ned nipote e la c\nVALOveranno are\nUCRCSA\nMari\nC\nLUM\nNEDA\n20s\n70",
+     "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/ucrcsa/posts/4000040907944636207/833241353_18645078448033865_7759130907281219612_n.jpg",
+     "media_key": "833241353_18645078448033865_7759130907281219612_n",
+     "qr_scan_version": 1
+    },
+    {
+     "index": 5,
+     "qr_urls": [],
+     "ocr_text": "AG\nJADEN TSAI\nGM\nNO\nHOBBIES\nVolleyball, pickleball,\ndrawing, traveling\nFAVORITE ARTISTS\nPami, Newjeans, Keshi\nFAVORITE FOODS\nXiao long bao, Sushi,\nIn n out\nTU FUN FACT\nI'm fluent in mandarin, I\nstudied abroad in Korea\n16 JAV\nchoM 2 ib\nUCRCSA",
+     "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/ucrcsa/posts/4000040907944636207/834179389_18645078523033865_5433900034632670140_n.jpg",
+     "media_key": "834179389_18645078523033865_5433900034632670140_n",
+     "qr_scan_version": 1
+    },
+    {
+     "index": 6,
+     "qr_urls": [],
+     "ocr_text": "EMILY\nHERNANDEZ\nHOBBIES\nThrifting, dance, cafe\nhopping, going out, shopping\nFAVORITE ARTISTS\nDon Toiliver, SZA, Drake,\nSWV, Travis Scott\nFAVORITE FOODS\nseafood boils,\nSushil, seaf\nmango sticky rice,\nla c\nmatcha, coffee ROLE NO\nd nipote\nFUN FACT are\nI'm lactose intolerant\nma\nU\nUCRCSA\nA",
+     "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/ucrcsa/posts/4000040907944636207/836261497_18645078463033865_7646233071837241607_n.jpg",
+     "media_key": "836261497_18645078463033865_7646233071837241607_n",
+     "qr_scan_version": 1
+    }
+   ],
+   "result": null,
+   "extracted_at": "2026-10-04T05:13:42.184816+00:00",
+   "created_at": "2026-10-04T05:13:42.207825+00:00",
+   "updated_at": "2026-10-04T05:13:42.207825+00:00"
+  },
+  "assessment": {
+   "model": "gemini-3.1-flash-lite",
+   "result": {
+    "kind": "activity",
+    "reason": "The post advertises a specific social event called 'Meet The Fams' with a clear date, time, and location.",
+    "schedule": null,
+    "date_role": "occurrence",
+    "occurrences": [
+     {
+      "title": "UCR CSA RGL Meet The Fams",
+      "all_day": false,
+      "ends_at": "2026-10-06T20:00:00-07:00",
+      "location": "Rivera Arches",
+      "starts_at": "2026-10-06T19:00:00-07:00",
+      "date_evidence": [
+       {
+        "field": "caption",
+        "quote": "MEET THE FAMS: RGL EDITION\nUCR CSA RGL Meet The Fams\nTuesday, October 6 | 7PM - 8PM\nRivera Arches\n_____________________________________________\n\nIt’s time to meet our RGL Fam Heads 🦁!! Come to Rivera Arches Tuesday, October 6th @ 7:00 PM and get ready to race for rewards 😱 Don’t miss out on your chance to see if RGL clicks with you!!\n\nIf you have any questions or concerns, feel free to message @maryy.ng and @kyrives._ , for more information!\n\n_____________________________________________\n\nThe Chinese Student Association (CSA) at UC Riverside is a social, cultural, and service oriented organization that strives to promote Chinese American culture throughout the UCR and Riverside communities. We provide various opportunities and events throughout the year that allow students to develop leadership skills and also provide a social outlet for students with similar backgrounds and interests. Our organization is a great way to meet lifelong friends and create fond memories that will contribute to a successful college experience and beyond!"
+       }
+      ],
+      "activity_evidence": [
+       {
+        "field": "caption",
+        "quote": "MEET THE FAMS: RGL EDITION\nUCR CSA RGL Meet The Fams\nTuesday, October 6 | 7PM - 8PM\nRivera Arches\n_____________________________________________\n\nIt’s time to meet our RGL Fam Heads 🦁!! Come to Rivera Arches Tuesday, October 6th @ 7:00 PM and get ready to race for rewards 😱 Don’t miss out on your chance to see if RGL clicks with you!!\n\nIf you have any questions or concerns, feel free to message @maryy.ng and @kyrives._ , for more information!\n\n_____________________________________________\n\nThe Chinese Student Association (CSA) at UC Riverside is a social, cultural, and service oriented organization that strives to promote Chinese American culture throughout the UCR and Riverside communities. We provide various opportunities and events throughout the year that allow students to develop leadership skills and also provide a social outlet for students with similar backgrounds and interests. Our organization is a great way to meet lifelong friends and create fond memories that will contribute to a successful college experience and beyond!"
+       }
+      ],
+      "location_evidence": [
+       {
+        "field": "caption",
+        "quote": "MEET THE FAMS: RGL EDITION\nUCR CSA RGL Meet The Fams\nTuesday, October 6 | 7PM - 8PM\nRivera Arches\n_____________________________________________\n\nIt’s time to meet our RGL Fam Heads 🦁!! Come to Rivera Arches Tuesday, October 6th @ 7:00 PM and get ready to race for rewards 😱 Don’t miss out on your chance to see if RGL clicks with you!!\n\nIf you have any questions or concerns, feel free to message @maryy.ng and @kyrives._ , for more information!\n\n_____________________________________________\n\nThe Chinese Student Association (CSA) at UC Riverside is a social, cultural, and service oriented organization that strives to promote Chinese American culture throughout the UCR and Riverside communities. We provide various opportunities and events throughout the year that allow students to develop leadership skills and also provide a social outlet for students with similar backgrounds and interests. Our organization is a great way to meet lifelong friends and create fond memories that will contribute to a successful college experience and beyond!"
+       }
+      ]
+     }
+    ],
+    "date_evidence": [
+     {
+      "field": "caption",
+      "quote": "MEET THE FAMS: RGL EDITION\nUCR CSA RGL Meet The Fams\nTuesday, October 6 | 7PM - 8PM\nRivera Arches\n_____________________________________________\n\nIt’s time to meet our RGL Fam Heads 🦁!! Come to Rivera Arches Tuesday, October 6th @ 7:00 PM and get ready to race for rewards 😱 Don’t miss out on your chance to see if RGL clicks with you!!\n\nIf you have any questions or concerns, feel free to message @maryy.ng and @kyrives._ , for more information!\n\n_____________________________________________\n\nThe Chinese Student Association (CSA) at UC Riverside is a social, cultural, and service oriented organization that strives to promote Chinese American culture throughout the UCR and Riverside communities. We provide various opportunities and events throughout the year that allow students to develop leadership skills and also provide a social outlet for students with similar backgrounds and interests. Our organization is a great way to meet lifelong friends and create fond memories that will contribute to a successful college experience and beyond!"
+     }
+    ],
+    "activity_evidence": [
+     {
+      "field": "caption",
+      "quote": "MEET THE FAMS: RGL EDITION\nUCR CSA RGL Meet The Fams\nTuesday, October 6 | 7PM - 8PM\nRivera Arches\n_____________________________________________\n\nIt’s time to meet our RGL Fam Heads 🦁!! Come to Rivera Arches Tuesday, October 6th @ 7:00 PM and get ready to race for rewards 😱 Don’t miss out on your chance to see if RGL clicks with you!!\n\nIf you have any questions or concerns, feel free to message @maryy.ng and @kyrives._ , for more information!\n\n_____________________________________________\n\nThe Chinese Student Association (CSA) at UC Riverside is a social, cultural, and service oriented organization that strives to promote Chinese American culture throughout the UCR and Riverside communities. We provide various opportunities and events throughout the year that allow students to develop leadership skills and also provide a social outlet for students with similar backgrounds and interests. Our organization is a great way to meet lifelong friends and create fond memories that will contribute to a successful college experience and beyond!"
+     }
+    ],
+    "use_source_occurrences": false
+   },
+   "source": {
+    "texts": {
+     "caption": "MEET THE FAMS: RGL EDITION\nUCR CSA RGL Meet The Fams\nTuesday, October 6 | 7PM - 8PM\nRivera Arches\n_____________________________________________\n\nIt’s time to meet our RGL Fam Heads 🦁!! Come to Rivera Arches Tuesday, October 6th @ 7:00 PM and get ready to race for rewards 😱 Don’t miss out on your chance to see if RGL clicks with you!!\n\nIf you have any questions or concerns, feel free to message @maryy.ng and @kyrives._ , for more information!\n\n_____________________________________________\n\nThe Chinese Student Association (CSA) at UC Riverside is a social, cultural, and service oriented organization that strives to promote Chinese American culture throughout the UCR and Riverside communities. We provide various opportunities and events throughout the year that allow students to develop leadership skills and also provide a social outlet for students with similar backgrounds and interests. Our organization is a great way to meet lifelong friends and create fond memories that will contribute to a successful college experience and beyond!",
+     "slide_1_ocr": "MEET\nTHE\nFAMS\nRGL FAM HEADS\nUSA\nC\n0 0003554562' 0",
+     "slide_2_ocr": "ETHAN PHO\nHOBBIES\nGym, rock climbing, exploring\ncafes, cooking\nFAVORITE ARTISTS\nJoji, Daniel Caesar, Tame\nImpala, Post Malone\nFAVORITE FOODS\nSweet potato, steak, noodles\n70% steak, not\nFUN FACT\nCON\ntriste annu POLE NOM\nI speak Canto, I do research on NO\norganic chemistry, I enjoy\ncooking\nORE\nChiesa di S. Mar\nRESENTER 79\nANNE DA\nDE\nMil\nosto 20\n48\nconati\n2016\nUCRCSA\nAPU\nnella Chies Ma\nA",
+     "slide_3_ocr": "BRADLEY\nGM\nИ\n84\n100 1,90\nittut\noisid\nsno\nU\nR\nC\n6\n910\nSu\nA\nfracture\nCHEN\nDIA\nHOBBIES\nGroup gaming nights, working\nout, swimming, hiking, sunset\nviews, spontaneous hangouts,\ncooking\nFAVORITE ARTISTS\nPink Floyd, Gunna, Billy Joel,\nFreddie Gibbs, Tory Lanez\nFAVORITE FOODS\nPasta, bbq, steak, seafood\nHOT VID FUN FACT\nHAND 912 honob\nDi 9/910qin DC/marvel fanatic\nHonor JAV\ncoM 2 ib papid",
+     "slide_4_ocr": "TUSCAN LEE\nHOBBIES\nGym, working, cello although I don't\nplay anymore, volunteering at hospice.\nFAVORITE ARTISTS\nDPR IAN, brb., Rocco, Malcolm\nTodd, Hotel Ugly, Hojean, Ateez,\nSKZ, Clairo\nFAVORITE FOODS\nBuldak noodles, shin noodles,\nmicrowaved eggwhites,\nmicrowaves croissants, soboro\ndon, keto bread, canned tunala cara\nwith kewpie mayo, tuna ra\nsandwhich, turkey sandwhich,\ncostco mixed vegetables with\nmixed\nhot honey dry seasoning. OLE NO\ntriste annuOLE\nFUN FACT nipotele la\nCard EN\nI have two cats but im\nallergic, I'm an EMT.\nma\n16 all\nIP\nARI\nUCRCSA",
+     "slide_5_ocr": "HOBBIES\nISABEL\nSkating, making drinks, drawing,\nvideo games\nFAVORITE ARTISTS\nDance Gavin Dance, Pierce the\nVeil, Orange Dog Club, Mat\nMaltese, Joost, Zazen Boys\nFAVORITE FOODS\nKonjac jelly, anything spicy,\nhot pot\nFURL\nFUN FACT\nla ca\nSI\nOLEN\nI'm the middle child\nle donno d triste annu\ned nipote e la c\nVALOveranno are\nUCRCSA\nMari\nC\nLUM\nNEDA\n20s\n70",
+     "slide_6_ocr": "AG\nJADEN TSAI\nGM\nNO\nHOBBIES\nVolleyball, pickleball,\ndrawing, traveling\nFAVORITE ARTISTS\nPami, Newjeans, Keshi\nFAVORITE FOODS\nXiao long bao, Sushi,\nIn n out\nTU FUN FACT\nI'm fluent in mandarin, I\nstudied abroad in Korea\n16 JAV\nchoM 2 ib\nUCRCSA",
+     "slide_7_ocr": "EMILY\nHERNANDEZ\nHOBBIES\nThrifting, dance, cafe\nhopping, going out, shopping\nFAVORITE ARTISTS\nDon Toiliver, SZA, Drake,\nSWV, Travis Scott\nFAVORITE FOODS\nseafood boils,\nSushil, seaf\nmango sticky rice,\nla c\nmatcha, coffee ROLE NO\nd nipote\nFUN FACT are\nI'm lactose intolerant\nma\nU\nUCRCSA\nA"
+    },
+    "origin": "instagram",
+    "posted_at": "2026-10-03T21:14:16+00:00",
+    "source_key": "instagram:post:4000040907944636207",
+    "source_occurrences": []
+   },
+   "status": "complete",
+   "version": 11,
+   "assessed_at": "2026-10-04T05:15:32.669094+00:00",
+   "source_hash": "0f2bf29ec43ddd749975af49a6297dcea9c73d9735f004185b9897e4686cb5b7"
+  }
+ },
+ "csa_bunnies": {
+  "record": {
+   "media": [
+    {
+     "index": 0,
+     "is_video": false,
+     "image_url": "https://instagram.fcok17-1.fna.fbcdn.net/v/t51.82787-15/837225145_18645076618033865_4529952889467792994_n.jpg?se=7&stp=dst-jpg_e35_tt6&efg=eyJ2ZW5jb2RlX3RhZyI6ImltYWdlX3VybGdlbi4xMDgwLnNkci5yZWd1bGFyX3Bob3RvLmMyIn0&_nc_ht=instagram.fcok17-1.fna.fbcdn.net&_nc_cat=105&_nc_oc=Q6cZ2gG0vWpLJ9JU6DnOgBYvKwO2DsUKkiym0zESNn_K0KJvaxbKg51O070ho5xxVeWp6Uc&_nc_ohc=dHsI_A9hmvwQ7kNvwEtCMQ-&_nc_gid=e75vufqVf88mqvMPA-CipQ&edm=APU89FABAAAA&ccb=7-5&oh=00_AQOi7hWcJ1GliRnuSsGyis5z2K2tzD6ocU1CMY1W1ztdTw&oe=6AC7AE85&_nc_sid=bc0c2c",
+     "media_key": "837225145_18645076618033865_4529952889467792994_n"
+    },
+    {
+     "index": 1,
+     "is_video": false,
+     "image_url": "https://instagram.fcok17-1.fna.fbcdn.net/v/t51.82787-15/834902903_18645076600033865_4551753714470619029_n.jpg?se=7&stp=dst-jpg_e35_tt6&efg=eyJ2ZW5jb2RlX3RhZyI6ImltYWdlX3VybGdlbi4xMDgwLnNkci5yZWd1bGFyX3Bob3RvLmMyIn0&_nc_ht=instagram.fcok17-1.fna.fbcdn.net&_nc_cat=105&_nc_oc=Q6cZ2gG0vWpLJ9JU6DnOgBYvKwO2DsUKkiym0zESNn_K0KJvaxbKg51O070ho5xxVeWp6Uc&_nc_ohc=PPKUobp47-YQ7kNvwEnJW5R&_nc_gid=e75vufqVf88mqvMPA-CipQ&edm=APU89FABAAAA&ccb=7-5&oh=00_AQOXzoin9h4aeHMHTsBToCaQLoN92IISx5MtDevkklSvLw&oe=6AC7BF6A&_nc_sid=bc0c2c",
+     "media_key": "834902903_18645076600033865_4551753714470619029_n"
+    },
+    {
+     "index": 2,
+     "is_video": false,
+     "image_url": "https://instagram.fcok17-1.fna.fbcdn.net/v/t51.82787-15/831424443_18645076642033865_6484180199034615628_n.jpg?se=7&stp=dst-jpg_e35_tt6&efg=eyJ2ZW5jb2RlX3RhZyI6ImltYWdlX3VybGdlbi4xMDgwLnNkci5yZWd1bGFyX3Bob3RvLmMyIn0&_nc_ht=instagram.fcok17-1.fna.fbcdn.net&_nc_cat=105&_nc_oc=Q6cZ2gG0vWpLJ9JU6DnOgBYvKwO2DsUKkiym0zESNn_K0KJvaxbKg51O070ho5xxVeWp6Uc&_nc_ohc=239TmZ_ZNvEQ7kNvwEpSeoi&_nc_gid=e75vufqVf88mqvMPA-CipQ&edm=APU89FABAAAA&ccb=7-5&oh=00_AQN9rN_RqNBG-eYVvALkMRNt8sJ76kUmMVArTWLa8wWuWQ&oe=6AC7C750&_nc_sid=bc0c2c",
+     "media_key": "831424443_18645076642033865_6484180199034615628_n"
+    },
+    {
+     "index": 3,
+     "is_video": false,
+     "image_url": "https://instagram.fcok17-1.fna.fbcdn.net/v/t51.82787-15/836759777_18645076606033865_3256448725746437486_n.jpg?se=7&stp=dst-jpg_e35_tt6&efg=eyJ2ZW5jb2RlX3RhZyI6ImltYWdlX3VybGdlbi4xMDgwLnNkci5yZWd1bGFyX3Bob3RvLmMyIn0&_nc_ht=instagram.fcok17-1.fna.fbcdn.net&_nc_cat=105&_nc_oc=Q6cZ2gG0vWpLJ9JU6DnOgBYvKwO2DsUKkiym0zESNn_K0KJvaxbKg51O070ho5xxVeWp6Uc&_nc_ohc=9-knJJCjGFYQ7kNvwGuhI1f&_nc_gid=e75vufqVf88mqvMPA-CipQ&edm=APU89FABAAAA&ccb=7-5&oh=00_AQP4Rg6IYKoJNpqCnm-qDbZR0LF29bT-usDJWhkKGIX5HQ&oe=6AC7A3D6&_nc_sid=bc0c2c",
+     "media_key": "836759777_18645076606033865_3256448725746437486_n"
+    },
+    {
+     "index": 4,
+     "is_video": false,
+     "image_url": "https://instagram.fcok17-1.fna.fbcdn.net/v/t51.82787-15/834190940_18645076630033865_4064966364655098472_n.jpg?se=7&stp=dst-jpg_e35_tt6&efg=eyJ2ZW5jb2RlX3RhZyI6ImltYWdlX3VybGdlbi4xMDgwLnNkci5yZWd1bGFyX3Bob3RvLmMyIn0&_nc_ht=instagram.fcok17-1.fna.fbcdn.net&_nc_cat=105&_nc_oc=Q6cZ2gG0vWpLJ9JU6DnOgBYvKwO2DsUKkiym0zESNn_K0KJvaxbKg51O070ho5xxVeWp6Uc&_nc_ohc=jYNkA7KRCjgQ7kNvwHZWOe8&_nc_gid=e75vufqVf88mqvMPA-CipQ&edm=APU89FABAAAA&ccb=7-5&oh=00_AQPwnkOMi5jiONRub1_uBYQ0o8fpr4LlNxfiS6HzOQWyTQ&oe=6AC7963F&_nc_sid=bc0c2c",
+     "media_key": "834190940_18645076630033865_4064966364655098472_n"
+    },
+    {
+     "index": 5,
+     "is_video": false,
+     "image_url": "https://instagram.fcok17-1.fna.fbcdn.net/v/t51.82787-15/833462046_18645076702033865_3133032702060215156_n.jpg?se=7&stp=dst-jpg_e35_tt6&efg=eyJ2ZW5jb2RlX3RhZyI6ImltYWdlX3VybGdlbi4xMDgwLnNkci5yZWd1bGFyX3Bob3RvLmMyIn0&_nc_ht=instagram.fcok17-1.fna.fbcdn.net&_nc_cat=105&_nc_oc=Q6cZ2gG0vWpLJ9JU6DnOgBYvKwO2DsUKkiym0zESNn_K0KJvaxbKg51O070ho5xxVeWp6Uc&_nc_ohc=woAZr3zi8voQ7kNvwEnUA5L&_nc_gid=e75vufqVf88mqvMPA-CipQ&edm=APU89FABAAAA&ccb=7-5&oh=00_AQNOW1K0JrmRK3vHx8hMG34HvqkV2kajYrlGJYo-FMzbdA&oe=6AC7BB79&_nc_sid=bc0c2c",
+     "media_key": "833462046_18645076702033865_3133032702060215156_n"
+    },
+    {
+     "index": 6,
+     "is_video": false,
+     "image_url": "https://instagram.fcok17-1.fna.fbcdn.net/v/t51.82787-15/834122902_18645076693033865_2448041112288937781_n.jpg?se=7&stp=dst-jpg_e35_tt6&efg=eyJ2ZW5jb2RlX3RhZyI6ImltYWdlX3VybGdlbi4xMDgwLnNkci5yZWd1bGFyX3Bob3RvLmMyIn0&_nc_ht=instagram.fcok17-1.fna.fbcdn.net&_nc_cat=105&_nc_oc=Q6cZ2gG0vWpLJ9JU6DnOgBYvKwO2DsUKkiym0zESNn_K0KJvaxbKg51O070ho5xxVeWp6Uc&_nc_ohc=5nrqvzNdVcgQ7kNvwED0YLd&_nc_gid=e75vufqVf88mqvMPA-CipQ&edm=APU89FABAAAA&ccb=7-5&oh=00_AQPkxiotfMYePFlMn9jsjjyBXDJ0jQ2YFLNtY9u9Sf4mHQ&oe=6AC7BA8A&_nc_sid=bc0c2c",
+     "media_key": "834122902_18645076693033865_2448041112288937781_n"
+    },
+    {
+     "index": 7,
+     "is_video": false,
+     "image_url": "https://instagram.fcok17-1.fna.fbcdn.net/v/t51.82787-15/831453656_18645076711033865_4586246353729715751_n.jpg?se=7&stp=dst-jpg_e35_tt6&efg=eyJ2ZW5jb2RlX3RhZyI6ImltYWdlX3VybGdlbi4xMDgwLnNkci5yZWd1bGFyX3Bob3RvLmMyIn0&_nc_ht=instagram.fcok17-1.fna.fbcdn.net&_nc_cat=105&_nc_oc=Q6cZ2gG0vWpLJ9JU6DnOgBYvKwO2DsUKkiym0zESNn_K0KJvaxbKg51O070ho5xxVeWp6Uc&_nc_ohc=YY7sxyQE7G8Q7kNvwE3IZ5T&_nc_gid=e75vufqVf88mqvMPA-CipQ&edm=APU89FABAAAA&ccb=7-5&oh=00_AQPl4sHzB3XLrN7LjebiNdB2k6S5X3v_Mz0uMMN3xnOkig&oe=6AC7B8DF&_nc_sid=bc0c2c",
+     "media_key": "831453656_18645076711033865_4586246353729715751_n"
+    },
+    {
+     "index": 8,
+     "is_video": false,
+     "image_url": "https://instagram.fcok17-1.fna.fbcdn.net/v/t51.82787-15/831615989_18645076786033865_4475447401649328841_n.jpg?se=7&stp=dst-jpg_e35_tt6&efg=eyJ2ZW5jb2RlX3RhZyI6ImltYWdlX3VybGdlbi4xMDgwLnNkci5yZWd1bGFyX3Bob3RvLmMyIn0&_nc_ht=instagram.fcok17-1.fna.fbcdn.net&_nc_cat=105&_nc_oc=Q6cZ2gG0vWpLJ9JU6DnOgBYvKwO2DsUKkiym0zESNn_K0KJvaxbKg51O070ho5xxVeWp6Uc&_nc_ohc=tQvDVdtlcjsQ7kNvwE0AqRZ&_nc_gid=e75vufqVf88mqvMPA-CipQ&edm=APU89FABAAAA&ccb=7-5&oh=00_AQNAsxIHRW8KhKWa1qwJOJo-LFIVaonkM5BwXPJeXdPEGQ&oe=6AC7CBD5&_nc_sid=bc0c2c",
+     "media_key": "831615989_18645076786033865_4475447401649328841_n"
+    },
+    {
+     "index": 9,
+     "is_video": false,
+     "image_url": "https://instagram.fcok17-1.fna.fbcdn.net/v/t51.82787-15/836211988_18645076753033865_8994053140288817786_n.jpg?se=7&stp=dst-jpg_e35_tt6&efg=eyJ2ZW5jb2RlX3RhZyI6ImltYWdlX3VybGdlbi4xMDgwLnNkci5yZWd1bGFyX3Bob3RvLmMyIn0&_nc_ht=instagram.fcok17-1.fna.fbcdn.net&_nc_cat=105&_nc_oc=Q6cZ2gG0vWpLJ9JU6DnOgBYvKwO2DsUKkiym0zESNn_K0KJvaxbKg51O070ho5xxVeWp6Uc&_nc_ohc=qKiqzt-3wz8Q7kNvwHKmYkR&_nc_gid=e75vufqVf88mqvMPA-CipQ&edm=APU89FABAAAA&ccb=7-5&oh=00_AQO0K40vsAC1k-ckAtYqWH6lg2qOsCpOq2fI0DG-vJ_ALw&oe=6AC7C61D&_nc_sid=bc0c2c",
+     "media_key": "836211988_18645076753033865_8994053140288817786_n"
+    }
+   ],
+   "handle": "ucrcsa",
+   "caption": "MEET THE FAMS: BUNNIES EDITION\nUCR CSA Bunnies Meet The Fams\nMonday, October 5 | 7PM - 8PM\nRivera Arches\n_____________________________________________\n\nIt’s time to meet our Bunnies Fam Heads 🐇 !! Come to the Rivera Arches Monday, October 5th @ 7:00 PM to find out what the bunnies are all about 🐰 We will be mingling 🤫 and have special prizes at the end !!\n\nIf you have any questions or concerns, feel free to message @maryy.ng and @kyrives._ , for more information!\n\n_____________________________________________\n\nThe Chinese Student Association (CSA) at UC Riverside is a social, cultural, and service oriented organization that strives to promote Chinese American culture throughout the UCR and Riverside communities. We provide various opportunities and events throughout the year that allow students to develop leadership skills and also provide a social outlet for students with similar backgrounds and interests. Our organization is a great way to meet lifelong friends and create fond memories that will contribute to a successful college experience and beyond!",
+   "media_id": "4000039985214574504",
+   "typename": "GraphSidecar",
+   "has_video": false,
+   "permalink": "https://www.instagram.com/p/DeC_yxmEs-o/",
+   "posted_at": "2026-10-03T21:12:26+00:00",
+   "shortcode": "DeC_yxmEs-o",
+   "fetched_at": "2026-10-04T05:02:01.669305+00:00",
+   "owner_userid": 1615969864,
+   "owner_username": "ucrcsa",
+   "caption_mentions": [
+    "maryy.ng",
+    "kyrives._"
+   ]
+  },
+  "cached": {
+   "media_id": "4000039985214574504",
+   "handle": "ucrcsa",
+   "status": "ok",
+   "fingerprint": "54b8e5c1088c61b799a4f54519a81c9fd1ca3e0af0e13a510872ad7880e55f0a",
+   "extraction_version": 3,
+   "caption": "MEET THE FAMS: BUNNIES EDITION\nUCR CSA Bunnies Meet The Fams\nMonday, October 5 | 7PM - 8PM\nRivera Arches\n_____________________________________________\n\nIt’s time to meet our Bunnies Fam Heads 🐇 !! Come to the Rivera Arches Monday, October 5th @ 7:00 PM to find out what the bunnies are all about 🐰 We will be mingling 🤫 and have special prizes at the end !!\n\nIf you have any questions or concerns, feel free to message @maryy.ng and @kyrives._ , for more information!\n\n_____________________________________________\n\nThe Chinese Student Association (CSA) at UC Riverside is a social, cultural, and service oriented organization that strives to promote Chinese American culture throughout the UCR and Riverside communities. We provide various opportunities and events throughout the year that allow students to develop leadership skills and also provide a social outlet for students with similar backgrounds and interests. Our organization is a great way to meet lifelong friends and create fond memories that will contribute to a successful college experience and beyond!",
+   "images": [
+    {
+     "index": 0,
+     "qr_urls": [],
+     "ocr_text": "MEET\nTHE\nFAM'S\nBUNNIES FAM HEADS\nC\nOSA\n0 0003554562' 0",
+     "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/ucrcsa/posts/4000039985214574504/837225145_18645076618033865_4529952889467792994_n.jpg",
+     "media_key": "837225145_18645076618033865_4529952889467792994_n",
+     "qr_scan_version": 1
+    },
+    {
+     "index": 1,
+     "qr_urls": [],
+     "ocr_text": "ANGELINA\nHOBBIES\nBBIES\nSUN\nRaving, piano, music production,\nmakeup, video games\n8 Lob sani\nFAVORITE ARTISTS\nNinajirachi, Aespa, Juelz,\nMen I Trust\noogoooo\n6509t2i29 6TBQ 6\nFAVORITE FOODS\nSA\nHainan chicken rice,\njasmine milk tea, salmon\nnigiri\nFUN FACT\nМАТ ИО\nER\nI used to have pink hair\nUCRCSA",
+     "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/ucrcsa/posts/4000039985214574504/834902903_18645076600033865_4551753714470619029_n.jpg",
+     "media_key": "834902903_18645076600033865_4551753714470619029_n",
+     "qr_scan_version": 1
+    },
+    {
+     "index": 2,
+     "qr_urls": [],
+     "ocr_text": "m F\nKYLEE VUONG\n895 62\nSolsid\nesno\n13 Бу\nHOBBIES\nCollecting cute trinkets/squishies\n(spending way too much on\ntoys...), doom scrolling, eating at\ncostco, buying lash clusters,\ntaking photobooth pics\nFAVORITE ARTISTS\nMalcom Todd, Adéla, NCT 127,\nOlivia Rodrigo, Ellie Goulding, BTS,\naespa, Sabrina Carpenter, Keshi\nFAVORITE FOODS\nTaco Bell, Costco Hot Dog, Costco\nPizza, Xtra cheese goldfish,\nHeyTea, Molly Tea, Chagee, Katsu\nCurry, Noodle dishes\nFUN FACT\n10 finished a Taco Bell extra\nperrefried bean burrito in under\nR\nCau\nS\nегнатиягая\nA\nsto silen\n190 one minute",
+     "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/ucrcsa/posts/4000039985214574504/831424443_18645076642033865_6484180199034615628_n.jpg",
+     "media_key": "831424443_18645076642033865_6484180199034615628_n",
+     "qr_scan_version": 1
+    },
+    {
+     "index": 3,
+     "qr_urls": [],
+     "ocr_text": "SIMON LIANG\nHOBBIES\nI like video games, cars,\nphotography, nature (beaches,\nmountain)\nFAVORITE ARTISTS\nKeshi, Illenium, Joji, The Weeknd,\nLaufey\nFAVORITE FOODS\nla car\nAny type of asian food because\nthere's endless combonations\nFUN FACT CON\nle donno triste annu\nI was born in Hong\nKong ALoveranno il\nChiesa di S. Mari\nRESENTER 79\nUCRCSA\nROD\nAL\nDA",
+     "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/ucrcsa/posts/4000039985214574504/836759777_18645076606033865_3256448725746437486_n.jpg",
+     "media_key": "836759777_18645076606033865_3256448725746437486_n",
+     "qr_scan_version": 1
+    },
+    {
+     "index": 4,
+     "qr_urls": [],
+     "ocr_text": "199\nUCRC SA\nKELSEY TSAI\nA JA\nКОИ В\nHOBBIES\nLolita fashion, digital art,\nanimation and watching\nanime\nFAVORITE FOODS\nSushi, fried chicken,\nsoup (any soup I really\nlike soup)\nFUN FACT\nI love the Hunger Games,\nPokemon and My Little\nPony\nFAVORITE ARTISTS\nOME Whatsaheart, Sleeping\nwith sirens, Arranged in\nApril, SKZ, TXT and Pierce\nthe Veil",
+     "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/ucrcsa/posts/4000039985214574504/834190940_18645076630033865_4064966364655098472_n.jpg",
+     "media_key": "834190940_18645076630033865_4064966364655098472_n",
+     "qr_scan_version": 1
+    },
+    {
+     "index": 5,
+     "qr_urls": [],
+     "ocr_text": "AUDREY\nMAI\n88del-Soccor\nore 16,30\nTur\nMil\nDE\nIn\nAgosto 2017\nAtutti\ne, 1 cona\ne48\nFonze\nbraio 2\n8tap es\n58\nKONEER\nFOR\nRESENTER 79\nChiesa di S. Mari\nHOBBIES\nON 910 Gundam building, TFT\nFundam\nra\nFAVORITE ARTISTS\nILLIT, Cö shu Nie\nFAVORITE FOODS\nMentaiko cream udon\nFUN FACT\nI peak grandmaster in TFT\nANNIDA\new\nUCRCSA",
+     "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/ucrcsa/posts/4000039985214574504/833462046_18645076702033865_3133032702060215156_n.jpg",
+     "media_key": "833462046_18645076702033865_3133032702060215156_n",
+     "qr_scan_version": 1
+    },
+    {
+     "index": 6,
+     "qr_urls": [],
+     "ocr_text": "GA\nC\nUCRCSA\nconat\n20\nzec\nASHLEY TEM\nHOBBIES\nDancing, baking, going to the\nbeach, shopping, traveling\nFAVORITE ARTISTS\nTate McRae, Olivia Rodrigo,\nGracie Abrams, Ariana Grande\nFAVORITE FOODS\nPho, pasta, malatang\nFUN FACT\nara\nI've been dancing for 10\nyears, I've played 4\ndifferent sports (soccer,\nvolleyball, golf, dance),\nI love matcha and\ngoing to the beach\nRESENTER 79\nSa\nore 1\nel",
+     "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/ucrcsa/posts/4000039985214574504/834122902_18645076693033865_2448041112288937781_n.jpg",
+     "media_key": "834122902_18645076693033865_2448041112288937781_n",
+     "qr_scan_version": 1
+    },
+    {
+     "index": 7,
+     "qr_urls": [],
+     "ocr_text": "BEZELLE\nKAI TIEU\nTIEUW\n83\nAVINGLE EMO FAVORITE\nD\nFAVORITE ARTISTS\nФОГЕ ИОИ ЕМИ\nHOBBIES\nGaming, reading manga,\nwatching youtube, shopping,\nFAVORITE FOODS\nBun bo hue, goi cuon,\nNew Jeans, Illit, Don Toliver,\nDeftones, Travis Scott\nJe'30\nmalatang, matcha, mochi in\ndrinks, burritos and tacos, any\nnoodle dish tbh\nFUN FACT\nI'm allergic to being cold,\nI have an irrational fear\nof balloons, I completely\nfinished stardew\nUCRCSA\n08",
+     "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/ucrcsa/posts/4000039985214574504/831453656_18645076711033865_4586246353729715751_n.jpg",
+     "media_key": "831453656_18645076711033865_4586246353729715751_n",
+     "qr_scan_version": 1
+    },
+    {
+     "index": 8,
+     "qr_urls": [],
+     "ocr_text": "JOSHUA\nSHIU\nHOBBIES\nGardening, video games, blind\nboxes/gambling, amusement\nparks, hanging out outside of\nschool, eating food\nFAVORITE ARTISTS\nGiveon, Daniel Caesar, Luke\nChiang\nFAVORITE FOODS\nA\nla cara\nMy mom's Taiwanese beef\nnoodle soup, Korean bbq,\nchubby skewer, sweet drinks\nlike 3cat, anything from my\nod triste annu\nenipote e la c\ngarden\nFUN FACT\narc\nI've been an orchestra kid\nfor like 14 years of my life\nssa pe\nUCRCSA",
+     "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/ucrcsa/posts/4000039985214574504/831615989_18645076786033865_4475447401649328841_n.jpg",
+     "media_key": "831615989_18645076786033865_4475447401649328841_n",
+     "qr_scan_version": 1
+    },
+    {
+     "index": 9,
+     "qr_urls": [],
+     "ocr_text": "1\nJACKIE CHONG\nAO\n623\nsaros old\nmesno\n913\nЯА\n99 08.01\n[s 0-10990\nUCRCSA\nHOBBIES\nGuitar, music, cooking,\ngames\nFAVORITE FOODS\nDaniel Caesar, knock2,\nGiveon, Seven Lions, Dabin\nFUN FACT\nAny asian, mexican,\nitalian\nFAVORITE ARTISTS\nI can fit a bag of seaside\nNOMET donut holes in my mouth\n2910 silen\nD19 JAV\nchoM 2 ib papido\nегативгая",
+     "image_url": "https://qyxlojftdtjasxhzyqil.supabase.co/storage/v1/object/public/event-flyers/instagram/ucrcsa/posts/4000039985214574504/836211988_18645076753033865_8994053140288817786_n.jpg",
+     "media_key": "836211988_18645076753033865_8994053140288817786_n",
+     "qr_scan_version": 1
+    }
+   ],
+   "result": null,
+   "extracted_at": "2026-10-04T05:13:24.482168+00:00",
+   "created_at": "2026-10-04T05:13:24.524155+00:00",
+   "updated_at": "2026-10-04T05:13:24.524155+00:00"
+  },
+  "assessment": {
+   "model": "gemini-3.1-flash-lite",
+   "result": {
+    "kind": "activity",
+    "reason": "The post advertises a specific social event for the UCR Chinese Student Association with a clear date, time, and location.",
+    "schedule": null,
+    "date_role": "occurrence",
+    "occurrences": [
+     {
+      "title": "UCR CSA Bunnies Meet The Fams",
+      "all_day": false,
+      "ends_at": "2026-10-05T20:00:00-07:00",
+      "location": "Rivera Arches",
+      "starts_at": "2026-10-05T19:00:00-07:00",
+      "date_evidence": [
+       {
+        "field": "caption",
+        "quote": "MEET THE FAMS: BUNNIES EDITION\nUCR CSA Bunnies Meet The Fams\nMonday, October 5 | 7PM - 8PM\nRivera Arches\n_____________________________________________\n\nIt’s time to meet our Bunnies Fam Heads 🐇 !! Come to the Rivera Arches Monday, October 5th @ 7:00 PM to find out what the bunnies are all about 🐰 We will be mingling 🤫 and have special prizes at the end !!\n\nIf you have any questions or concerns, feel free to message @maryy.ng and @kyrives._ , for more information!\n\n_____________________________________________\n\nThe Chinese Student Association (CSA) at UC Riverside is a social, cultural, and service oriented organization that strives to promote Chinese American culture throughout the UCR and Riverside communities. We provide various opportunities and events throughout the year that allow students to develop leadership skills and also provide a social outlet for students with similar backgrounds and interests. Our organization is a great way to meet lifelong friends and create fond memories that will contribute to a successful college experience and beyond!"
+       }
+      ],
+      "activity_evidence": [
+       {
+        "field": "caption",
+        "quote": "MEET THE FAMS: BUNNIES EDITION\nUCR CSA Bunnies Meet The Fams\nMonday, October 5 | 7PM - 8PM\nRivera Arches\n_____________________________________________\n\nIt’s time to meet our Bunnies Fam Heads 🐇 !! Come to the Rivera Arches Monday, October 5th @ 7:00 PM to find out what the bunnies are all about 🐰 We will be mingling 🤫 and have special prizes at the end !!\n\nIf you have any questions or concerns, feel free to message @maryy.ng and @kyrives._ , for more information!\n\n_____________________________________________\n\nThe Chinese Student Association (CSA) at UC Riverside is a social, cultural, and service oriented organization that strives to promote Chinese American culture throughout the UCR and Riverside communities. We provide various opportunities and events throughout the year that allow students to develop leadership skills and also provide a social outlet for students with similar backgrounds and interests. Our organization is a great way to meet lifelong friends and create fond memories that will contribute to a successful college experience and beyond!"
+       }
+      ],
+      "location_evidence": [
+       {
+        "field": "caption",
+        "quote": "MEET THE FAMS: BUNNIES EDITION\nUCR CSA Bunnies Meet The Fams\nMonday, October 5 | 7PM - 8PM\nRivera Arches\n_____________________________________________\n\nIt’s time to meet our Bunnies Fam Heads 🐇 !! Come to the Rivera Arches Monday, October 5th @ 7:00 PM to find out what the bunnies are all about 🐰 We will be mingling 🤫 and have special prizes at the end !!\n\nIf you have any questions or concerns, feel free to message @maryy.ng and @kyrives._ , for more information!\n\n_____________________________________________\n\nThe Chinese Student Association (CSA) at UC Riverside is a social, cultural, and service oriented organization that strives to promote Chinese American culture throughout the UCR and Riverside communities. We provide various opportunities and events throughout the year that allow students to develop leadership skills and also provide a social outlet for students with similar backgrounds and interests. Our organization is a great way to meet lifelong friends and create fond memories that will contribute to a successful college experience and beyond!"
+       }
+      ]
+     }
+    ],
+    "date_evidence": [
+     {
+      "field": "caption",
+      "quote": "MEET THE FAMS: BUNNIES EDITION\nUCR CSA Bunnies Meet The Fams\nMonday, October 5 | 7PM - 8PM\nRivera Arches\n_____________________________________________\n\nIt’s time to meet our Bunnies Fam Heads 🐇 !! Come to the Rivera Arches Monday, October 5th @ 7:00 PM to find out what the bunnies are all about 🐰 We will be mingling 🤫 and have special prizes at the end !!\n\nIf you have any questions or concerns, feel free to message @maryy.ng and @kyrives._ , for more information!\n\n_____________________________________________\n\nThe Chinese Student Association (CSA) at UC Riverside is a social, cultural, and service oriented organization that strives to promote Chinese American culture throughout the UCR and Riverside communities. We provide various opportunities and events throughout the year that allow students to develop leadership skills and also provide a social outlet for students with similar backgrounds and interests. Our organization is a great way to meet lifelong friends and create fond memories that will contribute to a successful college experience and beyond!"
+     }
+    ],
+    "activity_evidence": [
+     {
+      "field": "caption",
+      "quote": "MEET THE FAMS: BUNNIES EDITION\nUCR CSA Bunnies Meet The Fams\nMonday, October 5 | 7PM - 8PM\nRivera Arches\n_____________________________________________\n\nIt’s time to meet our Bunnies Fam Heads 🐇 !! Come to the Rivera Arches Monday, October 5th @ 7:00 PM to find out what the bunnies are all about 🐰 We will be mingling 🤫 and have special prizes at the end !!\n\nIf you have any questions or concerns, feel free to message @maryy.ng and @kyrives._ , for more information!\n\n_____________________________________________\n\nThe Chinese Student Association (CSA) at UC Riverside is a social, cultural, and service oriented organization that strives to promote Chinese American culture throughout the UCR and Riverside communities. We provide various opportunities and events throughout the year that allow students to develop leadership skills and also provide a social outlet for students with similar backgrounds and interests. Our organization is a great way to meet lifelong friends and create fond memories that will contribute to a successful college experience and beyond!"
+     }
+    ],
+    "use_source_occurrences": false
+   },
+   "source": {
+    "texts": {
+     "caption": "MEET THE FAMS: BUNNIES EDITION\nUCR CSA Bunnies Meet The Fams\nMonday, October 5 | 7PM - 8PM\nRivera Arches\n_____________________________________________\n\nIt’s time to meet our Bunnies Fam Heads 🐇 !! Come to the Rivera Arches Monday, October 5th @ 7:00 PM to find out what the bunnies are all about 🐰 We will be mingling 🤫 and have special prizes at the end !!\n\nIf you have any questions or concerns, feel free to message @maryy.ng and @kyrives._ , for more information!\n\n_____________________________________________\n\nThe Chinese Student Association (CSA) at UC Riverside is a social, cultural, and service oriented organization that strives to promote Chinese American culture throughout the UCR and Riverside communities. We provide various opportunities and events throughout the year that allow students to develop leadership skills and also provide a social outlet for students with similar backgrounds and interests. Our organization is a great way to meet lifelong friends and create fond memories that will contribute to a successful college experience and beyond!",
+     "slide_1_ocr": "MEET\nTHE\nFAM'S\nBUNNIES FAM HEADS\nC\nOSA\n0 0003554562' 0",
+     "slide_2_ocr": "ANGELINA\nHOBBIES\nBBIES\nSUN\nRaving, piano, music production,\nmakeup, video games\n8 Lob sani\nFAVORITE ARTISTS\nNinajirachi, Aespa, Juelz,\nMen I Trust\noogoooo\n6509t2i29 6TBQ 6\nFAVORITE FOODS\nSA\nHainan chicken rice,\njasmine milk tea, salmon\nnigiri\nFUN FACT\nМАТ ИО\nER\nI used to have pink hair\nUCRCSA",
+     "slide_3_ocr": "m F\nKYLEE VUONG\n895 62\nSolsid\nesno\n13 Бу\nHOBBIES\nCollecting cute trinkets/squishies\n(spending way too much on\ntoys...), doom scrolling, eating at\ncostco, buying lash clusters,\ntaking photobooth pics\nFAVORITE ARTISTS\nMalcom Todd, Adéla, NCT 127,\nOlivia Rodrigo, Ellie Goulding, BTS,\naespa, Sabrina Carpenter, Keshi\nFAVORITE FOODS\nTaco Bell, Costco Hot Dog, Costco\nPizza, Xtra cheese goldfish,\nHeyTea, Molly Tea, Chagee, Katsu\nCurry, Noodle dishes\nFUN FACT\n10 finished a Taco Bell extra\nperrefried bean burrito in under\nR\nCau\nS\nегнатиягая\nA\nsto silen\n190 one minute",
+     "slide_4_ocr": "SIMON LIANG\nHOBBIES\nI like video games, cars,\nphotography, nature (beaches,\nmountain)\nFAVORITE ARTISTS\nKeshi, Illenium, Joji, The Weeknd,\nLaufey\nFAVORITE FOODS\nla car\nAny type of asian food because\nthere's endless combonations\nFUN FACT CON\nle donno triste annu\nI was born in Hong\nKong ALoveranno il\nChiesa di S. Mari\nRESENTER 79\nUCRCSA\nROD\nAL\nDA",
+     "slide_5_ocr": "199\nUCRC SA\nKELSEY TSAI\nA JA\nКОИ В\nHOBBIES\nLolita fashion, digital art,\nanimation and watching\nanime\nFAVORITE FOODS\nSushi, fried chicken,\nsoup (any soup I really\nlike soup)\nFUN FACT\nI love the Hunger Games,\nPokemon and My Little\nPony\nFAVORITE ARTISTS\nOME Whatsaheart, Sleeping\nwith sirens, Arranged in\nApril, SKZ, TXT and Pierce\nthe Veil",
+     "slide_6_ocr": "AUDREY\nMAI\n88del-Soccor\nore 16,30\nTur\nMil\nDE\nIn\nAgosto 2017\nAtutti\ne, 1 cona\ne48\nFonze\nbraio 2\n8tap es\n58\nKONEER\nFOR\nRESENTER 79\nChiesa di S. Mari\nHOBBIES\nON 910 Gundam building, TFT\nFundam\nra\nFAVORITE ARTISTS\nILLIT, Cö shu Nie\nFAVORITE FOODS\nMentaiko cream udon\nFUN FACT\nI peak grandmaster in TFT\nANNIDA\new\nUCRCSA",
+     "slide_7_ocr": "GA\nC\nUCRCSA\nconat\n20\nzec\nASHLEY TEM\nHOBBIES\nDancing, baking, going to the\nbeach, shopping, traveling\nFAVORITE ARTISTS\nTate McRae, Olivia Rodrigo,\nGracie Abrams, Ariana Grande\nFAVORITE FOODS\nPho, pasta, malatang\nFUN FACT\nara\nI've been dancing for 10\nyears, I've played 4\ndifferent sports (soccer,\nvolleyball, golf, dance),\nI love matcha and\ngoing to the beach\nRESENTER 79\nSa\nore 1\nel",
+     "slide_8_ocr": "BEZELLE\nKAI TIEU\nTIEUW\n83\nAVINGLE EMO FAVORITE\nD\nFAVORITE ARTISTS\nФОГЕ ИОИ ЕМИ\nHOBBIES\nGaming, reading manga,\nwatching youtube, shopping,\nFAVORITE FOODS\nBun bo hue, goi cuon,\nNew Jeans, Illit, Don Toliver,\nDeftones, Travis Scott\nJe'30\nmalatang, matcha, mochi in\ndrinks, burritos and tacos, any\nnoodle dish tbh\nFUN FACT\nI'm allergic to being cold,\nI have an irrational fear\nof balloons, I completely\nfinished stardew\nUCRCSA\n08",
+     "slide_9_ocr": "JOSHUA\nSHIU\nHOBBIES\nGardening, video games, blind\nboxes/gambling, amusement\nparks, hanging out outside of\nschool, eating food\nFAVORITE ARTISTS\nGiveon, Daniel Caesar, Luke\nChiang\nFAVORITE FOODS\nA\nla cara\nMy mom's Taiwanese beef\nnoodle soup, Korean bbq,\nchubby skewer, sweet drinks\nlike 3cat, anything from my\nod triste annu\nenipote e la c\ngarden\nFUN FACT\narc\nI've been an orchestra kid\nfor like 14 years of my life\nssa pe\nUCRCSA",
+     "slide_10_ocr": "1\nJACKIE CHONG\nAO\n623\nsaros old\nmesno\n913\nЯА\n99 08.01\n[s 0-10990\nUCRCSA\nHOBBIES\nGuitar, music, cooking,\ngames\nFAVORITE FOODS\nDaniel Caesar, knock2,\nGiveon, Seven Lions, Dabin\nFUN FACT\nAny asian, mexican,\nitalian\nFAVORITE ARTISTS\nI can fit a bag of seaside\nNOMET donut holes in my mouth\n2910 silen\nD19 JAV\nchoM 2 ib papido\nегативгая"
+    },
+    "origin": "instagram",
+    "posted_at": "2026-10-03T21:12:26+00:00",
+    "source_key": "instagram:post:4000039985214574504",
+    "source_occurrences": []
+   },
+   "status": "complete",
+   "version": 11,
+   "assessed_at": "2026-10-04T05:15:31.148707+00:00",
+   "source_hash": "e79823c91517bf7dc4ade2470aeaaab51e7605024d64bc6c2c1a030d77ba4e90"
+  }
+ }
+}

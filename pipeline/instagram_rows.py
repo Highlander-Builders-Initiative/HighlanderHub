@@ -114,6 +114,7 @@ def build_instagram_row(
     scraped_at: str, assessed_kind: str | None, session: str | None = None,
     policy_text: str | None = None,
     classification_text: str | None = None,
+    category_text: str | None = None,
 ) -> dict | None:
     """Apply date, host privacy, classification and RSVP rules to an assessed post."""
     title = str(occurrence.get("title") or "").strip()
@@ -164,7 +165,7 @@ def build_instagram_row(
         host = account_meta.get("label") or host_handle
     category = occurrence.get("category")
     if not isinstance(category, str) or category not in EVENT_CATEGORIES:
-        category = infer_category_from_text(title, policy,
+        category = infer_category_from_text(title, policy if category_text is None else category_text,
                                             host_type=account_meta.get("category"))
 
     return {
