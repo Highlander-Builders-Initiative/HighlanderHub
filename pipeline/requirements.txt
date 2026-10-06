@@ -1,5 +1,5 @@
 -c constraints-security.txt
-cryptography>=50.0.1  # authenticated encryption for private Actions state
+cryptography>=50.0.2  # authenticated encryption for private Actions state
 requests>=2.34.2
 supabase>=2.31.0
 python-dotenv>=1.2.3
