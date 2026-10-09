@@ -16,6 +16,7 @@ if str(PIPELINE_ROOT) not in sys.path:
 STAGE_ORDER = [
     "instagram.posts.collect",
     "instagram.posts.extract",
+    "instagram.recheck",
     "instagram.publish",
     "events.reconcile",
 ]
@@ -28,6 +29,7 @@ class RunMainTests(unittest.TestCase):
             "apify_posts",
             "reconcile_events",
             "assessed_events",
+            "post_recheck",
         ]
         self.fake_modules = {
             name: types.SimpleNamespace(main=Mock(name=f"{name}.main"))
@@ -44,6 +46,7 @@ class RunMainTests(unittest.TestCase):
         self.stage_mocks = {
             "instagram.posts.collect": self.fake_modules["apify_posts"].main,
             "instagram.posts.extract": self.fake_modules["extract_posts"].extract_all,
+            "instagram.recheck": self.fake_modules["post_recheck"].main,
             "instagram.publish": self.fake_modules["assessed_events"].publish_posts,
             "events.reconcile": self.fake_modules["reconcile_events"].main,
         }

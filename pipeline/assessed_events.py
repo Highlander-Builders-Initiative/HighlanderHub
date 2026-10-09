@@ -525,6 +525,10 @@ def post_updates(processed: list[tuple[dict, dict]], meta: dict, now: str,
             continue
         source = post_source(record, cached)
         prior = registry.get(source["source_key"])
+        if ((prior or {}).get("assessment") or {}).get("deleted"):
+            # post_recheck withdrew this listing because Instagram deleted the
+            # post. The archive still holds it, so it must not be republished.
+            continue
         if status == "no_text":
             # Nothing is left to assess, so the withdrawal is published directly
             # rather than asked of the model. Sources that never published stay

@@ -1,6 +1,6 @@
 # Event ingestion pipeline
 
-`python pipeline/run.py` runs four stages: Apify post collection, all-slide
+`python pipeline/run.py` runs five stages: Apify post collection, all-slide
 Google Vision OCR, grounded Gemini event assessment/publication, and event
 reconciliation. Publication retains the existing evidence, deduplication,
 admin-lock, deletion and notification rules. Failed collection still processes
@@ -382,3 +382,17 @@ Their regression tests require the separate legacy dependencies:
 .venv/bin/pip install -r requirements-legacy.txt
 PYTHON_DOTENV_DISABLED=1 .venv/bin/python -m unittest discover -s tests -v
 ```
+
+
+## Deleted-post recheck
+
+`post_recheck.py` (stage `instagram.recheck`) looks up each source post once,
+when its event is within `APIFY_RECHECK_DAYS` (default 3), using the same hpix
+single-post lookup as collaboration details (about $0.0015 per post, capped per
+run by `APIFY_RECHECK_MAX_CHARGE_USD`, default $0.25). A post is treated as
+deleted only when the actor returns an explicit "deleted" error row for it, and
+its listings are withdrawn after two such answers in separate runs. A run where
+over half of a batch reports deleted is treated as an outage and changes nothing.
+Withdrawn sources carry `assessment.deleted`, which publication skips so the
+archived copy is not republished. Progress is kept in `data/post_rechecks.json`.
+A post is checked once, so a deletion after the check is not seen.

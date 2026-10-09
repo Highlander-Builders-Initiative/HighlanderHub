@@ -6,8 +6,9 @@ we log and keep going.
 Stages:
   1. Collect Instagram feed posts through the Apify API.
   2. Extract cached post images with Google Vision OCR.
-  3. Assess and publish the post archive even when collection failed.
-  4. Reconcile corroborated events and send eligible free-food alerts.
+  3. Look up posts for events starting soon and withdraw deleted ones.
+  4. Assess and publish the post archive even when collection failed.
+  5. Reconcile corroborated events and send eligible free-food alerts.
 
 Every run ends with a per-stage summary — printed to the log and appended to
 `data/run_history.jsonl`. Because stage failures are isolated, a dead source
@@ -33,6 +34,7 @@ import assessed_events
 import extract_posts
 import reconcile_events
 import apify_posts
+import post_recheck
 from config import DATA_DIR, load_account_meta
 from post_archive import ArchiveIndex
 
@@ -179,6 +181,7 @@ def _run_stages(results: list[StageResult], *, resume_halted: bool) -> None:
     _safe("instagram.posts.collect",
           lambda: apify_posts.main(resume_halted=resume_halted, archive=posts.archive), results)
     _safe("instagram.posts.extract", posts.extract_posts, results)
+    _safe("instagram.recheck", post_recheck.main, results)
     _safe("instagram.publish", posts.publish, results)
     _safe("events.reconcile", reconcile_events.main, results)
 
