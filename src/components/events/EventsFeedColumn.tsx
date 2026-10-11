@@ -131,7 +131,7 @@ export function EventsFeedColumn({
           onViewChange={onViewChange}
           className="col-start-2 row-start-1 lg:row-span-2 lg:self-end"
         />
-        <p className="col-span-2 mt-2 max-w-[58ch] text-[14px] text-muted lg:col-span-1">
+        <p className="col-span-2 mt-2 max-w-[58ch] text-[14px] tabular-nums text-muted lg:col-span-1">
           {summary.upcomingThisWeek} this week · {upcomingTotal} upcoming
         </p>
       </header>
@@ -163,7 +163,7 @@ export function EventsFeedColumn({
           <button
             type="button"
             onClick={onOpenMobileFilters}
-            className="interactive-focus relative inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-ink/[0.06] px-3.5 text-[13px] font-medium text-ink transition-colors hover:bg-ink/10 lg:hidden"
+            className="interactive-focus hit-area relative inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-ink/[0.06] px-3.5 text-[13px] font-medium text-ink transition-colors hover:bg-ink/10 lg:hidden"
             aria-haspopup="dialog"
           >
             <svg
@@ -228,24 +228,28 @@ export function EventsFeedColumn({
             aria-label="Back to top"
             aria-hidden={!showBackToTop}
             tabIndex={showBackToTop ? 0 : -1}
-            className={`interactive-focus inline-flex h-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-ink/[0.06] text-ink transition-[width,opacity,transform] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-ink/10 motion-reduce:transition-none ${
+            className={`interactive-focus hit-area relative inline-flex h-9 shrink-0 items-center justify-center rounded-full bg-ink/[0.06] text-ink transition-[width,opacity,transform] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-ink/10 motion-reduce:transition-none ${
               showBackToTop
                 ? "w-9 opacity-100"
                 : "pointer-events-none w-0 scale-75 opacity-0"
             }`}
           >
-            <svg
-              aria-hidden
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-4 w-4 shrink-0"
-            >
-              <path d="M12 19V5M5 12l7-7 7 7" />
-            </svg>
+            {/* The clip lives here, not on the button, so the button's
+                .hit-area reaches past its 36px edge. */}
+            <span className="inline-flex h-full w-full items-center justify-center overflow-hidden">
+              <svg
+                aria-hidden
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-4 w-4 shrink-0"
+              >
+                <path d="M12 19V5M5 12l7-7 7 7" />
+              </svg>
+            </span>
           </button>
         </div>
       </div>

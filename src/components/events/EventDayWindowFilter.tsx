@@ -49,7 +49,7 @@ export function EventDayWindowFilter({
               data-id={w.value}
               type="button"
               aria-pressed={active}
-              className={`interactive-focus flex-1 rounded-full py-1.5 font-medium transition-colors ${
+              className={`interactive-focus flex-1 rounded-full py-1.5 font-medium transition-colors coarse:min-h-11 ${
                 TEXT_SIZE_CLASS[layout]
               } ${active ? "text-ink" : "text-muted hover:text-ink"}`}
             >

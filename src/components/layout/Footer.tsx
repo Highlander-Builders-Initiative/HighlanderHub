@@ -49,14 +49,14 @@ export function Footer() {
           <p id="footer-site" className="text-[13px] font-medium text-muted">
             Site
           </p>
-          <ul className="mt-4 space-y-2 text-sm">
+          <ul className="mt-4 space-y-2 text-sm coarse:mt-1.5 coarse:space-y-0">
             {siteLinks.map((l) => {
               const SiteLink = l.href === "/events" ? EventsFeedLink : Link;
               return (
                 <li key={l.href}>
                   <SiteLink
                     href={l.href}
-                    className="interactive-focus text-ink/80 transition-colors hover:text-ink"
+                    className="interactive-focus text-ink/80 transition-colors hover:text-ink coarse:inline-flex coarse:min-h-11 coarse:items-center"
                   >
                     {l.label}
                   </SiteLink>
@@ -110,14 +110,14 @@ export function Footer() {
             <span className="hidden sm:inline text-ink/20" aria-hidden="true">·</span>
             <Link
               href="/privacy"
-              className="interactive-focus font-medium hover:text-ink transition-colors hover:underline underline-offset-4"
+              className="interactive-focus font-medium hover:text-ink transition-colors hover:underline underline-offset-4 coarse:inline-flex coarse:min-h-11 coarse:items-center"
             >
               Privacy Policy
             </Link>
             <span className="hidden sm:inline text-ink/20" aria-hidden="true">·</span>
             <Link
               href="/terms"
-              className="interactive-focus font-medium hover:text-ink transition-colors hover:underline underline-offset-4"
+              className="interactive-focus font-medium hover:text-ink transition-colors hover:underline underline-offset-4 coarse:inline-flex coarse:min-h-11 coarse:items-center"
             >
               Terms of Service
             </Link>

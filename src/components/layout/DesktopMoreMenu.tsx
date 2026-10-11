@@ -6,7 +6,7 @@ import { HbiLink } from "@/components/analytics/HbiLink";
 import { HBI_INSTAGRAM_URL } from "@/lib/hbi";
 
 const rowClass =
-  "interactive-focus flex min-h-9 w-full items-center justify-between gap-3 whitespace-nowrap rounded-xl px-3 text-left text-[14px] text-ink/80 hover:bg-ink/[0.04] hover:text-ink focus-visible:bg-ink/[0.04]";
+  "interactive-focus flex min-h-9 w-full coarse:min-h-11 items-center justify-between gap-3 whitespace-nowrap rounded-xl px-3 text-left text-[14px] text-ink/80 hover:bg-ink/[0.04] hover:text-ink focus-visible:bg-ink/[0.04]";
 const panelClass = "flex flex-col gap-1";
 
 /** The page footer's links, from lg, for the /events feed (see its page). */
