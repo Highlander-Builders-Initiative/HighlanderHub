@@ -4,6 +4,7 @@ Each source is independent. A failure in one shouldn't kill the others, so
 we log and keep going.
 
 Stages:
+  0. Gradually retire finished events and unreferenced old flyers.
   1. Collect Instagram feed posts through the Apify API.
   2. Extract cached post images with Google Vision OCR.
   3. Look up posts for events starting soon and withdraw deleted ones.
@@ -35,6 +36,7 @@ import extract_posts
 import reconcile_events
 import apify_posts
 import post_recheck
+import event_retention
 from config import DATA_DIR, load_account_meta
 from post_archive import ArchiveIndex
 
@@ -175,6 +177,7 @@ def _report(results: list[StageResult], total_seconds: float) -> None:
 
 
 def _run_stages(results: list[StageResult], *, resume_halted: bool) -> None:
+    _safe("events.retention", event_retention.main, results)
     # Apify failures do not invalidate already mirrored posts or their CDN URLs.
     # Continue OCR on the completed prefix even if dataset pagination stopped.
     posts = InstagramPosts()

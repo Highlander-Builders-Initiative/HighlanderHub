@@ -1,12 +1,29 @@
 # Event ingestion pipeline
 
-`python pipeline/run.py` runs five stages: Apify post collection, all-slide
+`python pipeline/run.py` runs gradual event retention, Apify post collection, all-slide
 Google Vision OCR, grounded Gemini event assessment/publication, and event
 reconciliation. Publication retains the existing evidence, deduplication,
 admin-lock, deletion and notification rules. Failed collection still processes
 the saved archive; partial collection permits extraction of newly saved posts.
 
 ## GitHub Actions: every eight hours
+
+Each run first deletes at most 50 oldest unlocked, non-manual events that ended
+more than 30 days ago (using the later of start/end). It then removes at most
+500 oldest unreferenced post flyers through the Storage API. Files and their
+posts must be at least 14 days old, their latest assessment must be complete,
+and every assessed occurrence/schedule must have finished at least 30 days ago.
+Completed announcements/applications without public listings are also eligible.
+Locked/current events, shared canonical listings, submissions, stories, and
+unresolved assessments protect their files. Other buckets are untouched.
+
+Apply `supabase/migrations/20261011000000_event_retention.sql` before deploying
+the worker. Retention has its own stage: a failure is reported while collection
+and publication continue, and leftover files retry next run. Source/OCR caches,
+checkpoints, admin deletion markers and notification history remain intact.
+Unchanged archives do not reupload retired files; edited posts check Storage
+and restore missing flyers without repeating OCR. Preview currently eligible
+files with `python pipeline/event_retention.py --dry-run` (no deletions).
 
 `.github/workflows/scrape.yml` schedules `0 */8 * * *`: **00:00, 08:00 and 16:00
 UTC**, with manual **Run workflow** support. GitHub schedules are best-effort.

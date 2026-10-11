@@ -255,9 +255,20 @@ def _cached_decision_still_applies(record: dict[str, Any], payload: Any) -> bool
 
 def _ensure_durable_flyer(record: dict[str, Any], slide: dict[str, Any],
                           entry: dict[str, Any], stats: Stats, *,
-                          cached_only: bool, image: bytes | None = None) -> dict[str, Any]:
+                          cached_only: bool, image: bytes | None = None,
+                          verify_stored: bool = False) -> dict[str, Any]:
     """Complete flyer storage independently of OCR, reusing bytes when available."""
-    if cached_only or entry.get("image_url"):
+    if cached_only:
+        return entry
+    if entry.get("image_url") and verify_stored:
+        # An edited old post may become relevant after its unused flyer was
+        # retired. Recover that file while preserving its paid OCR results.
+        path = _storage_object_path(record, str(slide.get("media_key") or record["media_id"]))
+        if path:
+            from db import client
+            if not client().storage.from_(DURABLE_FLYER_BUCKET).exists(path):
+                entry = {k: v for k, v in entry.items() if k != "image_url"}
+    if entry.get("image_url"):
         return entry
     recovery = image is None
     key = str(slide.get("media_key") or record["media_id"])
@@ -359,7 +370,8 @@ def process_post(record: dict[str, Any], stats: Stats | None = None, *,
                                   images + list(reusable.values()))
         prior = reusable.get(key)
         if prior is not None and prior.get("qr_scan_version") == QR_SCAN_VERSION:
-            entry = _ensure_durable_flyer(record, slide, prior, stats, cached_only=cached_only)
+            entry = _ensure_durable_flyer(record, slide, prior, stats, cached_only=cached_only,
+                                          verify_stored=True)
             images.append({**entry, "index": slide.get("index", len(images))})
             stats.bump("image_cache_hits")
             continue
@@ -408,7 +420,7 @@ def process_post(record: dict[str, Any], stats: Stats | None = None, *,
             entry["image_url"] = prior["image_url"]  # Stored already; not uploaded again.
         # Any slide can supply the cited evidence and become the event's flyer.
         entry = _ensure_durable_flyer(record, slide, entry, stats,
-                                      cached_only=cached_only, image=image)
+                                      cached_only=cached_only, image=image, verify_stored=True)
         images.append(entry)
         reusable[key] = entry
 

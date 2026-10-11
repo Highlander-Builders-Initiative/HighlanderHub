@@ -70,6 +70,11 @@ class PostExtractionTests(unittest.TestCase):
         self.qr = patch.object(posts, "qr_rsvp_urls", Mock(return_value=[]))
         self.qr.start()
         self.addCleanup(self.qr.stop)
+        storage = Mock()
+        storage.storage.from_.return_value.exists.return_value = True
+        stored = patch("db.client", return_value=storage)
+        self.storage = stored.start()
+        self.addCleanup(stored.stop)
 
     def ocr(self, *texts):
         return patch.object(posts, "_vision_ocr", Mock(side_effect=list(texts) * 20))
@@ -324,6 +329,17 @@ class PostExtractionTests(unittest.TestCase):
         self.assertNotEqual(first["fingerprint"], second["fingerprint"])
         self.assertEqual([entry["ocr_text"] for entry in posts.ordered_slides(first)],
                          [entry["ocr_text"] for entry in posts.ordered_slides(second)])
+
+    def test_edited_post_recovers_retired_flyer_without_repeating_ocr(self):
+        item = record(slides=1)
+        with self.ocr("Study Jam September 15") as vision:
+            posts.process_post(item)
+            self.storage.return_value.storage.from_.return_value.exists.return_value = False
+            edited = record(caption="New workshop on October 20", slides=1)
+            restored = posts.process_post(edited)
+        self.assertEqual(1, vision.call_count)
+        self.assertEqual(2, self.upload_flyer.call_count)
+        self.assertEqual("https://storage.example/flyer.jpg", restored["images"][0]["image_url"])
 
     def test_a_replaced_first_slide_is_read_again(self):
         item = record()
