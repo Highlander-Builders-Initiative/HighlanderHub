@@ -14,6 +14,7 @@ if str(PIPELINE_ROOT) not in sys.path:
     sys.path.insert(0, str(PIPELINE_ROOT))
 
 STAGE_ORDER = [
+    "events.retention",
     "instagram.posts.collect",
     "instagram.posts.extract",
     "instagram.recheck",
@@ -25,6 +26,7 @@ STAGE_ORDER = [
 class RunMainTests(unittest.TestCase):
     def setUp(self) -> None:
         self.stage_names = [
+            "event_retention",
             "extract_posts",
             "apify_posts",
             "reconcile_events",
@@ -44,6 +46,7 @@ class RunMainTests(unittest.TestCase):
         )
         # Stage name -> the mock the runner actually invokes for it.
         self.stage_mocks = {
+            "events.retention": self.fake_modules["event_retention"].main,
             "instagram.posts.collect": self.fake_modules["apify_posts"].main,
             "instagram.posts.extract": self.fake_modules["extract_posts"].extract_all,
             "instagram.recheck": self.fake_modules["post_recheck"].main,
@@ -102,6 +105,16 @@ class RunMainTests(unittest.TestCase):
         self.assertEqual(1, raised.exception.code)
         self.assertEqual(STAGE_ORDER, calls)
 
+
+    def test_retention_failure_does_not_stop_new_event_publication(self) -> None:
+        self.fake_modules["event_retention"].main.side_effect = RuntimeError("Storage unavailable")
+        with self.assertRaises(SystemExit):
+            self.run.main()
+        self.fake_modules["apify_posts"].main.assert_called_once()
+        self.fake_modules["extract_posts"].extract_all.assert_called_once()
+        self.fake_modules["assessed_events"].publish_posts.assert_called_once()
+        self.fake_modules["reconcile_events"].main.assert_called_once()
+        self.assertFalse(self._history()["stages"][0]["ok"])
 
     def test_summary_records_every_stage_and_names_the_broken_one(self) -> None:
         self.fake_modules["apify_posts"].main.side_effect = ValueError("page 2 exploded")
@@ -165,7 +178,7 @@ class RunMainTests(unittest.TestCase):
         with self.assertRaises(SystemExit):
             self.run.main()
         self.fake_modules["extract_posts"].extract_all.assert_called_once_with({"acm.ucr"}, cached_only=False, archive=ANY)
-        self.assertIn("continued past them", self._history()["stages"][0]["error"])
+        self.assertIn("continued past them", self._history()["stages"][1]["error"])
 
     def test_collection_resumes_halted_batches_only_when_requested(self) -> None:
         collect = self.fake_modules["apify_posts"].main
@@ -204,7 +217,7 @@ class RunMainTests(unittest.TestCase):
         self.assertEqual(completed, self.fake_modules["assessed_events"].publish_posts.call_args.args[0])
         report = json.loads(self.history.with_name("last_run.json").read_text())
         self.assertFalse(report["ok"])
-        self.assertIn("OCR timeout", report["stages"][1]["error"])
+        self.assertIn("OCR timeout", report["stages"][2]["error"])
         self.assertIn("run.py", report["resume"]["command"])
 
     def test_interruption_is_recorded_as_incomplete_instead_of_success(self):
@@ -213,7 +226,7 @@ class RunMainTests(unittest.TestCase):
             self.run.main()
         report = json.loads(self.history.with_name("last_run.json").read_text())
         self.assertFalse(report["ok"])
-        self.assertIn("interrupted", report["stages"][0]["error"])
+        self.assertIn("interrupted", report["stages"][1]["error"])
         self.fake_modules["extract_posts"].extract_all.assert_not_called()
 
     def test_failed_metadata_load_is_retried_by_publication(self) -> None:

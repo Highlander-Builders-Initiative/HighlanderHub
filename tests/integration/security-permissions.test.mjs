@@ -23,7 +23,8 @@ test('full migration history preserves public reads and denies client writes and
       create schema storage;
       create table storage.buckets (id text primary key, name text, public boolean,
         file_size_limit bigint, allowed_mime_types text[]);
-      create table storage.objects (bucket_id text, name text);
+      create table storage.objects (bucket_id text, name text, metadata jsonb,
+        created_at timestamptz default now(), updated_at timestamptz default now());
       alter table storage.objects enable row level security;
       grant usage on schema storage to anon, authenticated, service_role;
       grant all on storage.objects to anon, authenticated, service_role;
@@ -52,7 +53,7 @@ test('full migration history preserves public reads and denies client writes and
         where n.nspname='public' and has_function_privilege($1,p.oid,'EXECUTE')`, [role]);
       assert.deepEqual(rows, [], `${role} must not execute application RPCs`);
       await assert.rejects(asRole(role, `select check_admin_login_rate_limit($1)`, ['a'.repeat(64)]), { code: '42501' });
-      await assert.rejects(asRole(role, `insert into storage.objects values ('event-flyers','probe.jpg')`), { code: '42501' });
+      await assert.rejects(asRole(role, `insert into storage.objects(bucket_id,name) values ('event-flyers','probe.jpg')`), { code: '42501' });
       await asRole(role, 'select * from storage.objects');
     }
 
@@ -78,7 +79,7 @@ test('full migration history preserves public reads and denies client writes and
     await asRole('service_role', `update admin_login_attempts set reset_at=now()-interval '1 second' where key=$1`, [key]);
     assert.equal((await asRole('service_role', 'select check_admin_login_rate_limit($1) as result', [key])).rows[0].result.ok, true);
     await assert.rejects(asRole('service_role', 'select check_admin_login_rate_limit($1)', ['invalid']), /Invalid rate limit key/);
-    await asRole('service_role', `insert into storage.objects values ('event-flyers','allowed.jpg')`);
+    await asRole('service_role', `insert into storage.objects(bucket_id,name) values ('event-flyers','allowed.jpg')`);
     // Triggers still execute after revoking the client function grants.
     await asRole('service_role', `insert into story_extractions (story_id,handle,status) values ('probe','test','no_text')`);
     await asRole('service_role', `update story_extractions set handle='updated' where story_id='probe'`);
