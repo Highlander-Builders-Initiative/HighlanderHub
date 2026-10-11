@@ -2,6 +2,7 @@
 
 import { useRef } from "react";
 import { useDialogFocusTrap } from "@/components/ui/useDialogFocusTrap";
+import { useSheetSwipeDismiss } from "@/components/ui/useSheetSwipeDismiss";
 import { EventCategoryFilter } from "./EventCategoryFilter";
 import { EventDayWindowFilter } from "./EventDayWindowFilter";
 import { EventFeedSwitches } from "./EventFeedSwitches";
@@ -62,8 +63,17 @@ export function EventsMobileFilterSheet({
   resultCount,
 }: Props) {
   const panelRef = useRef<HTMLDivElement>(null);
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const backdropRef = useRef<HTMLButtonElement>(null);
 
   useDialogFocusTrap({ active: open, panelRef, onClose });
+  useSheetSwipeDismiss({
+    active: open,
+    panelRef,
+    scrollerRef,
+    backdropRef,
+    onDismiss: onClose,
+  });
 
   if (!open) return null;
 
@@ -76,6 +86,7 @@ export function EventsMobileFilterSheet({
     >
       {/* Backdrop */}
       <button
+        ref={backdropRef}
         type="button"
         aria-label="Close filters"
         onClick={onClose}
@@ -118,7 +129,10 @@ export function EventsMobileFilterSheet({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-5 py-5">
+        <div
+          ref={scrollerRef}
+          className="flex-1 overflow-y-auto overscroll-contain px-5 py-5"
+        >
           <div>
             <p className="pb-2 text-[12px] font-medium text-muted">Topics</p>
             <EventCategoryFilter

@@ -63,11 +63,14 @@ function settleTiming(distance: number, speed: number) {
  * an open animation that holds the panel's transform (fill: both).
  */
 export function useSheetSwipeDismiss({
+  active = true,
   panelRef,
   scrollerRef,
   backdropRef,
   onDismiss,
 }: {
+  /** Attach gestures while a conditionally rendered sheet is open. */
+  active?: boolean;
   panelRef: RefObject<HTMLElement | null>;
   /** The sheet's scrolling body: a pull starts only at its top. */
   scrollerRef: RefObject<HTMLElement | null>;
@@ -77,6 +80,7 @@ export function useSheetSwipeDismiss({
   onDismiss: () => void;
 }) {
   useEffect(() => {
+    if (!active) return;
     const panel = panelRef.current;
     const scroller = scrollerRef.current;
     if (!panel || !scroller) return;
@@ -216,10 +220,12 @@ export function useSheetSwipeDismiss({
     panel.addEventListener("touchend", onTouchEnd, { passive: true });
     panel.addEventListener("touchcancel", onTouchCancel, { passive: true });
     return () => {
+      stopSettling();
+      place(0);
       panel.removeEventListener("touchstart", onTouchStart);
       panel.removeEventListener("touchmove", onTouchMove);
       panel.removeEventListener("touchend", onTouchEnd);
       panel.removeEventListener("touchcancel", onTouchCancel);
     };
-  }, [panelRef, scrollerRef, backdropRef, onDismiss]);
+  }, [active, panelRef, scrollerRef, backdropRef, onDismiss]);
 }
