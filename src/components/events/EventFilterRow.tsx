@@ -10,8 +10,8 @@ export const FILTER_GROUP_CLASS = {
 } as const;
 
 const ROW_CLASS = {
-  rail: "rounded-xl px-3 py-2 text-[14px]",
-  grid: "rounded-xl px-3 py-2.5 text-[14px]",
+  rail: "rounded-xl px-3 py-2 text-[14px] coarse:min-h-11",
+  grid: "rounded-xl px-3 py-2.5 text-[14px] coarse:min-h-11",
 } as const;
 
 type EventFilterRowProps = {

@@ -101,7 +101,7 @@ export function EventsMobileFilterSheet({
             type="button"
             onClick={onClose}
             aria-label="Close filters"
-            className="interactive-focus inline-flex h-9 w-9 items-center justify-center rounded-md text-muted transition-colors hover:bg-ink/[0.04] hover:text-ink"
+            className="interactive-focus hit-area relative inline-flex h-9 w-9 items-center justify-center rounded-md text-muted transition-colors hover:bg-ink/[0.04] hover:text-ink"
           >
             <svg
               aria-hidden
@@ -176,14 +176,14 @@ export function EventsMobileFilterSheet({
             type="button"
             onClick={onClear}
             disabled={!hasActiveFilters}
-            className="interactive-focus text-[14px] font-medium text-ink underline-offset-4 transition-opacity hover:underline disabled:opacity-40 disabled:no-underline"
+            className="interactive-focus inline-flex min-h-11 items-center text-[14px] font-medium text-ink underline-offset-4 transition-opacity hover:underline disabled:opacity-40 disabled:no-underline"
           >
             Clear filters
           </button>
           <button
             type="button"
             onClick={onClose}
-            className="interactive-focus inline-flex min-h-10 items-center rounded-lg bg-ink px-5 py-2 text-[14px] font-medium text-canvas transition-opacity hover:opacity-85"
+            className="interactive-focus inline-flex min-h-11 items-center rounded-lg bg-ink px-5 py-2 text-[14px] font-medium tabular-nums text-canvas transition-opacity hover:opacity-85"
           >
             Show {resultCount} {resultCount === 1 ? "event" : "events"}
           </button>

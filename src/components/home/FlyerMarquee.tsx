@@ -364,13 +364,13 @@ function FlyerTileSet({
         <div
           key={`${event.id}-${decorative ? "duplicate" : "real"}-${i}`}
           data-marquee-tile=""
-          className="w-[160px] shrink-0 sm:w-[200px] md:w-[244px]"
+          className="w-[clamp(160px,80px+21.4vw,244px)] shrink-0"
         >
           <FlyerTile
             event={event}
             size="medium"
             aspectClassName="aspect-[4/5]"
-            sizes="(min-width: 768px) 244px, (min-width: 640px) 200px, 160px"
+            sizes="(min-width: 768px) 244px, calc(80px + 21.4vw)"
             decorative={decorative}
             hoverCaption
           />

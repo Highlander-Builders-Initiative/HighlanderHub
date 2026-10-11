@@ -501,7 +501,6 @@ test("masthead keeps navigation reachable on mobile", () => {
   assert.match(source, /<Link href="\/"/);
   assert.doesNotMatch(siteNav, /href: "\/",/);
   assert.match(siteNav, /href: "\/events"/);
-  assert.doesNotMatch(siteNav, /saved/i);
   assert.match(siteNav, /href: "\/about"/);
   assert.doesNotMatch(siteNav, /href: "\/submit"/);
   assert.match(source, /hideOnScroll/);

@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import plugin from "tailwindcss/plugin";
 
 const themeColor = (name: string) => `rgb(var(--color-${name}) / <alpha-value>)`;
 
@@ -12,6 +13,9 @@ const edgeInk = "rgb(var(--color-ink) / pow(<alpha-value>, var(--edge-alpha-curv
 const config: Config = {
   // `dark:` variants follow the device setting (prefers-color-scheme).
   darkMode: "media",
+  // `hover:` (and `group-hover:`) only where a real pointer can hover, so a
+  // tap on a phone does not leave the hover style stuck on.
+  future: { hoverOnlyWhenSupported: true },
   content: [
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -86,6 +90,10 @@ const config: Config = {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    // `coarse:` sizes up tightly packed controls (calendar, footer lists) to
+    // 44px on touch screens, where a .hit-area would overlap the neighbour.
+    plugin(({ addVariant }) => addVariant("coarse", "@media (pointer: coarse)")),
+  ],
 };
 export default config;

@@ -83,7 +83,7 @@ export function EventsMiniCalendar({
               type="button"
               data-id="today"
               onClick={() => onCursorChange(startOfPacificMonthKey(todayKey))}
-              className="interactive-focus inline-flex h-7 items-center rounded-md px-2.5 text-[12px] font-medium text-muted transition-colors hover:text-ink"
+              className="interactive-focus inline-flex h-7 items-center rounded-md px-2.5 text-[12px] font-medium text-muted transition-colors hover:text-ink coarse:h-11"
             >
               Today
             </button>
@@ -92,7 +92,7 @@ export function EventsMiniCalendar({
               data-id="prev"
               onClick={() => onCursorChange(addPacificMonths(cursor, -1))}
               aria-label="Previous month"
-              className="interactive-focus inline-flex h-7 w-7 items-center justify-center rounded-md text-muted transition-colors hover:text-ink"
+              className="interactive-focus inline-flex h-7 w-7 items-center justify-center rounded-md text-muted transition-colors hover:text-ink coarse:h-11 coarse:w-11"
             >
               ‹
             </button>
@@ -101,7 +101,7 @@ export function EventsMiniCalendar({
               data-id="next"
               onClick={() => onCursorChange(addPacificMonths(cursor, 1))}
               aria-label="Next month"
-              className="interactive-focus inline-flex h-7 w-7 items-center justify-center rounded-md text-muted transition-colors hover:text-ink"
+              className="interactive-focus inline-flex h-7 w-7 items-center justify-center rounded-md text-muted transition-colors hover:text-ink coarse:h-11 coarse:w-11"
             >
               ›
             </button>
@@ -157,7 +157,7 @@ export function EventsMiniCalendar({
                 }`}
                 aria-pressed={isSelected}
                 className={[
-                  "interactive-focus relative mx-auto flex h-9 w-9 items-center justify-center rounded-md text-[13px] transition-colors",
+                  "interactive-focus relative mx-auto flex h-9 w-9 items-center justify-center rounded-md text-[13px] transition-colors coarse:h-11 coarse:w-full coarse:max-w-11",
                   isSelected
                     ? "bg-ink text-canvas"
                     : inMonth

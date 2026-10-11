@@ -199,7 +199,7 @@ export default function AdminDashboardClient({
             <button
               type="button"
               onClick={() => setActionError(null)}
-              className="text-deep-coral hover:text-ink transition-colors outline-none font-bold"
+              className="text-deep-coral hover:text-ink transition-colors outline-none interactive-focus font-bold"
               aria-label="Dismiss error"
             >
               ×

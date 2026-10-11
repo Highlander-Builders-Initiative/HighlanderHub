@@ -167,14 +167,30 @@ body {
   box-shadow: 0 0 0 5px rgb(var(--color-canvas));
 }
 
-/* Card hover: the hairline edge darkens; nothing moves. */
+/* A 44px tap target around a control drawn smaller (WCAG 2.5.5). The control
+   must be positioned (relative or absolute) and must not clip its overflow.
+   Only for controls with room around them: in a tight row the area would
+   cover the neighbour, so size those up under the `coarse:` variant instead. */
+.hit-area::after {
+  content: "";
+  position: absolute;
+  inset: min(0px, (100% - 44px) / 2);
+}
+
+/* Card hover: the hairline edge darkens; nothing moves. Hover only where a
+   pointer can hover, so a tapped card does not stay dark on a phone. No
+   :focus-within: the overlay hands focus back to the card on close, which
+   would hold the dark edge after a click; :focus-visible covers keyboards. */
 .card-hover {
   transition: border-color 180ms ease;
 }
-.card-hover:hover,
-.card-hover:focus-visible,
-.card-hover:focus-within {
+.card-hover:focus-visible {
   border-color: rgb(var(--color-ink));
+}
+@media (hover: hover) and (pointer: fine) {
+  .card-hover:hover {
+    border-color: rgb(var(--color-ink));
+  }
 }
 
 /* Liquid glass: the /events filter bar's floating capsule (DESIGN.md, Sticky
