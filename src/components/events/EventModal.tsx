@@ -98,7 +98,7 @@ function EventModalDialog({ children, standalone }: { children: ReactNode; stand
         aria-labelledby={EVENT_MODAL_TITLE_ID}
         aria-label="Event details"
         tabIndex={-1}
-        className="event-modal-panel relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-[20px] bg-canvas shadow-[0_-8px_28px_rgba(15,17,21,0.08)] outline-none md:max-h-[calc(100dvh-4rem)] md:max-w-4xl md:rounded-[20px] md:shadow-[0_24px_40px_rgba(15,17,21,0.08)]"
+        className="event-modal-panel relative flex max-h-[92dvh] w-full flex-col overflow-clip rounded-t-[20px] bg-canvas shadow-sheet outline-none md:max-h-[calc(100dvh-4rem)] md:max-w-4xl md:rounded-[20px] md:shadow-dialog"
       >
         <button
           type="button"
@@ -106,7 +106,7 @@ function EventModalDialog({ children, standalone }: { children: ReactNode; stand
           aria-label="Close event"
           // The feed's secondary control: a neutral fill, no edge, like the
           // search bar's back-to-top circle.
-          className="interactive-focus hit-area absolute right-3 top-3 z-20 inline-flex h-10 w-10 items-center justify-center rounded-full bg-ink/[0.06] text-ink/70 transition-colors hover:bg-ink/10 hover:text-ink sm:right-4 sm:top-4"
+          className="interactive-focus press hit-area absolute right-3 top-3 z-20 inline-flex h-10 w-10 items-center justify-center rounded-full bg-ink/[0.06] text-ink/70 hover:bg-ink/10 hover:text-ink sm:right-4 sm:top-4"
         >
           <svg
             aria-hidden
@@ -134,16 +134,21 @@ function EventModalDialog({ children, standalone }: { children: ReactNode; stand
         /* Backwards, not both: a held fill would outrank the inline
            opacity the pull-to-close fades it with. */
         .event-modal-backdrop {
-          animation: event-modal-fade 200ms ease-out backwards;
+          animation: event-modal-fade 200ms var(--ease-out) backwards;
         }
+        /* The panel fades in; where motion is welcome it also slides up
+           (phones) or rises into place (md+). */
         .event-modal-panel {
-          animation: event-modal-sheet-up 280ms cubic-bezier(0.16, 1, 0.3, 1)
-            both;
+          animation: event-modal-fade 200ms var(--ease-out) both;
         }
-        @media (min-width: 768px) {
+        @media (prefers-reduced-motion: no-preference) {
           .event-modal-panel {
-            animation: event-modal-rise 220ms cubic-bezier(0.16, 1, 0.3, 1)
-              both;
+            animation: event-modal-sheet-up 280ms var(--ease-out) both;
+          }
+        }
+        @media (prefers-reduced-motion: no-preference) and (min-width: 768px) {
+          .event-modal-panel {
+            animation: event-modal-rise 220ms var(--ease-out) both;
           }
         }
         @keyframes event-modal-fade {

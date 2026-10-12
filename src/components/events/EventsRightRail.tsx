@@ -47,7 +47,7 @@ export function EventsRightRail({
 
       <div className="my-5 border-t border-ink/10" />
 
-      <p className="px-1 pb-2 text-[12px] font-medium text-muted">When</p>
+      <p className="px-1 pb-2 text-[0.75rem] font-medium text-muted">When</p>
 
       <EventDayWindowFilter
         layout="rail"

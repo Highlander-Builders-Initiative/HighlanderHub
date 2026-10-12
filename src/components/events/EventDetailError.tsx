@@ -22,17 +22,17 @@ export default function Error({
     <div className={EVENT_MODAL_CONTAINER_CLASS} aria-live="polite">
       <h2
         id={EVENT_MODAL_TITLE_ID}
-        className="pr-12 text-[24px] font-semibold tracking-[-0.015em] text-ink"
+        className="pr-12 text-[1.5rem] font-semibold tracking-[-0.015em] text-ink"
       >
         Something broke loading this event.
       </h2>
-      <p className="mt-3 text-[15px] text-ink/75">
+      <p className="mt-3 text-[0.9375rem] text-ink/75">
         Try again to reload the event details, date, location, and links.
       </p>
       <button
         type="button"
         onClick={reset}
-        className="interactive-focus mt-6 inline-flex min-h-11 items-center rounded-lg bg-ink px-5 py-2 text-sm font-medium text-canvas transition-opacity hover:opacity-85"
+        className="interactive-focus press mt-6 inline-flex min-h-11 items-center rounded-lg bg-ink px-5 py-2 text-sm font-medium text-canvas hover:opacity-85"
       >
         Try again
       </button>

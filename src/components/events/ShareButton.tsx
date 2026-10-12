@@ -68,7 +68,7 @@ export function ShareButton({
         type="button"
         onClick={handleShare}
         aria-label={state === "copied" ? "Link copied" : "Share"}
-        className="interactive-focus inline-flex min-h-12 min-w-12 items-center justify-center rounded-lg bg-ink/[0.06] text-ink transition-colors hover:bg-ink/10"
+        className="interactive-focus press inline-flex min-h-12 min-w-12 items-center justify-center rounded-lg bg-ink/[0.06] text-ink hover:bg-ink/10"
       >
         {state === "copied" ? (
           <svg
@@ -107,7 +107,7 @@ export function ShareButton({
     <button
       type="button"
       onClick={handleShare}
-      className="interactive-focus text-sm font-medium text-ink underline-offset-4 hover:underline"
+      className="interactive-focus press text-sm font-medium text-ink underline-offset-4 hover:underline"
     >
       {state === "copied" ? "Link copied" : "Share"}
     </button>

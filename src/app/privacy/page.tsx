@@ -23,7 +23,7 @@ export default function PrivacyPage() {
             href={HBI_ABOUT_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="font-medium text-ink underline decoration-ink/20 underline-offset-4 hover:decoration-ink"
+            className="font-medium text-ink underline decoration-ink/20 underline-offset-4 hover:decoration-ink active:opacity-70"
           >
             Highlander Builders Initiative (HBI)
           </a>
@@ -38,7 +38,7 @@ export default function PrivacyPage() {
       <div className="mt-12 space-y-10 text-base text-ink/80 leading-relaxed">
         
         {/* Section 1 */}
-        <section className="scroll-mt-24">
+        <section className="scroll-mt-10">
           <h2 className="font-display text-xl font-bold tracking-tight text-ink border-b border-ink/10 pb-2">
             1. Information Aggregation & Crawling
           </h2>
@@ -58,7 +58,7 @@ export default function PrivacyPage() {
         </section>
 
         {/* Section 2 */}
-        <section className="scroll-mt-24">
+        <section className="scroll-mt-10">
           <h2 className="font-display text-xl font-bold tracking-tight text-ink border-b border-ink/10 pb-2">
             2. Data Storage & Security
           </h2>
@@ -73,7 +73,7 @@ export default function PrivacyPage() {
         </section>
 
         {/* Section 3 */}
-        <section className="scroll-mt-24">
+        <section className="scroll-mt-10">
           <h2 className="font-display text-xl font-bold tracking-tight text-ink border-b border-ink/10 pb-2">
             3. Cookies & Web Analytics
           </h2>
@@ -93,7 +93,7 @@ export default function PrivacyPage() {
         </section>
 
         {/* Section 4 */}
-        <section className="scroll-mt-24">
+        <section className="scroll-mt-10">
           <h2 className="font-display text-xl font-bold tracking-tight text-ink border-b border-ink/10 pb-2">
             4. Corrections, Takedowns, & Opt-Out Rights
           </h2>
@@ -116,7 +116,7 @@ export default function PrivacyPage() {
                   href="https://www.instagram.com/hbi.ucr"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="underline decoration-ink/30 hover:decoration-ink transition-colors"
+                  className="underline decoration-ink/30 hover:decoration-ink transition-colors active:opacity-70"
                 >
                   Instagram @hbi.ucr
                 </a>
@@ -127,7 +127,7 @@ export default function PrivacyPage() {
                   href="https://discord.com/invite/QYCQwTTvfS"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="underline decoration-ink/30 hover:decoration-ink transition-colors"
+                  className="underline decoration-ink/30 hover:decoration-ink transition-colors active:opacity-70"
                 >
                   HBI Discord Server
                 </a>
@@ -137,7 +137,7 @@ export default function PrivacyPage() {
         </section>
 
         {/* Section 5 */}
-        <section className="scroll-mt-24">
+        <section className="scroll-mt-10">
           <h2 className="font-display text-xl font-bold tracking-tight text-ink border-b border-ink/10 pb-2">
             5. External Services & Affiliations
           </h2>

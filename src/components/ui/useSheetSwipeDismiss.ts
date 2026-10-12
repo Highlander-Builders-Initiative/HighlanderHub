@@ -49,6 +49,8 @@ function settleTiming(distance: number, speed: number) {
   );
   return {
     duration,
+    // --ease-drawer (globals.css), written out: Web Animations cannot read a
+    // CSS variable.
     easing: "cubic-bezier(0.32, 0.72, 0, 1)",
   };
 }

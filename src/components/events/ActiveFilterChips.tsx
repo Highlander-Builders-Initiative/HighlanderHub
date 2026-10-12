@@ -98,7 +98,7 @@ export function ActiveFilterChips({
       <button
         type="button"
         onClick={onClearAll}
-        className="interactive-focus ml-1 inline-flex min-h-11 items-center px-1 text-[13px] font-medium text-ink underline-offset-4 hover:underline"
+        className="interactive-focus press ml-1 inline-flex min-h-11 items-center px-1 text-[0.8125rem] font-medium text-ink underline-offset-4 hover:underline"
       >
         Clear all
       </button>
@@ -119,7 +119,7 @@ function Chip({ ariaLabel, onClick, dotClass, children }: ChipProps) {
       type="button"
       onClick={onClick}
       aria-label={ariaLabel}
-      className="interactive-focus group inline-flex min-h-11 max-w-full items-center gap-1.5 rounded-full border border-ink/15 bg-surface px-3.5 text-[13px] text-ink transition-colors hover:border-ink"
+      className="interactive-focus press group inline-flex min-h-11 max-w-full items-center gap-1.5 rounded-full border border-ink/15 bg-surface px-3.5 text-[0.8125rem] text-ink hover:border-ink"
     >
       {dotClass && (
         <span

@@ -12,6 +12,16 @@ const FOCUSABLE_SELECTOR = [
   "[tabindex]:not([tabindex='-1'])",
 ].join(",");
 
+function hasOpenPopover(panel: HTMLElement | null): boolean {
+  if (!panel) return false;
+  try {
+    return panel.querySelector(":popover-open") !== null;
+  } catch {
+    // A browser without popovers has no such selector, and no open popover.
+    return false;
+  }
+}
+
 type UseDialogFocusTrapArgs = {
   active: boolean;
   panelRef: RefObject<HTMLElement | null>;
@@ -63,6 +73,9 @@ export function useDialogFocusTrap({
 
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
+        // A popover open inside the panel (the calendar menu) takes this
+        // Escape: leave it uncancelled so the browser closes just the menu.
+        if (hasOpenPopover(panelRef.current)) return;
         e.preventDefault();
         onClose();
         return;

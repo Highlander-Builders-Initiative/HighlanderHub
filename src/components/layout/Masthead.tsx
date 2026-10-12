@@ -10,7 +10,7 @@ import { EventsFeedLink } from "@/components/events/EventsFeedLink";
 // The rest sit a step quieter so the marker reads at a glance. Links sit inline
 // at every width (no menu button), each a 44px-tall touch target.
 const NAV_LINK_CLASS =
-  "interactive-focus inline-flex min-h-11 items-center px-1 underline-offset-[6px] decoration-2 transition-colors";
+  "interactive-focus inline-flex min-h-11 items-center px-1 underline-offset-[6px] decoration-2 transition-colors active:opacity-70";
 const NAV_LINK_ACTIVE_CLASS = "text-ink underline";
 const NAV_LINK_IDLE_CLASS = "text-ink/60 hover:text-ink";
 
@@ -90,20 +90,20 @@ export function Masthead({
 
   return (
     <header
-      className={`${positionClass} z-50 ${surfaceClass} transition-transform duration-200 ease-out ${
+      className={`${positionClass} z-50 ${surfaceClass} duration-200 ease-out motion-safe:transition-transform ${
         hidden ? "-translate-y-full" : "translate-y-0"
       }`}
     >
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
-        <Link href="/" className="interactive-focus flex min-h-11 items-center gap-2.5">
-          <span className="font-display text-[18px] font-semibold tracking-[-0.04em] leading-none text-ink sm:text-[22px]">
+        <Link href="/" className="interactive-focus flex min-h-11 items-center gap-2.5 active:opacity-70">
+          <span className="font-display text-[1.125rem] font-semibold tracking-[-0.04em] leading-none text-ink sm:text-[1.375rem]">
             highlander<span className="text-muted">/</span>hub
           </span>
         </Link>
 
         <nav
           aria-label="Site"
-          className={`flex items-center gap-4 text-[13px] font-medium md:gap-5 md:text-sm ${
+          className={`flex items-center gap-4 text-[0.8125rem] font-medium md:gap-5 md:text-sm ${
             hideNavOnDesktop ? "lg:hidden" : ""
           }`}
         >

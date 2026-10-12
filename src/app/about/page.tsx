@@ -34,10 +34,10 @@ const HBI_DISCORD = "https://discord.com/invite/QYCQwTTvfS";
 const ACCOUNT_COUNT = TRACKED_ACCOUNT_COUNT.toLocaleString("en-US");
 
 const INLINE_LINK =
-  "interactive-focus font-medium text-ink underline decoration-ink/25 underline-offset-4 transition-colors hover:decoration-ink";
+  "interactive-focus font-medium text-ink underline decoration-ink/25 underline-offset-4 transition-colors hover:decoration-ink active:opacity-70";
 /** Every section heading on the page, at the feed title's size. */
 const SECTION_HEADING =
-  "font-display text-[28px] font-semibold leading-[1.05] tracking-[-0.025em] text-ink sm:text-[34px]";
+  "font-display text-[1.75rem] font-semibold leading-[1.05] tracking-[-0.025em] text-ink sm:text-[2.125rem]";
 
 /** A flyer that shows every step of the read: a picture, a host, a place and
  *  a topic. Deadlines are skipped; their card reads as a due date rather
@@ -134,11 +134,11 @@ export default async function AboutPage() {
       {/* What it is, in one headline and one paragraph. */}
       <section>
         <div className="mx-auto grid max-w-7xl gap-6 px-4 pb-14 pt-12 sm:px-6 md:pb-20 md:pt-20 lg:grid-cols-12 lg:items-end lg:gap-10">
-          <h1 className="max-w-[16ch] text-balance font-display text-[38px] font-semibold leading-[1.04] tracking-[-0.035em] text-ink sm:text-[48px] lg:col-span-7 lg:text-[56px]">
+          <h1 className="max-w-[16ch] text-balance font-display text-[2.375rem] font-semibold leading-[1.04] tracking-[-0.035em] text-ink sm:text-[3rem] lg:col-span-7 lg:text-[3.5rem]">
             We read club Instagram so you don&rsquo;t have to.
           </h1>
           <div className="lg:col-span-5">
-            <p className="max-w-xl text-[17px] leading-[1.55] text-ink/80 sm:text-[19px]">
+            <p className="max-w-xl text-[1.0625rem] leading-[1.55] text-ink/80 sm:text-[1.1875rem]">
               UCR clubs announce events on Instagram, across {ACCOUNT_COUNT}{" "}
               accounts, where a flyer scrolls out of sight in a day. Highlander
               Hub checks all of them, reads each new flyer, and lists the events
@@ -146,7 +146,7 @@ export default async function AboutPage() {
             </p>
             <EventsFeedLink
               href="/events"
-              className="interactive-focus group mt-7 inline-flex min-h-12 items-center gap-2 rounded-lg bg-ink px-6 py-3 text-sm font-medium text-canvas transition-opacity hover:opacity-85"
+              className="interactive-focus press group mt-7 inline-flex min-h-12 items-center gap-2 rounded-lg bg-ink px-6 py-3 text-sm font-medium text-canvas hover:opacity-85"
             >
               Browse events
               <svg
@@ -157,7 +157,7 @@ export default async function AboutPage() {
                 strokeWidth="1.6"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5"
+                className="h-4 w-4 duration-200 group-hover:translate-x-0.5 motion-safe:transition-transform"
               >
                 <path d="M3 8h10M9 4l4 4-4 4" />
               </svg>
@@ -189,10 +189,10 @@ export default async function AboutPage() {
                 key={q}
                 className="grid gap-2 border-b border-ink/10 py-5 md:py-6 lg:grid-cols-12 lg:gap-10"
               >
-                <dt className="text-[17px] font-semibold leading-snug tracking-[-0.01em] text-ink lg:col-span-5">
+                <dt className="text-[1.0625rem] font-semibold leading-snug tracking-[-0.01em] text-ink lg:col-span-5">
                   {q}
                 </dt>
-                <dd className="max-w-[60ch] text-[16px] leading-relaxed text-ink/75 lg:col-span-7">
+                <dd className="max-w-[60ch] text-[1rem] leading-relaxed text-ink/75 lg:col-span-7">
                   {a}
                 </dd>
               </div>
@@ -209,7 +209,7 @@ export default async function AboutPage() {
             <h2 id="clubs-heading" className={SECTION_HEADING}>
               Run a club?
             </h2>
-            <p className="mt-4 max-w-md text-[16px] leading-relaxed text-ink/75">
+            <p className="mt-4 max-w-md text-[1rem] leading-relaxed text-ink/75">
               Keep posting on Instagram. If your account is one of the{" "}
               {ACCOUNT_COUNT} we check, your flyers show up here on their own.
               Not on the list yet? Send us your handle and you&rsquo;ll be in
@@ -219,7 +219,7 @@ export default async function AboutPage() {
               href={HBI_INSTAGRAM_URL}
               location="about_page"
               channel="instagram"
-              className="interactive-focus mt-6 inline-flex min-h-12 items-center gap-2 rounded-lg border border-ink/15 bg-canvas px-5 py-3 text-sm font-medium text-ink transition-colors hover:border-ink"
+              className="interactive-focus press mt-6 inline-flex min-h-12 items-center gap-2 rounded-lg border border-ink/15 bg-canvas px-5 py-3 text-sm font-medium text-ink hover:border-ink"
             >
               <FaInstagram aria-hidden className="h-4 w-4" />
               DM @hbi.ucr
@@ -238,7 +238,7 @@ export default async function AboutPage() {
                 height={40}
                 className="mt-1 h-10 w-10 shrink-0"
               />
-              <p className="text-[16px] leading-relaxed text-ink/75">
+              <p className="text-[1rem] leading-relaxed text-ink/75">
                 <HbiLink
                   href={HBI_ABOUT_URL}
                   location="about_page"
@@ -252,7 +252,7 @@ export default async function AboutPage() {
                 them.
               </p>
             </div>
-            <p className="mt-6 pl-14 text-[16px] text-ink/75">
+            <p className="mt-6 pl-14 text-[1rem] text-ink/75">
               Want to build the next one?{" "}
               <HbiLink
                 href={HBI_DISCORD}

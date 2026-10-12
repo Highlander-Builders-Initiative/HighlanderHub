@@ -24,7 +24,7 @@ export function HeroHighlightCopy() {
           {index > 0 ? ", " : null}
           <Link
             href={item.href}
-            className={`interactive-focus font-medium underline decoration-ink/20 decoration-1 underline-offset-[5px] transition-colors hover:decoration-current ${item.text}`}
+            className={`interactive-focus font-medium underline decoration-ink/20 decoration-1 underline-offset-[5px] transition-colors hover:decoration-current ${item.text} active:opacity-70`}
           >
             {item.label}
           </Link>

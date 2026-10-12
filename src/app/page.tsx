@@ -48,13 +48,13 @@ export default async function HomePage() {
 
       {/* Hero: an editorial masthead over the living bulletin wall, with the
           campus skyline standing on the hairline that separates the two. */}
-      <section className="relative overflow-hidden border-b border-ink/10">
+      <section className="relative overflow-clip border-b border-ink/10">
         <div className="skyline-hero relative" data-daypart={daypart}>
           <CampusSkyline daypart={daypart} />
           <div className="skyline-copy relative mx-auto max-w-7xl px-4 pt-11 sm:px-6 md:pt-16">
             {/* Dateline: a campus-paper colophon. */}
             <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
-              <p className="text-[12px] text-muted">
+              <p className="text-[0.75rem] text-muted">
                 {dateLabel}
                 {weekLabel ? ` · ${weekLabel}` : ""}
               </p>
@@ -63,7 +63,7 @@ export default async function HomePage() {
                 href={HBI_ABOUT_URL}
                 location="hero"
                 channel="website"
-                className="interactive-focus group inline-flex items-center gap-2 md:mr-8 lg:mr-16"
+                className="interactive-focus group inline-flex items-center gap-2 md:mr-8 lg:mr-16 active:opacity-70"
               >
                 <FallbackImage
                   src="/logo_icon.png"
@@ -73,7 +73,7 @@ export default async function HomePage() {
                   aria-hidden
                   className="h-5 w-5 shrink-0 transition-transform"
                 />
-                <span className="text-[13px] text-muted transition-colors group-hover:text-ink">
+                <span className="text-[0.8125rem] text-muted transition-colors group-hover:text-ink">
                   Built by{" "}
                   <span className="font-medium text-ink">
                     Highlander Builders Initiative
@@ -83,7 +83,7 @@ export default async function HomePage() {
             </div>
 
             <h1
-              className="mt-8 max-w-[15ch] font-display text-[44px] font-semibold leading-[1.03] tracking-[-0.035em] text-ink sm:text-[56px] md:mt-10 md:text-[64px] lg:text-[72px]"
+              className="mt-8 max-w-[15ch] font-display text-[2.75rem] font-semibold leading-[1.03] tracking-[-0.035em] text-ink sm:text-[3.5rem] md:mt-10 md:text-[4rem] lg:text-[4.5rem]"
             >
               Every UCR event,
               <span className="block text-ink">one page.</span>
@@ -98,7 +98,7 @@ export default async function HomePage() {
             <div className="mt-6 md:mt-8">
               <EventsFeedLink
                 href="/events"
-                className="interactive-focus group inline-flex min-h-12 items-center gap-2 rounded-lg bg-ink px-6 py-3 text-sm font-medium text-canvas transition-opacity hover:opacity-85"
+                className="interactive-focus press group inline-flex min-h-12 items-center gap-2 rounded-lg bg-ink px-6 py-3 text-sm font-medium text-canvas hover:opacity-85"
               >
                 Browse events
                 <svg
@@ -109,7 +109,7 @@ export default async function HomePage() {
                   strokeWidth="1.6"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5"
+                  className="h-4 w-4 duration-200 group-hover:translate-x-0.5 motion-safe:transition-transform"
                 >
                   <path d="M3 8h10M9 4l4 4-4 4" />
                 </svg>
@@ -123,10 +123,10 @@ export default async function HomePage() {
         {/* The wall: a full-bleed, self-scrolling strip of real flyers. */}
         <div className="pt-4 pb-12 md:pt-6 md:pb-16">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
-            <p className="text-[13px] text-muted">Now on the wall</p>
+            <p className="text-[0.8125rem] text-muted">Now on the wall</p>
             <EventsFeedLink
               href={seeAll.href}
-              className="interactive-focus inline-flex min-h-11 items-center text-[13px] font-medium text-ink underline decoration-ink/25 underline-offset-4 transition-colors hover:decoration-ink"
+              className="interactive-focus inline-flex min-h-11 items-center text-[0.8125rem] font-medium text-ink underline decoration-ink/25 underline-offset-4 transition-colors hover:decoration-ink active:opacity-70"
             >
               {seeAll.label}
             </EventsFeedLink>
@@ -142,24 +142,24 @@ export default async function HomePage() {
         <div className="mx-auto grid max-w-7xl gap-6 px-4 py-16 sm:px-6 md:grid-cols-12 md:gap-10 md:py-24">
           <p
             id="editors-note"
-            className="text-[13px] text-muted md:col-span-3"
+            className="text-[0.8125rem] text-muted md:col-span-3"
           >
             Note from the editors
           </p>
           <div className="md:col-span-8 md:col-start-5">
-            <p className="text-[18px] leading-[1.5] text-ink sm:text-[20px] md:text-[22px]">
+            <p className="text-[1.125rem] leading-[1.5] text-ink sm:text-[1.25rem] md:text-[1.375rem]">
               We pull listings from club Instagram posts. One page instead of{" "}
               {TRACKED_ACCOUNT_COUNT.toLocaleString("en-US")} accounts to
               follow.
             </p>
-            <p className="mt-5 text-[15px] leading-relaxed text-muted sm:text-base">
+            <p className="mt-5 text-[0.9375rem] leading-relaxed text-muted sm:text-base">
               Run a club? Keep posting on Instagram like you already do. If
               we&rsquo;re missing you, DM{" "}
               <HbiLink
                 href={HBI_INSTAGRAM_URL}
                 location="editors_note"
                 channel="instagram"
-                className="interactive-focus font-medium text-ink underline decoration-ink/25 underline-offset-4 transition-colors hover:decoration-ink"
+                className="interactive-focus font-medium text-ink underline decoration-ink/25 underline-offset-4 transition-colors hover:decoration-ink active:opacity-70"
               >
                 @hbi.ucr
               </HbiLink>

@@ -9,7 +9,7 @@ import {
   markEventsDifferent,
 } from "../actions";
 import { useRouter } from "next/navigation";
-import { IoLogOut, IoOpenOutline, IoSearch } from "react-icons/io5";
+import { IoLogOutOutline, IoOpenOutline, IoSearchOutline } from "react-icons/io5";
 import Link from "next/link";
 import { formatDayShort, formatTimeParts } from "@/lib/dates";
 import { AdminLiveEventRow } from "../AdminLiveEventRow";
@@ -162,7 +162,7 @@ export default function AdminDashboardClient({
                 · Highlander Hub
               </span>
             </div>
-            <p className="text-[11px] text-muted font-sans truncate sm:max-w-none">
+            <p className="text-[0.6875rem] text-muted font-sans truncate sm:max-w-none">
               Manage live events
             </p>
           </div>
@@ -171,7 +171,7 @@ export default function AdminDashboardClient({
             <Link
               href="/events"
               target="_blank"
-              className="flex items-center gap-1.5 text-xs text-muted hover:text-ink transition-colors font-sans py-2 px-2.5 sm:px-3 hover:bg-surface border border-transparent hover:border-ink/5 rounded-md outline-none interactive-focus"
+              className="flex items-center gap-1.5 text-xs text-muted hover:text-ink font-sans py-2 px-2.5 sm:px-3 hover:bg-surface border border-transparent hover:border-ink/5 rounded-md outline-none interactive-focus press"
             >
               <IoOpenOutline size={15} aria-hidden />
               <span className="hidden sm:inline">View site</span>
@@ -179,9 +179,9 @@ export default function AdminDashboardClient({
             <button
               onClick={handleLogout}
               disabled={pendingAction?.type === "logout"}
-              className="flex items-center gap-1.5 text-xs text-muted hover:text-ink transition-colors font-sans py-2 px-2.5 sm:px-3 hover:bg-surface border border-transparent hover:border-ink/5 rounded-md outline-none interactive-focus disabled:opacity-50"
+              className="flex items-center gap-1.5 text-xs text-muted hover:text-ink font-sans py-2 px-2.5 sm:px-3 hover:bg-surface border border-transparent hover:border-ink/5 rounded-md outline-none interactive-focus press disabled:opacity-50"
             >
-              <IoLogOut size={15} aria-hidden />
+              <IoLogOutOutline size={15} aria-hidden />
               <span>Sign out</span>
             </button>
           </div>
@@ -199,7 +199,7 @@ export default function AdminDashboardClient({
             <button
               type="button"
               onClick={() => setActionError(null)}
-              className="text-deep-coral hover:text-ink transition-colors outline-none interactive-focus font-bold"
+              className="text-deep-coral hover:text-ink outline-none interactive-focus press font-bold"
               aria-label="Dismiss error"
             >
               ×
@@ -221,13 +221,13 @@ export default function AdminDashboardClient({
             <h2 className="font-display text-base font-semibold text-ink">
               Live events
             </h2>
-            <p className="text-[11px] text-muted">
+            <p className="text-[0.6875rem] text-muted">
               {initialEvents.length} on the public calendar
             </p>
           </div>
 
           <div className="relative max-w-md">
-            <IoSearch
+            <IoSearchOutline
               className="absolute left-3 top-1/2 -translate-y-1/2 text-muted/50 pointer-events-none"
               size={14}
               aria-hidden
@@ -237,7 +237,7 @@ export default function AdminDashboardClient({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by title, host, or location…"
-              className="w-full bg-canvas border border-ink/15 rounded-md pl-9 pr-3 py-2 text-sm placeholder:text-muted/40 transition-colors focus:border-ink outline-none interactive-focus"
+              className="w-full bg-canvas border border-ink/15 rounded-md pl-9 pr-3 py-2 text-base placeholder:text-muted/40 transition-colors focus:border-ink outline-none interactive-focus"
             />
           </div>
         </div>
@@ -307,7 +307,7 @@ export default function AdminDashboardClient({
           role="status"
           aria-live="polite"
         >
-          <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" aria-hidden>
+          <svg className="motion-safe:animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" aria-hidden>
             <circle
               className="opacity-25"
               cx="12"

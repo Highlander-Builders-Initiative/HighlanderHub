@@ -5,7 +5,7 @@ import { ClubAvatar } from "@/components/ui/ClubAvatar";
 import { FlyerPoster } from "@/components/events/FlyerPoster";
 
 const INLINE_LINK =
-  "interactive-focus font-medium text-ink underline decoration-ink/25 underline-offset-4 transition-colors hover:decoration-ink";
+  "interactive-focus font-medium text-ink underline decoration-ink/25 underline-offset-4 transition-colors hover:decoration-ink active:opacity-70";
 
 /**
  * The example as its club posted it: who posted it, then the flyer, whole.
@@ -32,9 +32,9 @@ export function PostedFlyer({
       <div className="flex items-center gap-2.5">
         <ClubAvatar handle={handle} name={host} size={32} />
         <p className="min-w-0 leading-tight">
-          <span className="block truncate text-[14px] font-semibold text-ink">{host}</span>
+          <span className="block truncate text-[0.875rem] font-semibold text-ink">{host}</span>
           {handle ? (
-            <span className="block truncate text-[13px] text-muted">@{handle}</span>
+            <span className="block truncate text-[0.8125rem] text-muted">@{handle}</span>
           ) : null}
         </p>
       </div>
@@ -56,7 +56,7 @@ export function PostedFlyer({
           href={sourceUrl}
           target="_blank"
           rel="noreferrer"
-          className={`${INLINE_LINK} mt-2 inline-flex min-h-11 items-center text-[14px]`}
+          className={`${INLINE_LINK} mt-2 inline-flex min-h-11 items-center text-[0.875rem]`}
         >
           View the post
         </a>

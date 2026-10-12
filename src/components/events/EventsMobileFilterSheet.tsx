@@ -98,11 +98,7 @@ export function EventsMobileFilterSheet({
       <div
         ref={panelRef}
         tabIndex={-1}
-        className="relative flex max-h-[88vh] flex-col rounded-t-2xl bg-canvas shadow-[0_-8px_28px_rgba(15,17,21,0.08)]"
-        style={{
-          animation:
-            "sheet-up 280ms cubic-bezier(0.16, 1, 0.3, 1) both",
-        }}
+        className="filter-sheet relative flex max-h-[88dvh] flex-col rounded-t-2xl bg-canvas shadow-sheet"
       >
         <div className="flex items-center justify-between border-b border-ink/10 px-5 py-3">
           <h2 className="text-lg font-semibold tracking-[-0.01em] text-ink">
@@ -112,7 +108,7 @@ export function EventsMobileFilterSheet({
             type="button"
             onClick={onClose}
             aria-label="Close filters"
-            className="interactive-focus hit-area relative inline-flex h-9 w-9 items-center justify-center rounded-md text-muted transition-colors hover:bg-ink/[0.04] hover:text-ink"
+            className="interactive-focus press hit-area relative inline-flex h-9 w-9 items-center justify-center rounded-md text-muted hover:bg-ink/[0.04] hover:text-ink"
           >
             <svg
               aria-hidden
@@ -134,7 +130,7 @@ export function EventsMobileFilterSheet({
           className="flex-1 overflow-y-auto overscroll-contain px-5 py-5"
         >
           <div>
-            <p className="pb-2 text-[12px] font-medium text-muted">Topics</p>
+            <p className="pb-2 text-[0.75rem] font-medium text-muted">Topics</p>
             <EventCategoryFilter
               layout="grid"
               category={category}
@@ -152,7 +148,7 @@ export function EventsMobileFilterSheet({
           </div>
 
           <div className="mt-6">
-            <p className="pb-2 text-[12px] font-medium text-muted">Hosted by</p>
+            <p className="pb-2 text-[0.75rem] font-medium text-muted">Hosted by</p>
             <EventHostGroupFilter
               layout="grid"
               hostGroup={facets.hostGroup}
@@ -162,7 +158,7 @@ export function EventsMobileFilterSheet({
           </div>
 
           <div className="mt-6">
-            <p className="pb-2 text-[12px] font-medium text-muted">When</p>
+            <p className="pb-2 text-[0.75rem] font-medium text-muted">When</p>
             <EventDayWindowFilter
               layout="sheet"
               dayWindow={dayWindow}
@@ -190,14 +186,14 @@ export function EventsMobileFilterSheet({
             type="button"
             onClick={onClear}
             disabled={!hasActiveFilters}
-            className="interactive-focus inline-flex min-h-11 items-center text-[14px] font-medium text-ink underline-offset-4 transition-opacity hover:underline disabled:opacity-40 disabled:no-underline"
+            className="interactive-focus press inline-flex min-h-11 items-center text-[0.875rem] font-medium text-ink underline-offset-4 hover:underline disabled:opacity-40 disabled:no-underline"
           >
             Clear filters
           </button>
           <button
             type="button"
             onClick={onClose}
-            className="interactive-focus inline-flex min-h-11 items-center rounded-lg bg-ink px-5 py-2 text-[14px] font-medium tabular-nums text-canvas transition-opacity hover:opacity-85"
+            className="interactive-focus press inline-flex min-h-11 items-center rounded-lg bg-ink px-5 py-2 text-[0.875rem] font-medium tabular-nums text-canvas hover:opacity-85"
           >
             Show {resultCount} {resultCount === 1 ? "event" : "events"}
           </button>
@@ -205,6 +201,23 @@ export function EventsMobileFilterSheet({
       </div>
 
       <style jsx>{`
+        /* Fades in; where motion is welcome it slides up from the edge. */
+        .filter-sheet {
+          animation: sheet-fade 200ms var(--ease-out) both;
+        }
+        @media (prefers-reduced-motion: no-preference) {
+          .filter-sheet {
+            animation: sheet-up 280ms var(--ease-out) both;
+          }
+        }
+        @keyframes sheet-fade {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
         @keyframes sheet-up {
           from {
             transform: translateY(100%);

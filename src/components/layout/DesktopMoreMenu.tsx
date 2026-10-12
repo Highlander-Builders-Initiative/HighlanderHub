@@ -6,7 +6,7 @@ import { HbiLink } from "@/components/analytics/HbiLink";
 import { HBI_INSTAGRAM_URL } from "@/lib/hbi";
 
 const rowClass =
-  "interactive-focus flex min-h-9 w-full coarse:min-h-11 items-center justify-between gap-3 whitespace-nowrap rounded-xl px-3 text-left text-[14px] text-ink/80 hover:bg-ink/[0.04] hover:text-ink focus-visible:bg-ink/[0.04]";
+  "interactive-focus flex min-h-9 w-full coarse:min-h-11 items-center justify-between gap-3 whitespace-nowrap rounded-xl px-3 text-left text-[0.875rem] text-ink/80 hover:bg-ink/[0.04] hover:text-ink focus-visible:bg-ink/[0.04] active:bg-ink/[0.06]";
 const panelClass = "flex flex-col gap-1";
 
 /** The page footer's links, from lg, for the /events feed (see its page). */
@@ -103,7 +103,7 @@ export function DesktopMoreMenu() {
             aria-expanded={open}
             aria-controls="desktop-more-links"
             onClick={() => { if (open) close(); else setOpen(true); }}
-            className={`interactive-focus flex min-h-11 items-center gap-2 px-1 text-sm font-medium transition-colors ${
+            className={`interactive-focus press flex min-h-11 items-center gap-2 px-1 text-sm font-medium ${
               open ? "text-ink" : "text-ink/60 hover:text-ink"
             }`}
           >

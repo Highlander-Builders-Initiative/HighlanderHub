@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { IoClose } from "react-icons/io5";
+import { IoCloseOutline } from "react-icons/io5";
 import { EVENT_CATEGORIES, EVENT_CATEGORY_LABELS } from "@/types/event";
 import type {
   AdminEventEditForm,
@@ -31,7 +31,7 @@ export function AdminEventEditDrawer({
                 <h3 className="font-display text-lg font-semibold text-ink leading-tight">
                   Edit event
                 </h3>
-                <p className="text-[11px] font-sans text-muted mt-1 leading-normal">
+                <p className="text-[0.6875rem] font-sans text-muted mt-1 leading-normal">
                   Saving locks this listing so automated imports won&apos;t overwrite your
                   changes.
                 </p>
@@ -39,87 +39,87 @@ export function AdminEventEditDrawer({
               <button
                 type="button"
                 onClick={onClose}
-                className="p-2 text-muted hover:text-ink transition-colors rounded-md outline-none interactive-focus"
+                className="p-2 text-muted hover:text-ink rounded-md outline-none interactive-focus press"
               >
-                <IoClose size={20} />
+                <IoCloseOutline size={20} />
               </button>
             </header>
 
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <label className="block text-[12px] font-sans text-muted">Event Title</label>
+                <label className="block text-[0.75rem] font-sans text-muted">Event Title</label>
                 <input
                   type="text"
                   value={form.title}
                   onChange={(e) => setField("title", e.target.value)}
                   required
-                  className="w-full bg-canvas text-ink border border-ink/15 rounded-md py-2 px-3 text-sm focus:border-ink outline-none interactive-focus transition-colors"
+                  className="w-full bg-canvas text-ink border border-ink/15 rounded-md py-2 px-3 text-base focus:border-ink outline-none interactive-focus transition-colors"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="block text-[12px] font-sans text-muted">Description</label>
+                <label className="block text-[0.75rem] font-sans text-muted">Description</label>
                 <textarea
                   value={form.description}
                   onChange={(e) => setField("description", e.target.value)}
                   rows={4}
-                  className="w-full bg-canvas text-ink border border-ink/15 rounded-md py-2 px-3 text-sm focus:border-ink outline-none interactive-focus transition-colors resize-y font-sans leading-relaxed"
+                  className="w-full bg-canvas text-ink border border-ink/15 rounded-md py-2 px-3 text-base focus:border-ink outline-none interactive-focus transition-colors resize-y font-sans leading-relaxed"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4 select-none">
                 <div className="space-y-1.5">
-                  <label className="block text-[12px] font-sans text-muted">Starts At</label>
+                  <label className="block text-[0.75rem] font-sans text-muted">Starts At</label>
                   <input
                     type="datetime-local"
                     value={form.startsAt}
                     onChange={(e) => setField("startsAt", e.target.value)}
                     required
-                    className="w-full bg-canvas text-ink border border-ink/15 rounded-md py-2 px-3 text-sm focus:border-ink outline-none interactive-focus transition-colors"
+                    className="w-full bg-canvas text-ink border border-ink/15 rounded-md py-2 px-3 text-base focus:border-ink outline-none interactive-focus transition-colors"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="block text-[12px] font-sans text-muted">Ends At (Optional)</label>
+                  <label className="block text-[0.75rem] font-sans text-muted">Ends At (Optional)</label>
                   <input
                     type="datetime-local"
                     value={form.endsAt}
                     onChange={(e) => setField("endsAt", e.target.value)}
-                    className="w-full bg-canvas text-ink border border-ink/15 rounded-md py-2 px-3 text-sm focus:border-ink outline-none interactive-focus transition-colors"
+                    className="w-full bg-canvas text-ink border border-ink/15 rounded-md py-2 px-3 text-base focus:border-ink outline-none interactive-focus transition-colors"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="block text-[12px] font-sans text-muted">Location</label>
+                  <label className="block text-[0.75rem] font-sans text-muted">Location</label>
                   <input
                     type="text"
                     value={form.location}
                     onChange={(e) => setField("location", e.target.value)}
                     required
-                    className="w-full bg-canvas text-ink border border-ink/15 rounded-md py-2 px-3 text-sm focus:border-ink outline-none interactive-focus transition-colors"
+                    className="w-full bg-canvas text-ink border border-ink/15 rounded-md py-2 px-3 text-base focus:border-ink outline-none interactive-focus transition-colors"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="block text-[12px] font-sans text-muted">Host Organizer</label>
+                  <label className="block text-[0.75rem] font-sans text-muted">Host Organizer</label>
                   <input
                     type="text"
                     value={form.host}
                     onChange={(e) => setField("host", e.target.value)}
                     required
-                    className="w-full bg-canvas text-ink border border-ink/15 rounded-md py-2 px-3 text-sm focus:border-ink outline-none interactive-focus transition-colors"
+                    className="w-full bg-canvas text-ink border border-ink/15 rounded-md py-2 px-3 text-base focus:border-ink outline-none interactive-focus transition-colors"
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <label className="block text-[12px] font-sans text-muted">
+                <label className="block text-[0.75rem] font-sans text-muted">
                   Listing type
                 </label>
                 <select
                   value={form.contentKind}
                   onChange={(e) => setField("contentKind", e.target.value)}
-                  className="w-full bg-canvas text-ink border border-ink/15 rounded-md py-2 px-3 text-sm focus:border-ink outline-none interactive-focus transition-colors"
+                  className="w-full bg-canvas text-ink border border-ink/15 rounded-md py-2 px-3 text-base focus:border-ink outline-none interactive-focus transition-colors"
                 >
                   <option value="student_event">Event</option>
                   <option value="student_deadline">Deadline</option>
@@ -129,7 +129,7 @@ export function AdminEventEditDrawer({
                   <option value="fundraiser">Fundraiser (hidden from public)</option>
                   <option value="other">Other (hidden from public)</option>
                 </select>
-                <p className="text-[11px] font-sans text-muted leading-normal">
+                <p className="text-[0.6875rem] font-sans text-muted leading-normal">
                   Only Event and Deadline appear on the public feed. Use
                   Application / Fundraiser / Other to correct a misclassified
                   import.
@@ -138,11 +138,11 @@ export function AdminEventEditDrawer({
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="block text-[12px] font-sans text-muted">Category</label>
+                  <label className="block text-[0.75rem] font-sans text-muted">Category</label>
                   <select
                     value={form.category}
                     onChange={(e) => setField("category", e.target.value)}
-                    className="w-full bg-canvas text-ink border border-ink/15 rounded-md py-2 px-3 text-sm focus:border-ink outline-none interactive-focus transition-colors"
+                    className="w-full bg-canvas text-ink border border-ink/15 rounded-md py-2 px-3 text-base focus:border-ink outline-none interactive-focus transition-colors"
                   >
                     {EVENT_CATEGORIES.map((value) => (
                       <option key={value} value={value}>
@@ -152,34 +152,34 @@ export function AdminEventEditDrawer({
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="block text-[12px] font-sans text-muted">IG Handle (Optional)</label>
+                  <label className="block text-[0.75rem] font-sans text-muted">IG Handle (Optional)</label>
                   <input
                     type="text"
                     value={form.hostHandle}
                     onChange={(e) => setField("hostHandle", e.target.value)}
                     placeholder="acm.ucr"
-                    className="w-full bg-canvas text-ink border border-ink/15 rounded-md py-2 px-3 text-sm focus:border-ink outline-none interactive-focus transition-colors"
+                    className="w-full bg-canvas text-ink border border-ink/15 rounded-md py-2 px-3 text-base focus:border-ink outline-none interactive-focus transition-colors"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="block text-[12px] font-sans text-muted">Flyer Image URL (Optional)</label>
+                  <label className="block text-[0.75rem] font-sans text-muted">Flyer Image URL (Optional)</label>
                   <input
                     type="text"
                     value={form.imageUrl}
                     onChange={(e) => setField("imageUrl", e.target.value)}
-                    className="w-full bg-canvas text-ink border border-ink/15 rounded-md py-2 px-3 text-sm focus:border-ink outline-none interactive-focus transition-colors"
+                    className="w-full bg-canvas text-ink border border-ink/15 rounded-md py-2 px-3 text-base focus:border-ink outline-none interactive-focus transition-colors"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="block text-[12px] font-sans text-muted">RSVP Link (Optional)</label>
+                  <label className="block text-[0.75rem] font-sans text-muted">RSVP Link (Optional)</label>
                   <input
                     type="text"
                     value={form.rsvpUrl}
                     onChange={(e) => setField("rsvpUrl", e.target.value)}
-                    className="w-full bg-canvas text-ink border border-ink/15 rounded-md py-2 px-3 text-sm focus:border-ink outline-none interactive-focus transition-colors"
+                    className="w-full bg-canvas text-ink border border-ink/15 rounded-md py-2 px-3 text-base focus:border-ink outline-none interactive-focus transition-colors"
                   />
                 </div>
               </div>
@@ -211,14 +211,14 @@ export function AdminEventEditDrawer({
             <button
               type="submit"
               disabled={isPending}
-              className="flex-1 min-h-11 bg-ink hover:bg-ink/90 text-canvas text-xs font-semibold rounded-md transition-colors outline-none interactive-focus"
+              className="flex-1 min-h-11 bg-ink hover:bg-ink/90 text-canvas text-xs font-semibold rounded-md outline-none interactive-focus press"
             >
               Save changes
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="px-6 min-h-11 border border-ink/10 hover:bg-ink/5 text-muted hover:text-ink text-xs font-semibold rounded-md transition-colors outline-none interactive-focus"
+              className="px-6 min-h-11 border border-ink/10 hover:bg-ink/5 text-muted hover:text-ink text-xs font-semibold rounded-md outline-none interactive-focus press"
             >
               Cancel
             </button>

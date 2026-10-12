@@ -16,6 +16,8 @@ export function EventsNavSkeleton() {
   if (!pending) return null;
 
   return (
+    // overflow-hidden, not clip: this is the scroll container the skeleton's
+    // sticky rails stick to, as the real page's would to the viewport.
     <div
       data-events-nav-skeleton
       className="nav-skeleton fixed inset-0 z-[60] overflow-hidden bg-surface"

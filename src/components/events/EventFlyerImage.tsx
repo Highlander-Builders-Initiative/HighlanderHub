@@ -93,7 +93,7 @@ export function EventFlyerImage({
         backgroundRepeat: "no-repeat",
       }
     : style;
-  const fadeClassName = `transition-opacity duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]${
+  const fadeClassName = `transition-opacity duration-300 ease-out-expo${
     hidden ? " opacity-0" : ""
   }`;
   const handleLoad = (img: HTMLImageElement) => {

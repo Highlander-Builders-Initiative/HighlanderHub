@@ -55,8 +55,8 @@ export function RouteErrorPage({ error, reset, variant }: RouteErrorPageProps) {
 
       <section className="border-b border-ink/10">
         <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 md:py-24">
-          <p className="text-[13px] text-muted">{content.label}</p>
-          <h1 className="mt-4 font-display text-[34px] font-semibold leading-[1.05] tracking-[-0.03em] text-ink md:text-5xl">
+          <p className="text-[0.8125rem] text-muted">{content.label}</p>
+          <h1 className="mt-4 font-display text-[2.125rem] font-semibold leading-[1.05] tracking-[-0.03em] text-ink md:text-5xl">
             {content.title}
           </h1>
           <p aria-live="polite" className="mt-3 max-w-xl text-base text-ink/70">
@@ -65,7 +65,7 @@ export function RouteErrorPage({ error, reset, variant }: RouteErrorPageProps) {
           <button
             type="button"
             onClick={reset}
-            className="interactive-focus mt-8 inline-flex min-h-12 items-center rounded-lg bg-ink px-5 py-3 text-sm font-medium text-canvas transition-opacity hover:opacity-85"
+            className="interactive-focus press mt-8 inline-flex min-h-12 items-center rounded-lg bg-ink px-5 py-3 text-sm font-medium text-canvas hover:opacity-85"
           >
             Try again
           </button>

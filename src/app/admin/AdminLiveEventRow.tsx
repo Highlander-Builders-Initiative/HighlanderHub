@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { IoPencil, IoTrash } from "react-icons/io5";
+import { IoPencilOutline, IoTrashOutline } from "react-icons/io5";
 import { EventListRowTimeColumn } from "@/components/events/EventListRowTimeColumn";
 import { FlyerPoster } from "@/components/events/FlyerPoster";
 import { eventRowToCampusEvent } from "@/lib/events/map-event-row";
@@ -27,13 +27,13 @@ export function AdminLiveEventRow({
   const showImage = Boolean(campusEvent.imageUrl) && !imageBroken;
 
   return (
-    <article className="bg-canvas border border-ink/10 rounded-xl shadow-card hover:border-ink/25 transition-all overflow-hidden flex flex-col sm:flex-row sm:items-stretch">
+    <article className="bg-canvas border border-ink/10 rounded-xl shadow-card hover:border-ink/25 transition-colors overflow-clip flex flex-col sm:flex-row sm:items-stretch">
       <div className="flex flex-1 min-w-0 min-h-[6rem]">
         <EventListRowTimeColumn
           startsAt={campusEvent.startsAt}
           category={campusEvent.category}
           prefix={
-            <span className="text-[10px] text-muted tabular-nums mb-1">
+            <span className="text-[0.625rem] text-muted tabular-nums mb-1">
               #{feedIndex + 1}
             </span>
           }
@@ -49,14 +49,14 @@ export function AdminLiveEventRow({
               src={campusEvent.imageUrl!}
               alt={`${campusEvent.title} flyer`}
               width={80}
-              className="rounded bg-ink/[0.05] shadow-[0_1px_2px_rgba(15,17,21,0.06),0_3px_8px_-2px_rgba(15,17,21,0.08)] ring-1 ring-ink/10"
+              className="rounded bg-ink/[0.05] shadow-flyer ring-1 ring-ink/10"
               onError={() => setImageBroken(true)}
             />
           </div>
         ) : (
           <div className="my-2 ml-3 h-[100px] w-[80px] shrink-0 self-center">
             <div
-              className="flex h-full w-full items-center justify-center rounded border border-dashed border-ink/15 bg-surface text-[9px] font-sans text-muted text-center px-1 leading-tight"
+              className="flex h-full w-full items-center justify-center rounded border border-dashed border-ink/15 bg-surface text-[0.5625rem] font-sans text-muted text-center px-1 leading-tight"
               aria-label="No flyer image"
             >
               No flyer
@@ -66,14 +66,14 @@ export function AdminLiveEventRow({
 
         <div className="min-w-0 flex-1 py-3 pr-3 pl-3 sm:pl-4">
           <div className="flex flex-wrap items-center gap-2 mb-1">
-            <span className="bg-ink/5 border border-ink/10 text-muted text-[9px] px-1 py-0.5 rounded font-semibold uppercase">
+            <span className="bg-ink/5 border border-ink/10 text-muted text-[0.5625rem] px-1 py-0.5 rounded font-semibold uppercase tracking-[0.08em]">
               {event.source}
             </span>
-            <span className="text-[10px] text-muted">
+            <span className="text-[0.625rem] text-muted">
               {formatDate(event.starts_at)}
             </span>
             {event.is_locked && (
-              <span className="bg-gold/10 border border-gold/20 text-deep-gold text-[9px] px-1 py-0.5 rounded font-semibold">
+              <span className="bg-gold/10 border border-gold/20 text-deep-gold text-[0.5625rem] px-1 py-0.5 rounded font-semibold">
                 Locked
               </span>
             )}
@@ -97,18 +97,18 @@ export function AdminLiveEventRow({
           type="button"
           onClick={onEdit}
           disabled={isActionPending}
-          className="flex-1 sm:flex-none min-h-9 px-3 border border-ink/10 hover:bg-ink/5 text-muted hover:text-ink rounded-md transition-all outline-none interactive-focus flex items-center justify-center gap-1.5 text-xs font-semibold disabled:opacity-50"
+          className="flex-1 sm:flex-none min-h-9 px-3 border border-ink/10 hover:bg-ink/5 text-muted hover:text-ink rounded-md outline-none interactive-focus press flex items-center justify-center gap-1.5 text-xs font-semibold disabled:opacity-50"
         >
-          <IoPencil size={14} aria-hidden />
+          <IoPencilOutline size={14} aria-hidden />
           <span>Edit</span>
         </button>
         <button
           type="button"
           onClick={onDelete}
           disabled={isActionPending}
-          className="flex-1 sm:flex-none min-h-9 px-3 border border-coral/20 hover:bg-coral/5 text-muted hover:text-deep-coral rounded-md transition-all outline-none interactive-focus flex items-center justify-center gap-1.5 text-xs font-semibold disabled:opacity-50"
+          className="flex-1 sm:flex-none min-h-9 px-3 border border-coral/20 hover:bg-coral/5 text-muted hover:text-deep-coral rounded-md outline-none interactive-focus press flex items-center justify-center gap-1.5 text-xs font-semibold disabled:opacity-50"
         >
-          <IoTrash size={14} aria-hidden />
+          <IoTrashOutline size={14} aria-hidden />
           <span>Delete</span>
         </button>
       </div>

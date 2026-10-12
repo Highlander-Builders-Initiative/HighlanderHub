@@ -46,7 +46,7 @@ export function Footer() {
 
         {/* Site */}
         <nav aria-labelledby="footer-site" className="md:col-span-3">
-          <p id="footer-site" className="text-[13px] font-medium text-muted">
+          <p id="footer-site" className="text-[0.8125rem] font-medium text-muted">
             Site
           </p>
           <ul className="mt-4 space-y-2 text-sm coarse:mt-1.5 coarse:space-y-0">
@@ -68,7 +68,7 @@ export function Footer() {
 
         {/* Connect */}
         <div className="md:col-span-4">
-          <p id="footer-connect" className="text-[13px] font-medium text-muted">
+          <p id="footer-connect" className="text-[0.8125rem] font-medium text-muted">
             Connect
           </p>
           <div
@@ -82,7 +82,7 @@ export function Footer() {
                 ariaLabel={label}
                 location="footer_social"
                 channel={channel}
-                className="interactive-focus flex h-11 w-11 items-center justify-center rounded-lg border border-ink/15 text-ink transition-colors hover:border-ink hover:bg-ink hover:text-canvas"
+                className="interactive-focus press flex h-11 w-11 items-center justify-center rounded-lg border border-ink/15 text-ink hover:border-ink hover:bg-ink hover:text-canvas"
               >
                 <Icon aria-hidden="true" className="h-5 w-5" />
               </HbiLink>
@@ -94,7 +94,7 @@ export function Footer() {
               href={HBI_ABOUT_URL}
               location="footer_credit"
               channel="website"
-              className="interactive-focus font-medium text-ink underline-offset-4 hover:underline"
+              className="interactive-focus font-medium text-ink underline-offset-4 hover:underline active:opacity-70"
             >
               Highlander Builders Initiative
             </HbiLink>
@@ -110,14 +110,14 @@ export function Footer() {
             <span className="hidden sm:inline text-ink/20" aria-hidden="true">·</span>
             <Link
               href="/privacy"
-              className="interactive-focus font-medium hover:text-ink transition-colors hover:underline underline-offset-4 coarse:inline-flex coarse:min-h-11 coarse:items-center"
+              className="interactive-focus font-medium hover:text-ink transition-colors hover:underline underline-offset-4 coarse:inline-flex coarse:min-h-11 coarse:items-center active:opacity-70"
             >
               Privacy Policy
             </Link>
             <span className="hidden sm:inline text-ink/20" aria-hidden="true">·</span>
             <Link
               href="/terms"
-              className="interactive-focus font-medium hover:text-ink transition-colors hover:underline underline-offset-4 coarse:inline-flex coarse:min-h-11 coarse:items-center"
+              className="interactive-focus font-medium hover:text-ink transition-colors hover:underline underline-offset-4 coarse:inline-flex coarse:min-h-11 coarse:items-center active:opacity-70"
             >
               Terms of Service
             </Link>

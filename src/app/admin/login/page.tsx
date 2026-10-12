@@ -37,7 +37,7 @@ export default function AdminLoginPage() {
   return (
     <main className="min-h-screen bg-surface flex flex-col items-center justify-center p-4 sm:p-6 select-none">
       {/* Visual background accents - very minimal */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-5 flex items-center justify-center">
+      <div className="absolute inset-0 pointer-events-none overflow-clip opacity-5 flex items-center justify-center">
         <span className="font-display text-[20vw] font-bold text-ink select-none tracking-tighter">
           UCR
         </span>
@@ -45,7 +45,7 @@ export default function AdminLoginPage() {
 
       <div className="w-full max-w-[420px] bg-canvas border border-ink/10 rounded-xl p-8 shadow-card animate-fade-up relative z-10">
         <header className="mb-8">
-          <div className="flex items-center gap-1 text-[11px] text-muted uppercase mb-2">
+          <div className="flex items-center gap-1 text-[0.6875rem] uppercase tracking-[0.08em] text-muted mb-2">
             <span>Highlander Builders Initiative</span>
             <span className="text-coral">·</span>
             <span>HBI</span>
@@ -62,7 +62,7 @@ export default function AdminLoginPage() {
           <div className="space-y-2">
             <label
               htmlFor="password"
-              className="block text-[13px] font-sans text-muted"
+              className="block text-[0.8125rem] font-sans text-muted"
             >
               Admin password
             </label>
@@ -81,7 +81,7 @@ export default function AdminLoginPage() {
 
           {error && (
             <div className="p-3.5 bg-coral/10 border border-deep-coral/20 rounded-md animate-field-reveal">
-              <p className="text-[13px] text-deep-coral leading-normal font-sans">
+              <p className="text-[0.8125rem] text-deep-coral leading-normal font-sans">
                 {error}
               </p>
             </div>
@@ -90,12 +90,12 @@ export default function AdminLoginPage() {
           <button
             type="submit"
             disabled={isPending}
-            className="w-full min-h-12 bg-ink text-canvas rounded-md font-sans text-sm font-semibold hover:bg-ink/90 active:scale-[0.99] transition-all flex items-center justify-center gap-2 interactive-focus outline-none disabled:opacity-50"
+            className="w-full min-h-12 bg-ink text-canvas rounded-md font-sans text-sm font-semibold hover:bg-ink/90 flex items-center justify-center gap-2 interactive-focus press outline-none disabled:opacity-50"
           >
             {isPending ? (
               <span className="flex items-center gap-1.5 font-sans">
                 <svg
-                  className="animate-spin h-4 w-4 text-canvas"
+                  className="motion-safe:animate-spin h-4 w-4 text-canvas"
                   fill="none"
                   viewBox="0 0 24 24"
                 >
@@ -122,7 +122,7 @@ export default function AdminLoginPage() {
         </form>
       </div>
 
-      <footer className="mt-8 text-[11px] text-muted/60">
+      <footer className="mt-8 text-[0.6875rem] text-muted/60">
         <span>© {new Date().getFullYear()} HIGHLANDER HUB · UCR CAMPUS</span>
       </footer>
     </main>

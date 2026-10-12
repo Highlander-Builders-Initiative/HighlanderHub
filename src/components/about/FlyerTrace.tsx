@@ -10,9 +10,9 @@ import { hostNamesByline } from "@/lib/events/host-byline";
 import { CATEGORY_PILL, FREE_FOOD_PILL } from "@/lib/category-colors";
 import { formatDay, formatTimeRange } from "@/lib/dates";
 
-const PILL = "inline-flex rounded-full px-2.5 py-0.5 text-[13px] font-medium";
+const PILL = "inline-flex rounded-full px-2.5 py-0.5 text-[0.8125rem] font-medium";
 const INLINE_LINK =
-  "interactive-focus font-medium text-ink underline decoration-ink/25 underline-offset-4 transition-colors hover:decoration-ink";
+  "interactive-focus font-medium text-ink underline decoration-ink/25 underline-offset-4 transition-colors hover:decoration-ink active:opacity-70";
 /** Product data (the read-out, the card) reads in the feed's UI face, not
  *  the page's Bricolage. */
 const UI_FACE = "font-body [--font-body:var(--font-ui)]";
@@ -75,7 +75,7 @@ export function FlyerTrace({
             <EventCard event={event} />
             <EventsFeedLink
               href="/events"
-              className={`${INLINE_LINK} mt-2 inline-flex min-h-11 items-center text-[14px]`}
+              className={`${INLINE_LINK} mt-2 inline-flex min-h-11 items-center text-[0.875rem]`}
             >
               See the rest of this week
             </EventsFeedLink>
@@ -88,13 +88,13 @@ export function FlyerTrace({
     <section
       id="how"
       aria-labelledby="how-heading"
-      className="scroll-mt-14 border-y border-ink/10 bg-surface"
+      className="border-y border-ink/10 bg-surface"
     >
       <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 md:py-20">
         <h2 id="how-heading" className={headingClassName}>
           How a flyer becomes a listing
         </h2>
-        <p className="mt-3 max-w-xl text-[16px] leading-relaxed text-muted sm:text-[17px]">
+        <p className="mt-3 max-w-xl text-[1rem] leading-relaxed text-muted sm:text-[1.0625rem]">
           {event
             ? "One from this week, start to finish. Nobody typed any of it in."
             : "Every listing gets here the same way. Nobody types any of it in."}
@@ -109,13 +109,13 @@ export function FlyerTrace({
               className="grid content-start gap-5 lg:row-span-2 lg:grid-rows-subgrid"
             >
               <div>
-                <h3 className="flex items-baseline gap-2.5 font-display text-[20px] font-semibold tracking-[-0.02em] text-ink">
-                  <span className="text-[15px] font-medium tabular-nums text-muted">
+                <h3 className="flex items-baseline gap-2.5 font-display text-[1.25rem] font-semibold tracking-[-0.02em] text-ink">
+                  <span className="text-[0.9375rem] font-medium tabular-nums text-muted">
                     {i + 1}
                   </span>
                   {step.title}
                 </h3>
-                <p className="mt-1.5 max-w-sm text-[15px] leading-relaxed text-muted">
+                <p className="mt-1.5 max-w-sm text-[0.9375rem] leading-relaxed text-muted">
                   {step.body}
                 </p>
               </div>
@@ -178,11 +178,11 @@ function Readout({ event }: { event: CampusEvent }) {
 
   return (
     <dl
-      className={`max-w-md divide-y divide-ink/[0.07] rounded-[20px] bg-canvas text-[15px] leading-snug ring-1 ring-ink/10 ${UI_FACE}`}
+      className={`max-w-md divide-y divide-ink/[0.07] rounded-[20px] bg-canvas text-[0.9375rem] leading-snug ring-1 ring-ink/10 ${UI_FACE}`}
     >
       {rows.map((row) => (
         <div key={row.label} className="grid grid-cols-[5.5rem_minmax(0,1fr)] gap-3 px-4 py-2.5">
-          <dt className="pt-px text-[13px] text-muted">{row.label}</dt>
+          <dt className="pt-px text-[0.8125rem] text-muted">{row.label}</dt>
           <dd className="min-w-0 break-words text-ink">{row.value}</dd>
         </div>
       ))}

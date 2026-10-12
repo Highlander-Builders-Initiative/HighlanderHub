@@ -60,7 +60,8 @@ export default function GlobalError({
               maxWidth: 620,
               fontFamily:
                 "var(--font-display), ui-sans-serif, system-ui, sans-serif",
-              fontSize: "clamp(34px, 7vw, 56px)",
+              // 34px at a 375px viewport to 56px at 800px, in rem so it zooms.
+              fontSize: "clamp(2.125rem, 0.912rem + 5.18vw, 3.5rem)",
               fontWeight: 600,
               lineHeight: 1.05,
               letterSpacing: "-0.03em",

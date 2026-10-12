@@ -32,9 +32,9 @@ const LEAD_COLUMN_PX = 16;
 /** From lg the pills step down to 12px, Luma's badge size, so the tag row
  *  stays a footnote under the title. */
 const PILL =
-  "rounded-full px-2.5 py-0.5 text-[13px] font-medium sm:px-3 sm:text-[14px] lg:px-2 lg:text-[12px]";
+  "rounded-full px-2.5 py-0.5 text-[0.8125rem] font-medium sm:px-3 sm:text-[0.875rem] lg:px-2 lg:text-[0.75rem]";
 /** Compact rows use the 12px pill at every width. */
-const ROW_PILL = "rounded-full px-2 py-0.5 text-[12px] font-medium";
+const ROW_PILL = "rounded-full px-2 py-0.5 text-[0.75rem] font-medium";
 
 /**
  * Pin or camera for the where-row, drawn to sit in the text like a glyph. Each
@@ -131,20 +131,20 @@ function EventCardComponent({ event, loadedCount }: EventCardProps) {
       onFocus={prefetch}
       aria-label={eventListLinkLabel(event)}
       data-event-id={event.id}
-      className="interactive-focus card-hover group flex w-full min-w-0 gap-4 rounded-2xl border border-ink/10 bg-canvas p-4 shadow-card transition-[border-color,box-shadow] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] [contain-intrinsic-height:auto_207px] [content-visibility:auto] hover:border-ink/30 hover:shadow-cardHover sm:gap-5 sm:p-5 sm:[contain-intrinsic-height:auto_202px] lg:rounded-[20px] lg:border-ink/[0.06] lg:py-3.5 lg:pl-[18px] lg:pr-3.5 lg:shadow-none lg:[contain-intrinsic-height:auto_178px] lg:hover:shadow-none"
+      className="interactive-focus card-hover group flex w-full min-w-0 gap-4 rounded-2xl border border-ink/10 bg-canvas p-4 shadow-card [contain-intrinsic-height:auto_207px] [content-visibility:auto] hover:border-ink/30 hover:shadow-cardHover sm:gap-5 sm:p-5 sm:[contain-intrinsic-height:auto_202px] lg:rounded-[20px] lg:border-ink/[0.06] lg:py-3.5 lg:pl-[18px] lg:pr-3.5 lg:shadow-none lg:[contain-intrinsic-height:auto_178px] lg:hover:shadow-none"
     >
       <div className="flex min-w-0 flex-1 flex-col">
-        <p className="text-[14px] leading-5 tabular-nums text-faint sm:text-[15px]">
+        <p className="text-[0.875rem] leading-5 tabular-nums text-faint sm:text-[0.9375rem]">
           {isDeadline && <span className={`font-medium ${DEADLINE_PILL.text}`}>Due </span>}
           {eventTimeLabel(event, "start")}
         </p>
 
-        <h3 className="mt-2 text-[18px] font-semibold leading-[1.25] tracking-[-0.01em] text-ink line-clamp-2 break-words sm:text-[20px] lg:mt-1 lg:font-medium">
+        <h3 className="mt-2 text-[1.125rem] font-semibold leading-[1.25] tracking-[-0.01em] text-ink text-pretty line-clamp-2 break-words sm:text-[1.25rem] lg:mt-1 lg:font-medium">
           {event.title}
         </h3>
 
         {hosts.length > 0 && (
-          <div className="mt-2.5 flex min-w-0 items-center gap-2 text-[14px] text-faint sm:text-[16px]">
+          <div className="mt-2.5 flex min-w-0 items-center gap-2 text-[0.875rem] text-faint sm:text-[1rem]">
             <HostAvatars hosts={hosts} size={LEAD_COLUMN_PX} />
             {/* Phones name hosts by handle; full club names truncate there. */}
             <span className="min-w-0 truncate">
@@ -155,7 +155,7 @@ function EventCardComponent({ event, loadedCount }: EventCardProps) {
         )}
 
         {location ? (
-          <div className="mt-1.5 flex min-w-0 items-center gap-2 text-[14px] text-faint sm:text-[16px]">
+          <div className="mt-1.5 flex min-w-0 items-center gap-2 text-[0.875rem] text-faint sm:text-[1rem]">
             <span className="flex shrink-0 justify-center" style={{ width: LEAD_COLUMN_PX }}>
               <LocationIcon online={isOnlineLocation(location)} />
             </span>
@@ -236,7 +236,7 @@ function EventCompactRowComponent({ event, loadedCount }: EventCardProps) {
       onFocus={prefetch}
       aria-label={eventListLinkLabel(event)}
       data-event-id={event.id}
-      className="interactive-focus grid w-full min-w-0 grid-cols-[40px_auto_minmax(0,1fr)_auto] items-center gap-x-2.5 gap-y-0.5 py-2.5 pl-2.5 pr-3.5 transition-colors duration-150 [contain-intrinsic-height:auto_84px] [content-visibility:auto] [grid-template-areas:'thumb_time_loc_loc'_'thumb_title_title_title'_'thumb_host_host_tags'] first:rounded-t-[19px] last:rounded-b-[19px] hover:bg-ink/[0.03] focus-visible:!shadow-none focus-visible:!outline-offset-[-3px] lg:grid-cols-[40px_72px_minmax(0,1fr)_auto] lg:gap-x-3.5 lg:gap-y-0 lg:pr-4 lg:[contain-intrinsic-height:auto_70px] lg:[grid-template-areas:'thumb_time_main_aside']"
+      className="interactive-focus grid w-full min-w-0 grid-cols-[40px_auto_minmax(0,1fr)_auto] items-center gap-x-2.5 gap-y-0.5 py-2.5 pl-2.5 pr-3.5 transition-colors duration-150 [contain-intrinsic-height:auto_84px] [content-visibility:auto] [grid-template-areas:'thumb_time_loc_loc'_'thumb_title_title_title'_'thumb_host_host_tags'] first:rounded-t-[19px] last:rounded-b-[19px] hover:bg-ink/[0.03] focus-visible:!shadow-none focus-visible:!outline-offset-[-3px] lg:grid-cols-[40px_72px_minmax(0,1fr)_auto] lg:gap-x-3.5 lg:gap-y-0 lg:pr-4 lg:[contain-intrinsic-height:auto_70px] lg:[grid-template-areas:'thumb_time_main_aside'] active:bg-ink/[0.06]"
     >
       <span className="flex h-[50px] w-10 items-center justify-center [--flyer-max-h:50px] [--flyer-max-w:40px] [grid-area:thumb]">
         {showImage ? (
@@ -254,17 +254,17 @@ function EventCompactRowComponent({ event, loadedCount }: EventCardProps) {
       </span>
 
       {/* Deadlines read "Due 11:59 PM" inline on phones, stacked from lg. */}
-      <p className="whitespace-nowrap text-[13px] leading-[18px] tabular-nums text-faint [grid-area:time] lg:whitespace-normal lg:text-[14px] lg:leading-5">
+      <p className="whitespace-nowrap text-[0.8125rem] leading-[1.125rem] tabular-nums text-faint [grid-area:time] lg:whitespace-normal lg:text-[0.875rem] lg:leading-5">
         {isDeadline && <span className={`font-medium ${DEADLINE_PILL.text} lg:block`}>Due </span>}
         {eventTimeLabel(event, "start")}
       </p>
 
       <div className="contents lg:block lg:min-w-0 lg:[grid-area:main]">
-        <h3 className="truncate text-[15px] font-medium leading-5 tracking-[-0.005em] text-ink [grid-area:title] lg:text-[16px] lg:leading-[1.35]">
+        <h3 className="truncate text-[0.9375rem] font-medium leading-5 tracking-[-0.005em] text-ink [grid-area:title] lg:text-[1rem] lg:leading-[1.35]">
           {event.title}
         </h3>
         {hosts.length > 0 && (
-          <div className="flex min-w-0 items-center gap-2 text-[13px] leading-[18px] text-faint [grid-area:host] lg:mt-0.5 lg:text-[14px] lg:leading-5">
+          <div className="flex min-w-0 items-center gap-2 text-[0.8125rem] leading-[1.125rem] text-faint [grid-area:host] lg:mt-0.5 lg:text-[0.875rem] lg:leading-5">
             <HostAvatars hosts={hosts} size={LEAD_COLUMN_PX} />
             {/* Phones name hosts by handle, as the cards do. */}
             <span className="min-w-0 truncate">
@@ -278,7 +278,7 @@ function EventCompactRowComponent({ event, loadedCount }: EventCardProps) {
       {(location || tags.length > 0) && (
         <div className="contents lg:flex lg:min-w-0 lg:max-w-[200px] lg:flex-col lg:items-end lg:gap-1 lg:[grid-area:aside]">
           {location && (
-            <div className="flex min-w-0 items-center gap-1.5 text-[13px] leading-[18px] text-faint [grid-area:loc] lg:max-w-full lg:text-[14px] lg:leading-5">
+            <div className="flex min-w-0 items-center gap-1.5 text-[0.8125rem] leading-[1.125rem] text-faint [grid-area:loc] lg:max-w-full lg:text-[0.875rem] lg:leading-5">
               <LocationIcon online={isOnlineLocation(location)} />
               <span className="min-w-0 truncate">{location}</span>
             </div>

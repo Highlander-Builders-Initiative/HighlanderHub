@@ -60,7 +60,7 @@ export function EventFeedViewToggle({
               aria-pressed={active}
               aria-label={v.label}
               title={v.label}
-              className={`interactive-focus inline-flex h-8 w-10 items-center justify-center rounded-full transition-colors ${
+              className={`interactive-focus press inline-flex h-8 w-10 items-center justify-center rounded-full ${
                 active ? "text-ink" : "text-muted hover:text-ink"
               }`}
             >

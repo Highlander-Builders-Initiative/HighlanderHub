@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { IoCheckmark, IoOpenOutline } from "react-icons/io5";
+import { IoCheckmarkOutline, IoOpenOutline } from "react-icons/io5";
 import clsx from "clsx";
 import { FlyerPoster } from "@/components/events/FlyerPoster";
 import { formatDayShort, formatTimeRange } from "@/lib/dates";
@@ -15,7 +15,7 @@ import {
 } from "./types";
 
 const OUTLINE_BUTTON =
-  "min-h-9 px-3 border border-ink/10 hover:bg-ink/5 text-muted hover:text-ink rounded-md transition-colors outline-none interactive-focus inline-flex items-center justify-center gap-1.5 text-xs font-semibold disabled:opacity-50";
+  "min-h-9 px-3 border border-ink/10 hover:bg-ink/5 text-muted hover:text-ink rounded-md outline-none interactive-focus press inline-flex items-center justify-center gap-1.5 text-xs font-semibold disabled:opacity-50";
 
 function when(event: AdminEventRow): string {
   return `${formatDayShort(event.starts_at)} · ${formatTimeRange(
@@ -55,7 +55,7 @@ export function AdminDuplicateReview({
           Possible duplicates
         </h2>
         {pairs.length > 0 && (
-          <p className="text-[11px] text-muted tabular-nums">
+          <p className="text-[0.6875rem] text-muted tabular-nums">
             {pairs.length} to review
           </p>
         )}
@@ -136,7 +136,7 @@ function DuplicatePairCard({
   };
 
   return (
-    <li className="bg-canvas border border-ink/10 rounded-xl shadow-card overflow-hidden">
+    <li className="bg-canvas border border-ink/10 rounded-xl shadow-card overflow-clip">
       <div className="grid sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-ink/10">
         {listings.map((event, index) => (
           <DuplicateListing
@@ -184,7 +184,7 @@ function DuplicatePairCard({
                 type="button"
                 onClick={() => onMerge(kept, removed)}
                 disabled={pending !== null}
-                className="min-h-9 px-4 bg-ink text-canvas rounded-md transition-opacity hover:opacity-85 outline-none interactive-focus inline-flex items-center justify-center text-xs font-semibold disabled:opacity-50"
+                className="min-h-9 px-4 bg-ink text-canvas rounded-md hover:opacity-85 outline-none interactive-focus press inline-flex items-center justify-center text-xs font-semibold disabled:opacity-50"
               >
                 {pending === "merge" ? "Merging…" : "Merge listings"}
               </button>
@@ -245,15 +245,15 @@ function DuplicateListing({
         outcome === "removed" && "opacity-55"
       )}
     >
-      <div className="flex items-center gap-2 text-[10px] text-muted">
+      <div className="flex items-center gap-2 text-[0.625rem] text-muted">
         {feedIndex !== undefined && (
           <span className="tabular-nums">#{feedIndex + 1}</span>
         )}
-        <span className="bg-ink/5 border border-ink/10 px-1 py-0.5 rounded font-semibold uppercase text-[9px]">
+        <span className="bg-ink/5 border border-ink/10 px-1 py-0.5 rounded font-semibold uppercase tracking-[0.08em] text-[0.5625rem]">
           {event.source}
         </span>
         {event.is_locked && (
-          <span className="bg-gold/10 border border-gold/20 text-deep-gold text-[9px] px-1 py-0.5 rounded font-semibold">
+          <span className="bg-gold/10 border border-gold/20 text-deep-gold text-[0.5625rem] px-1 py-0.5 rounded font-semibold">
             Locked
           </span>
         )}
@@ -273,7 +273,7 @@ function DuplicateListing({
           </div>
         ) : (
           <div
-            className="flex h-[80px] w-[64px] shrink-0 items-center justify-center rounded border border-dashed border-ink/15 bg-surface text-[9px] text-muted text-center leading-tight"
+            className="flex h-[80px] w-[64px] shrink-0 items-center justify-center rounded border border-dashed border-ink/15 bg-surface text-[0.5625rem] text-muted text-center leading-tight"
             aria-label="No flyer image"
           >
             No flyer
@@ -309,7 +309,7 @@ function DuplicateListing({
       <div className="mt-auto flex flex-wrap items-center gap-3 pt-1">
         {outcome === "kept" ? (
           <span className="min-h-9 inline-flex items-center gap-1.5 text-xs font-semibold text-ink">
-            <IoCheckmark size={14} aria-hidden />
+            <IoCheckmarkOutline size={14} aria-hidden />
             Keeping this one
           </span>
         ) : (
@@ -327,7 +327,7 @@ function DuplicateListing({
             href={event.source_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-xs text-muted hover:text-ink underline decoration-ink/20 underline-offset-2 outline-none interactive-focus rounded-sm"
+            className="inline-flex items-center gap-1 text-xs text-muted hover:text-ink underline decoration-ink/20 underline-offset-2 outline-none interactive-focus rounded-sm active:opacity-70"
           >
             Source post
             <IoOpenOutline size={12} aria-hidden />

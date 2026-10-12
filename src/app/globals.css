@@ -11,6 +11,13 @@
   --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
   --font-body: var(--font-ui);
   --masthead-h: 56px;
+
+  /* Motion tokens (DESIGN.md, Motion): decelerating only, never ease-in.
+     --ease-out is the soft ease-out-expo state changes use; --ease-drawer is
+     the iOS sheet curve for parts that travel or grow (sheets, the filter
+     capsule's back-to-top button and day echo). */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 /* ----- Color tokens -----
@@ -115,12 +122,13 @@
   }
 }
 
+/* No font-size here: the root keeps the reader's own setting (16px unless
+   they changed it), so every rem-sized font follows it. */
 html,
 body {
   background: rgb(var(--color-canvas));
   color: rgb(var(--color-ink));
   font-family: var(--font-body);
-  font-size: 16px;
   line-height: 1.55;
   font-optical-sizing: auto;
   -webkit-font-smoothing: antialiased;
@@ -128,11 +136,45 @@ body {
 }
 
 html {
-  scroll-behavior: smooth;
   overflow-x: clip;
+  /* Anchor jumps, find-in-page and keyboard focus land clear of the sticky
+     masthead, which zeroes --masthead-h while it is tucked away. */
+  scroll-padding-block-start: var(--masthead-h);
 }
 body {
   overflow-x: clip;
+}
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer base {
+  /* No stranded last word in running text; headings balance their lines.
+     A line-clamped title opts back to `text-pretty`, since balancing it
+     shortens the lines the clamp shows. */
+  :root {
+    text-wrap: pretty;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    text-wrap: balance;
+  }
+  /* iOS Safari zooms the page into any field set under 16px. */
+  input,
+  textarea,
+  select {
+    font-size: max(16px, 1rem);
+  }
+  button,
+  a,
+  summary,
+  [role="button"] {
+    touch-action: manipulation;
+  }
 }
 
 .font-display {
@@ -177,14 +219,42 @@ body {
   inset: min(0px, (100% - 44px) / 2);
 }
 
-/* Card hover: the hairline edge darkens; nothing moves. Hover only where a
-   pointer can hover, so a tapped card does not stay dark on a phone. No
-   :focus-within: the overlay hands focus back to the card on close, which
-   would hold the dark edge after a click; :focus-visible covers keyboards. */
-.card-hover {
-  transition: border-color 180ms ease;
+/* Press feedback. Preflight removes the browser's tap highlight, so anything
+   pressable answers on its own: buttons and button-like links with .press, a
+   small scale; list rows with an `active:` wash; cards with their edge
+   (.card-hover). .press owns its element's transition, so an element that
+   carries it drops its own transition-* utilities. Colors and opacity always
+   ease; the scale only eases where motion is welcome, and otherwise snaps. */
+@layer components {
+  .press {
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke,
+      opacity, box-shadow;
+    transition-duration: 160ms;
+    transition-timing-function: var(--ease-out);
+  }
+  .press:active {
+    scale: 0.97;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .press {
+      transition-property: color, background-color, border-color, text-decoration-color, fill, stroke,
+        opacity, box-shadow, scale;
+    }
+  }
 }
-.card-hover:focus-visible {
+
+/* Card hover: the hairline edge darkens; nothing moves. Hover only where a
+   pointer can hover, so a tapped card does not stay dark on a phone; a press
+   darkens it on any screen. No :focus-within: the overlay hands focus back to
+   the card on close, which would hold the dark edge after a click;
+   :focus-visible covers keyboards. */
+.card-hover {
+  transition:
+    border-color 180ms var(--ease-out),
+    box-shadow 180ms var(--ease-out);
+}
+.card-hover:focus-visible,
+.card-hover:active {
   border-color: rgb(var(--color-ink));
 }
 @media (hover: hover) and (pointer: fine) {
@@ -216,7 +286,7 @@ body {
     0 0 0 1px rgb(var(--color-ink) / 0.07),
     0 1px 2px rgb(var(--color-shadow) / 0.04),
     0 12px 32px rgb(var(--color-shadow) / 0.08);
-  transition: box-shadow 200ms ease;
+  transition: box-shadow 200ms var(--ease-out);
 }
 @media (prefers-color-scheme: dark) {
   .liquid-glass {
@@ -264,7 +334,7 @@ body {
   appearance: none;
   width: 18px;
   height: 18px;
-  margin-left: 8px;
+  margin-inline-start: 8px;
   cursor: pointer;
   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'%3E%3Ccircle cx='9' cy='9' r='9' fill='%230f1115' fill-opacity='.28'/%3E%3Cpath d='M6.2 6.2l5.6 5.6M11.8 6.2l-5.6 5.6' stroke='%23fff' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E")
     center / contain no-repeat;
@@ -286,7 +356,7 @@ body {
   padding: 10px 2px;
   color: rgb(var(--color-muted));
   font-weight: 500;
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 .tab[aria-selected="true"] {
   color: rgb(var(--color-ink));
@@ -294,17 +364,27 @@ body {
 .tab[aria-selected="true"]::after {
   content: "";
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -1px;
-  height: 2px;
+  inset-inline: 0;
+  inset-block-end: -1px;
+  block-size: 2px;
   background: rgb(var(--color-ink));
 }
 
-/* ----- Motion ----- */
+/* ----- Motion -----
+   Motion is opt-in: each animation that moves something is declared inside
+   (prefers-reduced-motion: no-preference), and outside it the same state
+   change happens as a fade or at once. Fades of opacity and color are not
+   motion and run for everyone. There is no global rule zeroing durations. */
 
-/* Easing curve borrowed from the Anthropic / Linear feel: a soft outgoing
-   ease that decelerates without ever bouncing. */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 @keyframes fade-up {
   from {
     opacity: 0;
@@ -327,12 +407,16 @@ body {
   }
 }
 
-.animate-fade-up {
-  animation: fade-up 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+.animate-fade-in {
+  animation: fade-in 200ms var(--ease-out) both;
 }
 
 .animate-scale-in {
-  animation: scale-in 800ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: fade-in 300ms var(--ease-out) both;
+}
+
+.animate-fade-up {
+  animation: fade-in 300ms var(--ease-out) both;
 }
 
 /* Tight inline reveal for field-level disclosure (conditional inputs,
@@ -348,7 +432,19 @@ body {
   }
 }
 .animate-field-reveal {
-  animation: field-reveal 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: fade-in 220ms var(--ease-out) both;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .animate-fade-up {
+    animation-name: fade-up;
+  }
+  .animate-scale-in {
+    animation-name: scale-in;
+  }
+  .animate-field-reveal {
+    animation-name: field-reveal;
+  }
 }
 
 /* Loading shimmer. A placeholder (a skeleton bar, a flyer's slot before the
@@ -358,9 +454,9 @@ body {
    a stack of them reads as one sweep; narrow bars rest between passes. It is
    a ::before, so an image painting into the slot covers it. Callers keep
    their own fill and radius. It loops at a constant speed, so it is linear
-   where state changes ease out. Under reduced motion the root rule ends the
-   loop at once and the fill stays still. Components layer, so utilities
-   (`absolute`) still win. */
+   where state changes ease out. Under reduced motion it never starts, and
+   the fill stays still. Components layer, so utilities (`absolute`) still
+   win. */
 @keyframes skeleton-shimmer {
   from {
     transform: translateX(-100%);
@@ -380,19 +476,22 @@ body {
 @layer components {
   .skeleton {
     position: relative;
-    overflow: hidden;
+    overflow: clip;
   }
   .skeleton::before {
     content: "";
     position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
+    inset-block: 0;
+    inset-inline-start: 0;
     width: 240px;
     background: linear-gradient(90deg, transparent, var(--skeleton-shine), transparent);
     transform: translateX(-100%);
-    animation: skeleton-shimmer 1.6s linear infinite;
     pointer-events: none;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .skeleton::before {
+      animation: skeleton-shimmer 1.6s linear infinite;
+    }
   }
   /* A flyer's slot waits a beat before its first sweep, so a flyer that is
      already cached never flashes one, and slots whose shape script is still
@@ -405,7 +504,7 @@ body {
      (a prefetched feed) never flashes it. Fill mode keeps it hidden until
      then. */
   .nav-skeleton {
-    animation: nav-skeleton-in 150ms cubic-bezier(0.16, 1, 0.3, 1) 100ms both;
+    animation: nav-skeleton-in 150ms var(--ease-out) 100ms both;
   }
 }
 
@@ -438,7 +537,7 @@ body {
 /* Phones: the copy sits above the art. Only the button, at the left, overlaps
    its sky, which clears both the tower and the ridge there. */
 .skyline-copy {
-  padding-bottom: calc(var(--skyline-h) - 64px);
+  padding-block-end: calc(var(--skyline-h) - 64px);
 }
 
 /* md+: the copy overlaps the art's open sky at left, clearing the ridge. The
@@ -448,7 +547,7 @@ body {
     min-height: calc(var(--skyline-h) + 100px);
   }
   .skyline-copy {
-    padding-bottom: calc(var(--skyline-h) * 0.36);
+    padding-block-end: calc(var(--skyline-h) * 0.36);
   }
 }
 
@@ -538,9 +637,9 @@ body {
    approaches the marquee's focal point — viewport center at rest,
    pointer-x while hovering. The variable drives a small lift + scale
    and a tonal ink-tinted lift shadow (Hairline-Plus-Lift, Quiet-Shadow,
-   no color wash). Blur radii stay constant; only the rgba alpha is
-   interpolated, so the compositor fades the shadow without re-rastering
-   per frame. */
+   no color wash). The shadow is drawn once, at full strength, on its own
+   layer (::after) and faded with opacity: the compositor fades a layer for
+   free, where re-tinting a box-shadow repaints the tile every frame. */
 [data-marquee-tile] {
   --focal: 0;
   position: relative;
@@ -548,24 +647,72 @@ body {
   border-radius: 0.75rem;
   transform: translate3d(0, calc(var(--focal) * -7px), 0)
     scale(calc(1 + var(--focal) * 0.05));
-  box-shadow:
-    0 2px 6px -2px rgb(var(--color-shadow) / calc(var(--focal) * 0.18)),
-    0 16px 36px -10px rgb(var(--color-shadow) / calc(var(--focal) * 0.22));
   will-change: transform;
 }
+[data-marquee-tile]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  box-shadow:
+    0 2px 6px -2px rgb(var(--color-shadow) / 0.18),
+    0 16px 36px -10px rgb(var(--color-shadow) / 0.22);
+  opacity: var(--focal);
+  pointer-events: none;
+  will-change: opacity;
+}
 
+/* The marquee's frame loop already stops under reduced motion
+   (FlyerMarquee); this keeps a tile that was mid-lift flat. */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    scroll-behavior: auto !important;
-    transition-duration: 0.01ms !important;
-  }
-
   [data-marquee-tile] {
     transform: none !important;
-    box-shadow: none !important;
+  }
+  [data-marquee-tile]::after {
+    content: none;
+  }
+}
+
+/* ----- Calendar menu popover -----
+   "Add to calendar" opens a native popover (EventCalendarMenu): a tap
+   outside or Escape closes it, and it sits in the top layer above the event
+   overlay. Where anchor positioning is supported it hangs off its button:
+   below it on desktop, above it in the phone's bottom bar, flipping when
+   that side runs out of room. Elsewhere it opens centred, the browser's
+   default. It fades in and out; nothing moves. */
+.calendar-trigger {
+  anchor-name: var(--calendar-anchor);
+}
+@supports selector(:popover-open) {
+  .calendar-popover {
+    opacity: 0;
+    transition:
+      opacity 150ms var(--ease-out),
+      display 150ms allow-discrete,
+      overlay 150ms allow-discrete;
+  }
+  .calendar-popover:popover-open {
+    opacity: 1;
+  }
+  @starting-style {
+    .calendar-popover:popover-open {
+      opacity: 0;
+    }
+  }
+}
+@supports (position-area: block-end) {
+  .calendar-popover {
+    position-anchor: var(--calendar-anchor);
+    inset: auto;
+    margin: 0;
+    margin-block-start: 0.5rem;
+    position-area: block-end span-inline-end;
+    position-try-fallbacks: flip-block, flip-inline, flip-block flip-inline;
+  }
+  .calendar-popover[data-surface="mobile"] {
+    margin-block-start: 0;
+    margin-block-end: 0.5rem;
+    position-area: block-start span-inline-start;
   }
 }

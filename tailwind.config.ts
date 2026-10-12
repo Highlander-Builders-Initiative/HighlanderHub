@@ -84,9 +84,24 @@ const config: Config = {
         display: ["var(--font-display)", "ui-sans-serif", "system-ui", "sans-serif"],
         body: ["var(--font-body)", "ui-sans-serif", "system-ui", "sans-serif"],
       },
+      // Shadows read --color-shadow, which stays dark in both themes (never
+      // tint a shadow from ink, which turns light in dark mode).
       boxShadow: {
-        card: "0 1px 2px rgba(15, 17, 21, 0.04), 0 4px 12px rgba(15, 17, 21, 0.04)",
-        cardHover: "0 4px 8px rgba(15, 17, 21, 0.06), 0 12px 28px rgba(15, 17, 21, 0.08)",
+        card: "0 1px 2px rgb(var(--color-shadow) / 0.04), 0 4px 12px rgb(var(--color-shadow) / 0.04)",
+        cardHover: "0 4px 8px rgb(var(--color-shadow) / 0.06), 0 12px 28px rgb(var(--color-shadow) / 0.08)",
+        // A pinned flyer resting on its tile.
+        flyer: "0 1px 2px rgb(var(--color-shadow) / 0.08), 0 4px 12px -2px rgb(var(--color-shadow) / 0.08)",
+        // Dropdowns and menus that float over the page.
+        menu: "0 18px 44px rgb(var(--color-shadow) / 0.12)",
+        // A bottom sheet's top edge, and a centred dialog.
+        sheet: "0 -8px 28px rgb(var(--color-shadow) / 0.08)",
+        dialog: "0 24px 40px rgb(var(--color-shadow) / 0.08)",
+      },
+      // The motion tokens in globals.css: `ease-out-expo` for state changes,
+      // `ease-drawer` for parts that travel or grow.
+      transitionTimingFunction: {
+        "out-expo": "var(--ease-out)",
+        drawer: "var(--ease-drawer)",
       },
     },
   },

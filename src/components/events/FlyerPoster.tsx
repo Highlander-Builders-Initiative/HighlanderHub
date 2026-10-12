@@ -71,7 +71,7 @@ export function FlyerPoster({
   // The known ratio only shapes the placeholder and narrows reel covers.
   const image = (
     <span
-      className={`flyer-fit relative block overflow-hidden ${
+      className={`flyer-fit relative block overflow-clip ${
         pending ? "skeleton" : ""
       } ${className}`}
       style={ratioStyle(ratio)}

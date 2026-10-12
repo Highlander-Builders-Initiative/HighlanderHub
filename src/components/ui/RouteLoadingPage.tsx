@@ -26,8 +26,8 @@ export function RouteLoadingPage() {
 
       <section className="border-b border-ink/10">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 md:py-24">
-          <p className="text-[13px] text-muted">About</p>
-          <h1 className="mt-4 max-w-2xl font-display text-[34px] font-semibold leading-[1.05] tracking-[-0.03em] text-ink md:text-5xl">
+          <p className="text-[0.8125rem] text-muted">About</p>
+          <h1 className="mt-4 max-w-2xl font-display text-[2.125rem] font-semibold leading-[1.05] tracking-[-0.03em] text-ink md:text-5xl">
             Loading Highlander Hub
           </h1>
           <p className="mt-3 max-w-xl text-base text-ink/70">

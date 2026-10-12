@@ -1,7 +1,12 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { AnimatePresence, motion, type Transition } from "motion/react";
+import {
+  AnimatePresence,
+  motion,
+  useReducedMotion,
+  type Transition,
+} from "motion/react";
 import {
   Children,
   cloneElement,
@@ -51,6 +56,8 @@ export function AnimatedBackground({
     defaultValue ?? null
   );
   const uniqueId = useId();
+  // Under reduced motion the highlight moves to its new item at once.
+  const reduceMotion = useReducedMotion();
 
   const handleSetActiveId = (id: string | null) => {
     setActiveId(id);
@@ -116,7 +123,7 @@ export function AnimatedBackground({
                 "absolute inset-0",
                 typeof className === "function" ? className(activeId) : className
               )}
-              transition={transition}
+              transition={reduceMotion ? { duration: 0 } : transition}
               initial={{ opacity: defaultValue ? 1 : 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}

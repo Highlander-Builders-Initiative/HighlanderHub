@@ -56,8 +56,10 @@ export const EVENT_DETAIL_MOBILE_FLYER_CLASS =
 // When and where rows: the icon sits in a lead column one text line tall, as
 // the pin does on a feed card, so both rows' text starts at the same x.
 const INFO_ICON_CLASS = "flex h-6 w-5 shrink-0 items-center justify-center text-muted";
+// The bars' side padding matches their container's, so the buttons line up
+// with the text above them.
 export const EVENT_DETAIL_MOBILE_BAR_CLASS =
-  "fixed inset-x-0 bottom-0 z-30 border-t border-ink/10 bg-canvas/95 px-4 py-3 backdrop-blur md:hidden";
+  "fixed inset-x-0 bottom-0 z-30 border-t border-ink/10 bg-canvas/95 px-4 py-3 backdrop-blur sm:px-6 md:hidden";
 
 /** The overlay's dialog is labelled by the event title. */
 export const EVENT_MODAL_TITLE_ID = "event-modal-title";
@@ -70,7 +72,7 @@ export const EVENT_MODAL_ASIDE_CLASS =
 // Sticky, not fixed: the panel's open animation leaves a transform on it,
 // which would make a fixed bar position against the panel anyway.
 export const EVENT_MODAL_MOBILE_BAR_CLASS =
-  "sticky bottom-0 z-10 border-t border-ink/10 bg-canvas px-4 py-3 md:hidden";
+  "sticky bottom-0 z-10 border-t border-ink/10 bg-canvas px-5 py-3 sm:px-8 md:hidden";
 
 const SOURCE_LABELS: Record<CampusEvent["source"], string> = {
   instagram: "Instagram",
@@ -78,6 +80,18 @@ const SOURCE_LABELS: Record<CampusEvent["source"], string> = {
   club_website: "Club site",
   manual: "Manual",
 };
+
+// With no RSVP link, the primary button opens the listing's source, and says
+// where it goes rather than "View source" beside a separate "via …".
+const SOURCE_CTA: Record<CampusEvent["source"], string> = {
+  instagram: "View on Instagram",
+  campus_website: "View on UCR Events",
+  club_website: "Visit club site",
+  manual: "Open link",
+};
+
+const PRIMARY_CTA_CLASS =
+  "interactive-focus press inline-flex min-h-12 items-center gap-2 rounded-lg bg-ink py-3 text-sm font-medium text-canvas hover:opacity-85";
 
 function CalendarIcon() {
   return (
@@ -142,6 +156,7 @@ export function EventDetailView({
   const safeSourceUrl = normalizeHttpUrl(event.sourceUrl);
   const primaryUrl = safeRsvpUrl ?? safeSourceUrl;
   const primaryKind = safeRsvpUrl ? "rsvp" : "view_source";
+  const primaryLabel = safeRsvpUrl ? "RSVP" : SOURCE_CTA[event.source];
   const sourceLabel = SOURCE_LABELS[event.source];
   const hasImage = Boolean(event.imageUrl);
   const hosts = eventHosts(event);
@@ -182,7 +197,7 @@ export function EventDetailView({
         target="_blank"
         rel="noreferrer"
         aria-label={`View original post on ${sourceLabel}`}
-        className="interactive-focus block w-fit max-w-full rounded-xl transition-opacity hover:opacity-90"
+        className="interactive-focus block w-fit max-w-full rounded-xl transition-opacity hover:opacity-90 active:opacity-75"
       >
         {image}
       </a>
@@ -226,7 +241,7 @@ export function EventDetailView({
               {eventTags(event).map((tag) => (
                 <span
                   key={tag.label}
-                  className={`inline-flex items-center rounded-full px-2 py-0.5 text-[12px] font-medium ${tag.highlight} ${tag.text}`}
+                  className={`inline-flex items-center rounded-full px-2 py-0.5 text-[0.75rem] font-medium ${tag.highlight} ${tag.text}`}
                 >
                   {tag.label}
                 </span>
@@ -236,7 +251,7 @@ export function EventDetailView({
             <Title
               id={isModal ? EVENT_MODAL_TITLE_ID : undefined}
               className={`mt-3 max-w-3xl font-semibold leading-[1.05] tracking-[-0.02em] text-ink md:mt-5 ${
-                isModal ? "text-[28px] sm:text-[36px]" : "text-[34px] sm:text-[44px]"
+                isModal ? "text-[1.75rem] sm:text-[2.25rem]" : "text-[2.125rem] sm:text-[2.75rem]"
               }`}
             >
               {event.title}
@@ -245,7 +260,7 @@ export function EventDetailView({
             {/* The feed card's byline, with its club pictures: every host by
                 name. It wraps here rather than truncating. */}
             {hosts.length > 0 && (
-              <div className="mt-3 flex items-start gap-2 text-[15px] text-muted md:mt-4">
+              <div className="mt-3 flex items-start gap-2 text-[0.9375rem] text-muted md:mt-4">
                 <span className="mt-0.5">
                   <HostAvatars hosts={hosts} size={20} />
                 </span>
@@ -282,10 +297,10 @@ export function EventDetailView({
                     <CalendarIcon />
                   </span>
                   <div className="min-w-0">
-                    <div className="text-[16px] font-semibold leading-6 text-ink md:text-[17px]">
+                    <div className="text-[1rem] font-semibold leading-6 text-ink md:text-[1.0625rem]">
                       {formatDay(event.startsAt)}
                     </div>
-                    <div className="mt-0.5 text-[14px] text-muted">
+                    <div className="mt-0.5 text-[0.875rem] text-muted">
                       <span className="tabular-nums text-ink/85">
                         {eventTimeLabel(event, "span")}
                       </span>
@@ -310,7 +325,7 @@ export function EventDetailView({
                         <LocationPinIcon />
                       )}
                     </span>
-                    <div className="min-w-0 text-[16px] leading-6 text-ink">
+                    <div className="min-w-0 text-[1rem] leading-6 text-ink">
                       {event.location}
                     </div>
                   </div>
@@ -324,7 +339,7 @@ export function EventDetailView({
                 className="mt-8 hidden md:block"
               >
                 {!primaryUrl && (
-                  <p className="mb-4 text-[14px] text-ink/75">
+                  <p className="mb-4 text-[0.875rem] text-ink/75">
                     No external link is on file. Check with the host for the
                     latest info.
                   </p>
@@ -337,9 +352,9 @@ export function EventDetailView({
                       eventId={event.id}
                       surface="desktop"
                       href={primaryUrl}
-                      className="interactive-focus inline-flex min-h-12 items-center gap-2 rounded-lg bg-ink px-6 py-3 text-sm font-medium text-canvas transition-opacity hover:opacity-85"
+                      className={`${PRIMARY_CTA_CLASS} px-6`}
                     >
-                      {safeRsvpUrl ? "RSVP" : "View source"}
+                      {primaryLabel}
                       <span aria-hidden>↗</span>
                     </TrackedAnchor>
                   )}
@@ -351,8 +366,10 @@ export function EventDetailView({
 
                   <ShareButton event={event} variant="text" />
 
-                  {primaryUrl && (
-                    <span className="ml-auto text-[13px] text-muted">
+                  {/* Credit the source beside an RSVP; a source button
+                      already names it. */}
+                  {safeRsvpUrl && (
+                    <span className="ml-auto text-[0.8125rem] text-muted">
                       via {sourceLabel}
                     </span>
                   )}
@@ -365,17 +382,17 @@ export function EventDetailView({
               {hasAbout && (
                 <section aria-label="About" className="mt-6 md:mt-10">
                   <div className="hairline hidden md:block" />
-                  <h2 className="mt-7 hidden text-[18px] font-semibold tracking-[-0.01em] text-ink md:block">
+                  <h2 className="mt-7 hidden text-[1.125rem] font-semibold tracking-[-0.01em] text-ink md:block">
                     About
                   </h2>
                   {description && (
-                    <p className="max-w-prose whitespace-pre-line text-[15px] leading-relaxed text-ink/80 md:mt-3 md:text-[16px]">
+                    <p className="max-w-prose whitespace-pre-line text-[0.9375rem] leading-relaxed text-ink/80 md:mt-3 md:text-[1rem]">
                       {description}
                     </p>
                   )}
 
                   {event.tags.length > 0 && (
-                    <div className="mt-5 flex flex-wrap gap-x-3 gap-y-1 text-[13px] text-muted md:mt-6">
+                    <div className="mt-5 flex flex-wrap gap-x-3 gap-y-1 text-[0.8125rem] text-muted md:mt-6">
                       {event.tags.map((t) => (
                         <span key={t}>#{t.replace(/\s+/g, "")}</span>
                       ))}
@@ -402,9 +419,9 @@ export function EventDetailView({
               eventId={event.id}
               surface="mobile"
               href={primaryUrl}
-              className="interactive-focus flex-1 inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-ink px-4 py-3 text-sm font-medium text-canvas"
+              className={`${PRIMARY_CTA_CLASS} flex-1 justify-center px-4`}
             >
-              {safeRsvpUrl ? "RSVP" : "View source"}
+              {primaryLabel}
               <span aria-hidden>↗</span>
             </TrackedAnchor>
           ) : null}

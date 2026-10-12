@@ -83,7 +83,7 @@ export function EventsMiniCalendar({
               type="button"
               data-id="today"
               onClick={() => onCursorChange(startOfPacificMonthKey(todayKey))}
-              className="interactive-focus inline-flex h-7 items-center rounded-md px-2.5 text-[12px] font-medium text-muted transition-colors hover:text-ink coarse:h-11"
+              className="interactive-focus press inline-flex h-7 items-center rounded-md px-2.5 text-[0.75rem] font-medium text-muted hover:text-ink coarse:h-11"
             >
               Today
             </button>
@@ -92,7 +92,7 @@ export function EventsMiniCalendar({
               data-id="prev"
               onClick={() => onCursorChange(addPacificMonths(cursor, -1))}
               aria-label="Previous month"
-              className="interactive-focus inline-flex h-7 w-7 items-center justify-center rounded-md text-muted transition-colors hover:text-ink coarse:h-11 coarse:w-11"
+              className="interactive-focus press inline-flex h-7 w-7 items-center justify-center rounded-md text-muted hover:text-ink coarse:h-11 coarse:w-11"
             >
               ‹
             </button>
@@ -101,7 +101,7 @@ export function EventsMiniCalendar({
               data-id="next"
               onClick={() => onCursorChange(addPacificMonths(cursor, 1))}
               aria-label="Next month"
-              className="interactive-focus inline-flex h-7 w-7 items-center justify-center rounded-md text-muted transition-colors hover:text-ink coarse:h-11 coarse:w-11"
+              className="interactive-focus press inline-flex h-7 w-7 items-center justify-center rounded-md text-muted hover:text-ink coarse:h-11 coarse:w-11"
             >
               ›
             </button>
@@ -112,14 +112,14 @@ export function EventsMiniCalendar({
       {error && (
         <p role="alert" className="mb-3 text-sm text-muted">
           Couldn’t load this month.{' '}
-          <button type="button" onClick={onRetry} className="interactive-focus underline">
+          <button type="button" onClick={onRetry} className="interactive-focus underline active:opacity-70">
             Retry calendar
           </button>
         </p>
       )}
       <div
         aria-busy={isLoading}
-        className={`transition-opacity duration-[250ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${
+        className={`transition-opacity duration-[250ms] ease-out-expo ${
           isLoading ? "opacity-60" : "opacity-100"
         }`}
       >
@@ -128,7 +128,7 @@ export function EventsMiniCalendar({
             <span
               key={i}
               aria-hidden
-              className="pb-1.5 text-[10px] font-medium text-muted/80"
+              className="pb-1.5 text-[0.625rem] font-medium text-muted/80"
             >
               {d}
             </span>
@@ -157,7 +157,7 @@ export function EventsMiniCalendar({
                 }`}
                 aria-pressed={isSelected}
                 className={[
-                  "interactive-focus relative mx-auto flex h-9 w-9 items-center justify-center rounded-md text-[13px] transition-colors coarse:h-11 coarse:w-full coarse:max-w-11",
+                  "interactive-focus press relative mx-auto flex h-9 w-9 items-center justify-center rounded-md text-[0.8125rem] coarse:h-11 coarse:w-full coarse:max-w-11",
                   isSelected
                     ? "bg-ink text-canvas"
                     : inMonth

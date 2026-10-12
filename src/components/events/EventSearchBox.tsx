@@ -140,7 +140,7 @@ export function EventSearchBox({ query, clubs: allClubs, onQueryChange }: Props)
             setOpen(e.target.value.trim().length > 0);
           }}
           onKeyDown={onKeyDown}
-          placeholder="Search events, or pick a club"
+          placeholder="Search events or clubs"
           autoComplete="off"
           aria-describedby="event-filter-summary"
           role="combobox"
@@ -149,7 +149,7 @@ export function EventSearchBox({ query, clubs: allClubs, onQueryChange }: Props)
           aria-autocomplete="list"
           aria-activedescendant={activeOptionId}
           // The capsule draws the focus ring (.liquid-glass in globals.css).
-          className="h-9 w-full text-ellipsis bg-transparent pl-7 pr-2 text-sm text-ink outline-none placeholder:text-muted"
+          className="h-9 w-full text-ellipsis bg-transparent pl-7 pr-2 text-base text-ink outline-none placeholder:text-muted"
         />
       </div>
 
@@ -157,13 +157,13 @@ export function EventSearchBox({ query, clubs: allClubs, onQueryChange }: Props)
         <div
           // Solid, not glass: the capsule's backdrop-filter walls off the
           // feed, so a blur here would only ghost the cards through.
-          className="absolute inset-x-0 top-full z-30 mt-2 overflow-hidden rounded-3xl bg-canvas p-1.5 shadow-[0_0_0_1px_rgba(15,17,21,0.07),0_18px_44px_rgba(15,17,21,0.12)]"
+          className="absolute inset-x-0 top-full z-30 mt-2 overflow-clip rounded-3xl bg-canvas p-1.5 shadow-menu ring-1 ring-ink/[0.07]"
           // Block the input's blur from firing before the row's onClick can
           // run — pointer-down on the dropdown container would otherwise
           // collapse the list mid-click.
           onMouseDown={(e) => e.preventDefault()}
         >
-          <div className="px-3 pb-1 pt-1.5 text-[12px] font-medium text-muted">
+          <div className="px-3 pb-1 pt-1.5 text-[0.75rem] font-medium text-muted">
             Clubs
           </div>
           <ul
@@ -182,16 +182,16 @@ export function EventSearchBox({ query, clubs: allClubs, onQueryChange }: Props)
                   aria-selected={isActive}
                   onMouseEnter={() => setActiveIndex(idx)}
                   onClick={() => selectClub(club)}
-                  className={`flex cursor-pointer items-center gap-3 rounded-[18px] px-3 py-2 ${
+                  className={`flex cursor-pointer items-center gap-3 rounded-[18px] px-3 py-2 active:bg-ink/[0.08] ${
                     isActive ? "bg-ink/[0.05]" : ""
                   }`}
                 >
                   <ClubAvatar handle={club.handle} name={club.label} size={32} />
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[14px] font-medium text-ink">
+                    <span className="block truncate text-[0.875rem] font-medium text-ink">
                       {club.label}
                     </span>
-                    <span className="block truncate text-[12px] text-muted">
+                    <span className="block truncate text-[0.75rem] text-muted">
                       @{club.handle}
                     </span>
                   </span>

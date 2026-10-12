@@ -19,7 +19,7 @@ type ClubAvatarProps = {
 export function ClubAvatar({ handle, name, size = 32, className = "" }: ClubAvatarProps) {
   const src = clubAvatarSrc(handle);
   const [brokenSrc, setBrokenSrc] = useState<string>();
-  const shape = `inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full ring-1 ring-ink/10 ${className}`;
+  const shape = `inline-flex shrink-0 items-center justify-center overflow-clip rounded-full ring-1 ring-ink/10 ${className}`;
 
   if (src && brokenSrc !== src) {
     return (

@@ -16,15 +16,15 @@ export type FlyerTileSize = "large" | "medium" | "small" | "wide";
 const TITLE_CLASSES: Record<FlyerTileSize, string> = {
   large: "text-xl md:text-3xl line-clamp-3",
   medium: "text-base md:text-xl line-clamp-2",
-  small: "text-sm md:text-[15px] line-clamp-2",
+  small: "text-sm md:text-[0.9375rem] line-clamp-2",
   wide: "text-sm md:text-base line-clamp-2",
 };
 
 const META_CLASSES: Record<FlyerTileSize, string> = {
-  large: "text-[10px] md:text-[11px]",
-  medium: "text-[10px] md:text-[11px]",
-  small: "text-[10px]",
-  wide: "text-[10px]",
+  large: "text-[0.625rem] md:text-[0.6875rem]",
+  medium: "text-[0.625rem] md:text-[0.6875rem]",
+  small: "text-[0.625rem]",
+  wide: "text-[0.625rem]",
 };
 
 // A flyer within ~8% of its tile's shape fills the tile edge to edge (the trim
@@ -100,7 +100,7 @@ export function FlyerTile({
       tabIndex={decorative ? -1 : undefined}
       data-event-id={event.id}
       // The tile's tint shimmers until the flyer paints over it.
-      className={`interactive-focus card-hover group relative block overflow-hidden rounded-xl border border-ink/15 bg-highlander/[0.07] transition-[filter,opacity,border-color] duration-300 hover:border-ink/30 ${
+      className={`interactive-focus card-hover group relative block overflow-clip rounded-xl border border-ink/15 bg-highlander/[0.07] transition-[filter,opacity,border-color] duration-300 hover:border-ink/30 ${
         showImage && !loaded ? "skeleton" : ""
       } ${aspectClassName} ${className}`}
     >
@@ -113,7 +113,7 @@ export function FlyerTile({
           sizes={sizes}
           className={
             pinned
-              ? "absolute inset-0 m-auto h-auto max-h-[calc(100%-1.5rem)] w-auto max-w-[calc(100%-1.5rem)] rounded-md shadow-[0_1px_2px_rgba(15,17,21,0.08),0_4px_12px_-2px_rgba(15,17,21,0.08)] ring-1 ring-ink/10"
+              ? "absolute inset-0 m-auto h-auto max-h-[calc(100%-1.5rem)] w-auto max-w-[calc(100%-1.5rem)] rounded-md shadow-flyer ring-1 ring-ink/10"
               : "absolute inset-0 h-full w-full object-cover"
           }
           onLoad={(img) => {

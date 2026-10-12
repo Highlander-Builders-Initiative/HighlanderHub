@@ -3,10 +3,10 @@ import { EVENT_MODAL_CONTAINER_CLASS, EVENT_MODAL_TITLE_ID } from "@/components/
 export default function NotFound() {
   return (
     <div className={EVENT_MODAL_CONTAINER_CLASS}>
-      <h2 id={EVENT_MODAL_TITLE_ID} className="pr-12 text-[24px] font-semibold tracking-[-0.015em] text-ink">
+      <h2 id={EVENT_MODAL_TITLE_ID} className="pr-12 text-[1.5rem] font-semibold tracking-[-0.015em] text-ink">
         This event is no longer listed.
       </h2>
-      <p className="mt-3 text-[15px] text-ink/75">
+      <p className="mt-3 text-[0.9375rem] text-ink/75">
         It may have been removed or rescheduled by the host.
       </p>
     </div>

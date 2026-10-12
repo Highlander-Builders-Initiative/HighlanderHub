@@ -96,7 +96,7 @@ export function EventsBrowserSkeleton() {
 
         <div className="min-w-0 pt-6 sm:pt-8 lg:py-8" aria-busy="true">
           <header className="mb-7">
-            <h1 className="font-display text-[28px] font-semibold leading-[1.05] tracking-[-0.025em] text-ink sm:text-[34px]">
+            <h1 className="font-display text-[1.75rem] font-semibold leading-[1.05] tracking-[-0.025em] text-ink sm:text-[2.125rem]">
               Events
             </h1>
             <p className="mt-2 flex h-[21px] items-center">
@@ -107,7 +107,7 @@ export function EventsBrowserSkeleton() {
           {/* Filter bar: same sticky shell as the live feed, controls inert. */}
           <div className="sticky top-0 z-20 -mx-4 mb-5 bg-surface/80 px-4 py-2 backdrop-blur-xl sm:-mx-6 sm:px-6 lg:top-3 lg:mx-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none">
             <div className="liquid-glass pointer-events-none relative flex h-12 items-center gap-2 rounded-full p-1.5 lg:gap-3 lg:pl-4">
-              <span className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-ink/[0.06] px-3.5 text-[13px] font-medium text-ink/50 lg:hidden">
+              <span className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-ink/[0.06] px-3.5 text-[0.8125rem] font-medium text-ink/50 lg:hidden">
                 <svg
                   aria-hidden
                   viewBox="0 0 24 24"
@@ -137,8 +137,8 @@ export function EventsBrowserSkeleton() {
                   <circle cx="11" cy="11" r="7" />
                   <path d="m20 20-3.5-3.5" />
                 </svg>
-                <div className="flex h-9 w-full items-center pl-7 text-sm text-muted">
-                  Search events, or pick a club
+                <div className="flex h-9 w-full items-center pl-7 text-base text-muted">
+                  Search events or clubs
                 </div>
               </div>
             </div>

@@ -123,7 +123,7 @@ export function EventsFeedColumn({
       {/* Phones set the view toggle beside the title, so the counts keep a
           full line; from lg it drops to the counts' baseline. */}
       <header className="mb-7 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4">
-        <h1 className="font-display text-[28px] font-semibold leading-[1.05] tracking-[-0.025em] text-ink sm:text-[34px]">
+        <h1 className="font-display text-[1.75rem] font-semibold leading-[1.05] tracking-[-0.025em] text-ink sm:text-[2.125rem]">
           Events
         </h1>
         <EventFeedViewToggle
@@ -131,7 +131,7 @@ export function EventsFeedColumn({
           onViewChange={onViewChange}
           className="col-start-2 row-start-1 lg:row-span-2 lg:self-end"
         />
-        <p className="col-span-2 mt-2 max-w-[58ch] text-[14px] tabular-nums text-muted lg:col-span-1">
+        <p className="col-span-2 mt-2 max-w-[58ch] text-[0.875rem] tabular-nums text-muted lg:col-span-1">
           {summary.upcomingThisWeek} this week · {upcomingTotal} upcoming
         </p>
       </header>
@@ -163,7 +163,7 @@ export function EventsFeedColumn({
           <button
             type="button"
             onClick={onOpenMobileFilters}
-            className="interactive-focus hit-area relative inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-ink/[0.06] px-3.5 text-[13px] font-medium text-ink transition-colors hover:bg-ink/10 lg:hidden"
+            className="interactive-focus press hit-area relative inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-ink/[0.06] px-3.5 text-[0.8125rem] font-medium text-ink hover:bg-ink/10 lg:hidden"
             aria-haspopup="dialog"
           >
             <svg
@@ -182,7 +182,7 @@ export function EventsFeedColumn({
             {activeFilterCount > 0 && (
               <span
                 aria-hidden
-                className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-ink px-1 text-[10px] text-canvas"
+                className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-ink px-1 text-[0.625rem] text-canvas"
               >
                 {activeFilterCount}
               </span>
@@ -205,12 +205,12 @@ export function EventsFeedColumn({
             <span
               aria-hidden
               data-observed-day={observedDayKey}
-              className={`-mr-3 hidden shrink-0 transition-[grid-template-columns,opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none lg:grid ${
+              className={`-mr-3 hidden shrink-0 transition-[grid-template-columns,opacity] duration-300 ease-drawer motion-reduce:transition-none lg:grid ${
                 showObservedDay ? "grid-cols-[1fr] opacity-100" : "grid-cols-[0fr] opacity-0"
               }`}
             >
-              <span className="flex min-w-0 items-center gap-3 overflow-hidden">
-                <span className="ml-1 shrink-0 whitespace-nowrap text-[14px] font-semibold tracking-[-0.01em] text-ink">
+              <span className="flex min-w-0 items-center gap-3 overflow-clip">
+                <span className="ml-1 shrink-0 whitespace-nowrap text-[0.875rem] font-semibold tracking-[-0.01em] text-ink">
                   {observedHeading.label}{" "}
                   <span className="font-medium text-faint">{observedHeading.weekday}</span>
                 </span>
@@ -228,15 +228,15 @@ export function EventsFeedColumn({
             aria-label="Back to top"
             aria-hidden={!showBackToTop}
             tabIndex={showBackToTop ? 0 : -1}
-            className={`interactive-focus hit-area relative inline-flex h-9 shrink-0 items-center justify-center rounded-full bg-ink/[0.06] text-ink transition-[width,opacity,transform] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-ink/10 motion-reduce:transition-none ${
+            className={`interactive-focus hit-area relative inline-flex h-9 shrink-0 items-center justify-center rounded-full bg-ink/[0.06] text-ink transition-[width,opacity,transform] duration-300 ease-drawer hover:bg-ink/10 motion-reduce:transition-none ${
               showBackToTop
-                ? "w-9 opacity-100"
+                ? "w-9 opacity-100 active:scale-[0.97]"
                 : "pointer-events-none w-0 scale-75 opacity-0"
             }`}
           >
             {/* The clip lives here, not on the button, so the button's
                 .hit-area reaches past its 36px edge. */}
-            <span className="inline-flex h-full w-full items-center justify-center overflow-hidden">
+            <span className="inline-flex h-full w-full items-center justify-center overflow-clip">
               <svg
                 aria-hidden
                 viewBox="0 0 24 24"
@@ -276,10 +276,10 @@ export function EventsFeedColumn({
 
       {showEmptyState && (
         <div className="py-14 sm:py-20">
-          <p className="max-w-[42ch] text-2xl font-semibold leading-[1.2] tracking-[-0.015em] text-ink sm:text-[28px]">
+          <p className="max-w-[42ch] text-2xl font-semibold leading-[1.2] tracking-[-0.015em] text-ink sm:text-[1.75rem]">
             {emptyCopy.headline}
           </p>
-          <p className="mt-3 max-w-[52ch] text-[15px] leading-[1.55] text-ink/70">
+          <p className="mt-3 max-w-[52ch] text-[0.9375rem] leading-[1.55] text-ink/70">
             {emptyCopy.nudge}
           </p>
           {hasActiveFilters && (
@@ -287,7 +287,7 @@ export function EventsFeedColumn({
               <button
                 type="button"
                 onClick={onClearFilters}
-                className="interactive-focus inline-flex min-h-11 items-center rounded-lg bg-ink px-5 py-2 font-medium text-canvas transition-opacity hover:opacity-85"
+                className="interactive-focus press inline-flex min-h-11 items-center rounded-lg bg-ink px-5 py-2 font-medium text-canvas hover:opacity-85"
               >
                 Clear filters
               </button>
@@ -353,7 +353,7 @@ export function EventsFeedColumn({
               type="button"
               onClick={onLoadMore}
               disabled={isLoadingMore}
-              className="interactive-focus inline-flex min-h-11 items-center rounded-lg border border-ink/15 bg-canvas px-5 py-2 text-sm font-medium text-ink transition-colors hover:border-ink disabled:cursor-not-allowed disabled:opacity-50"
+              className="interactive-focus press inline-flex min-h-11 items-center rounded-lg border border-ink/15 bg-canvas px-5 py-2 text-sm font-medium text-ink hover:border-ink disabled:cursor-not-allowed disabled:opacity-50"
             >
               Retry
             </button>

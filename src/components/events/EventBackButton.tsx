@@ -19,7 +19,7 @@ export function EventBackButton() {
     <button
       type="button"
       onClick={handleClick}
-      className="interactive-focus inline-flex min-h-11 items-center gap-1.5 text-sm text-muted hover:text-ink"
+      className="interactive-focus press inline-flex min-h-11 items-center gap-1.5 text-sm text-muted hover:text-ink"
     >
       <span aria-hidden>←</span> Back
     </button>
