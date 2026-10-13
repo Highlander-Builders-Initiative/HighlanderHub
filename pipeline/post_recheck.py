@@ -120,7 +120,12 @@ def main() -> None:
     registry = assessed_events.load_registry()
     state = read_json(STATE_FILE) if STATE_FILE.exists() else {}
     due = due_sources(events, registry, state, now)
-    if not due:
+    details_file = RUN_FILE.with_name(RUN_FILE.stem + "-details.json")
+    saved = read_json(details_file) if details_file.exists() else {}
+    # Finish already-paid work before buying a new batch, even if its events
+    # have expired or its check state was saved just before an interruption.
+    recovery = saved.get("usernames", []) if saved and not saved.get("consumed") else []
+    if not due and not recovery:
         log.info("post recheck: nothing due")
         return
     media_ids = [key.rsplit(":", 1)[-1] for key in due]
@@ -131,12 +136,12 @@ def main() -> None:
     token = os.environ.get("APIFY_TOKEN", "")
     api = ApifyClient(token, RUN_FILE)
     results: dict[str, str] = {}
-    pending = sorted(by_code)
-    for i in range(0, len(pending), BATCH_SIZE):
-        batch = pending[i:i + BATCH_SIZE]
+    withdrawn = 0
+    pending = sorted(set(by_code) - set(recovery))
+    batches = ([recovery] if recovery else []) + [
+        pending[i:i + BATCH_SIZE] for i in range(0, len(pending), BATCH_SIZE)]
+    for batch in batches:
         run, rows = api.details(batch, max_charge=MAX_CHARGE_USD, timeout=600)
-        details_file = RUN_FILE.with_name(RUN_FILE.stem + "-details.json")
-        write_json(details_file, {**read_json(details_file), "consumed": True})
         # Count against the lookup's own ceiling; a charge-limited run may
         # have stopped before reaching every post, so nothing can be concluded.
         if run.get("status") != "SUCCEEDED":
@@ -144,33 +149,50 @@ def main() -> None:
         reason = charge_limit_reason(run, MAX_CHARGE_USD, len(rows), details=True)
         if reason:
             raise CollectionDeferred(f"Post recheck: {reason}")
-        batch_result = classify(rows, set(pending))
+        if not rows:
+            raise RuntimeError(f"Post recheck run {run['id']}: empty output; paid batch retained")
+        for row in rows:
+            node = row.get("data") if isinstance(row, dict) else None
+            code = (node.get("code") or node.get("shortcode")) if isinstance(node, dict) else None
+            match = POST_URL.search(str(row.get("input") or "")) if isinstance(row, dict) else None
+            identities = {value for value in (code, match.group(1) if match else None) if value}
+            if not identities or not identities.issubset(batch):
+                raise RuntimeError(f"Post recheck run {run['id']}: unrelated or unidentifiable output; paid batch retained")
+        batch_result = classify(rows, set(batch))
         gone = sum(1 for v in batch_result.values() if v == "missing")
         if len(batch) >= 4 and gone * 2 > len(batch):
             # Posts this old almost never vanish together; the lookup is broken.
             raise RuntimeError(f"Post recheck: {gone} of {len(batch)} posts reported deleted; "
                                "treating the response as an outage and changing nothing")
         results.update(batch_result)
-
-    updates = []
-    for code, outcome in results.items():
-        media_id = by_code[code]
-        key = f"instagram:post:{media_id}"
-        entry = state.get(media_id) or {}
-        if outcome == "present":
-            state[media_id] = {"status": "present", "checked_at": iso(now)}
-            continue
-        misses = entry.get("misses", 0) + 1
-        state[media_id] = {"status": "missing", "misses": misses, "checked_at": iso(now)}
-        log.info("post %s (%s): reported deleted (%d/%d)", media_id, code, misses, CONFIRMATIONS)
-        if misses >= CONFIRMATIONS:
-            updates.append(withdrawal(key, registry[key], now))
-            state[media_id]["status"] = "withdrawn"
-    write_json(STATE_FILE, state)
-    if updates:
-        log.info("post recheck: withdrawing %d deleted post(s): %s", len(updates),
-                 ", ".join(u["source_key"] for u in updates))
-        log.info("Assessed publication: %s", assessed_events.publish(updates))
+        updates = []
+        for code, outcome in batch_result.items():
+            # Recovery may contain sources that are no longer due. Its paid
+            # dataset is still consumed, but expired listings are left alone.
+            if code not in by_code:
+                continue
+            media_id = by_code[code]
+            key = f"instagram:post:{media_id}"
+            entry = state.get(media_id) or {}
+            if entry.get("run_id") == run["id"]:
+                continue
+            state[media_id] = {"status": outcome, "checked_at": iso(now), "run_id": run["id"]}
+            if outcome == "missing":
+                misses = entry.get("misses", 0) + 1
+                state[media_id]["misses"] = misses
+                log.info("post %s (%s): reported deleted (%d/%d)", media_id, code, misses, CONFIRMATIONS)
+                if misses >= CONFIRMATIONS:
+                    updates.append(withdrawal(key, registry[key], now))
+                    state[media_id]["status"] = "withdrawn"
+        if updates:
+            log.info("post recheck: withdrawing %d deleted post(s): %s", len(updates),
+                     ", ".join(u["source_key"] for u in updates))
+            log.info("Assessed publication: %s", assessed_events.publish(updates))
+            withdrawn += len(updates)
+        # Persist each batch before marking its paid run consumed. If either
+        # write fails, replay retains the run ID and cannot double-count misses.
+        write_json(STATE_FILE, state)
+        write_json(details_file, {**read_json(details_file), "consumed": True})
     log.info("post recheck: %d looked up, %d present, %d reported deleted, %d withdrawn",
              len(results), sum(v == "present" for v in results.values()),
-             sum(v == "missing" for v in results.values()), len(updates))
+             sum(v == "missing" for v in results.values()), withdrawn)
