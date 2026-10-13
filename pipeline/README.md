@@ -413,3 +413,8 @@ over half of a batch reports deleted is treated as an outage and changes nothing
 Withdrawn sources carry `assessment.deleted`, which publication skips so the
 archived copy is not republished. Progress is kept in `data/post_rechecks.json`.
 A post is checked once, so a deletion after the check is not seen.
+Each batch saves its check results before marking the paid run consumed.
+An interrupted batch reuses its original run and post list; completed batches
+use the next due list. Replaying a run cannot count as a second deletion
+confirmation. Empty or unrelated output stops further batches and retains the
+paid run for investigation rather than silently buying the same lookup again.

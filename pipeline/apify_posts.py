@@ -154,7 +154,10 @@ class ApifyClient:
         # This intent stays unconsumed even for FAILED runs: replacing it within
         # a batch could spend its reserved detail ceiling twice. A fresh plan's
         # cycle-specific filename permits a new attempt for incomplete profiles.
-        codes = saved.get("usernames", sorted(codes))
+        if saved and not saved.get("consumed"):
+            codes = saved.get("usernames", sorted(codes))
+        else:
+            codes = sorted(codes)
         client = ApifyClient(self.session.headers["Authorization"].removeprefix("Bearer "), path)
         run = client._run(hpix_input(posts=[f"https://www.instagram.com/p/{code}/" for code in codes]),
                           {"usernames": codes, "actor_id": HPIX_ACTOR_ID,
