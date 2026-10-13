@@ -6,6 +6,11 @@ updates:
       interval: daily
     open-pull-requests-limit: 10
     groups:
+      # Keep the framework and its lint rules on the same release.
+      next:
+        patterns:
+          - "next"
+          - "eslint-config-next"
       # react, react-dom and their @types must move together: bumping one
       # alone breaks npm ci on peer-dependency conflicts.
       react:
