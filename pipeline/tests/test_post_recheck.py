@@ -14,6 +14,8 @@ if str(PIPELINE_ROOT) not in sys.path:
 
 import post_recheck as pr  # noqa: E402
 import apify_posts as apify  # noqa: E402
+from retire_apify_recheck import retire  # noqa: E402
+from requests.exceptions import HTTPError  # noqa: E402
 
 NOW = datetime(2026, 10, 9, 12, tzinfo=timezone.utc)
 
@@ -151,6 +153,34 @@ class RecheckIntegration(unittest.TestCase):
         self.add_posts(1)
         pr.main()
         self.assertEqual([["POST_000"]], self.purchases)
+
+    def test_account_switch_requires_explicit_retirement_before_replacement_purchase(self):
+        self.add_posts(2)
+        self.run_file = self.run_file.with_name("post_recheck_run.json")
+        self.details_file = self.run_file.with_name("post_recheck_run-details.json")
+        self.enterContext(patch.object(pr, "RUN_FILE", self.run_file))
+        pr.write_json(self.details_file, {"id": "oldRun", "consumed": False,
+                                        "usernames": ["POST_000"]})
+        pr.write_json(self.state_file, {"1": {"status": "present", "run_id": "completed"}})
+
+        def forbidden(method, path, **kwargs):
+            if path == "actor-runs/oldRun":
+                raise HTTPError("403 Forbidden")
+            return self.request(method, path, **kwargs)
+
+        with patch.object(apify.ApifyClient, "request", side_effect=forbidden):
+            with self.assertRaisesRegex(HTTPError, "403 Forbidden"):
+                pr.main()
+        self.assertEqual([], self.purchases)
+        self.publish.assert_not_called()
+        backup = retire(self.run_file.parent, "oldRun")
+        pr.main()
+        self.assertEqual([["POST_000"]], self.purchases)
+        state = pr.read_json(self.state_file)
+        self.assertEqual("present", state["0"]["status"])
+        self.assertEqual({"status": "present", "run_id": "completed"}, state["1"])
+        self.assertEqual("oldRun", pr.read_json(backup)["id"])
+        self.publish.assert_not_called()
 
     def test_state_write_failure_replays_paid_run_without_another_purchase(self):
         self.add_posts(1)

@@ -14,6 +14,10 @@ on:
         description: "Resume Apify batches halted by an abort or output contract failure (only after reviewing the cause)"
         type: boolean
         default: false
+      retire_recheck_run_id:
+        description: "Recovery only after an Apify account switch: archive this inaccessible recheck run ID (old paid output may be lost)"
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -81,8 +85,14 @@ jobs:
             exit 1
           fi
 
+      - name: Retire inaccessible recheck from the previous Apify account
+        if: inputs.retire_recheck_run_id != ''
+        env:
+          RETIRE_RECHECK_RUN_ID: ${{ inputs.retire_recheck_run_id }}
+        run: python pipeline/retire_apify_recheck.py --run-id "$RETIRE_RECHECK_RUN_ID"
+
       - name: Validate credentials
-        if: '!inputs.migrate_plaintext_cache'
+        if: ${{ !inputs.migrate_plaintext_cache && inputs.retire_recheck_run_id == '' }}
         env:
           APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -148,7 +158,7 @@ jobs:
           fi
 
       - name: Run collection, OCR, assessment and publication
-        if: '!inputs.migrate_plaintext_cache'
+        if: ${{ !inputs.migrate_plaintext_cache && inputs.retire_recheck_run_id == '' }}
         env:
           APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
           APIFY_POSTS_PER_PROFILE: ${{ vars.APIFY_POSTS_PER_PROFILE || '100' }}

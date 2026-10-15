@@ -377,6 +377,22 @@ plaintext `pipeline-report-*` artifact. Keep the migration input disabled therea
 Changing the key requires decrypting and reencrypting the last saved state with
 the old and new keys before running collection again.
 
+Switching **Apify accounts** is separate from cache encryption. A new account's
+token may return `403 Forbidden` for a saved run owned by the previous account;
+neither `migrate_plaintext_cache` nor `resume_halted` changes those permissions.
+Prefer recovering the paid run with access to the original account. If that is
+unavailable and the error is in `instagram.recheck`, manually run **Collect
+Instagram events** on the default branch with **retire_recheck_run_id** set to
+the exact run ID in that error. Leave the other inputs disabled. This recovery-only
+run archives `post_recheck_run-details.json` under a name containing the old ID,
+then encrypts and saves all state without collection, OCR, assessment or publication.
+It refuses a mismatched or already-consumed run. Verify **Save encrypted pipeline
+state** succeeds, then run normally with the ID field empty and both checkboxes off.
+Existing posts, extraction caches, assessments and deletion-check history are
+preserved. The old actor is not cancelled and its unread output is not recovered;
+replacement rechecks may incur new charges. Discovery-run access errors need
+separate review; this option only retires the saved recheck run.
+
 ## Local setup and tests
 
 ```bash
