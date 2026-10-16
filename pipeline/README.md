@@ -432,7 +432,14 @@ out, because a confirmation batch is mostly posts already reported deleted and
 is expected to come back that way. Such a batch with fewer than four first-time
 posts is not guarded, and the two-answer rule is the only protection.
 Withdrawn sources carry `assessment.deleted`, which publication skips so the
-archived copy is not republished. Progress is kept in `data/post_rechecks.json`.
+archived copy is not republished. A listing another live post still claims is
+not deleted with it. That happens when reconciliation kept the older post's
+listing because the newer repeat lacked a detail (an image, an end, a venue).
+Publication then has the newest such repeat republish the listing under its
+existing ID, with that post's link, caption and flyer (none, if it has none),
+and its venue when it names one. Title, times and the other merged details
+stay. A locked listing is left alone, and so is one an admin judged a
+different event from the repeat. Progress is kept in `data/post_rechecks.json`.
 A post is checked once, so a deletion after the check is not seen.
 Each batch saves its check results before marking the paid run consumed.
 An interrupted batch reuses its original run and post list; completed batches

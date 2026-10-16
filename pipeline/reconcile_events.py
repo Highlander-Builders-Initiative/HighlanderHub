@@ -833,15 +833,24 @@ def prefer_repost_source(winner: dict, rows: list[dict], *, reviews: Reviews = R
     source = max(candidates, key=lambda row: (media(row), row['id']))
     if not preserve_identity:
         return source
-    merged = merge_duplicates(winner, [winner, source])
+    return adopt_source(merge_duplicates(winner, [winner, source]), source)
+
+
+def adopt_source(listing: dict, source: dict) -> dict:
+    """The listing, now linked to and described by another post of its event.
+
+    The permalink, caption and flyer always come from the source, even when it
+    has none: they describe that one post. A corrected venue travels with its
+    source too. An omitted venue, TBA or the host center's own name corrects
+    nothing, so the listing's own venue stays.
+    """
+    adopted = dict(listing)
     for key in ('source_url', 'description', 'image_url'):
         if key in source:
-            merged[key] = source[key]
-    # A corrected venue travels with its source. An omitted venue, TBA or the
-    # host center's own name corrects nothing; merge_duplicates chose that.
+            adopted[key] = source[key]
     if _place_words(source) and not _host_venue(source):
-        merged['location'] = source['location']
-    return merged
+        adopted['location'] = source['location']
+    return adopted
 
 
 # Words every application or signup deadline shares; they name no program.

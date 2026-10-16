@@ -3,6 +3,7 @@ import copy
 import itertools
 import sys
 import unittest
+from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import patch
 
@@ -126,6 +127,81 @@ class RepostSourceTests(unittest.TestCase):
             publication.publish_posts([({}, {}), ({}, {})], '2026-09-26T17:00:00Z', meta={}, notify=False)
         load.assert_called_once_with()
         self.assertEqual(Reviews(), updates.call_args.kwargs['reviews'])
+
+
+class WithdrawnSourceTests(unittest.TestCase):
+    """The older post's listing outlives that post on its repeat's support."""
+
+    OLD, NEW = 'instagram:post:3992713400886284255', 'instagram:post:3992822134405002764'
+    PAYLOAD = {'status': 'complete', 'result': {}}
+
+    def merged(self):
+        old, new = announcements()
+        # A newer repeat without a flyer does not replace the original.
+        new['image_url'] = None
+        updates, removed, replacements = plan([old, new])
+        self.assertEqual({new['id']: old['id']}, replacements)
+        listing = updates[0] if updates else old
+        # remap_assessed_event_sources moved the repeat's support onto the listing.
+        registry = {self.OLD: {'assessment': self.PAYLOAD, 'event_ids': [old['id']],
+                               'known_event_ids': [old['id']]},
+                    self.NEW: {'assessment': self.PAYLOAD, 'event_ids': [old['id']],
+                               'known_event_ids': [new['id'], old['id']]}}
+        return old, new, listing, registry
+
+    def withdraw(self, registry):
+        import post_recheck
+        update = post_recheck.withdrawal(self.OLD, registry[self.OLD],
+                                         datetime(2026, 9, 27, tzinfo=timezone.utc))
+        # reconcile_source_assessments: no rows, so the post supports nothing.
+        registry[self.OLD] = {'assessment': update['assessment'], 'event_ids': [],
+                              'known_event_ids': update['known_event_ids']}
+
+    def republish(self, new, registry, canonical, **kwargs):
+        # post_updates skips the withdrawn post; only the repeat is processed.
+        update = {'source_key': self.NEW, 'origin': 'instagram', 'assessment': self.PAYLOAD,
+                  'rows': [copy.deepcopy(new)], 'known_event_ids': []}
+        return publication._withhold_reconciled([update], registry, canonical, **kwargs)
+
+    def test_listing_links_to_the_surviving_post_after_withdrawal(self):
+        old, new, listing, registry = self.merged()
+        self.withdraw(registry)
+        stats = {}
+        result = self.republish(new, registry, {old['id']: listing}, stats=stats)
+        self.assertEqual([self.NEW], [update['source_key'] for update in result])
+        [published] = result[0]['rows']
+        self.assertEqual(old['id'], published['id'])
+        for key in ('source_url', 'description', 'image_url'):
+            self.assertEqual(new[key], published[key], key)
+        self.assertIsNone(published['image_url'])
+        for key in ('title', 'starts_at', 'ends_at', 'location'):
+            self.assertEqual(listing[key], published[key], key)
+        self.assertNotIn('hosts', published)
+        self.assertEqual(1, stats['withdrawn_sources_replaced'])
+        # The next run republishes the same row, and nothing is left to merge.
+        self.assertEqual(result, self.republish(new, registry, {old['id']: published}))
+        self.assertEqual(([], set(), {}), plan([published]))
+
+    def test_listing_is_left_alone_while_its_post_is_up(self):
+        old, new, listing, registry = self.merged()
+        self.assertEqual([], self.republish(new, registry, {old['id']: listing}))
+
+    def test_locked_listing_and_distinct_decision_keep_the_listing(self):
+        old, new, listing, registry = self.merged()
+        self.withdraw(registry)
+        locked = listing | {'is_locked': True}
+        self.assertEqual([], self.republish(new, registry, {old['id']: locked}))
+        distinct = Reviews(distinct=frozenset({frozenset({old['id'], new['id']})}))
+        self.assertEqual([], self.republish(new, registry, {old['id']: listing}, reviews=distinct))
+
+    def test_admin_merge_keeps_the_listing_id_and_takes_the_surviving_source(self):
+        old, new, listing, registry = self.merged()
+        self.withdraw(registry)
+        result = self.republish(new, registry, {old['id']: listing},
+                                reviews=Reviews({new['id']: old['id']}))
+        [published] = result[0]['rows']
+        self.assertEqual(old['id'], published['id'])
+        self.assertEqual(new['source_url'], published['source_url'])
 
 
 if __name__ == '__main__':

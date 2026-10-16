@@ -597,10 +597,18 @@ def _withhold_reconciled(updates: list[dict], registry: dict, canonical: dict[st
     or it is locked. Otherwise the session republishes as before.
 
     A row an admin merged into the listing matches it whatever the rules say.
+
+    Reconciliation can keep the older post's listing when the newer repeat
+    lacks a detail. If post_recheck later withdraws that older post, the
+    listing survives on the repeat's support but nothing republishes it, and
+    it would keep linking to the deleted post. The newest withheld repeat then
+    publishes the listing itself, under the listing's ID, with its own link,
+    caption, flyer and any venue it names. A locked listing is left as it is,
+    and a repeat an admin judged a different event never supplies it.
     """
     from reconcile_events import (Reviews, _CandidateIndex, _ambiguous_summaries,
-                                  _summary_group_conflict, merge_duplicates,
-                                  prefer_repost_source, same_event)
+                                  _source_media, _summary_group_conflict, adopt_source,
+                                  merge_duplicates, prefer_repost_source, same_event)
     reviews = reviews or Reviews()
     # Current decisions supersede saved rows when checking whether a summary
     # still identifies only one event. A newly collected competing event must
@@ -649,12 +657,29 @@ def _withhold_reconciled(updates: list[dict], registry: dict, canonical: dict[st
             candidates = [row for row in candidates if row not in joined]
         withheld[canonical_id] = group[1:]
         skipped.update(row["id"] for row in group[1:])
+    # Withdrawn posts are skipped by post_updates, so every withheld row here
+    # comes from a post that is still up.
+    adopted: dict[str, dict] = {}
+    for canonical_id, duplicates in withheld.items():
+        listing = canonical[canonical_id]
+        sources = [row for row in duplicates if not reviews.judged_distinct([listing, row])]
+        if listing.get("is_locked") or not sources or not any(
+                ((registry.get(f"instagram:post:{media}") or {}).get("assessment") or {}).get("deleted")
+                for media in _source_media(listing)):
+            continue
+        source = max(sources, key=lambda row: (max(map(int, _source_media(row)), default=0), row["id"]))
+        # The listing's fields in this source's row shape, stamped by this run.
+        published = adopt_source(listing, source)
+        adopted[source["id"]] = {key: value if key == "scraped_at" else published.get(key, value)
+                                 for key, value in source.items()} | {"id": canonical_id}
     if stats is not None and skipped:
         stats["reconciled_duplicates_skipped"] = len(skipped)
+    if stats is not None and adopted:
+        stats["withdrawn_sources_replaced"] = len(adopted)
     kept = []
     for update in updates:
         rows = update.get("rows") or []
-        if rows and all(row["id"] in skipped for row in rows):
+        if rows and all(row["id"] in skipped and row["id"] not in adopted for row in rows):
             continue
         # The canonical source republishes its own row every run. Keep what
         # reconciliation merged into it from these duplicates (free food, a
@@ -662,7 +687,9 @@ def _withhold_reconciled(updates: list[dict], registry: dict, canonical: dict[st
         # Hosts are left to reconciliation; publication does not write them.
         merged_rows = []
         for row in rows:
-            if row['id'] in skipped:
+            if row['id'] in adopted:
+                row = adopted[row['id']]
+            elif row['id'] in skipped:
                 continue
             duplicates = withheld.get(row['id']) or []
             merged = merge_duplicates(row, [row, *duplicates]) if duplicates else row
