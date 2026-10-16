@@ -262,6 +262,33 @@ class RecheckIntegration(unittest.TestCase):
         self.assertEqual(1, len(self.purchases))
         self.assertEqual("withdrawn", pr.read_json(self.state_file)["0"]["status"])
 
+    def deleted_rows(self, deleted, present):
+        return ([{"kind": "post", "input": f"https://www.instagram.com/p/POST_{i:03d}/",
+                  "error": "Post deleted"} for i in deleted] +
+                [{"kind": "post", "data": {"code": f"POST_{i:03d}"}} for i in present])
+
+    def test_second_confirmation_batch_is_not_mistaken_for_an_outage(self):
+        self.add_posts(6)
+        pr.write_json(self.state_file, {str(i): {"status": "missing", "misses": 1,
+                      "checked_at": (NOW - timedelta(hours=8)).isoformat(), "run_id": "old"}
+                      for i in range(4)})
+        self.response_rows = self.deleted_rows(range(4), range(4, 6))
+        pr.main()
+        state = pr.read_json(self.state_file)
+        self.assertEqual(["withdrawn"] * 4 + ["present"] * 2,
+                         [state[str(i)]["status"] for i in range(6)])
+        self.assertEqual(4, len(self.publish.call_args.args[0]))
+        self.assertTrue(pr.read_json(self.details_file)["consumed"])
+
+    def test_first_time_mass_deletion_is_treated_as_an_outage(self):
+        self.add_posts(6)
+        self.response_rows = self.deleted_rows(range(4), range(4, 6))
+        with self.assertRaisesRegex(RuntimeError, "outage"):
+            pr.main()
+        self.assertFalse(self.state_file.exists())
+        self.assertFalse(pr.read_json(self.details_file)["consumed"])
+        self.publish.assert_not_called()
+
     def test_matching_rate_limit_stays_unknown_without_withdrawing(self):
         self.add_posts(1)
         self.response_rows = [{"input": "https://www.instagram.com/p/POST_000/", "error": "Rate limited"}]

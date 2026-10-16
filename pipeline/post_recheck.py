@@ -159,10 +159,14 @@ def main() -> None:
             if not identities or not identities.issubset(batch):
                 raise RuntimeError(f"Post recheck run {run['id']}: unrelated or unidentifiable output; paid batch retained")
         batch_result = classify(rows, set(batch))
-        gone = sum(1 for v in batch_result.values() if v == "missing")
-        if len(batch) >= 4 and gone * 2 > len(batch):
+        # Posts already reported deleted once are rechecked as a group, so they
+        # are expected to be missing again. Judge the lookup on the rest only.
+        fresh = [code for code in batch
+                 if not (state.get(by_code.get(code, "")) or {}).get("misses")]
+        gone = sum(1 for code in fresh if batch_result.get(code) == "missing")
+        if len(fresh) >= 4 and gone * 2 > len(fresh):
             # Posts this old almost never vanish together; the lookup is broken.
-            raise RuntimeError(f"Post recheck: {gone} of {len(batch)} posts reported deleted; "
+            raise RuntimeError(f"Post recheck: {gone} of {len(fresh)} first-time lookups reported deleted; "
                                "treating the response as an outage and changing nothing")
         results.update(batch_result)
         updates = []
