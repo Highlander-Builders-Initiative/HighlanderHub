@@ -424,8 +424,13 @@ when its event is within `APIFY_RECHECK_DAYS` (default 3), using the same hpix
 single-post lookup as collaboration details (about $0.0015 per post, capped per
 run by `APIFY_RECHECK_MAX_CHARGE_USD`, default $0.25). A post is treated as
 deleted only when the actor returns an explicit "deleted" error row for it, and
-its listings are withdrawn after two such answers in separate runs. A run where
-over half of a batch reports deleted is treated as an outage and changes nothing.
+its listings are withdrawn after two such answers in separate runs. The outage
+guard judges only first-time lookups: when a batch has at least four posts with
+no earlier deletion report and over half of those come back deleted, the run is
+treated as an outage and changes nothing. Posts on their second check are left
+out, because a confirmation batch is mostly posts already reported deleted and
+is expected to come back that way. Such a batch with fewer than four first-time
+posts is not guarded, and the two-answer rule is the only protection.
 Withdrawn sources carry `assessment.deleted`, which publication skips so the
 archived copy is not republished. Progress is kept in `data/post_rechecks.json`.
 A post is checked once, so a deletion after the check is not seen.
