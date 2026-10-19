@@ -28,7 +28,7 @@
     "tailwind-merge": "^3.7.0"
   },
   "devDependencies": {
-    "@electric-sql/pglite": "^0.5.9",
+    "@electric-sql/pglite": "^0.5.10",
     "@playwright/test": "^1.64.0",
     "@types/node": "^26.6.5",
     "@types/react": "^19.3.0",
