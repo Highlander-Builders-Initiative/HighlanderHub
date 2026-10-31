@@ -1,12 +1,17 @@
 import { spawnSync } from 'node:child_process';
 
 // npm audit cannot ignore an advisory. Each entry here is one with no patched
-// release that has been judged not to apply; remove it once a fix ships.
+// release that the depending packages accept, and that has been judged not to
+// apply; remove it once they move to a fixed version.
 const ACCEPTED = {
-  // braces <=3.0.3 (every release): stack exhaustion from deeply nested
-  // patterns. Reached only through tailwindcss and eslint-config-next, which
-  // expand globs from this repository's own config, never user input.
-  'GHSA-vfj7-8cjw-p6xm': 'braces has no patched release; dev tooling only',
+  // minimatch <11.0.1: glob-pattern amplification when optimizationLevel >= 2.
+  // Only ESLint and its plugins use it, matching globs from this repository's
+  // own lint config, never user input. eslint-plugin-react, -import and
+  // -jsx-a11y need 3.x, which predates optimizationLevel and lacks the
+  // vulnerable code; 11.x exports an object instead of the function they call,
+  // so it can't be forced through overrides. typescript-eslint's 10.x copy
+  // only matches projectService globs, which eslint.config.mjs doesn't set.
+  'GHSA-g3hv-75wg-m249': 'minimatch fix is 11.x only, which ESLint plugins reject; dev tooling only',
 };
 const BLOCKING = new Set(['moderate', 'high', 'critical']);
 
