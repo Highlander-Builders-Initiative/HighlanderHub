@@ -153,29 +153,51 @@ Optional repository **Actions variables**:
 | `APIFY_MAX_CHARGE_USD` | `10` | Combined charge ceilings for all batches in one collection cycle; excludes Google API costs |
 | `APIFY_DISCOVERY_OVERLAP_SECONDS` | `300` | Discovery overlap behind each successful checkpoint (0–3600 seconds) |
 | `APIFY_INCOMPLETE_RETRY_HOURS` | `8` | Wait before retrying a profile whose discovery was incomplete (at least 8 hours) |
+| `APIFY_RECHECK_ENABLED` | `false` | Run the deleted-post recheck; off while hpix single-post lookups are broken |
 
 New collection uses [hpix/instagram-scraper](https://apify.com/hpix/instagram-scraper),
-ID `JER1eC8E7teQWMN3p`, pinned to build `1.2.17`, with 1 GB memory.
+ID `JER1eC8E7teQWMN3p`, pinned to build `1.2.27`, with 1 GB memory.
 It requests profile posts and reels, raw media data, and no profile records.
 Both `scrape_detailed_data` and `scrape_restricted_posts` are explicitly false:
-their documented restricted-post event costs $0.10 per result.
+their documented restricted-post event costs $0.10 per result. Club avatar runs
+(`club_avatars.py`) stay on build `1.2.17`, the last one verified for profiles.
 
 `fromDate` accepts only `YYYY-MM-DD`. A verified server-side `custom_functions`
 `shouldSkip` checks the native post timestamp against the precise checkpoint
-before export/billing. `shouldContinue` always returns true so an old pin does
-not stop traversal. `fromDate` provides the coarse pagination boundary. Unknown
-or malformed timestamps are exported for validation rather than silently skipped.
-If the actor exports anything older than the precise paid cutoff, collection
-halts. The exact timestamp filter was checked against live output and settled
-charges; relying on `item.kind` in this hook does not work in build 1.2.17.
+before export/billing. `fromDate` provides the coarse pagination boundary and,
+on the pinned build, walks past old pinned posts (the log says `Skipping pinned
+post X (taken at T, newer posts follow)`). Build 1.2.25 stopped at them
+instead: every row there reports `is_pinned: false`, so a club whose pin
+predated the cutoff came back empty. The hooks receive only the raw media node
+(no profile, no position), so the walk cannot be steered per profile from our
+side; `shouldContinue` always returns true. Unknown or malformed timestamps are
+exported for validation rather than silently skipped. If the actor exports
+anything older than the precise paid cutoff, collection halts.
 
-A new post whose owner differs from the requested club gets one individual-post
-lookup per shortcode in that batch to recover accepted coauthors. Saved media
-IDs skip enrichment and processing. Details must preserve the exact media ID,
-shortcode and timestamp and pass the same ownership and media validation.
-A valid unrelated repost is skipped; a feed containing only unrelated reposts
-cannot establish ownership coverage. Multiple club associations are not yet
-persisted: the archive still stores one routing handle per media ID.
+Since 1.2.25 each row's raw `data` is Instagram's v1 media object (`pk`,
+`code`, `taken_at`, `user`, `caption.text`, `coauthor_producers`,
+`carousel_media`, `image_versions2`), the same shape individual-post lookups
+return. hpix guarantees only the mapped `metadata` block and warns that raw
+data follows Meta's API. Raw data is still needed for carousel slides and the
+exact media ID, so `hpix_contract.hpix_item` requires every row to agree with
+`metadata` on shortcode, media ID, timestamp, owner, caption and video flag.
+A missing field or any disagreement fails the row; if no row in a batch
+validates, collection halts rather than spending on later batches.
+
+The v1 feed lists accepted coauthors by numeric ID only, apart from invited
+ones. A post owned by someone else counts for the club when the club is its
+owner or an accepted coauthor, matched by handle or, when no handle is given,
+by the roster's `instagram_user_id`. A new post whose owner differs from the
+requested club, and whose coauthors do not include the club's roster ID, gets
+one individual-post lookup per shortcode in that batch to recover accepted
+coauthors. Saved media IDs skip enrichment and processing. Details must
+preserve the exact media ID, shortcode and timestamp and pass the same
+ownership and media validation. A valid unrelated repost is skipped; a feed
+containing only unrelated reposts cannot establish ownership coverage. Multiple
+club associations are not yet persisted: the archive still stores one routing
+handle per media ID. Since 2026-10-30 individual-post lookups answer "Deleted or
+restricted post" for live posts on every build, so a club whose batch needs one
+stays incomplete and is retried; most collaborations no longer need one.
 
 A profile advances only after `Finished scraping posts`, durable archival, and
 no failure or cap. Null/error profile rows override completion, even if the
@@ -418,6 +440,11 @@ PYTHON_DOTENV_DISABLED=1 .venv/bin/python -m unittest discover -s tests -v
 
 
 ## Deleted-post recheck
+
+Off unless the repository variable `APIFY_RECHECK_ENABLED` is `true`. Since
+2026-10-30 hpix's individual-post lookup reports live posts as deleted, and two
+such answers withdrew a live listing. Before turning it back on, look up a few
+known-live posts on the pinned build and confirm they come back as posts.
 
 `post_recheck.py` (stage `instagram.recheck`) looks up each source post once,
 when its event is within `APIFY_RECHECK_DAYS` (default 3), using the same hpix

@@ -22,13 +22,25 @@ STATE = {h: {'activated_at': '2026-09-01T00:00:00Z',
              'last_status': 'incomplete'} for h in ACCOUNTS}
 
 
-def row(handle='club', owner='club', owner_id='42'):
-    return {'kind': 'post', 'input': handle, 'data': {
-        '__typename': 'GraphImage', 'id': '123', 'shortcode': 'ABC',
-        'taken_at_timestamp': 1789776000, 'owner': {'username': owner, 'id': owner_id},
-        'coauthor_producers': [], 'edge_media_to_caption': {'edges': [{'node': {'text': 'Event'}}]},
-        'display_resources': [{'src': 'https://example.com/photo.jpg', 'config_width': 1080, 'config_height': 1080}],
-        'is_video': False}}
+def metadata(node):
+    """hpix's guaranteed mapping, derived from the same raw node."""
+    taken = node.get('taken_at')
+    return {'shortcode': node.get('code'), 'owner_id': (node.get('user') or {}).get('pk'),
+            'owner_username': (node.get('user') or {}).get('username'),
+            'taken_at': datetime.fromtimestamp(taken, timezone.utc).isoformat()
+                        .replace('+00:00', '.000Z') if isinstance(taken, int) else None,
+            'caption': (node.get('caption') or {}).get('text'),
+            'is_video': node.get('media_type') == 2}
+
+
+def row(handle='club', owner='club', owner_id='42', **data):
+    """A 1.2.25+ feed row: raw v1 media plus the metadata hpix guarantees."""
+    node = {'id': f'123_{owner_id}', 'pk': '123', 'code': 'ABC', 'taken_at': 1789776000,
+            'user': {'username': owner, 'pk': owner_id}, 'media_type': 1,
+            'coauthor_producers': [], 'caption': {'text': 'Event'},
+            'image_versions2': {'candidates': [
+                {'url': 'https://example.com/photo.jpg', 'width': 1080, 'height': 1080}]}, **data}
+    return {'kind': 'post', 'input': handle, 'data': node, 'metadata': metadata(node)}
 
 
 def run(**updates):
@@ -292,6 +304,64 @@ class HpixCollectionTests(unittest.TestCase):
         self.assertEqual('ok', self.status('club')['last_status'])
         self.assertEqual('partner', self.write.call_args.args[0]['owner_username'])
 
+    def test_coauthor_listed_only_by_roster_id_keeps_the_collaboration(self):
+        # hpix 1.2.25+ names accepted coauthors by numeric ID alone.
+        self.api.items.return_value = [row(owner='partner', owner_id='77')]
+        self.detail(coauthor_producers=[{'pk': '42', 'id': '42'}])
+        self.collect()
+        self.write.assert_called_once()
+        self.assertEqual('club', self.write.call_args.args[0]['handle'])
+        self.assertEqual('ok', self.status('club')['last_status'])
+
+    def test_feed_coauthor_with_roster_id_needs_no_paid_lookup(self):
+        self.api.items.return_value = [row(owner='partner', owner_id='77',
+                                           coauthor_producers=[{'pk': '42', 'id': '42'}])]
+        self.collect()
+        self.api.details.assert_not_called()
+        self.assertEqual('club', self.write.call_args.args[0]['handle'])
+        self.assertEqual('partner', self.write.call_args.args[0]['owner_username'])
+
+    def test_feed_coauthor_with_wrong_id_still_gets_a_lookup(self):
+        self.api.items.return_value = [row(owner='partner', owner_id='77',
+                                           coauthor_producers=[{'pk': '999', 'id': '999'}])]
+        self.detail()
+        self.collect()
+        self.api.details.assert_called_once()
+
+    def test_unknown_coauthor_id_is_an_unrelated_repost(self):
+        self.api.items.return_value = [row(owner='partner', owner_id='77')]
+        self.detail(coauthor_producers=[{'pk': '555', 'id': '555'}])
+        self.collect()
+        self.write.assert_not_called()
+        self.assertEqual('ok', self.status('club')['last_status'])
+
+    def test_raw_data_must_agree_with_guaranteed_metadata(self):
+        for field, value in (('shortcode', 'OTHER'), ('owner_id', '99'),
+                             ('owner_username', 'someoneelse'), ('caption', 'Edited'),
+                             ('taken_at', '2026-09-19T06:00:00.000Z'), ('is_video', True)):
+            with self.subTest(field=field):
+                self.write.reset_mock()
+                bad = row(); bad['metadata'][field] = value
+                self.api.items.return_value = [bad]
+                with self.assertRaises(apify.PartialCollection): self.collect()
+                self.assertEqual('incomplete', self.status('club')['last_status'])
+                self.assertIn(field.split('_')[0], json.loads(self.path.read_text())['errors'][0])
+                self.write.assert_not_called()
+
+    def test_missing_metadata_or_raw_fields_fail_closed(self):
+        for change in ('metadata', 'caption', 'coauthor_producers', 'user', 'carousel'):
+            with self.subTest(change=change):
+                self.write.reset_mock()
+                bad = row(media_type=8) if change == 'carousel' else row()
+                if change == 'metadata':
+                    del bad['metadata']
+                elif change != 'carousel':
+                    del bad['data'][change]
+                self.api.items.return_value = [bad]
+                with self.assertRaises(apify.PartialCollection): self.collect()
+                self.assertEqual('incomplete', self.status('club')['last_status'])
+                self.write.assert_not_called()
+
     def test_known_collaboration_is_not_enriched_or_overwritten(self):
         self.known.return_value = {'123'}
         self.api.items.return_value = [row(owner='partner', owner_id='77')]
@@ -305,7 +375,7 @@ class HpixCollectionTests(unittest.TestCase):
         self.assertEqual('GraphVideo', self.write.call_args.args[0]['typename'])
 
     def test_verified_unrelated_repost_does_not_strand_a_matching_feed(self):
-        owned = row(); owned['data'].update(id='456', shortcode='DEF')
+        owned = row(id='456_42', pk='456', code='DEF')
         self.api.items.return_value = [row(owner='partner', owner_id='77'), owned]
         self.detail(coauthor_producers=[])
         self.collect()
@@ -329,7 +399,7 @@ class HpixCollectionTests(unittest.TestCase):
             'posts_per_profile': 100, 'started_at': later.isoformat(), 'consumed': False}))
         def filtered_items(_):
             cutoff = apify.parse_instant(self.api.run.call_args.args[0]['onlyPostsNewerThan'])
-            self.assertGreater(cutoff.timestamp(), repost['data']['taken_at_timestamp'])
+            self.assertGreater(cutoff.timestamp(), repost['data']['taken_at'])
             return []
         self.api.items.side_effect = filtered_items
         apify.collect(self.api, ACCOUNTS, state, later, limit=100, max_charge=1, timeout=300, archive=apify.ArchiveIndex())
@@ -372,7 +442,7 @@ class HpixCollectionTests(unittest.TestCase):
                 self.write.assert_not_called()
 
     def test_old_output_halts_before_extra_detail_spend(self):
-        r = row(owner='partner', owner_id='77'); r['data']['taken_at_timestamp'] = 1000000000
+        r = row(owner='partner', owner_id='77', taken_at=1000000000)
         self.api.items.return_value = [r]
         with self.assertRaises(apify.CollectionHalted): self.collect()
         self.api.details.assert_not_called()
@@ -492,7 +562,7 @@ class HpixInputTests(unittest.TestCase):
             self.assertTrue(payload['scrape_reels'])
             for flag in ('scrape_profile_data', 'scrape_detailed_data', 'scrape_restricted_posts'):
                 self.assertFalse(payload[flag])
-            self.assertEqual('1.2.17', call.kwargs['params']['build'])
+            self.assertEqual('1.2.27', call.kwargs['params']['build'])
             self.assertEqual(.8, call.kwargs['params']['maxTotalChargeUsd'])
 
     def test_log_cap_overrides_finish_even_with_filtered_dataset(self):

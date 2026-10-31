@@ -77,7 +77,7 @@ class RecheckIntegration(unittest.TestCase):
         self.details_file = Path(directory) / "recheck-details.json"
         self.enterContext(patch.object(pr, "STATE_FILE", self.state_file))
         self.enterContext(patch.object(pr, "RUN_FILE", self.run_file))
-        self.enterContext(patch.dict(pr.os.environ, {"APIFY_TOKEN": "test"}))
+        self.enterContext(patch.dict(pr.os.environ, {"APIFY_TOKEN": "test", "APIFY_RECHECK_ENABLED": "true"}))
         self.clock = self.enterContext(patch.object(pr, "datetime", wraps=datetime))
         self.clock.now.return_value = NOW
         self.events = []
@@ -135,6 +135,17 @@ class RecheckIntegration(unittest.TestCase):
                 raise RuntimeError("dataset temporarily unavailable")
             return self.datasets[path.split("/")[1]]
         raise AssertionError((method, path))
+
+    def test_off_unless_enabled_buys_nothing_and_keeps_pending_work(self):
+        self.add_posts(2)
+        pr.write_json(self.details_file, {"id": "paid", "consumed": False, "usernames": ["POST_000"]})
+        for value in ("", "false", "0"):
+            with self.subTest(value=value), patch.dict(pr.os.environ, {"APIFY_RECHECK_ENABLED": value}):
+                pr.main()
+        self.assertEqual([], self.requests)
+        self.publish.assert_not_called()
+        self.assertFalse(self.state_file.exists())
+        self.assertFalse(pr.read_json(self.details_file)["consumed"])
 
     def test_distinct_batches_and_later_cycle_do_not_recheck_present_posts(self):
         self.add_posts(60)

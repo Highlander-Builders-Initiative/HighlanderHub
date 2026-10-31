@@ -36,6 +36,16 @@ DELETED = re.compile(r"deleted|not found|no longer available|does not exist", re
 POST_URL = re.compile(r"instagram\.com/(?:[^/]+/)?(?:p|reel|reels)/([A-Za-z0-9_-]+)")
 
 
+def enabled() -> bool:
+    """Off unless APIFY_RECHECK_ENABLED says otherwise.
+
+    Since 2026-10-30 hpix's single-post lookup answers "Deleted or restricted
+    post" for live posts, on every build, so each answer could withdraw a live
+    listing. Turn this back on only after lookups return known-live posts.
+    """
+    return os.environ.get("APIFY_RECHECK_ENABLED", "").strip().lower() in ("1", "true", "yes", "on")
+
+
 def lookahead_days() -> int:
     return int(os.environ.get("APIFY_RECHECK_DAYS", LOOKAHEAD_DAYS))
 
@@ -111,6 +121,10 @@ def shortcodes(media_ids: list[str]) -> dict[str, str]:
 
 
 def main() -> None:
+    if not enabled():
+        # Leaves any unconsumed paid batch in place for when it is turned on.
+        log.info("post recheck: off (APIFY_RECHECK_ENABLED is not true)")
+        return
     import assessed_events
     from db import client
     now = datetime.now(timezone.utc)

@@ -25,7 +25,7 @@ from pathlib import Path
 
 from PIL import Image, ImageOps
 
-from apify_posts import HPIX_ACTOR_ID, HPIX_BUILD, ApifyClient, hpix_input
+from apify_posts import HPIX_ACTOR_ID, ApifyClient, hpix_input
 from post_archive import read_json, write_json
 from image_ocr import _download_image
 
@@ -40,6 +40,9 @@ INSTAGRAM_RUN_FILE = ROOT / "data" / "apify_avatar_run.json"
 
 INSTAGRAM = "instagram"
 PROFILE_PRICE_USD = 0.00299  # hpix 1.2.17 profile_scraped, Free tier
+# Profile-only runs were verified on 1.2.17, which kept serving profiles
+# through the October feed outage. Post collection pins its own build.
+HPIX_BUILD = "1.2.17"
 # Instagram's blank silhouette; a monogram says more than a grey outline.
 DEFAULT_PICTURE = "44884218_345707102882519_2446069589734326272_n"
 # Mirrors src/lib/events/anonymized-hosts.ts: these hosts never get a face.

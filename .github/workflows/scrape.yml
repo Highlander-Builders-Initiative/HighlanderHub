@@ -167,6 +167,8 @@ jobs:
           APIFY_TIMEOUT_SECONDS: ${{ vars.APIFY_TIMEOUT_SECONDS || '3600' }}
           APIFY_DISCOVERY_OVERLAP_SECONDS: ${{ vars.APIFY_DISCOVERY_OVERLAP_SECONDS || '300' }}
           APIFY_INCOMPLETE_RETRY_HOURS: ${{ vars.APIFY_INCOMPLETE_RETRY_HOURS || '8' }}
+          # Deleted-post recheck; off until hpix single-post lookups work again.
+          APIFY_RECHECK_ENABLED: ${{ vars.APIFY_RECHECK_ENABLED || 'false' }}
           PIPELINE_ACCOUNT_SOURCE: accounts_json
           # Historical imports are explicit local maintenance, never scheduled.
           PIPELINE_POST_BACKFILL_SINCE: ''

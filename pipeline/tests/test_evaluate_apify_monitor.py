@@ -1,6 +1,7 @@
 import copy
 import sys
 import unittest
+from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -73,14 +74,20 @@ class MonitorEvaluationTests(unittest.TestCase):
 
 
 def hpix_node(**overrides):
-    node = {'__typename': 'GraphImage', 'id': '123', 'shortcode': 'abc',
-            'taken_at_timestamp': 1788307200, 'owner': {'id': '42', 'username': 'club'},
-            'coauthor_producers': [], 'is_video': False,
-            'edge_media_to_caption': {'edges': [{'node': {'text': 'Event'}}]},
-            'display_resources': [{'src': 'https://example.com/a.jpg', 'config_width': 640,
-                                   'config_height': 640}]}
+    """A 1.2.25+ feed row: raw v1 media plus hpix's guaranteed metadata."""
+    node = {'id': '123_42', 'pk': '123', 'code': 'abc', 'taken_at': 1788307200,
+            'user': {'pk': '42', 'username': 'club'}, 'media_type': 1,
+            'coauthor_producers': [], 'caption': {'text': 'Event'},
+            'image_versions2': {'candidates': [{'url': 'https://example.com/a.jpg',
+                                                'width': 640, 'height': 640}]}}
     node.update(overrides)
-    return {'kind': 'post', 'input': 'club', 'data': node}
+    return {'kind': 'post', 'input': 'club', 'data': node, 'metadata': {
+        'shortcode': node.get('code'), 'owner_id': (node.get('user') or {}).get('pk'),
+        'owner_username': (node.get('user') or {}).get('username'),
+        'taken_at': datetime.fromtimestamp(node.get('taken_at', 0), timezone.utc)
+                            .isoformat().replace('+00:00', '.000Z'),
+        'caption': (node.get('caption') or {}).get('text'),
+        'is_video': node.get('media_type') == 2}}
 
 
 ARCHIVE = {'handle': 'club', 'media_id': '123', 'owner_username': 'club', 'owner_userid': '42',
@@ -136,38 +143,43 @@ class HpixEvaluationTests(unittest.TestCase):
         result = self.evaluate([], log=log)
         self.assertEqual(1, result['false_quiet']['rate'])
 
-    def test_missing_graphql_fields_are_not_silently_defaulted(self):
-        for field in ('coauthor_producers', 'edge_media_to_caption', 'owner', 'display_resources'):
+    def test_missing_raw_fields_are_not_silently_defaulted(self):
+        for field in ('coauthor_producers', 'caption', 'user', 'media_type'):
             node = hpix_node()
             del node['data'][field]
             result = self.evaluate([node])
             self.assertEqual(0, result['contract_valid_rows']['rate'], field)
             self.assertEqual(f'missing {field}', result['contract_failures'][0]['reason'])
 
+    def test_raw_data_that_disagrees_with_metadata_is_rejected(self):
+        node = hpix_node()
+        node['metadata']['caption'] = 'Edited'
+        result = self.evaluate([node])
+        self.assertEqual(0, result['contract_valid_rows']['rate'])
+        self.assertIn('caption', result['contract_failures'][0]['reason'])
+
     def test_carousel_children_must_keep_their_order(self):
         def child(name):
-            return {'is_video': False,
-                    'display_resources': [{'src': f'https://example.com/{name}.jpg',
-                                           'config_width': 640, 'config_height': 640}]}
+            return {'media_type': 1, 'image_versions2': {'candidates': [
+                {'url': f'https://example.com/{name}.jpg', 'width': 640, 'height': 640}]}}
         reference = copy.deepcopy(ARCHIVE)
         reference['typename'] = 'GraphSidecar'
         reference['media'] = [{'index': 0, 'is_video': False, 'media_key': 'a',
                                'image_url': 'https://example.com/a.jpg'},
                               {'index': 1, 'is_video': False, 'media_key': 'b',
                                'image_url': 'https://example.com/b.jpg'}]
-        node = hpix_node(__typename='GraphSidecar', edge_sidecar_to_children={
-            'edges': [{'node': child('b')}, {'node': child('a')}]})
+        node = hpix_node(media_type=8, carousel_media=[child('b'), child('a')])
         result = self.evaluate([node], reference=[reference])
         self.assertEqual(0, result['fidelity']['carousel']['rate'])
 
     def test_a_feed_post_owned_by_a_stranger_is_not_attributed_to_the_club(self):
-        node = hpix_node(owner={'id': '99', 'username': 'someoneelse'})
+        node = hpix_node(user={'pk': '99', 'username': 'someoneelse'})
         result = self.evaluate([node])
         self.assertEqual(0, result['contract_valid_rows']['rate'])
         self.assertIn('owner/accepted coauthor', result['contract_failures'][0]['reason'])
 
     def test_a_verified_coauthor_restores_club_attribution(self):
-        node = hpix_node(owner={'id': '99', 'username': 'someoneelse'},
+        node = hpix_node(user={'pk': '99', 'username': 'someoneelse'},
                          coauthor_producers=[{'id': '42', 'username': 'club'}])
         self.assertEqual('club', hpix_item(node)['coauthor_producers'][0]['username'])
         result = self.evaluate([node])

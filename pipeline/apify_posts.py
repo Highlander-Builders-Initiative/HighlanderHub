@@ -31,7 +31,7 @@ log = logging.getLogger("pipeline.apify_posts")
 ACTOR_ID = "nH2AHrwxeTRJoN5hX"  # apify/instagram-post-scraper
 ACTOR_BUILD = "0.0.599"
 HPIX_ACTOR_ID = "JER1eC8E7teQWMN3p"  # hpix/instagram-scraper
-HPIX_BUILD = "1.2.17"
+HPIX_BUILD = "1.2.27"
 LEGACY_ACTOR_ID = "Y5mzw9TLFReI0d6gQ"
 API = "https://api.apify.com/v2"
 RUN_FILE = DATA_DIR / "apify_run.json"
@@ -94,9 +94,10 @@ class ApifyClient:
         cutoff = parse_instant(actor_input["onlyPostsNewerThan"])
         if cutoff is None:
             raise ValueError("Invalid hpix discovery cutoff")
-        # hpix's fromDate schema accepts only whole dates. Its server-side
-        # shouldSkip receives the native post node (not the output envelope).
-        # Continue walking past old pins; only fromDate ends the feed walk.
+        # hpix's fromDate schema accepts only whole dates and, since the
+        # pinned build, walks past old pinned posts itself. The server-side
+        # hooks receive only the raw v1 media node: no profile, no position.
+        # shouldContinue stays true so fromDate alone ends the feed walk.
         payload["fromDate"] = cutoff.date().isoformat()
         payload["custom_functions"] = (
             "{ shouldSkip: (item) => { const raw = item.data ?? item; "
@@ -265,6 +266,25 @@ def identity(item: dict, accounts: dict, seen_at: datetime) -> tuple[str, str, d
     return handle, media_id, posted_at
 
 
+def _claims(author: Any, handle: str, expected_id: Any) -> bool:
+    """Whether an author presents itself as the club, by handle or roster ID.
+
+    hpix 1.2.25+ lists accepted coauthors by numeric ID only. Without a
+    username, only the club's exact roster ID identifies it.
+    """
+    if not isinstance(author, dict):
+        return False
+    if author.get("username") is not None:
+        return _handle(author["username"]) == handle
+    return bool(expected_id) and str(author.get("pk") or author.get("id")) == str(expected_id)
+
+
+def _accepted(author: Any, handle: str, expected_id: Any) -> bool:
+    """A claim that also carries the roster ID, when the roster knows it."""
+    return _claims(author, handle, expected_id) and (
+        not expected_id or str(author.get("pk") or author.get("id")) == str(expected_id))
+
+
 def owner_userid(owner: dict) -> Any:
     """Keep one numeric owner identity: this actor reports IDs as strings."""
     value = owner.get("pk") or owner.get("id")
@@ -278,9 +298,7 @@ def normalize(item: dict, accounts: dict, seen_at: datetime) -> dict:
     owner_name = _handle(owner.get("username"))
     authors = [owner, *(item.get("coauthor_producers") or [])]
     expected_id = accounts[handle].get("instagram_user_id")
-    if not any(_handle(author.get("username")) == handle and
-               (not expected_id or str(author.get("pk") or author.get("id")) == str(expected_id))
-               for author in authors):
+    if not any(_accepted(author, handle, expected_id) for author in authors):
         raise ValueError(f"{handle}: owner/accepted coauthor does not match roster")
     shortcode = item.get("code")
     if not media_id.isascii() or not media_id.isdigit() or not isinstance(shortcode, str) or not re.fullmatch(r"[A-Za-z0-9_-]+", shortcode):
@@ -429,8 +447,12 @@ def prepare_hpix(api, run, rows, accounts, boundaries, known, now, *, max_charge
                     raise ValueError("invalid shortcode")
                 owner = item["user"]
                 expected = accounts[handle].get("instagram_user_id")
-                if (_handle(owner.get("username")) != handle or
-                        (expected and str(owner.get("pk")) != str(expected))):
+                # The v1 feed separates accepted coauthors from invited ones,
+                # so a roster-ID match there already proves the collaboration.
+                if ((_handle(owner.get("username")) != handle or
+                        (expected and str(owner.get("pk")) != str(expected))) and
+                        not any(_accepted(author, handle, expected)
+                                for author in item["coauthor_producers"])):
                     needed.setdefault(code, []).append(item)
             mapped.append(item)
         except (ValueError, TypeError, KeyError, AttributeError, OverflowError, OSError) as exc:
@@ -491,8 +513,9 @@ def prepare_hpix(api, run, rows, accounts, boundaries, known, now, *, max_charge
                     if not isinstance(routed.get("coauthor_producers"), list):
                         raise ValueError("missing or invalid collaboration detail coauthors")
                     authors = [routed.get("user") or {}, *routed["coauthor_producers"]]
-                    names = {_handle(author.get("username")) for author in authors}
-                    unrelated = routed["scraped_username"] not in names
+                    club = _handle(routed["scraped_username"])
+                    expected = accounts[club].get("instagram_user_id")
+                    unrelated = not any(_claims(author, club, expected) for author in authors)
                     if unrelated:
                         owner = _handle(routed["user"]["username"])
                         normalize({**routed, "scraped_username": owner}, {owner: {}}, now)

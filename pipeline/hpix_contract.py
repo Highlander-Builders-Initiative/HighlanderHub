@@ -1,50 +1,66 @@
-"""Verified hpix 1.2.17 feed adapter and completion signals."""
+"""Verified hpix 1.2.25+ feed adapter and completion signals.
+
+Since 1.2.25 each row's raw `data` is Instagram's v1 media object, the same
+shape `normalize` already reads for individual-post lookups. hpix guarantees
+only the mapped `metadata` block; raw `data` follows Meta's API and can change
+without notice. We still need raw `data` for carousel slides and the exact
+numeric media ID, so every row must agree with `metadata` on identity, time,
+owner and caption, and a missing field or any disagreement fails the row closed.
+"""
 import re
 
-HPIX_KIND = {'GraphImage': 1, 'GraphVideo': 2, 'GraphSidecar': 8}
+from post_archive import parse_instant
+
+RAW_FIELDS = ('id', 'pk', 'code', 'taken_at', 'user', 'media_type',
+              'caption', 'coauthor_producers')
+META_FIELDS = ('shortcode', 'taken_at', 'owner_id', 'owner_username',
+               'caption', 'is_video')
 
 
 def hpix_item(row: dict) -> dict:
-    """Map an hpix/instagram-scraper profile-feed node onto our contract.
+    """Map an hpix/instagram-scraper feed row onto our native contract.
 
-    The actor returns raw Instagram GraphQL nodes. Absence of a field is an
-    incomplete row, never an empty caption, carousel or coauthor list.
+    Absence of a field is an incomplete row, never an empty caption, carousel
+    or coauthor list.
     """
     node = row.get('data')
     if not isinstance(node, dict):
         raise ValueError('no post node; profile retrieval failed')
-    for field in ('__typename', 'id', 'shortcode', 'taken_at_timestamp', 'owner',
-                  'coauthor_producers', 'edge_media_to_caption', 'display_resources'):
+    meta = row.get('metadata')
+    if not isinstance(meta, dict):
+        raise ValueError('missing metadata')
+    for field in RAW_FIELDS:
         if field not in node:
             raise ValueError(f'missing {field}')
-    if node['__typename'] not in HPIX_KIND:
-        raise ValueError(f"unsupported __typename {node['__typename']!r}")
-    if node['__typename'] == 'GraphSidecar' and 'edge_sidecar_to_children' not in node:
-        raise ValueError('missing edge_sidecar_to_children')
+    for field in META_FIELDS:
+        if field not in meta:
+            raise ValueError(f'missing metadata.{field}')
+    if node['media_type'] not in (1, 2, 8):
+        raise ValueError(f"unsupported media_type {node['media_type']!r}")
+    if node['media_type'] == 8 and not isinstance(node.get('carousel_media'), list):
+        raise ValueError('missing carousel_media')
     if not isinstance(node['coauthor_producers'], list):
         raise ValueError('invalid coauthor_producers')
 
-    def media(child):
-        sources = [r for r in (child.get('display_resources') or [])
-                   if isinstance(r.get('src'), str)]
-        best = max(sources, key=lambda r: (r.get('config_width') or 0) * (r.get('config_height') or 0),
-                   default=None)
-        return {'media_type': 2 if child.get('is_video') else 1,
-                'image_url': (best or {}).get('src') or child.get('display_url')}
-
-    children = [edge['node'] for edge in
-                ((node.get('edge_sidecar_to_children') or {}).get('edges') or [])]
-    captions = [edge['node'].get('text')
-                for edge in (node['edge_media_to_caption'].get('edges') or [])]
-    owner = node['owner'] or {}
-    return {**media(node), 'media_type': HPIX_KIND[node['__typename']],
-            'id': node['id'], 'pk': node['id'], 'code': node['shortcode'],
-            'scraped_username': row.get('input'), 'taken_at': node['taken_at_timestamp'],
-            'user': {'username': owner.get('username'), 'pk': owner.get('id')},
-            'coauthor_producers': node['coauthor_producers'] or [],
-            'caption': {'text': captions[0] if captions else None},
-            'carousel_media': [media(child) for child in children]}
-
+    owner = node['user'] if isinstance(node['user'], dict) else {}
+    caption = node['caption']
+    text = caption.get('text') if isinstance(caption, dict) else caption
+    posted = parse_instant(meta['taken_at'])
+    agrees = {
+        'shortcode': node['code'] == meta['shortcode'],
+        'media id': str(node['id']).split('_')[0] == str(node['pk']),
+        'taken_at': (posted is not None and isinstance(node['taken_at'], (int, float))
+                     and not isinstance(node['taken_at'], bool)
+                     and abs(posted.timestamp() - node['taken_at']) < 1),
+        'owner': (str(owner.get('pk') or owner.get('id')) == str(meta['owner_id'])
+                  and str(owner.get('username') or '').lower() == str(meta['owner_username'] or '').lower()),
+        'caption': (text or '') == (meta['caption'] or ''),
+        'is_video': (node['media_type'] == 2) == bool(meta['is_video']),
+    }
+    disagree = [name for name, ok in agrees.items() if not ok]
+    if disagree:
+        raise ValueError('raw data disagrees with metadata: ' + ', '.join(disagree))
+    return {**node, 'scraped_username': row.get('input')}
 
 
 def capped_profiles(text: str) -> set[str]:

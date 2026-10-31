@@ -69,7 +69,7 @@ def snuggly_coverage(log, profiles, candidate=(), cutoff=None):
 def hpix_rows(candidate):
     for row in candidate:
         if row.get('kind') in ('post', 'reel'):
-            yield row.get('input'), (row.get('data') or {}).get('shortcode'), row
+            yield row.get('input'), (row.get('metadata') or {}).get('shortcode'), row
 
 
 def hpix_coverage(log, profiles, candidate=(), cutoff=None):
