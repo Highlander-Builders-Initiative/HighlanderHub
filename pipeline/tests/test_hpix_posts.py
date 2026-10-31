@@ -362,6 +362,21 @@ class HpixCollectionTests(unittest.TestCase):
                 self.assertEqual('incomplete', self.status('club')['last_status'])
                 self.write.assert_not_called()
 
+    def test_captionless_post_without_metadata_caption_is_archived(self):
+        # hpix omits metadata.caption when the post has no caption at all.
+        bare = row(caption=None)
+        del bare['metadata']['caption']
+        self.api.items.return_value = [bare]
+        self.collect()
+        self.assertEqual('', self.write.call_args.args[0]['caption'] or '')
+
+    def test_metadata_without_caption_fails_closed_when_raw_has_one(self):
+        bad = row()
+        del bad['metadata']['caption']
+        self.api.items.return_value = [bad]
+        with self.assertRaises(apify.PartialCollection): self.collect()
+        self.write.assert_not_called()
+
     def test_known_collaboration_is_not_enriched_or_overwritten(self):
         self.known.return_value = {'123'}
         self.api.items.return_value = [row(owner='partner', owner_id='77')]

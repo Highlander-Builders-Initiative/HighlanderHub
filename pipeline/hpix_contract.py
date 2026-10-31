@@ -13,8 +13,7 @@ from post_archive import parse_instant
 
 RAW_FIELDS = ('id', 'pk', 'code', 'taken_at', 'user', 'media_type',
               'caption', 'coauthor_producers')
-META_FIELDS = ('shortcode', 'taken_at', 'owner_id', 'owner_username',
-               'caption', 'is_video')
+META_FIELDS = ('shortcode', 'taken_at', 'owner_id', 'owner_username', 'is_video')
 
 
 def hpix_item(row: dict) -> dict:
@@ -35,6 +34,10 @@ def hpix_item(row: dict) -> dict:
     for field in META_FIELDS:
         if field not in meta:
             raise ValueError(f'missing metadata.{field}')
+    # hpix leaves metadata.caption out for a post with no caption; raw data
+    # then says so explicitly with a null caption.
+    if 'caption' not in meta and node['caption'] is not None:
+        raise ValueError('missing metadata.caption')
     if node['media_type'] not in (1, 2, 8):
         raise ValueError(f"unsupported media_type {node['media_type']!r}")
     if node['media_type'] == 8 and not isinstance(node.get('carousel_media'), list):
@@ -54,7 +57,7 @@ def hpix_item(row: dict) -> dict:
                      and abs(posted.timestamp() - node['taken_at']) < 1),
         'owner': (str(owner.get('pk') or owner.get('id')) == str(meta['owner_id'])
                   and str(owner.get('username') or '').lower() == str(meta['owner_username'] or '').lower()),
-        'caption': (text or '') == (meta['caption'] or ''),
+        'caption': (text or '') == (meta.get('caption') or ''),
         'is_video': (node['media_type'] == 2) == bool(meta['is_video']),
     }
     disagree = [name for name, ok in agrees.items() if not ok]
