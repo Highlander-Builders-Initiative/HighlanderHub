@@ -32,6 +32,9 @@ ACTOR_ID = "nH2AHrwxeTRJoN5hX"  # apify/instagram-post-scraper
 ACTOR_BUILD = "0.0.599"
 HPIX_ACTOR_ID = "JER1eC8E7teQWMN3p"  # hpix/instagram-scraper
 HPIX_BUILD = "1.2.27"
+# Single-post lookups (collaboration details, deleted-post recheck). 1.2.27
+# reports live posts as deleted; 1.2.29 returns them (probe 6iIN1a4uZBJmee9zA).
+HPIX_DETAILS_BUILD = "1.2.29"
 LEGACY_ACTOR_ID = "Y5mzw9TLFReI0d6gQ"
 API = "https://api.apify.com/v2"
 RUN_FILE = DATA_DIR / "apify_run.json"
@@ -162,7 +165,7 @@ class ApifyClient:
         client = ApifyClient(self.session.headers["Authorization"].removeprefix("Bearer "), path)
         run = client._run(hpix_input(posts=[f"https://www.instagram.com/p/{code}/" for code in codes]),
                           {"usernames": codes, "actor_id": HPIX_ACTOR_ID,
-                           "build": HPIX_BUILD, "consumed": False, "purpose": "details"},
+                           "build": HPIX_DETAILS_BUILD, "consumed": False, "purpose": "details"},
                           max_charge=max_charge, timeout=timeout)
         if run.get("actId") != HPIX_ACTOR_ID:
             raise CollectionHalted("Unexpected actor in saved detail run")

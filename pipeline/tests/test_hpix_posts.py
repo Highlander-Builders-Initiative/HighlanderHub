@@ -605,6 +605,7 @@ class HpixInputTests(unittest.TestCase):
                 api.details(['A', 'B'], max_charge=.2, timeout=60)
                 api.details(['B'], max_charge=.2, timeout=60)
             self.assertEqual(['POST', 'GET'], [call.args[0] for call in request.call_args_list])
+            self.assertEqual('1.2.29', request.call_args_list[0].kwargs['params']['build'])
             payload = request.call_args_list[0].kwargs['json']
             self.assertFalse(payload['scrape_detailed_data'])
             self.assertFalse(payload['scrape_restricted_posts'])

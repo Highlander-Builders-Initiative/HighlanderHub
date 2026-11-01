@@ -153,10 +153,12 @@ Optional repository **Actions variables**:
 | `APIFY_MAX_CHARGE_USD` | `10` | Combined charge ceilings for all batches in one collection cycle; excludes Google API costs |
 | `APIFY_DISCOVERY_OVERLAP_SECONDS` | `300` | Discovery overlap behind each successful checkpoint (0–3600 seconds) |
 | `APIFY_INCOMPLETE_RETRY_HOURS` | `8` | Wait before retrying a profile whose discovery was incomplete (at least 8 hours) |
-| `APIFY_RECHECK_ENABLED` | `false` | Run the deleted-post recheck; off while hpix single-post lookups are broken |
+| `APIFY_RECHECK_ENABLED` | `false` | Run the deleted-post recheck (lookups were broken through hpix 1.2.27; 1.2.29 works) |
 
 New collection uses [hpix/instagram-scraper](https://apify.com/hpix/instagram-scraper),
 ID `JER1eC8E7teQWMN3p`, pinned to build `1.2.27`, with 1 GB memory.
+Single-post lookups (collaboration details and the deleted-post recheck) use
+build `1.2.29`: on 1.2.27 they report live posts as deleted.
 It requests profile posts and reels, raw media data, and no profile records.
 Both `scrape_detailed_data` and `scrape_restricted_posts` are explicitly false:
 their documented restricted-post event costs $0.10 per result. Club avatar runs
@@ -441,10 +443,12 @@ PYTHON_DOTENV_DISABLED=1 .venv/bin/python -m unittest discover -s tests -v
 
 ## Deleted-post recheck
 
-Off unless the repository variable `APIFY_RECHECK_ENABLED` is `true`. Since
-2026-10-30 hpix's individual-post lookup reports live posts as deleted, and two
-such answers withdrew a live listing. Before turning it back on, look up a few
-known-live posts on the pinned build and confirm they come back as posts.
+Off unless the repository variable `APIFY_RECHECK_ENABLED` is `true`. From
+2026-10-30 hpix's individual-post lookup reported live posts as deleted on every
+build up to 1.2.27, and two such answers withdrew a live listing. Build 1.2.29
+(2026-11-01) returns them again: probe run `6iIN1a4uZBJmee9zA` got four live
+posts back as posts and a made-up shortcode as "Deleted or restricted post".
+Before turning the recheck on after any lookup build change, repeat that probe.
 
 `post_recheck.py` (stage `instagram.recheck`) looks up each source post once,
 when its event is within `APIFY_RECHECK_DAYS` (default 3), using the same hpix

@@ -39,9 +39,10 @@ POST_URL = re.compile(r"instagram\.com/(?:[^/]+/)?(?:p|reel|reels)/([A-Za-z0-9_-
 def enabled() -> bool:
     """Off unless APIFY_RECHECK_ENABLED says otherwise.
 
-    Since 2026-10-30 hpix's single-post lookup answers "Deleted or restricted
-    post" for live posts, on every build, so each answer could withdraw a live
-    listing. Turn this back on only after lookups return known-live posts.
+    From 2026-10-30 hpix's single-post lookup answered "Deleted or restricted
+    post" for live posts on every build up to 1.2.27, so each answer could
+    withdraw a live listing. 1.2.29 (HPIX_DETAILS_BUILD) returns them again.
+    After any lookup build change, confirm known-live posts come back first.
     """
     return os.environ.get("APIFY_RECHECK_ENABLED", "").strip().lower() in ("1", "true", "yes", "on")
 
