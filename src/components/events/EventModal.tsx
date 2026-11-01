@@ -105,7 +105,7 @@ function EventModalDialog({ children, standalone }: { children: ReactNode; stand
           onClick={close}
           aria-label="Close event"
           // The feed's secondary control: a neutral fill, no edge, like the
-          // search bar's back-to-top circle.
+          // capsule's Filter pill.
           className="interactive-focus press hit-area absolute right-3 top-3 z-20 inline-flex h-10 w-10 items-center justify-center rounded-full bg-ink/[0.06] text-ink/70 hover:bg-ink/10 hover:text-ink sm:right-4 sm:top-4"
         >
           <svg

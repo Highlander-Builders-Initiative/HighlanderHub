@@ -221,14 +221,15 @@ export function EventsFeedColumn({
 
           <EventSearchBox query={query} clubs={clubs} onQueryChange={onQueryChange} />
 
-          {/* Back to top: grows in at the capsule's end once past the fold. */}
+          {/* Back to top: grows in at the capsule's end once past the fold.
+              A bare arrow at rest; its circle fills in on hover or press. */}
           <button
             type="button"
             onClick={scrollToTop}
             aria-label="Back to top"
             aria-hidden={!showBackToTop}
             tabIndex={showBackToTop ? 0 : -1}
-            className={`interactive-focus hit-area relative inline-flex h-9 shrink-0 items-center justify-center rounded-full bg-ink/[0.06] text-ink transition-[width,opacity,transform] duration-300 ease-drawer hover:bg-ink/10 motion-reduce:transition-none ${
+            className={`interactive-focus hit-area relative inline-flex h-9 shrink-0 items-center justify-center rounded-full text-ink transition-[width,opacity,transform,background-color] duration-300 ease-drawer hover:bg-ink/[0.08] active:bg-ink/10 motion-reduce:transition-none ${
               showBackToTop
                 ? "w-9 opacity-100 active:scale-[0.97]"
                 : "pointer-events-none w-0 scale-75 opacity-0"
