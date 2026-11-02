@@ -14,7 +14,7 @@ import json
 import logging
 import re
 import unicodedata
-from datetime import date, datetime, time, timedelta
+from datetime import date, datetime, time, timedelta, timezone
 from functools import cache
 from time import monotonic, sleep
 from typing import Any
@@ -408,11 +408,36 @@ _THIS_WEEK = re.compile(r"\b(?:this|for\s+the)\s+week\b(?!\s+of\b)(?!\s*\d)", re
 _NEXT_WEEK_ON = re.compile(r"\bnext\s+week\s+(?:on\s+)?(?=mon|tue|wed|thu|fri|sat|sun)[^.!?\n]*", re.I)
 
 
+# A zone named for a printed time: an uppercase abbreviation right after a
+# clock ("5pm ET", "17:00 UTC") or a spelled-out zone ("Eastern Time"). Loose
+# matches ("Mt. Rubidoux", "HanWave FALL MT", "EST. 2009", "Middle Eastern")
+# must not lift the Pacific check.
+_CLOCK_ZONE = re.compile(
+    r"\b\d{1,2}(?::\d{2}(?:\s*[aApP]\.?[mM]\.?)?|\s*[aApP]\.?[mM]\.?)\s*\(?"
+    r"(ET|EST|EDT|CT|CST|CDT|MT|MST|MDT|UTC|GMT)\b")
+_ZONE_NAME = re.compile(r"\b(Eastern|Central|Mountain)\s+(?:(?:Standard|Daylight)\s+)?Time\b", re.I)
+_REGIONAL_ZONES = {"E": ZoneInfo("America/New_York"), "C": ZoneInfo("America/Chicago"),
+                   "M": ZoneInfo("America/Denver")}
+_FIXED_ZONES = {"EST": -5, "EDT": -4, "CST": -6, "CDT": -5, "MST": -7, "MDT": -6, "UTC": 0, "GMT": 0}
+
+
+def _named_zones(text: str) -> list:
+    """Time zones the text explicitly names for a time, besides Pacific."""
+    zones = []
+    for name in [m.group(1) for m in _CLOCK_ZONE.finditer(text)] + [m.group(1) for m in _ZONE_NAME.finditer(text)]:
+        if name in _FIXED_ZONES:
+            zones.append(timezone(timedelta(hours=_FIXED_ZONES[name])))
+        if name[0].upper() in _REGIONAL_ZONES:
+            zones.append(_REGIONAL_ZONES[name[0].upper()])
+    return zones
+
+
 def _named_weekdays(text: str) -> set[int]:
     """Weekdays (0=Monday) the text names, with a two-day range filled in."""
     names = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
     printed = [names.index(m.group()[:3].lower()) for m in re.finditer(
-        r"\b(?:mon(?:day)?|tue(?:sday)?|wed(?:nesday)?|thu(?:rsday)?|fri(?:day)?|sat(?:urday)?|sun(?:day)?)s?\b", text, re.I)]
+        r"\b(?:mon(?:day)?|tue(?:sday)?|wed(?:nesday)?|thu(?:r(?:s(?:day)?)?)?|fri(?:day)?|sat(?:urday)?|sun(?:day)?)s?\b",
+        text, re.I)]
     supported = set(printed)
     if len(printed) == 2 and re.search(r"(?:-|–|—|\bto\b|\bthrough\b)\s*(?:\n\s*)?(?:mon|tue|wed|thu|fri|sat|sun)", text, re.I):
         supported |= {(printed[0] + i) % 7 for i in range((printed[1] - printed[0]) % 7 + 1)}
@@ -622,15 +647,16 @@ def validate_occurrence(item: dict, source: dict, *, week_scoped: bool = False) 
     if (end and not item["all_day"] and end.date() == start.date()
             and end.time() == time(0) and start.hour >= 12):
         end += timedelta(days=1)
-    # Pacific is the campus default. Explicitly zoned sources may use their
-    # named zone, but a model may not silently apply a winter offset in summer.
-    explicit_zone = re.search(r"\b(?:[ECM][SD]?T|UTC|GMT|Eastern|Central|Mountain)\b", text, re.I)
-    if not explicit_zone:
-        for value in (start, end):
-            if value and value.utcoffset() != value.replace(tzinfo=PACIFIC).utcoffset():
-                expected = value.replace(tzinfo=PACIFIC).isoformat()
-                raise ValueError(f"Occurrence offset disagrees with America/Los_Angeles: "
-                                 f"{value.isoformat()} should use {expected} for that local date and clock")
+    # Pacific is the campus default. A source that names another zone for its
+    # time may use that zone's offset, but a model may never silently apply a
+    # winter offset in summer (or the reverse) in either zone.
+    zones = [PACIFIC, *_named_zones(text)]
+    for value in (start, end):
+        if value and value.utcoffset() not in {value.replace(tzinfo=zone).utcoffset() for zone in zones}:
+            expected = value.replace(tzinfo=PACIFIC).isoformat()
+            named = " (or the offset of the zone the source names for this time)" if len(zones) > 1 else ""
+            raise ValueError(f"Occurrence offset disagrees with America/Los_Angeles: "
+                             f"{value.isoformat()} should use {expected}{named} for that local date and clock")
     if end and end <= start:
         raise ValueError("Invalid occurrence duration: ends_at must be after starts_at; "
                          "use ends_at=null for a timed event with no printed end time")

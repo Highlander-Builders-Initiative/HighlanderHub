@@ -203,6 +203,45 @@ class ContentAssessmentTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "2026-11-21T09:00:00-08:00.*ID Camp"):
             assess.validate(result, src)
 
+    def test_zone_like_words_do_not_lift_the_pacific_offset_check(self):
+        # Nov 1 ends daylight time; -07:00 on Nov 14 lists the event an hour early.
+        for text in ("Sunset hike up Mt. Rubidoux November 14, 2026 at 5 PM",
+                     "HanWave FALL MT November 14, 2026 at 5 PM",
+                     "Middle Eastern Student Center mixer November 14, 2026 at 5 PM",
+                     "Taco night on Central Ave November 14, 2026 at 5 PM",
+                     "Club EST. 2009 social November 14, 2026 at 5 PM",
+                     "Soirée et danse November 14, 2026 at 5 PM"):
+            src = source(text)
+            result = decision(src)
+            result["occurrences"][0].update(starts_at="2026-11-14T17:00:00-07:00", ends_at=None)
+            with self.subTest(text=text), self.assertRaisesRegex(ValueError, "offset disagrees"):
+                assess.validate(result, src)
+            result["occurrences"][0].update(starts_at="2026-11-14T17:00:00-08:00")
+            with self.subTest(text=text):
+                self.assertEqual(result, assess.validate(result, src))
+
+    def test_a_zone_named_for_the_time_allows_its_offset_but_not_a_wrong_one(self):
+        for text, accepted, rejected in (
+                ("Webinar July 14, 2026 at 5 PM ET", "-04:00", "-05:00"),
+                ("Webinar July 14, 2026 at 5 PM Eastern Time", "-04:00", "-06:00"),
+                ("Webinar July 14, 2026 at 5 PM EST", "-05:00", "-06:00"),
+                ("Webinar July 14, 2026, 17:00 UTC", "+00:00", "-01:00")):
+            src = source(text)
+            result = decision(src)
+            result["occurrences"][0].update(starts_at=f"2026-07-14T17:00:00{accepted}", ends_at=None)
+            with self.subTest(text=text):
+                self.assertEqual(result, assess.validate(result, src))
+            result["occurrences"][0].update(starts_at=f"2026-07-14T17:00:00{rejected}")
+            with self.subTest(text=text), self.assertRaisesRegex(ValueError, "offset disagrees"):
+                assess.validate(result, src)
+
+    def test_abbreviated_thursday_counts_as_a_named_weekday(self):
+        for text, days in (("Mon-Thurs 10am-2pm", {0, 1, 2, 3}), ("Tues & Thurs 5pm", {1, 3}),
+                           ("Thur 5pm", {3}), ("Mon/Wed/Thur", {0, 2, 3}), ("Mon–Thu", {0, 1, 2, 3}),
+                           ("Thursdays", {3}), ("Weds and Fri", {2, 4})):
+            with self.subTest(text=text):
+                self.assertEqual(days, assess._named_weekdays(text))
+
     def test_caption_all_day_numeric_date_without_clock_is_supported(self):
         src = source("P.s. we loved the Huntington trip so much we are gonna do it again on 9/25 👀✍️")
         result = decision(src)
