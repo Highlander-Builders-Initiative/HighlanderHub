@@ -17,7 +17,7 @@ const hooks = registerHooks({ resolve(specifier, context, next) {
       set: (...args) => globalThis.__adminSecurityTest.sets.push(args)
     });
     export const headers = async () => new Headers({ 'x-forwarded-for': '203.0.113.5' });`);
-  if (specifier === 'next/cache') return stub('export const revalidatePath = () => {}; export const revalidateTag = () => {};');
+  if (specifier === 'next/cache') return stub('export const revalidatePath = () => {}; export const updateTag = () => {};');
   if (/\/src\/lib\/events\/index\.[^/]+\.mjs$/.test(specifier)) return stub('export const EVENTS_CACHE_TAG = "events";');
   return next(specifier, context);
 } });

@@ -37,7 +37,7 @@ const EVENTS_SITEMAP_LIMIT = 500;
 // Cross-request caching for the public read path. The Supabase client is
 // hardwired to `cache: "no-store"` (see lib/supabase.ts), so route-level
 // `revalidate` alone can't cache these reads — they're wrapped in the Data
-// Cache below instead. Admin mutations call `revalidateTag(EVENTS_CACHE_TAG)`
+// Cache below instead. Admin mutations call `updateTag(EVENTS_CACHE_TAG)`
 // to bust every entry; otherwise the stale window is EVENTS_CACHE_TTL_SECONDS.
 export const EVENTS_CACHE_TAG = "events";
 const EVENTS_CACHE_TTL_SECONDS = 300;
@@ -240,15 +240,22 @@ async function withDbRetry<T extends { error: unknown }>(
  * `refresh` runs on every cached result, however old: past its TTL an entry is
  * still served once (stale-while-revalidate) while it refills, and a rarely
  * read key can be hours old by then.
+ *
+ * `keyArgs` fills in defaults that must be part of the cache key, such as
+ * today's Pacific date for day-relative reads. A default computed inside
+ * `operation` is invisible to the key, so yesterday's entry would be reused.
  */
 function cachePublicRead<Args extends unknown[], Result>(
   operation: (...args: Args) => Promise<Result>,
   keyParts: string[],
-  refresh: (result: Result) => Result = (result) => result
+  refresh: (result: Result) => Result = (result) => result,
+  keyArgs: (...args: Args) => Args = (...args) => args
 ): (...args: Args) => Promise<Result> {
   const cached = unstable_cache(operation, keyParts, eventsCacheOptions);
-  return (...args: Args) =>
-    e2eFixturesEnabled() ? operation(...args) : cached(...args).then(refresh);
+  return (...callerArgs: Args) => {
+    const args = keyArgs(...callerArgs);
+    return e2eFixturesEnabled() ? operation(...args) : cached(...args).then(refresh);
+  };
 }
 
 /**
@@ -265,14 +272,16 @@ function dropEndedEvents(page: EventsPageResult): EventsPageResult {
   return events.length === page.events.length ? page : { ...page, events };
 }
 
-async function getEventsUpcomingThisWeekUncached(): Promise<number> {
+async function getEventsUpcomingThisWeekUncached(
+  todayKey: string = pacificTodayKey()
+): Promise<number> {
   return withE2eFixture(
     () => E2E_PUBLIC_FIXTURE_EVENTS.length,
     async () => {
       const nowIso = new Date().toISOString();
       // "This week" counts exactly what the feed's Week filter shows (today
       // through Saturday), so the number matches the list it links to.
-      const week = dayWindowRange("week")!;
+      const week = dayWindowRange("week", todayKey)!;
       const weekStartIso = parsePacificDateTimeInput(`${week.start}T00:00`);
       const weekEndIso = parsePacificDateTimeInput(
         `${addPacificDays(week.end, 1)}T00:00`
@@ -532,15 +541,20 @@ const getEventByIdUncached = cache(async function getEventById(
 // Data Cache wrappers for the public read path. Each keeps the underlying
 // function's signature (args are folded into the cache key); a successful
 // result is cached for EVENTS_CACHE_TTL_SECONDS and busted by
-// revalidateTag(EVENTS_CACHE_TAG). Thrown errors are not cached.
+// updateTag(EVENTS_CACHE_TAG). Thrown errors are not cached.
 export const getEventsUpcomingThisWeek = cachePublicRead(
   getEventsUpcomingThisWeekUncached,
-  ["events-upcoming-this-week"]
+  ["events-upcoming-this-week"],
+  undefined,
+  (todayKey?: string): [todayKey?: string] => [todayKey ?? pacificTodayKey()]
 );
 export const getEventsPage = cachePublicRead(
   getEventsPageUncached,
   ["events-page"],
-  dropEndedEvents
+  dropEndedEvents,
+  (options: EventsPageOptions = {}): [options?: EventsPageOptions] => [
+    { ...options, todayKey: options.todayKey ?? pacificTodayKey() },
+  ]
 );
 export const getEventFilterCountSource = cachePublicRead(
   getEventFilterCountSourceUncached,

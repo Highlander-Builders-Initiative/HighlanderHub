@@ -141,7 +141,9 @@ test("public event reads are Data-Cached and busted on admin writes", () => {
 
   // Admin mutations bust the cache immediately rather than waiting for TTL.
   assert.match(adminActions, /import \{ EVENTS_CACHE_TAG \} from "@\/lib\/events"/);
-  assert.match(adminActions, /revalidateTag\(EVENTS_CACHE_TAG, "max"\)/);
+  assert.match(adminActions, /updateTag\(EVENTS_CACHE_TAG\)/);
+  // The "max" revalidateTag profile serves stale once per cached key.
+  assert.doesNotMatch(adminActions, /revalidateTag\(/);
 });
 
 test("e2e fixtures stay outside the main event reader", () => {

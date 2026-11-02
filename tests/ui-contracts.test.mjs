@@ -58,7 +58,7 @@ test("events page header uses full upcoming event totals", () => {
   assert.match(feedColumn, /summary\.upcomingThisWeek/);
   assert.doesNotMatch(layout, /events\.length/);
   // "This week" counts what the Week filter lists, not a rolling 7 days.
-  assert.match(data, /dayWindowRange\("week"\)/);
+  assert.match(data, /dayWindowRange\("week", todayKey\)/);
   assert.doesNotMatch(data, /inSevenDays/);
 });
 
