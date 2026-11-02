@@ -30,6 +30,8 @@ import {
 
 interface AdminDashboardClientProps {
   initialEvents: AdminEventRow[];
+  /** Set when the live-events read failed; initialEvents is then empty. */
+  eventsError: string | null;
   duplicatePairs: DuplicateReviewPair[];
   duplicateQueueError: string | null;
 }
@@ -45,6 +47,7 @@ function formatAdminEventDate(isoStr: string) {
 
 export default function AdminDashboardClient({
   initialEvents,
+  eventsError,
   duplicatePairs,
   duplicateQueueError,
 }: AdminDashboardClientProps) {
@@ -221,9 +224,11 @@ export default function AdminDashboardClient({
             <h2 className="font-display text-base font-semibold text-ink">
               Live events
             </h2>
-            <p className="text-[0.6875rem] text-muted">
-              {initialEvents.length} on the public calendar
-            </p>
+            {!eventsError && (
+              <p className="text-[0.6875rem] text-muted">
+                {initialEvents.length} on the public calendar
+              </p>
+            )}
           </div>
 
           <div className="relative max-w-md">
@@ -248,7 +253,11 @@ export default function AdminDashboardClient({
             students see — use the # labels to find a row on /events. Edit locks the listing;
             delete removes it from the site.
           </p>
-          {initialEvents.length === 0 ? (
+          {eventsError ? (
+            <p role="alert" className="text-xs text-deep-coral font-sans">
+              Live events didn&apos;t load: {eventsError}. Refresh to try again.
+            </p>
+          ) : initialEvents.length === 0 ? (
             <div className="border border-ink/10 border-dashed rounded-xl p-12 text-center bg-canvas">
               <h3 className="font-display text-base font-semibold text-ink">
                 No live events right now

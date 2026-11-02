@@ -43,6 +43,8 @@ export default async function AdminDashboardPage() {
 
   // The pipeline refreshes the queue each run; a pair whose listing has since
   // ended, merged or been deleted no longer needs a decision.
+  // Pairs are shown only while both listings are live, so without the events
+  // read the queue can't be judged either.
   const live = new Map((events ?? []).map((event) => [event.id, event]));
   const duplicatePairs: DuplicateReviewPair[] = (queue ?? [])
     .flatMap(({ event_id, other_event_id }) => {
@@ -55,8 +57,15 @@ export default async function AdminDashboardPage() {
   return (
     <AdminDashboardClient
       initialEvents={events || []}
+      eventsError={eventErr ? eventErr.message : null}
       duplicatePairs={duplicatePairs}
-      duplicateQueueError={queueErr ? queueErr.message : null}
+      duplicateQueueError={
+        queueErr
+          ? queueErr.message
+          : eventErr
+            ? `live events didn't load (${eventErr.message})`
+            : null
+      }
     />
   );
 }

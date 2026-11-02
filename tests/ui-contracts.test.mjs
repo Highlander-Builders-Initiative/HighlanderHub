@@ -697,3 +697,15 @@ test("global error page keeps Highlander Hub fallback styling", () => {
   assert.match(source, /Try again/);
   assert.doesNotMatch(source, /Fatal error/);
 });
+
+test("admin failures surface instead of looking like success or an empty deck", () => {
+  // Handlers call runAction with `void`; a thrown action (expired session,
+  // network) must still reach the dashboard's error banner.
+  const hook = read("src/app/admin/useAdminActions.ts");
+  assert.match(hook, /catch \(error\) \{[\s\S]*setActionError\(ADMIN_ACTION_FAILED_MESSAGE\)/);
+
+  const page = read("src/app/admin/(dashboard)/page.tsx");
+  const client = read("src/app/admin/(dashboard)/AdminDashboardClient.tsx");
+  assert.match(page, /eventsError=\{eventErr \? eventErr\.message : null\}/);
+  assert.match(client, /eventsError \? \(\s*<p role="alert"/);
+});
