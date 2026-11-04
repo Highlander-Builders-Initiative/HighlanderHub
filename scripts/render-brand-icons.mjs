@@ -28,7 +28,14 @@ try {
     throw new Error("Bricolage failed to load.");
   }
   await mkdir(new URL("brand/", root), { recursive: true });
-  const png = await page.screenshot();
+  // Size from the visible glyphs, not the font's line box. Keep only 3% side
+  // padding so the wide h/h mark remains legible at browser-tab sizes.
+  const png = await sharp(await page.screenshot())
+    .trim({ background: "#ffffff", threshold: 8 })
+    .resize(960, 960, { fit: "contain", background: "#ffffff" })
+    .extend({ top: 32, bottom: 32, left: 32, right: 32, background: "#ffffff" })
+    .png()
+    .toBuffer();
   await writeFile(new URL("brand/highlanderhub-icon.png", root), png);
   for (const [name, size] of [["icon-192.png", 192], ["icon-512.png", 512], ["apple-touch-icon.png", 180]]) {
     await sharp(png).resize(size, size).png().toFile(fileURLToPath(new URL(name, root)));
