@@ -234,21 +234,22 @@ export function EventsBrowser({
 
   // Search input piggybacks on the existing 600ms debouncer that gates the
   // events_search analytics ping; one timer writes the URL and fires the ping
-  // together, so we never thrash the address bar mid-keystroke.
+  // together, so we never thrash the address bar mid-keystroke. The timer
+  // writes the current filters: a chip clicked while it is pending restarts
+  // it, so it can't put the pre-click filters back in the URL.
   const lastTrackedQuery = useRef(initialFilters.query.trim());
   useEffect(() => {
     if (isRestoring || pathname !== "/events") return;
     if (trimmedQuery === lastTrackedQuery.current) return;
     const t = setTimeout(() => {
-      writeFiltersToUrl({ category, query: trimmedQuery, dayWindow, ...facets });
+      writeFiltersToUrl(feedFilters);
       if (trimmedQuery.length > 0) {
         track("events_search", { query_length: trimmedQuery.length });
       }
       lastTrackedQuery.current = trimmedQuery;
     }, 600);
     return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [trimmedQuery, isRestoring, writeFiltersToUrl, pathname]);
+  }, [feedFilters, trimmedQuery, isRestoring, writeFiltersToUrl, pathname]);
 
   const clearFilters = useCallback(() => {
     setCategory("all");

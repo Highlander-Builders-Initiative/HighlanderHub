@@ -1,7 +1,7 @@
 "use server";
 
 import { cookies, headers } from "next/headers";
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { EVENTS_CACHE_TAG } from "@/lib/events";
 import { signSession, verifySession, getAdminSupabase, getAdminPassword, verifyPassword, checkAdminLoginRateLimit } from "@/lib/admin";
 import { clientIp } from "@/lib/rate-limit";
@@ -122,9 +122,7 @@ export async function updateEvent(eventId: string, updatedFields: unknown) {
     return { success: false, error: `Failed to update event: ${error.message}` };
   }
 
-  revalidateTag(EVENTS_CACHE_TAG, "max");
-  revalidatePath("/events");
-  revalidatePath("/admin");
+  revalidateEvents();
 
   return { success: true };
 }
@@ -159,9 +157,7 @@ export async function deleteEvent(eventId: string) {
     return { success: false, error: `Failed to delete event: ${error.message}` };
   }
 
-  revalidateTag(EVENTS_CACHE_TAG, "max");
-  revalidatePath("/events");
-  revalidatePath("/admin");
+  revalidateEvents();
 
   return { success: true };
 }
@@ -194,8 +190,13 @@ async function loadDuplicatePair(firstId: unknown, secondId: unknown) {
   return { ok: true as const, first, second };
 }
 
+/**
+ * Expires every cached public read now, so the next request waits for fresh
+ * data. The "max" revalidateTag profile would instead serve each cached page
+ * (home, event detail, calendar, load-more) stale once more.
+ */
 function revalidateEvents() {
-  revalidateTag(EVENTS_CACHE_TAG, "max");
+  updateTag(EVENTS_CACHE_TAG);
   revalidatePath("/events");
   revalidatePath("/admin");
 }

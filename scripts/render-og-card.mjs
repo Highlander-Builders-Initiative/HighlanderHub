@@ -2,16 +2,21 @@
 /**
  * Render public/og-card.jpg, the 1200x630 link-preview card: the wordmark and
  * the home headline over the campus skyline, composed like the hero.
- * Run via: node scripts/render-og-card.mjs (needs network for Google Fonts).
+ * Run via: node scripts/render-og-card.mjs [local-bricolage-latin.woff2].
+ * Without a local font, needs network for Google Fonts.
  *
  * JPEG, not PNG: the PNG is ~350 KB, and WhatsApp drops previews over ~300 KB.
  */
 import { chromium } from "@playwright/test";
 import { fileURLToPath } from "node:url";
+import { readFile } from "node:fs/promises";
 
 const root = new URL("..", import.meta.url);
 const skyline = new URL("src/components/home/campus-skyline-golden.webp", root).href;
 const out = fileURLToPath(new URL("public/og-card.jpg", root));
+const fontStyle = process.argv[2]
+  ? `<style>@font-face { font-family: "Bricolage Grotesque"; src: url(data:font/woff2;base64,${(await readFile(process.argv[2])).toString("base64")}); font-weight: 100 900; }</style>`
+  : '<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600&display=block" rel="stylesheet">';
 
 // The sky seam matches .skyline-hero in globals.css: white into the art's
 // sampled sky colour (#fff9f2), arriving where the picture begins.
@@ -19,7 +24,7 @@ const html = `<!doctype html>
 <html>
 <head>
 <meta charset="utf-8">
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600&display=block" rel="stylesheet">
+${fontStyle}
 <style>
   html, body { margin: 0; }
   .card {
@@ -42,14 +47,14 @@ const html = `<!doctype html>
   <div class="card">
     <img class="art" src="${skyline}" alt="">
     <div class="copy">
-      <div class="wordmark">highlander<span>/</span>hub</div>
+      <div class="wordmark">h<span>/</span>h</div>
       <h1>Every UCR event,<br>one page.</h1>
     </div>
   </div>
 </body>
 </html>`;
 
-const browser = await chromium.launch();
+const browser = await chromium.launch({ channel: process.env.PLAYWRIGHT_CHANNEL || undefined });
 const page = await browser.newPage({
   viewport: { width: 1200, height: 630 },
   deviceScaleFactor: 1,

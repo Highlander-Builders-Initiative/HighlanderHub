@@ -42,6 +42,21 @@ test("a newer filter selection cancels an in-flight replacement of the current U
   await expect(page.locator("#event-filter-summary")).toHaveText("2 events loaded");
 });
 
+test("a filter clicked while search is debouncing stays in the URL", async ({ page }) => {
+  await page.goto("/events");
+  await waitForEventsBrowserHydration(page);
+
+  await page.getByLabel("Search events").fill("Showcase");
+  // Well inside the 600ms search debounce.
+  await categoryFilterButton(page, "Hang out").click();
+  await expect(page).toHaveURL(/cat=hangout&q=Showcase/);
+  // Outlast the debounce: its write must carry the click, not the
+  // pre-click filters.
+  await page.waitForTimeout(1200);
+  await expect(page).toHaveURL(/cat=hangout&q=Showcase/);
+  await expect(categoryFilterButton(page, "Hang out")).toHaveAttribute("aria-pressed", "true");
+});
+
 test("event filters expose accessible state and recovery actions", async ({
   page,
 }) => {
