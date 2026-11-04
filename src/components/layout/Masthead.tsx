@@ -97,7 +97,7 @@ export function Masthead({
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
         <Link href="/" aria-label="Highlander Hub home" className="interactive-focus flex min-h-11 items-center gap-2.5 active:opacity-70">
           <span className="font-display text-[1.125rem] font-semibold tracking-[-0.04em] leading-none text-ink sm:text-[1.375rem]">
-            h<span className="text-muted">/</span>h
+            highlander<span className="text-muted">/</span>hub
           </span>
         </Link>
 

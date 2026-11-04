@@ -37,7 +37,7 @@ export function Footer() {
         {/* Brand */}
         <div className="md:col-span-5">
           <p aria-label="Highlander Hub" className="font-display text-xl font-semibold tracking-[-0.04em] text-ink">
-            h<span className="text-muted">/</span>h
+            highlander<span className="text-muted">/</span>hub
           </p>
           <p className="mt-3 max-w-md text-sm text-muted">
             Campus and club events at UC Riverside, all on one page.

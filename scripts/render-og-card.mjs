@@ -47,7 +47,7 @@ ${fontStyle}
   <div class="card">
     <img class="art" src="${skyline}" alt="">
     <div class="copy">
-      <div class="wordmark">h<span>/</span>h</div>
+      <div class="wordmark">highlander<span>/</span>hub</div>
       <h1>Every UCR event,<br>one page.</h1>
     </div>
   </div>
