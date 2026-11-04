@@ -26,11 +26,11 @@ export const metadata: Metadata = {
   description: SITE_DESCRIPTION,
   applicationName: SITE_NAME,
   manifest: "/manifest.json",
-  // Sized cuts of public/logo_icon.png (1250px) so tabs don't pull the full PNG.
+  // Sized exports of the h/h wordmark; logo_icon.png belongs to HBI.
   icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "48x48" },
-      { url: "/icon-192.png", type: "image/png", sizes: "192x192" },
+      { url: "/favicon.ico?v=hh-1", type: "image/x-icon", sizes: "16x16 32x32 48x48" },
+      { url: "/icon-192.png?v=hh-1", type: "image/png", sizes: "192x192" },
     ],
     apple: "/apple-touch-icon.png",
   },

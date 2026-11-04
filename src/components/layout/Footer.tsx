@@ -36,8 +36,8 @@ export function Footer() {
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 md:grid-cols-12 md:gap-8 md:py-14">
         {/* Brand */}
         <div className="md:col-span-5">
-          <p className="font-display text-xl font-semibold tracking-[-0.04em] text-ink">
-            highlander<span className="text-muted">/</span>hub
+          <p aria-label="Highlander Hub" className="font-display text-xl font-semibold tracking-[-0.04em] text-ink">
+            h<span className="text-muted">/</span>h
           </p>
           <p className="mt-3 max-w-md text-sm text-muted">
             Campus and club events at UC Riverside, all on one page.
