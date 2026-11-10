@@ -5,7 +5,9 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
+
+from postgrest.exceptions import APIError
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import assessed_events as publication
@@ -317,6 +319,64 @@ class SourcePublicationTests(unittest.TestCase):
              self.assertLogs("pipeline.assessed_events", level="WARNING"):
             publication._complete(updates, notify=True)
         notify.assert_not_called()
+
+
+def api_error(code, message="canceling statement due to statement timeout"):
+    return APIError({"message": message, "code": code, "hint": None, "details": None})
+
+
+class PublishStatementTimeoutTests(unittest.TestCase):
+    def setUp(self):
+        self.updates = [{"source_key": "instagram:post:1", "origin": "instagram"}]
+        self.timeout = api_error("57014")
+
+    def database(self, effects):
+        database = Mock()
+        database.rpc.return_value.execute.side_effect = effects
+        return database
+
+    @patch.object(publication.time, "sleep")
+    def test_succeeds_after_one_statement_timeout(self, sleep):
+        database = self.database([self.timeout, Mock(data={"written": 2, "deleted": 1})])
+        with patch("db.client", return_value=database), \
+             self.assertLogs("pipeline.assessed_events", level="WARNING") as logs:
+            result = publication.publish(self.updates)
+        self.assertEqual({"written": 2, "deleted": 1}, result)
+        self.assertEqual(2, database.rpc.call_count)
+        database.rpc.assert_called_with(
+            "reconcile_source_assessments", {"updates": self.updates})
+        self.assertEqual([publication.RPC_RETRY_SECONDS], [call.args[0] for call in sleep.call_args_list])
+        self.assertEqual(1, len(logs.records))
+        self.assertIn("57014", logs.records[0].getMessage())
+
+    @patch.object(publication.time, "sleep")
+    def test_other_api_error_is_not_retried(self, sleep):
+        denied = api_error("42501", "permission denied for function reconcile_source_assessments")
+        database = self.database([denied])
+        with patch("db.client", return_value=database), \
+             self.assertNoLogs("pipeline.assessed_events", level="WARNING"), \
+             self.assertRaises(APIError) as caught:
+            publication.publish(self.updates)
+        self.assertIs(denied, caught.exception)
+        database.rpc.assert_called_once_with(
+            "reconcile_source_assessments", {"updates": self.updates})
+        sleep.assert_not_called()
+
+    @patch.object(publication.time, "sleep")
+    def test_gives_up_after_bounded_statement_timeouts(self, sleep):
+        database = self.database([self.timeout, self.timeout, self.timeout])
+        with patch("db.client", return_value=database), \
+             self.assertLogs("pipeline.assessed_events", level="WARNING") as logs, \
+             self.assertRaises(APIError) as caught:
+            publication.publish(self.updates)
+        self.assertIs(self.timeout, caught.exception)
+        self.assertEqual(3, database.rpc.call_count)
+        self.assertEqual(3, publication.RPC_ATTEMPTS)
+        self.assertEqual(
+            [publication.RPC_RETRY_SECONDS, publication.RPC_RETRY_SECONDS * 2],
+            [call.args[0] for call in sleep.call_args_list])
+        self.assertEqual(publication.RPC_ATTEMPTS - 1, len(logs.records))
+        self.assertTrue(all("57014" in record.getMessage() for record in logs.records))
 
 
 if __name__ == "__main__":

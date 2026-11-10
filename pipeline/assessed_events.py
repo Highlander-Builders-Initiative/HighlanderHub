@@ -11,9 +11,12 @@ import hashlib
 import json
 import logging
 import re
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, NamedTuple
+
+from postgrest.exceptions import APIError
 
 import content_assessment as semantic
 from config import DATA_DIR, load_account_meta
@@ -30,6 +33,10 @@ CACHE_DIR = DATA_DIR / "assessments"
 MAX_CONSECUTIVE_FAILURES = 3
 # More sessions than this in one post is a season schedule, not a week's plans.
 MAX_SESSIONS = 10
+# reconcile_source_assessments is one transaction. Statement timeout 57014
+# aborts it, and the upserts/deletes converge if the same payload is sent again.
+RPC_ATTEMPTS = 3
+RPC_RETRY_SECONDS = 2
 # Saved as the assessment of a post whose extraction failed: no model ran.
 EXTRACTION_FAILED = {"status": "error", "error": "Post extraction failed"}
 
@@ -444,11 +451,21 @@ def publish(updates: list[dict]) -> dict:
 
     Error updates retain existing ownership. The RPC rechecks locks and admin
     tombstones within the transaction and serializes competing import batches.
+    A statement timeout aborts that transaction, so the same payload is retried.
     """
     from db import client
     if not updates:
         return {"written": 0, "deleted": 0}
-    return client().rpc("reconcile_source_assessments", {"updates": updates}).execute().data
+    for attempt in range(1, RPC_ATTEMPTS + 1):
+        try:
+            return client().rpc(
+                "reconcile_source_assessments", {"updates": updates}).execute().data
+        except APIError as exc:
+            if exc.code != "57014" or attempt == RPC_ATTEMPTS:
+                raise
+            log.warning("reconcile_source_assessments failed (%s); retry %d/%d",
+                        exc.code, attempt, RPC_ATTEMPTS - 1)
+            time.sleep(RPC_RETRY_SECONDS * attempt)
 
 
 def _complete(updates: list[dict], *, notify: bool) -> None:
