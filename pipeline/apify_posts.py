@@ -37,6 +37,8 @@ HPIX_BUILD = "1.2.27"
 HPIX_DETAILS_BUILD = "1.2.29"
 LEGACY_ACTOR_ID = "Y5mzw9TLFReI0d6gQ"
 API = "https://api.apify.com/v2"
+GET_ATTEMPTS = 3
+GET_RETRY_SECONDS = 5
 RUN_FILE = DATA_DIR / "apify_run.json"
 TERMINAL = {"SUCCEEDED", "FAILED", "ABORTED", "TIMED-OUT"}
 PAGE_SIZE = 1000
@@ -80,9 +82,21 @@ class ApifyClient:
     def request(self, method: str, path: str, **kwargs):
         # Never retry a run-creation POST: an ambiguous response may already
         # have started a billed run. Tokens stay in headers, never URLs/logs.
-        response = self.session.request(method, f"{API}/{path}", timeout=60, **kwargs)
-        response.raise_for_status()
-        return response.json()
+        # Reads are safe to repeat, so ride out brief 5xx/429/network blips.
+        attempts = GET_ATTEMPTS if method == "GET" else 1
+        for attempt in range(1, attempts + 1):
+            try:
+                response = self.session.request(method, f"{API}/{path}", timeout=60, **kwargs)
+                response.raise_for_status()
+                return response.json()
+            except (requests.ConnectionError, requests.Timeout, requests.HTTPError) as exc:
+                status = getattr(exc.response, "status_code", None)
+                transient = status is None or status == 429 or status >= 500
+                if attempt == attempts or not transient:
+                    raise
+                log.warning("Apify GET %s failed (%s); retry %d/%d", path.split("?")[0],
+                            status or type(exc).__name__, attempt, attempts - 1)
+                time.sleep(GET_RETRY_SECONDS * attempt)
 
     def run(self, actor_input: dict, *, max_charge: float, timeout: int) -> dict:
         # Keep the internal discovery request stable so cached official/legacy

@@ -109,6 +109,41 @@ class ApiTests(unittest.TestCase):
         self.assertEqual("Bearer test-token", self.api.session.headers["Authorization"])
         self.assertNotIn("test-token", str(self.api.session.request.call_args))
 
+    def _http(self, status):
+        response = Mock(status_code=status, json=Mock(return_value={"data": {"ok": True}}))
+        if status >= 400:
+            response.raise_for_status.side_effect = apify.requests.HTTPError(response=response)
+        return response
+
+    @patch.object(apify.time, "sleep")
+    def test_get_retries_transient_gateway_error(self, sleep):
+        self.api.session.request = Mock(side_effect=[self._http(502), self._http(200)])
+        self.assertEqual({"data": {"ok": True}}, self.api.request("GET", "actor-runs/x"))
+        self.assertEqual(2, self.api.session.request.call_count)
+        sleep.assert_called_once()
+
+    @patch.object(apify.time, "sleep")
+    def test_get_gives_up_after_bounded_attempts(self, sleep):
+        self.api.session.request = Mock(return_value=self._http(503))
+        with self.assertRaises(apify.requests.HTTPError):
+            self.api.request("GET", "actor-runs/x")
+        self.assertEqual(apify.GET_ATTEMPTS, self.api.session.request.call_count)
+
+    @patch.object(apify.time, "sleep")
+    def test_get_does_not_retry_client_error(self, sleep):
+        self.api.session.request = Mock(return_value=self._http(404))
+        with self.assertRaises(apify.requests.HTTPError):
+            self.api.request("GET", "actor-runs/x")
+        self.api.session.request.assert_called_once()
+        sleep.assert_not_called()
+
+    @patch.object(apify.time, "sleep")
+    def test_post_is_never_retried(self, sleep):
+        self.api.session.request = Mock(return_value=self._http(502))
+        with self.assertRaises(apify.requests.HTTPError):
+            self.api.request("POST", "acts/x/runs")
+        self.api.session.request.assert_called_once()
+
     def test_no_retry_of_ambiguous_creation(self):
         self.api.request = Mock(side_effect=TimeoutError("unknown start status"))
         with self.assertRaises(TimeoutError):
