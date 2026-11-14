@@ -103,10 +103,13 @@ _PLACE_NOISE = frozenset('the and at of ucr uc riverside university california c
 _VIRTUAL_WORDS = frozenset('zoom online virtual remote webinar discord'.split())
 # One campus venue written several ways: "SSC 114", "SSC114", "Student
 # Success Center 114"; "Pentland Bear Cave" and "Pentland Bearcave";
-# "Student Recreation Center", "Rec Center" and "SRC".
+# "Student Recreation Center", "Rec Center" and "SRC"; "SSB" and "Student
+# Services Bldg."; "SBB RM 202" and "School of Business Building, Room 202".
 _VENUE_SPELLINGS = (
     (r'https?://\S+', lambda m: ' zoom ' if 'zoom.' in m.group(0) else ' '),
     (r'\bstudent success center\b', 'ssc'),
+    (r'\bstudent services (?:building|bldg)\b', 'ssb'),
+    (r'\bschool of business(?: building)?\b', 'sbb'),
     (r'\b(?:student\s+)?rec(?:reation)?\s+center\b', 'src'),
     (r'\bwinston chung(?: hall)?\b', 'wch'),
     (r'\bhighlander union(?: building)?\b', 'hub'),
@@ -118,6 +121,10 @@ _VENUE_SPELLINGS = (
 # Words shared by unrelated venues, and bare room numbers without a building.
 _VENUE_FILLER = frozenset('hall building center lawn lobby park plaza patio courtyard field fields '
                           'street st ave avenue drive dr way north south east west upper lower mpr'.split())
+# How a post happens to write a building, not which one: "APSP (244 Costo
+# Hall)" and "APSP Center 244 Costo". A lawn, plaza or lobby is a place of
+# its own (HUB Plaza is not HUB 302), as is a wing (HUB 302 North and South).
+_BUILDING_KINDS = frozenset('hall building bldg center'.split())
 
 
 def _shared_venue(left: dict, right: dict) -> bool:
@@ -137,6 +144,10 @@ def _same_place(left: dict, right: dict) -> str:
     if not a or not b:
         return 'missing'
     if a <= b or b <= a:
+        return 'same'
+    named = [words - _BUILDING_KINDS for words in (a, b)]
+    if ((named[0] <= named[1] or named[1] <= named[0])
+            and any(not word.isdigit() for word in named[0] & named[1])):
         return 'same'
     # An organizer's center name omits its street/room detail. Only treat it
     # as unspecified for repeat titles from that same account; an actual room
@@ -173,9 +184,14 @@ def _rsvp_identity(value: str | None) -> str | None:
     if not value:
         return None
     parsed = urlsplit(value)
-    if parsed.scheme not in {"http", "https"} or not parsed.netloc or parsed.path.rstrip("/") == "":
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
         return None
     query = [(k, v) for k, v in parse_qsl(parsed.query) if k != "fbclid" and not k.startswith("utm_")]
+    # A bare site (ucr.scholarshipuniverse.com/) names no form. A root address
+    # whose query carries one does: gateway.campuslogic.com/?...ctx=/student/
+    # scholarship/607387.
+    if parsed.path.rstrip("/") == "" and not query:
+        return None
     return urlunsplit((parsed.scheme, parsed.netloc.casefold(), parsed.path.rstrip("/"), urlencode(sorted(query)), ""))
 
 
@@ -317,6 +333,19 @@ def _own_name_words(row: dict) -> set[str]:
     return {word for alias in _host_aliases(row) for word in alias} | {_account(row)}
 
 
+def _held_at(row: dict, occasion: set[str]) -> bool:
+    """Whether a title places an activity of its own at the named occasion.
+
+    "Depop at UCR Pop-up at Once Upon a Faire" is a stall at the fair, not the
+    fair. "CHASS Academic Advising at LGBT Resource Center" names a venue: the
+    occasion's words come before "at", so it is still that advising hour.
+    """
+    title = _title_text(str(row.get('title') or ''))
+    return any(occasion <= _slot_title_words({'title': title[match.end():]})
+               and bool(_slot_title_words({'title': title[:match.start()]}))
+               for match in re.finditer(r'\s(?:at|@)\s', title))
+
+
 def _same_slot_event(left: dict, right: dict, place: str) -> bool:
     """One occasion posted twice, identified by its exact start and end.
 
@@ -329,7 +358,8 @@ def _same_slot_event(left: dict, right: dict, place: str) -> bool:
     match. Another account at the same slot must name the occasion in the same
     place: one title contains the other's distinctive words. "KDSAP at
     Involvement Fair" is KDSAP's table at the fair, not a repost of it, so a
-    title that only adds its own club's name stays.
+    title that only adds its own club's name stays, as does one that places
+    an activity of its own at the occasion.
     """
     if not _same_slot(left, right) or _contradicting_titles(left, right):
         return False
@@ -339,7 +369,8 @@ def _same_slot_event(left: dict, right: dict, place: str) -> bool:
         return False
     short, long = sorted((left, right), key=lambda row: len(_slot_title_words(row)))
     words, other = _slot_title_words(short), _slot_title_words(long)
-    return bool(words and words <= other and not ((other - words) & _own_name_words(long)))
+    return bool(words and words <= other and not ((other - words) & _own_name_words(long))
+                and not _held_at(long, words))
 
 
 def _unnumbered_repeat(left: dict, right: dict, place: str) -> bool:
@@ -432,7 +463,8 @@ def _same_multiday_span(left: dict, right: dict, place: str) -> bool:
         return False
     short, long = sorted((left, right), key=lambda row: len(_slot_title_words(row)))
     words, other = _slot_title_words(short), _slot_title_words(long)
-    return bool(len(words) >= 2 and words <= other and not ((other - words) & _own_name_words(long)))
+    return bool(len(words) >= 2 and words <= other and not ((other - words) & _own_name_words(long))
+                and not _held_at(long, words))
 
 
 def _legacy_story(row: dict) -> bool:
