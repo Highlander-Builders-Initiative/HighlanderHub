@@ -417,6 +417,33 @@ preserved. The old actor is not cancelled and its unread output is not recovered
 replacement rechecks may incur new charges. Discovery-run access errors need
 separate review; this option only retires the saved recheck run.
 
+## Duplicate scorer (shadow mode)
+
+`reconcile_events.py` merges only corroborated repeats and queues look-alike
+pairs for an admin. `duplicate_scorer.py` (stage `events.duplicate_shadow`,
+after reconciliation) scores every same-day pair of upcoming listings the
+rules left apart: a small logistic model over evidence the rules already
+compute (start, venue, sign-up link, title words weighted by how few accounts
+use them, co-host naming, "X at Y" titles). It **writes nothing**. Each run
+logs:
+
+- `Shadow scorer would merge / leave for review / dismiss from review (score,
+  queued|not queued): …` for every queued pair, and for any unqueued pair it
+  would merge;
+- `Shadow scorer on N admin 'duplicate' / 'different' decisions: merge, review,
+  dismiss` — the scorer run on the snapshots in `event_duplicate_reviews`, and
+  a warning for each decision it contradicts.
+
+The second line is the evidence for letting it act. Until admin decisions
+back it, the merge threshold is deliberately timid.
+
+Weights and thresholds live in `duplicate_scorer_model.json`. Refit them with
+`python train_duplicate_scorer.py --write`; the report scores every pair with
+a model that never saw its day. Labelled pairs are in
+`tests/fixtures/duplicate-scorer-pairs.json` (public listings labelled by
+reading them, not admin decisions); add files of the same shape with
+`--pairs`.
+
 ## Local setup and tests
 
 ```bash

@@ -90,6 +90,22 @@ def get_duplicate_reviews() -> list[dict[str, Any]]:
     raise RuntimeError("Duplicate review pagination exceeded its safety limit")
 
 
+def get_decided_duplicate_reviews() -> list[dict[str, Any]]:
+    """Admin decisions with both listings as the admin saw them."""
+    found = []
+    for offset in range(0, 1_000_000, 200):
+        batch = (
+            client().table("event_duplicate_reviews")
+            .select("event_id,other_event_id,status,kept_event_id,event_snapshot,other_snapshot")
+            .neq("status", "pending")
+            .order("event_id").order("other_event_id").range(offset, offset + 199).execute().data or []
+        )
+        found.extend(batch)
+        if len(batch) < 200:
+            return found
+    raise RuntimeError("Duplicate review pagination exceeded its safety limit")
+
+
 def queue_duplicate_reviews(pairs: Iterable[tuple[str, str]], reviews: list[dict[str, Any]]) -> None:
     """Make the pending queue exactly these pairs, leaving admin decisions alone.
 

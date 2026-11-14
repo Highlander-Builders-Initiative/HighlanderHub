@@ -1,0 +1,56 @@
+{
+ "bias": -2.7417,
+ "weights": {
+  "same_account": 2.0036,
+  "same_start": 1.4949,
+  "near_start": -1.1032,
+  "far_start": -0.7578,
+  "one_untimed": -0.0393,
+  "both_untimed": -0.7078,
+  "ends_conflict": -1.1333,
+  "place_same": 0.1189,
+  "place_conflict": -1.255,
+  "shared_venue": 0.7197,
+  "same_signup": 0.0529,
+  "title_rare_shared": 2.5968,
+  "title_rare_jaccard": 0.2015,
+  "title_subset": 0.4001,
+  "title_spelling": 2.1976,
+  "caption_overlap": 0.1161,
+  "title_in_caption": -0.3695,
+  "credited": 0.4646,
+  "names_other_host": 2.287,
+  "part_marker": -2.1361,
+  "held_at": -0.9229,
+  "one_session": 0.3396,
+  "both_session": 1.0184,
+  "deadline": -1.029,
+  "same_title": 0.0313,
+  "title_rare_unshared": -2.0211,
+  "title_rare_extra": 0.0002,
+  "both_own_named": 0.388,
+  "at_shared_occasion": -1.633,
+  "slot_venue_word": 0.4717,
+  "account_start_word": -0.174,
+  "cross_far_start": -0.9536,
+  "untimed_word": -0.1487,
+  "cross_slot": -0.152,
+  "cross_slot_venue": 0.6685
+ },
+ "merge_at": 0.994,
+ "dismiss_below": 0.1,
+ "trained_on": {
+  "pairs": 485,
+  "duplicates": 156,
+  "held_out_duplicates": {
+   "merge": 16,
+   "review": 109,
+   "dismiss": 1
+  },
+  "held_out_non_duplicates": {
+   "merge": 0,
+   "review": 50,
+   "dismiss": 279
+  }
+ }
+}

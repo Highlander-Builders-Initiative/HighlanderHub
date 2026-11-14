@@ -32,6 +32,7 @@ from functools import cached_property
 from typing import Any
 
 import assessed_events
+import duplicate_scorer
 import extract_posts
 import reconcile_events
 import apify_posts
@@ -187,6 +188,8 @@ def _run_stages(results: list[StageResult], *, resume_halted: bool) -> None:
     _safe("instagram.recheck", post_recheck.main, results)
     _safe("instagram.publish", posts.publish, results)
     _safe("events.reconcile", reconcile_events.main, results)
+    # Shadow mode: logs what a scored matcher would merge or dismiss. Writes nothing.
+    _safe("events.duplicate_shadow", duplicate_scorer.main, results)
 
 
 def main(*, resume_halted: bool = False) -> None:
