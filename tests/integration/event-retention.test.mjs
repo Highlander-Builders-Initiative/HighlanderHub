@@ -101,3 +101,65 @@ test('schedule retention uses the full final Pacific day and public callers cann
     } finally { await db.exec('reset role'); }
   }
 });
+
+async function stored(name, days, bucket = 'event-flyers') {
+  await db.query(`insert into storage.objects values($1,$2,'{"size":2000}',
+    now()-$3::interval, now()-$3::interval)`, [bucket, name, `${days} days`]);
+}
+async function assessed(id, status, eventIds = []) {
+  await db.query(`insert into source_assessments(source_key,origin,assessment,event_ids)
+    values($1,'instagram',$2::jsonb,$3)`, [`instagram:post:${id}`, JSON.stringify({status}), eventIds]);
+}
+const unused = async (max = 1000) =>
+  (await db.query('select name from unused_event_flyers($1) order by name', [max])).rows.map(r => r.name);
+const slide = (id, n = 1) => `instagram/club/posts/${id}/slide${n}.jpg`;
+
+test('unused flyers: files no listing shows, old failures and legacy story files', async () => {
+  await reset();
+  await event('ig_live', "now()+interval '3 days'");
+  await assessed('live', 'complete', ['ig_live']);
+  await stored(slide('live', 1), 30);                  // the live event's flyer
+  await stored(slide('live', 2), 30);                  // sibling slide nothing shows
+  await db.query('update events set image_url=$1 where id=$2',
+    [`https://example.supabase.co/storage/v1/object/public/event-flyers/${slide('live', 1)}`, 'ig_live']);
+  await assessed('done', 'complete');
+  await stored(slide('done', 1), 3);                   // settled, unused
+  await stored(slide('done', 2), 1);                   // too new
+  await assessed('shown', 'complete');
+  await stored(slide('shown'), 30);
+  await event('ig_admin', "now()+interval '1 day'");
+  await db.query('update events set image_url=$1 where id=$2',
+    [`https://example.supabase.co/storage/v1/object/public/event-flyers/${slide('shown')}`, 'ig_admin']);
+  await assessed('failed', 'error');
+  await stored(slide('failed', 1), 5);                 // may be retried
+  await stored(slide('failed', 2), 20);                // given up on
+  await stored(slide('never', 1), 20);                 // never assessed
+  await stored('instagram/club/story1.jpg', 20);       // dropped stories pipeline
+  await stored('instagram/club/story2.jpg', 20);
+  await db.query(`insert into stories(id,handle,posted_at,image_url) values('s2','club',now(),$1)`,
+    [`https://example.supabase.co/storage/v1/object/public/event-flyers/instagram/club/story2.jpg`]);
+  await stored('external.jpg', 60, 'submission-flyers');
+  assert.deepEqual(await unused(), [
+    'instagram/club/posts/done/slide1.jpg', 'instagram/club/posts/failed/slide2.jpg',
+    'instagram/club/posts/live/slide2.jpg', 'instagram/club/posts/never/slide1.jpg',
+    'instagram/club/story1.jpg']);
+  assert.equal((await unused(2)).length, 2);
+  // A retired event frees its flyer too.
+  await db.exec(`delete from events where id='ig_live'`);
+  assert.ok((await unused()).includes(slide('live', 1)));
+});
+
+test('missing flyers names exactly the paths with no stored file', async () => {
+  await reset();
+  await stored(slide('a'), 1);
+  const rows = (await db.query('select name from missing_event_flyers($1)',
+    [[slide('a'), slide('b'), slide('b')]])).rows.map(r => r.name);
+  assert.deepEqual(rows, [slide('b')]);
+  for (const role of ['anon', 'authenticated']) {
+    await db.exec(`set role ${role}`);
+    try {
+      await assert.rejects(db.query('select * from unused_event_flyers(10)'), {code: '42501'});
+      await assert.rejects(db.query('select * from missing_event_flyers(array[]::text[])'), {code: '42501'});
+    } finally { await db.exec('reset role'); }
+  }
+});

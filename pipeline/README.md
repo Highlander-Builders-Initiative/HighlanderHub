@@ -9,21 +9,33 @@ the saved archive; partial collection permits extraction of newly saved posts.
 ## GitHub Actions: every eight hours
 
 Each run first deletes at most 50 oldest unlocked, non-manual events that ended
-more than 30 days ago (using the later of start/end). It then removes at most
-500 oldest unreferenced post flyers through the Storage API. Files and their
-posts must be at least 14 days old, their latest assessment must be complete,
-and every assessed occurrence/schedule must have finished at least 30 days ago.
-Completed announcements/applications without public listings are also eligible.
-Locked/current events, shared canonical listings, submissions, stories, and
-unresolved assessments protect their files. Other buckets are untouched.
+more than 30 days ago (using the later of start/end). It then removes up to
+3000 unused `event-flyers` files through the Storage API, in batches of 500.
+A file is unused when no event, submission or story points at it, and it is
+2+ days old with its post's assessment complete, or 14+ days old whatever the
+post's state; that covers failed or never-assessed posts and files from the
+dropped stories pipeline. Other buckets are untouched. The free plan holds
+1 GB; on 2026-11-14 the bucket held 3.1 GB, 2.7 GB of it slides no listing
+showed, because extraction then stored every slide of every post.
 
-Apply `supabase/migrations/20261011000000_event_retention.sql` before deploying
-the worker. Retention has its own stage: a failure is reported while collection
-and publication continue, and leftover files retry next run. Source/OCR caches,
+Apply `supabase/migrations/20261114000000_old_event_flyers_speedup.sql` and
+`20261114010000_unused_event_flyers.sql` before deploying the worker.
+`20261114020000_shown_event_flyers_only.sql` stops protecting the other
+slides of a live event's post; it is safe to apply before or after.
+Retention has its own stage: a failure is reported while collection and
+publication continue, and leftover files retry next run. Source/OCR caches,
 checkpoints, admin deletion markers and notification history remain intact.
-Unchanged archives do not reupload retired files; edited posts check Storage
-and restore missing flyers without repeating OCR. Preview currently eligible
-files with `python pipeline/event_retention.py --dry-run` (no deletions).
+
+Extraction stores no flyers. Each published row names its chosen slide's
+fixed bucket path; publication checks those paths in one call (the
+`Event flyers:` log line) and uploads the missing ones from the CDN URL
+extraction just read. A slide retention deleted is uploaded again the same
+way when a reassessment picks it; when Instagram's copy has expired the row is
+published without an image. A failed check stops publication rather than
+writing rows that name unstored files. Stored slides are display copies
+(JPEG, quality 82, at most 1440px); OCR and QR read the original download.
+Preview currently eligible files (no deletions) with
+`python pipeline/event_retention.py --dry-run`.
 
 `.github/workflows/scrape.yml` schedules `0 */8 * * *`: **00:00, 08:00 and 16:00
 UTC**, with manual **Run workflow** support. GitHub schedules are best-effort.
@@ -68,7 +80,7 @@ project; changing base64 formatting or rerunning the job will not resolve it.
 ### Every image in a post
 
 OCR and QR scanning read every carousel image in order, including video cover
-images. Each slide retains its own evidence field and durable flyer. A failure
+images. Each slide retains its own evidence field and can become the flyer. A failure
 on any slide keeps the post retryable; completed image work is reused on retry.
 Temporary Vision service, rate-limit, and network failures get up to three
 attempts per image, waiting 1 then 2 seconds. This includes per-image errors

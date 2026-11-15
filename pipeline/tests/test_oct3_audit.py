@@ -117,7 +117,7 @@ class FlyerStorageTests(unittest.TestCase):
         self.assertLessEqual(len(uploaded), extraction.MAX_FLYER_BYTES)
         with Image.open(io.BytesIO(uploaded)) as decoded:
             self.assertEqual('JPEG', decoded.format)
-            self.assertEqual((2560, 1707), decoded.size)
+            self.assertEqual((extraction.FLYER_MAX_SIDE, 960), decoded.size)
 
     def test_small_images_are_preserved_and_upload_failures_remain_retryable(self):
         record = {'handle': 'club', 'media_id': '123'}
@@ -127,6 +127,92 @@ class FlyerStorageTests(unittest.TestCase):
             self.assertEqual(b'unchanged', bucket.upload.call_args.args[1])
             bucket.upload.side_effect = RuntimeError('temporary storage outage')
             self.assertIsNone(extraction._upload_flyer(record, 'slide', b'unchanged'))
+
+    def test_display_copies_shrink_and_never_grow(self):
+        from PIL import Image
+        import random
+        rng = random.Random(7)
+        noisy = Image.new('RGB', (1080, 1350))
+        noisy.putdata([tuple(rng.randrange(256) for _ in range(3)) for _ in range(1080 * 1350)])
+        source = io.BytesIO()
+        noisy.save(source, 'JPEG', quality=97)
+        compact = extraction._compact_flyer(source.getvalue())
+        self.assertLess(len(compact), len(source.getvalue()))
+        with Image.open(io.BytesIO(compact)) as decoded:
+            self.assertEqual((1080, 1350), decoded.size)
+        # A display-size JPEG already smaller than its re-encoding is kept byte for byte.
+        tiny = io.BytesIO()
+        noisy.save(tiny, 'JPEG', quality=40, optimize=True, progressive=True)
+        self.assertEqual(tiny.getvalue(), extraction._compact_flyer(tiny.getvalue()))
+        # A PNG is always stored as JPEG: the bucket only accepts image/jpeg.
+        png = io.BytesIO()
+        Image.new('RGB', (100, 100), 'navy').save(png, 'PNG')
+        with Image.open(io.BytesIO(extraction._compact_flyer(png.getvalue()))) as decoded:
+            self.assertEqual('JPEG', decoded.format)
+
+
+class EventFlyerTests(unittest.TestCase):
+    PATH = 'instagram/club/posts/123/slide2.jpg'
+    URL = f'https://example.supabase.co/storage/v1/object/public/event-flyers/{PATH}'
+
+    def setUp(self):
+        patcher = patch('db.SUPABASE_URL', 'https://example.supabase.co/')
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def _inputs(self):
+        record = {'handle': 'club', 'media_id': '123',
+                  'media': [{'media_key': 'slide1', 'image_url': 'https://cdn.example/1.jpg'},
+                            {'media_key': 'slide2', 'image_url': 'https://cdn.example/2.jpg'}]}
+        # Extraction no longer stores slides, so the cache names no stored file.
+        cached = {'images': [{'media_key': 'slide1', 'index': 0}, {'media_key': 'slide2', 'index': 1}]}
+        row = {'id': 'ig_club_p123', 'image_url': extraction.flyer_url(record, 'slide2')}
+        return [{'rows': [row]}], [(record, cached)], row
+
+    def _rpc(self, client, names):
+        client.return_value.rpc.return_value.execute.return_value.data = [{'name': n} for n in names]
+
+    def test_rows_name_the_chosen_slide_before_it_is_stored(self):
+        self.assertEqual(self.URL, self._inputs()[2]['image_url'])
+        with patch('db.SUPABASE_URL', None):
+            self.assertIsNone(extraction.flyer_url({'handle': 'club', 'media_id': '123'}, 'slide2'))
+
+    def test_only_the_shown_slide_is_uploaded_at_publication(self):
+        updates, processed, row = self._inputs()
+        with patch('db.client') as client, \
+             patch.object(extraction, '_download_image', return_value=b'jpeg') as download, \
+             patch.object(extraction, '_upload_flyer', return_value=self.URL) as upload:
+            self._rpc(client, [self.PATH])
+            counts = publication.store_event_flyers(updates, processed)
+        client.return_value.rpc.assert_called_once_with('missing_event_flyers', {'names': [self.PATH]})
+        download.assert_called_once_with('https://cdn.example/2.jpg')
+        self.assertEqual(('slide2', b'jpeg'), upload.call_args.args[1:])
+        self.assertEqual({'flyers_stored': 0, 'flyers_uploaded': 1, 'flyers_dropped': 0}, counts)
+        self.assertEqual(self.URL, row['image_url'])
+
+    def test_a_flyer_that_cannot_be_stored_publishes_without_an_image(self):
+        for failure in ({'side_effect': extraction.ImageExpired('gone')}, {'return_value': b'jpeg'}):
+            with self.subTest(failure=failure):
+                updates, processed, row = self._inputs()
+                with patch('db.client') as client, \
+                     patch.object(extraction, '_download_image', **failure), \
+                     patch.object(extraction, '_upload_flyer', return_value=None):
+                    self._rpc(client, [self.PATH])
+                    counts = publication.store_event_flyers(updates, processed)
+                self.assertEqual({'flyers_stored': 0, 'flyers_uploaded': 0, 'flyers_dropped': 1}, counts)
+                self.assertIsNone(row['image_url'])
+
+    def test_stored_flyers_are_not_downloaded_and_a_failed_check_stops_publication(self):
+        updates, processed, row = self._inputs()
+        with patch('db.client') as client, patch.object(extraction, '_download_image') as download:
+            self._rpc(client, [])
+            self.assertEqual({'flyers_stored': 1, 'flyers_uploaded': 0, 'flyers_dropped': 0},
+                             publication.store_event_flyers(updates, processed))
+            client.return_value.rpc.side_effect = RuntimeError('function does not exist')
+            with self.assertRaises(RuntimeError):
+                publication.store_event_flyers(updates, processed)
+        download.assert_not_called()
+        self.assertEqual(self.URL, row['image_url'])
 
 
 class ReviewedSourceTests(unittest.TestCase):

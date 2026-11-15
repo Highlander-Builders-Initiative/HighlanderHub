@@ -89,79 +89,20 @@ class PostExtractionTests(unittest.TestCase):
             self.assertEqual(2, vision.call_count)
         self.assertEqual(first, second)
 
-    def test_fresh_flyer_uses_ocr_bytes_without_another_download(self):
-        item = record(slides=1)
-        with patch.object(posts, "_download_image", return_value=b"same image") as download, self.ocr(""):
-            extracted = posts.process_post(item)
-        download.assert_called_once_with(item["media"][0]["image_url"])
-        self.upload_flyer.assert_called_once_with(item, item["media"][0]["media_key"], b"same image")
-        self.assertEqual("https://storage.example/flyer.jpg", extracted["images"][0]["image_url"])
-
-    def test_failed_flyer_upload_recovers_without_repeating_ocr_or_qr(self):
-        for cache in ("local", "remote", "edited_caption"):
-            with self.subTest(cache=cache):
-                posts._cache_path("700").unlink(missing_ok=True)
-                item = record(slides=1)
-                self.upload_flyer.reset_mock(side_effect=True)
-                self.upload_flyer.side_effect = [None, "https://storage.example/recovered.jpg"]
-                with self.ocr("") as vision, \
-                     patch.object(posts, "qr_rsvp_urls", return_value=[]) as qr:
-                    first = posts.process_post(item)
-                    self.assertEqual("ok", first["status"])
-                    self.assertFalse(first["images"][0].get("image_url"))
-                    if cache == "remote":
-                        posts._cache_path("700").unlink()
-                    if cache == "edited_caption":
-                        item["caption"] += " Bring a friend!"
-                    item["media"][0]["image_url"] = "https://cdn.example/refreshed.jpg"
-                    with patch.object(posts, "_load_remote_cache", return_value=first), \
-                         patch.object(posts, "_download_image", return_value=b"retry") as download:
-                        recovered = posts.process_post(item)
-                        again = posts.process_post(item)
-                    download.assert_called_once_with("https://cdn.example/refreshed.jpg")
-                    vision.assert_called_once()
-                    qr.assert_called_once()
-                self.assertEqual(2, self.upload_flyer.call_count)
-                self.assertEqual("https://storage.example/recovered.jpg", recovered["images"][0]["image_url"])
-                self.assertEqual(recovered, again)
-                self.assertEqual(recovered, posts._read_json(posts._cache_path("700")))
-                self.write_remote_cache.assert_called_with(recovered)
-                source = publication.post_source(item, recovered)
-                payload = {"status": "complete", "source": source,
-                           "result": post_decision(source, field="caption")}
-                rows, _ = publication.post_rows(item, recovered, payload, {}, "2026-09-11T12:00:00Z")
-                self.assertEqual("https://storage.example/recovered.jpg", rows[0]["image_url"])
-
-    def test_flyer_recovery_failures_preserve_ocr_and_remain_retryable(self):
-        item = record(slides=1)
-        self.upload_flyer.side_effect = [None, None, "https://storage.example/recovered.jpg"]
-        with self.ocr("Study Jam") as vision:
-            original = posts.process_post(item)
-            with patch.object(posts, "_download_image", side_effect=RuntimeError("timeout")):
-                self.assertEqual(original, posts.process_post(item))
-            self.assertEqual(original, posts.process_post(item))
-            recovered = posts.process_post(item)
-        vision.assert_called_once()
-        self.assertEqual(3, self.upload_flyer.call_count)
-        self.assertEqual("https://storage.example/recovered.jpg", recovered["images"][0]["image_url"])
-
-    def test_an_expired_flyer_url_is_not_requested_again_until_it_is_refreshed(self):
-        item = record(slides=1)
-        self.upload_flyer.side_effect = [None, "https://storage.example/recovered.jpg"]
-        with self.ocr("Study Jam") as vision:
-            original = posts.process_post(item)
-            with patch.object(posts, "_download_image", side_effect=posts.ImageExpired("HTTP 403")) as expired:
-                failed = posts.process_post(item)
-                self.assertEqual(failed, posts.process_post(item))
-            expired.assert_called_once()
-            self.assertEqual(original["images"][0]["ocr_text"], failed["images"][0]["ocr_text"])
-            self.assertFalse(failed["images"][0].get("image_url"))
-            self.assertEqual(failed, posts._read_json(posts._cache_path("700")))
-            item["media"][0]["image_url"] = "https://cdn.example/refreshed.jpg"
-            recovered = posts.process_post(item)
-        vision.assert_called_once()
-        self.assertEqual("https://storage.example/recovered.jpg", recovered["images"][0]["image_url"])
-        self.assertNotIn("flyer_expired_url", recovered["images"][0])
+    def test_extraction_stores_no_flyers(self):
+        # Most posts are not events: publication stores the slide an event shows.
+        item = record()
+        with patch.object(posts, "_download_image", return_value=b"image") as download, \
+             self.ocr("", "Study Jam September 15"):
+            first = posts.process_post(item)
+            again = posts.process_post(item)
+            edited = posts.process_post(record(caption="Study Jam moved to Tuesday"))
+        self.assertEqual(2, download.call_count)
+        self.upload_flyer.assert_not_called()
+        self.storage.assert_not_called()
+        self.assertEqual(first, again)
+        for extracted in (first, edited):
+            self.assertFalse(any("image_url" in entry for entry in extracted["images"]))
 
     def test_cached_only_does_not_attempt_missing_flyer_recovery(self):
         item = record()
@@ -329,17 +270,6 @@ class PostExtractionTests(unittest.TestCase):
         self.assertNotEqual(first["fingerprint"], second["fingerprint"])
         self.assertEqual([entry["ocr_text"] for entry in posts.ordered_slides(first)],
                          [entry["ocr_text"] for entry in posts.ordered_slides(second)])
-
-    def test_edited_post_recovers_retired_flyer_without_repeating_ocr(self):
-        item = record(slides=1)
-        with self.ocr("Study Jam September 15") as vision:
-            posts.process_post(item)
-            self.storage.return_value.storage.from_.return_value.exists.return_value = False
-            edited = record(caption="New workshop on October 20", slides=1)
-            restored = posts.process_post(edited)
-        self.assertEqual(1, vision.call_count)
-        self.assertEqual(2, self.upload_flyer.call_count)
-        self.assertEqual("https://storage.example/flyer.jpg", restored["images"][0]["image_url"])
 
     def test_a_replaced_first_slide_is_read_again(self):
         item = record()
@@ -628,12 +558,17 @@ class PostExtractionTests(unittest.TestCase):
         self.assertEqual("ok", result["status"])
         self.assertEqual(1, vision.call_count)
 
-    def test_every_slide_is_stored_as_a_possible_flyer(self):
-        # Even a blank first slide is kept for caption-only events.
-        with self.ocr("", "Study Jam September 15", "") as _:
-            posts.process_post(record(slides=3))
-        stored = [call.args[1] for call in self.upload_flyer.call_args_list]
-        self.assertEqual(["700_0_n", "700_1_n", "700_2_n"], stored)
+    def test_a_caption_only_event_names_its_blank_lead_slide(self):
+        item = record(slides=3)
+        with self.ocr("", "Study Jam September 15", ""):
+            extracted = posts.process_post(item)
+        source = publication.post_source(item, extracted)
+        payload = {"status": "complete", "source": source, "result": post_decision(source, field="caption")}
+        with patch("db.SUPABASE_URL", "https://example.supabase.co"):
+            rows, _ = publication.post_rows(item, extracted, payload, {}, "2026-09-11T12:00:00Z")
+        self.assertEqual("https://example.supabase.co/storage/v1/object/public/event-flyers/"
+                         f"instagram/{item['handle']}/posts/700/700_0_n.jpg", rows[0]["image_url"])
+        self.upload_flyer.assert_not_called()
 
 
 class PostSourceTests(unittest.TestCase):

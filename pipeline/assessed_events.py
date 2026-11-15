@@ -393,7 +393,8 @@ def post_rows(record: dict, cached: dict, payload: dict, meta: dict, now: str) -
         row = build_instagram_row(
             record, {**occurrence, "description": caption}, identity_handle=owner, host_handle=owner,
             account_meta=meta.get(owner) or meta.get(record.get("handle")) or {},
-            text=policy_text, policy_text=policy_text, image_url=(flyer or {}).get("image_url"),
+            text=policy_text, policy_text=policy_text,
+            image_url=(flyer or {}).get("image_url") or posts.flyer_url(record, (flyer or {}).get("media_key")),
             qr_urls=[url for slide in (slides if len(occurrences) == 1 else [by_index[i] for i in cited])
                      for url in slide.get("qr_urls") or []],
             scraped_at=now, assessed_kind=result["kind"], session=session,
@@ -774,6 +775,59 @@ def _canonical_listings(processed: list[tuple[dict, dict]], registry: dict) -> d
     return {row["id"]: row for row in get_event_rows_by_ids(sorted(wanted))}
 
 
+_FLYER_MARKER = "/storage/v1/object/public/event-flyers/"
+
+
+def _flyer_path(url) -> str | None:
+    """The event-flyers bucket path a public URL names, or None for any other URL."""
+    if not isinstance(url, str):
+        return None
+    _, marker, path = url.rpartition(_FLYER_MARKER)
+    return path or None if marker else None
+
+
+def store_event_flyers(updates: list[dict], processed: list[tuple[dict, dict]]) -> dict[str, int]:
+    """Store the flyer each published row names, uploading the ones not stored yet.
+
+    Extraction stores nothing, so a new event's slide is uploaded here, from
+    the CDN URL extraction just read. A slide retention deleted as unused (a
+    reassessment picked another slide) is uploaded again the same way. When
+    Instagram's copy has expired, the row is published without an image
+    rather than with a broken one. A failed check stops publication: writing
+    rows then could name files that were never stored.
+    """
+    wanted: dict[str, list[dict]] = {}
+    for item in updates:
+        for row in item.get("rows") or []:
+            path = _flyer_path(row.get("image_url"))
+            if path:
+                wanted.setdefault(path, []).append(row)
+    if not wanted:
+        return {}
+    from db import client
+    missing = {row["name"] for row in
+               client().rpc("missing_event_flyers", {"names": sorted(wanted)}).execute().data or []}
+    import extract_posts as posts
+    slides: dict[str, tuple[dict, str]] = {}
+    for record, _ in processed:
+        for slide in posts._readable_slides(record):
+            key = str(slide.get("media_key") or "")
+            path = posts._storage_object_path(record, key)
+            if path in missing:
+                slides[path] = (record, key)
+    counts = {"flyers_stored": len(wanted) - len(missing), "flyers_uploaded": 0, "flyers_dropped": 0}
+    for path in sorted(missing):
+        if path in slides and posts.store_flyer(*slides[path]) == path:
+            counts["flyers_uploaded"] += 1
+            continue
+        counts["flyers_dropped"] += 1
+        log.warning("Flyer %s could not be stored; publishing without it", path)
+        for row in wanted[path]:
+            row["image_url"] = None
+    log.info("Event flyers: %s", counts)
+    return counts
+
+
 def publish_posts(processed: list[tuple[dict, dict]], now: str, *, notify: bool,
                   meta: dict | None = None) -> None:
     stats: dict[str, int] = {}
@@ -790,6 +844,7 @@ def publish_posts(processed: list[tuple[dict, dict]], now: str, *, notify: bool,
                            canonical=canonical, reviews=reviews)
     log.info("Instagram publication: %d post source(s); %s",
              len(processed), dict(sorted(stats.items())) or "fully cached")
+    store_event_flyers(updates, processed)
     _complete(updates, notify=notify)
 
 
@@ -873,6 +928,7 @@ def main() -> None:
              sum(item["assessment"]["status"] == "error" for item in updates), args.report)
     log.info("Skipped %d sources outside the selected reassessment scope or already finished", skipped)
     if args.apply:
+        store_event_flyers(updates, [(raw, cached) for _, raw, cached in sources])
         _complete(updates, notify=False)
 
 

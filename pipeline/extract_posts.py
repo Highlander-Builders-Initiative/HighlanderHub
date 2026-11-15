@@ -5,7 +5,8 @@ cached under a signature-free media key, so editing a caption reuses its OCR
 and a re-signed CDN URL costs nothing at all.
 
 Publication itself lives in `assessed_events`, which reads the caches this
-module writes. Nothing here decides whether a post is an event.
+module writes. Nothing here decides whether a post is an event, so nothing
+here stores flyers: publication stores the one slide each event shows.
 """
 from __future__ import annotations
 
@@ -36,6 +37,12 @@ log = logging.getLogger("pipeline.extract_posts")
 EXTRACTION_VERSION = 3
 # Match the event-flyers bucket; downloads/OCR can accept larger originals.
 MAX_FLYER_BYTES = 5 * 1024 * 1024
+# Stored flyers are display copies: OCR and QR read the downloaded original.
+# Instagram serves 1080px-wide JPEGs, so this rarely resizes; the saving comes
+# from re-encoding (stored slides averaged ~400 KB on 2026-11-14), and the
+# original is kept whenever it is already smaller.
+FLYER_MAX_SIDE = 1440
+FLYER_JPEG_QUALITY = 82
 
 # Retain unsupported_media for reading legacy caches, but reopen those skips:
 # carousel length no longer prevents reading every slide.
@@ -193,6 +200,32 @@ def _storage_object_path(record: dict[str, Any], media_key: str) -> str | None:
     return f"instagram/{handle}/posts/{media_id}/{slug}.jpg"
 
 
+def _compact_flyer(image: bytes) -> bytes:
+    """A display-size JPEG of this slide, or the original when that is smaller.
+
+    Bytes Pillow cannot read are returned unchanged; the bucket's size limit
+    still rejects an oversize upload, which leaves the slide retryable.
+    """
+    from PIL import Image, ImageOps, UnidentifiedImageError
+
+    try:
+        with Image.open(io.BytesIO(image)) as original:
+            fits = (original.format == "JPEG" and len(image) <= MAX_FLYER_BYTES
+                    and max(original.size) <= FLYER_MAX_SIDE)
+            flyer = ImageOps.exif_transpose(original).convert("RGB")
+    except (UnidentifiedImageError, OSError, ValueError):
+        return image
+    flyer.thumbnail((FLYER_MAX_SIDE, FLYER_MAX_SIDE))
+    while True:
+        output = io.BytesIO()
+        flyer.save(output, format="JPEG", quality=FLYER_JPEG_QUALITY, optimize=True, progressive=True)
+        compact = output.getvalue()
+        if len(compact) <= MAX_FLYER_BYTES:
+            break
+        flyer.thumbnail((max(1, flyer.width // 2), max(1, flyer.height // 2)))
+    return image if fits and len(image) <= len(compact) else compact
+
+
 def _upload_flyer(record: dict[str, Any], media_key: str, image: bytes) -> str | None:
     path = _storage_object_path(record, media_key)
     if path is None:
@@ -200,19 +233,7 @@ def _upload_flyer(record: dict[str, Any], media_key: str, image: bytes) -> str |
     try:
         from db import client
 
-        if len(image) > MAX_FLYER_BYTES:
-            from PIL import Image, ImageOps
-
-            with Image.open(io.BytesIO(image)) as original:
-                flyer = ImageOps.exif_transpose(original).convert("RGB")
-                flyer.thumbnail((2560, 2560))
-                while True:
-                    output = io.BytesIO()
-                    flyer.save(output, format="JPEG", quality=90, optimize=True)
-                    image = output.getvalue()
-                    if len(image) <= MAX_FLYER_BYTES:
-                        break
-                    flyer.thumbnail((max(1, flyer.width // 2), max(1, flyer.height // 2)))
+        image = _compact_flyer(image)
         bucket = client().storage.from_(DURABLE_FLYER_BUCKET)
         bucket.upload(
             path,
@@ -253,51 +274,37 @@ def _cached_decision_still_applies(record: dict[str, Any], payload: Any) -> bool
     return payload.get("status") != "unsupported_media"
 
 
-def _ensure_durable_flyer(record: dict[str, Any], slide: dict[str, Any],
-                          entry: dict[str, Any], stats: Stats, *,
-                          cached_only: bool, image: bytes | None = None,
-                          verify_stored: bool = False) -> dict[str, Any]:
-    """Complete flyer storage independently of OCR, reusing bytes when available."""
-    if cached_only:
-        return entry
-    if entry.get("image_url") and verify_stored:
-        # An edited old post may become relevant after its unused flyer was
-        # retired. Recover that file while preserving its paid OCR results.
-        path = _storage_object_path(record, str(slide.get("media_key") or record["media_id"]))
-        if path:
-            from db import client
-            if not client().storage.from_(DURABLE_FLYER_BUCKET).exists(path):
-                entry = {k: v for k, v in entry.items() if k != "image_url"}
-    if entry.get("image_url"):
-        return entry
-    recovery = image is None
-    key = str(slide.get("media_key") or record["media_id"])
-    if recovery:
-        if not slide.get("image_url"):
-            return entry
-        # A signed CDN URL that has expired stays expired. Remember it so each
-        # run does not request it again; a refreshed saved URL is tried anew.
-        attempt = _url_attempt(slide["image_url"])
-        if entry.get("flyer_expired_url") == attempt:
-            return entry
-        try:
-            image = _download_image(slide["image_url"])
-        except ImageExpired as exc:
-            log.warning("post flyer URL expired for %s: %s", key, exc)
-            stats.bump("flyer_recovery_failed")
-            return {**entry, "flyer_expired_url": attempt}
-        except Exception as exc:  # noqa: BLE001 - keep usable OCR if the download fails.
-            log.warning("post flyer download failed for %s: %s", key, exc)
-            stats.bump("flyer_recovery_failed")
-            return entry
-    durable = _upload_flyer(record, key, image)
-    if not durable:
-        if recovery:
-            stats.bump("flyer_recovery_failed")
-        return entry
-    if recovery:
-        stats.bump("flyers_recovered")
-    return {**{k: v for k, v in entry.items() if k != "flyer_expired_url"}, "image_url": durable}
+def flyer_url(record: dict[str, Any], media_key: Any) -> str | None:
+    """The public URL this slide's flyer has, or will have once publication stores it.
+
+    The path is fixed by the post and the slide, so a row can name its flyer
+    before the file exists; publication uploads it before writing the row.
+    """
+    from db import SUPABASE_URL
+
+    path = _storage_object_path(record, str(media_key or ""))
+    if path is None or not SUPABASE_URL:
+        return None
+    return f"{SUPABASE_URL.rstrip('/')}/storage/v1/object/public/{DURABLE_FLYER_BUCKET}/{path}"
+
+
+def store_flyer(record: dict[str, Any], media_key: str) -> str | None:
+    """Download one slide from Instagram's CDN and store it as an event flyer.
+
+    Returns the stored path, or None when the slide is unknown, its URL has
+    expired or failed, or the upload failed.
+    """
+    path = _storage_object_path(record, media_key)
+    slide = next((item for item in _readable_slides(record)
+                  if str(item.get("media_key") or "") == media_key), None)
+    if path is None or slide is None or not slide.get("image_url"):
+        return None
+    try:
+        image = _download_image(slide["image_url"])
+    except Exception as exc:  # noqa: BLE001 - publish without the flyer instead.
+        log.warning("post flyer download failed for %s: %s", path, exc)
+        return None
+    return path if _upload_flyer(record, media_key, image) else None
 
 
 def process_post(record: dict[str, Any], stats: Stats | None = None, *,
@@ -332,15 +339,6 @@ def process_post(record: dict[str, Any], stats: Stats | None = None, *,
     if _cached_decision_still_applies(record, cached):
         stats.bump("cache_hits")
         log.debug("extract %s: cache %s", label, cached.get("status"))
-        slides = {slide.get("media_key"): slide for slide in _readable_slides(record)}
-        images = [
-            _ensure_durable_flyer(record, slides[entry.get("media_key")], entry, stats,
-                                  cached_only=cached_only)
-            if isinstance(entry, dict) and entry.get("media_key") in slides else entry
-            for entry in cached.get("images") or []
-        ]
-        if images != (cached.get("images") or []):
-            cached = _persist(media_id, {**cached, "images": images})
         return cached
 
     # A changed fingerprint invalidates the decision, never the image work:
@@ -370,9 +368,7 @@ def process_post(record: dict[str, Any], stats: Stats | None = None, *,
                                   images + list(reusable.values()))
         prior = reusable.get(key)
         if prior is not None and prior.get("qr_scan_version") == QR_SCAN_VERSION:
-            entry = _ensure_durable_flyer(record, slide, prior, stats, cached_only=cached_only,
-                                          verify_stored=True)
-            images.append({**entry, "index": slide.get("index", len(images))})
+            images.append({**prior, "index": slide.get("index", len(images))})
             stats.bump("image_cache_hits")
             continue
         try:
@@ -417,10 +413,10 @@ def process_post(record: dict[str, Any], stats: Stats | None = None, *,
             "qr_scan_version": QR_SCAN_VERSION,
         }
         if prior is not None and prior.get("image_url"):
-            entry["image_url"] = prior["image_url"]  # Stored already; not uploaded again.
-        # Any slide can supply the cited evidence and become the event's flyer.
-        entry = _ensure_durable_flyer(record, slide, entry, stats,
-                                      cached_only=cached_only, image=image, verify_stored=True)
+            # Stored by an earlier version, which uploaded every slide here.
+            entry["image_url"] = prior["image_url"]
+        # Flyers are stored at publication, and only for the slide an event
+        # shows: most posts are not events, and an event shows one slide.
         images.append(entry)
         reusable[key] = entry
 
