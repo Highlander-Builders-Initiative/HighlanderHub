@@ -174,6 +174,17 @@ class EventFlyerTests(unittest.TestCase):
 
     def test_rows_name_the_chosen_slide_before_it_is_stored(self):
         self.assertEqual(self.URL, self._inputs()[2]['image_url'])
+        # A link cached under another project is rebuilt for this one.
+        record, cached = self._inputs()[1][0]
+        cached['images'][1]['image_url'] = ('https://old.supabase.co/storage/v1/object/public/'
+                                           f'event-flyers/{self.PATH}')
+        cached['images'][1]['ocr_text'] = 'Workshop Nov 20'
+        source = publication.post_source(record, cached)
+        from test_post_events import post_decision
+        payload = {'status': 'complete', 'source': source,
+                   'result': post_decision(source, field='slide_2_ocr')}
+        rows, _ = publication.post_rows(record, cached, payload, {}, '2026-09-11T12:00:00Z')
+        self.assertEqual(self.URL, rows[0]['image_url'])
         with patch('db.SUPABASE_URL', None):
             self.assertIsNone(extraction.flyer_url({'handle': 'club', 'media_id': '123'}, 'slide2'))
 

@@ -280,12 +280,13 @@ def flyer_url(record: dict[str, Any], media_key: Any) -> str | None:
     The path is fixed by the post and the slide, so a row can name its flyer
     before the file exists; publication uploads it before writing the row.
     """
-    from db import SUPABASE_URL
+    import db
 
+    base = getattr(db, "SUPABASE_URL", None)
     path = _storage_object_path(record, str(media_key or ""))
-    if path is None or not SUPABASE_URL:
+    if path is None or not base:
         return None
-    return f"{SUPABASE_URL.rstrip('/')}/storage/v1/object/public/{DURABLE_FLYER_BUCKET}/{path}"
+    return f"{base.rstrip('/')}/storage/v1/object/public/{DURABLE_FLYER_BUCKET}/{path}"
 
 
 def store_flyer(record: dict[str, Any], media_key: str) -> str | None:

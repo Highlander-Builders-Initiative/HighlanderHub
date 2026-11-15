@@ -394,7 +394,9 @@ def post_rows(record: dict, cached: dict, payload: dict, meta: dict, now: str) -
             record, {**occurrence, "description": caption}, identity_handle=owner, host_handle=owner,
             account_meta=meta.get(owner) or meta.get(record.get("handle")) or {},
             text=policy_text, policy_text=policy_text,
-            image_url=(flyer or {}).get("image_url") or posts.flyer_url(record, (flyer or {}).get("media_key")),
+            # Built from this project's URL: a cached link can name the project
+            # the data was copied from, and publication stores the file here.
+            image_url=posts.flyer_url(record, (flyer or {}).get("media_key")) or (flyer or {}).get("image_url"),
             qr_urls=[url for slide in (slides if len(occurrences) == 1 else [by_index[i] for i in cited])
                      for url in slide.get("qr_urls") or []],
             scraped_at=now, assessed_kind=result["kind"], session=session,
