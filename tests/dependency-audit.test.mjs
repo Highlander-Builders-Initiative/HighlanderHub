@@ -33,13 +33,14 @@ function runAudit(t, packages, nodes, id = advisory) {
   });
 }
 
-test('audit accepts the advisory only for legacy minimatch dev dependencies', t => {
+test('audit rejects GHSA-g3hv-75wg-m249 even for legacy minimatch dev dependencies', t => {
   const result = runAudit(t, {
     'node_modules/minimatch': legacy,
     'node_modules/parser/node_modules/minimatch': { version: '11.0.1', dev: true },
   }, ['node_modules/minimatch']);
-  assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Accepted GHSA-g3hv-75wg-m249/);
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /GHSA-g3hv-75wg-m249/);
+  assert.doesNotMatch(result.stdout, /Accepted GHSA/);
 });
 
 test('audit rejects an affected modern minimatch even alongside legacy copies', t => {

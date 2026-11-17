@@ -628,7 +628,7 @@ test("site exposes crawler and social preview metadata", () => {
   assert.match(layout, /twitter:/);
   assert.match(layout, /manifest:/);
   assert.match(layout, /\/favicon\.ico/);
-  assert.match(layout, /apple: "\/apple-touch-icon\.png"/);
+  assert.match(layout, /apple: "\/apple-touch-icon\.png\?v=hh-5"/);
   for (const icon of ["favicon.ico", "icon-192.png", "icon-512.png", "apple-touch-icon.png"]) {
     assert.equal(existsSync(sourceFile(`public/${icon}`)), true, icon);
   }
