@@ -26,13 +26,13 @@ export const metadata: Metadata = {
   description: SITE_DESCRIPTION,
   applicationName: SITE_NAME,
   manifest: "/manifest.json",
-  // Sized exports of the h/h wordmark; logo_icon.png belongs to HBI.
+  // Sized exports of the h/h app icon (scripts/render-brand-icons.mjs); logo_icon.png belongs to HBI.
   icons: {
     icon: [
-      { url: "/favicon.ico?v=hh-2", type: "image/x-icon", sizes: "16x16 32x32 48x48" },
-      { url: "/icon-192.png?v=hh-2", type: "image/png", sizes: "192x192" },
+      { url: "/favicon.ico?v=hh-5", type: "image/x-icon", sizes: "16x16 32x32 48x48" },
+      { url: "/icon-192.png?v=hh-5", type: "image/png", sizes: "192x192" },
     ],
-    apple: "/apple-touch-icon.png",
+    apple: "/apple-touch-icon.png?v=hh-5",
   },
   openGraph: {
     type: "website",
