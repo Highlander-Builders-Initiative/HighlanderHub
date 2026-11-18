@@ -7,7 +7,7 @@ import tempfile
 import unittest
 from datetime import date, datetime, timezone
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import call, MagicMock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import content_assessment as semantic
@@ -117,7 +117,7 @@ class FlyerStorageTests(unittest.TestCase):
         self.assertLessEqual(len(uploaded), extraction.MAX_FLYER_BYTES)
         with Image.open(io.BytesIO(uploaded)) as decoded:
             self.assertEqual('JPEG', decoded.format)
-            self.assertEqual((extraction.FLYER_MAX_SIDE, 960), decoded.size)
+            self.assertEqual((2560, 1707), decoded.size)
 
     def test_small_images_are_preserved_and_upload_failures_remain_retryable(self):
         record = {'handle': 'club', 'media_id': '123'}
@@ -127,28 +127,6 @@ class FlyerStorageTests(unittest.TestCase):
             self.assertEqual(b'unchanged', bucket.upload.call_args.args[1])
             bucket.upload.side_effect = RuntimeError('temporary storage outage')
             self.assertIsNone(extraction._upload_flyer(record, 'slide', b'unchanged'))
-
-    def test_display_copies_shrink_and_never_grow(self):
-        from PIL import Image
-        import random
-        rng = random.Random(7)
-        noisy = Image.new('RGB', (1080, 1350))
-        noisy.putdata([tuple(rng.randrange(256) for _ in range(3)) for _ in range(1080 * 1350)])
-        source = io.BytesIO()
-        noisy.save(source, 'JPEG', quality=97)
-        compact = extraction._compact_flyer(source.getvalue())
-        self.assertLess(len(compact), len(source.getvalue()))
-        with Image.open(io.BytesIO(compact)) as decoded:
-            self.assertEqual((1080, 1350), decoded.size)
-        # A display-size JPEG already smaller than its re-encoding is kept byte for byte.
-        tiny = io.BytesIO()
-        noisy.save(tiny, 'JPEG', quality=40, optimize=True, progressive=True)
-        self.assertEqual(tiny.getvalue(), extraction._compact_flyer(tiny.getvalue()))
-        # A PNG is always stored as JPEG: the bucket only accepts image/jpeg.
-        png = io.BytesIO()
-        Image.new('RGB', (100, 100), 'navy').save(png, 'PNG')
-        with Image.open(io.BytesIO(extraction._compact_flyer(png.getvalue()))) as decoded:
-            self.assertEqual('JPEG', decoded.format)
 
 
 class EventFlyerTests(unittest.TestCase):
@@ -224,6 +202,38 @@ class EventFlyerTests(unittest.TestCase):
                 publication.store_event_flyers(updates, processed)
         download.assert_not_called()
         self.assertEqual(self.URL, row['image_url'])
+
+
+class RegistryReadTests(unittest.TestCase):
+    def _client(self, rows):
+        client = MagicMock()
+        query = client.table.return_value.select.return_value.eq.return_value
+        for method in ('in_', 'overlaps'):
+            getattr(query, method).return_value.execute.side_effect = lambda: MagicMock(data=rows.pop(0))
+        return client, query
+
+    def test_a_filtered_read_fetches_only_the_named_sources(self):
+        one = {'source_key': 'instagram:post:1', 'event_ids': ['a']}
+        two = {'source_key': 'instagram:post:2', 'known_event_ids': ['b']}
+        client, query = self._client([[one], [one], [two]])
+        with patch('db.client', return_value=client):
+            registry = publication.load_registry(
+                keys=['instagram:post:1'], event_ids=['a', 'b'], known_event_ids={'b', 'a'})
+        self.assertEqual({'instagram:post:1': one, 'instagram:post:2': two}, registry)
+        query.in_.assert_called_once_with('source_key', ['instagram:post:1'])
+        self.assertEqual([call(('event_ids', ['a', 'b'])), call(('known_event_ids', ['a', 'b']))],
+                         [call(c.args) for c in query.overlaps.call_args_list])
+        query.order.assert_not_called()
+
+    def test_long_filters_are_split_and_empty_ones_read_nothing(self):
+        ids = [f'ig_club_p{n}' for n in range(publication.REGISTRY_FILTER_CHUNK * 2 + 1)]
+        client, query = self._client([[], [], []])
+        with patch('db.client', return_value=client):
+            self.assertEqual({}, publication.load_registry(event_ids=ids))
+            self.assertEqual({}, publication.load_registry(keys=[], event_ids=[], known_event_ids=[]))
+        self.assertEqual([publication.REGISTRY_FILTER_CHUNK] * 2 + [1],
+                         [len(c.args[1]) for c in query.overlaps.call_args_list])
+        query.in_.assert_not_called()
 
 
 class ReviewedSourceTests(unittest.TestCase):

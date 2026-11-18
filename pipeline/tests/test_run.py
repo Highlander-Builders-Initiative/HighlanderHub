@@ -21,6 +21,7 @@ STAGE_ORDER = [
     "instagram.publish",
     "events.reconcile",
     "events.duplicate_shadow",
+    "supabase.usage",
 ]
 
 
@@ -34,6 +35,7 @@ class RunMainTests(unittest.TestCase):
             "assessed_events",
             "post_recheck",
             "duplicate_scorer",
+            "project_usage",
         ]
         self.fake_modules = {
             name: types.SimpleNamespace(main=Mock(name=f"{name}.main"))
@@ -55,6 +57,7 @@ class RunMainTests(unittest.TestCase):
             "instagram.publish": self.fake_modules["assessed_events"].publish_posts,
             "events.reconcile": self.fake_modules["reconcile_events"].main,
             "events.duplicate_shadow": self.fake_modules["duplicate_scorer"].main,
+            "supabase.usage": self.fake_modules["project_usage"].main,
         }
         self.module_patch = patch.dict(sys.modules, self.fake_modules)
         self.module_patch.start()

@@ -37,12 +37,6 @@ log = logging.getLogger("pipeline.extract_posts")
 EXTRACTION_VERSION = 3
 # Match the event-flyers bucket; downloads/OCR can accept larger originals.
 MAX_FLYER_BYTES = 5 * 1024 * 1024
-# Stored flyers are display copies: OCR and QR read the downloaded original.
-# Instagram serves 1080px-wide JPEGs, so this rarely resizes; the saving comes
-# from re-encoding (stored slides averaged ~400 KB on 2026-11-14), and the
-# original is kept whenever it is already smaller.
-FLYER_MAX_SIDE = 1440
-FLYER_JPEG_QUALITY = 82
 
 # Retain unsupported_media for reading legacy caches, but reopen those skips:
 # carousel length no longer prevents reading every slide.
@@ -200,32 +194,6 @@ def _storage_object_path(record: dict[str, Any], media_key: str) -> str | None:
     return f"instagram/{handle}/posts/{media_id}/{slug}.jpg"
 
 
-def _compact_flyer(image: bytes) -> bytes:
-    """A display-size JPEG of this slide, or the original when that is smaller.
-
-    Bytes Pillow cannot read are returned unchanged; the bucket's size limit
-    still rejects an oversize upload, which leaves the slide retryable.
-    """
-    from PIL import Image, ImageOps, UnidentifiedImageError
-
-    try:
-        with Image.open(io.BytesIO(image)) as original:
-            fits = (original.format == "JPEG" and len(image) <= MAX_FLYER_BYTES
-                    and max(original.size) <= FLYER_MAX_SIDE)
-            flyer = ImageOps.exif_transpose(original).convert("RGB")
-    except (UnidentifiedImageError, OSError, ValueError):
-        return image
-    flyer.thumbnail((FLYER_MAX_SIDE, FLYER_MAX_SIDE))
-    while True:
-        output = io.BytesIO()
-        flyer.save(output, format="JPEG", quality=FLYER_JPEG_QUALITY, optimize=True, progressive=True)
-        compact = output.getvalue()
-        if len(compact) <= MAX_FLYER_BYTES:
-            break
-        flyer.thumbnail((max(1, flyer.width // 2), max(1, flyer.height // 2)))
-    return image if fits and len(image) <= len(compact) else compact
-
-
 def _upload_flyer(record: dict[str, Any], media_key: str, image: bytes) -> str | None:
     path = _storage_object_path(record, media_key)
     if path is None:
@@ -233,7 +201,19 @@ def _upload_flyer(record: dict[str, Any], media_key: str, image: bytes) -> str |
     try:
         from db import client
 
-        image = _compact_flyer(image)
+        if len(image) > MAX_FLYER_BYTES:
+            from PIL import Image, ImageOps
+
+            with Image.open(io.BytesIO(image)) as original:
+                flyer = ImageOps.exif_transpose(original).convert("RGB")
+                flyer.thumbnail((2560, 2560))
+                while True:
+                    output = io.BytesIO()
+                    flyer.save(output, format="JPEG", quality=90, optimize=True)
+                    image = output.getvalue()
+                    if len(image) <= MAX_FLYER_BYTES:
+                        break
+                    flyer.thumbnail((max(1, flyer.width // 2), max(1, flyer.height // 2)))
         bucket = client().storage.from_(DURABLE_FLYER_BUCKET)
         bucket.upload(
             path,

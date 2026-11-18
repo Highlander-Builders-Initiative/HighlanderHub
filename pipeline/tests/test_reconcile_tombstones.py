@@ -28,7 +28,7 @@ class AssessedTombstoneTests(unittest.TestCase):
         self.root = Path(directory.name)
         self.registry = {}
         for target, name, value in (
-            (publication, 'load_registry', lambda: self.registry),
+            (publication, 'load_registry', lambda **_: self.registry),
             (publication, 'load_account_meta', lambda: {}),
         ):
             mocked = patch.object(target, name, side_effect=value)

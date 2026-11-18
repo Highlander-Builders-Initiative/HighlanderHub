@@ -1124,7 +1124,6 @@ def _tombstoned_candidates(deleted: set[str]) -> list[dict]:
         return []
     from config import load_account_meta
     import assessed_events as publication
-    registry = publication.load_registry()
     now = datetime.now(timezone.utc).isoformat()
     meta = load_account_meta()
     tombstones = []
@@ -1151,6 +1150,10 @@ def _tombstoned_candidates(deleted: set[str]) -> list[dict]:
     # ID, so only a post a deleted ID names, or whose recorded IDs were deleted,
     # can match; skip reading and rebuilding every other post.
     deleted_media = {match.group(2) for event_id in deleted if (match := POST_EVENT_ID.fullmatch(event_id))}
+    # Only these sources can match, so read just them, not every assessment.
+    registry = publication.load_registry(
+        keys=[f"instagram:post:{media_id}" for media_id in deleted_media],
+        event_ids=deleted, known_event_ids=deleted)
     import extract_posts as igposts
     import post_archive
     for record in post_archive.iter_local_posts():

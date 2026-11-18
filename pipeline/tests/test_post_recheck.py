@@ -87,7 +87,7 @@ class RecheckIntegration(unittest.TestCase):
         query = self.database.table.return_value.select.return_value.eq.return_value
         query.gte.return_value.lte.return_value.execute.return_value.data = self.events
         self.enterContext(patch("db.client", return_value=self.database))
-        self.enterContext(patch("assessed_events.load_registry", return_value=self.registry))
+        self.load_registry = self.enterContext(patch("assessed_events.load_registry", return_value=self.registry))
         self.publish = self.enterContext(patch("assessed_events.publish"))
         self.enterContext(patch.object(pr, "shortcodes", side_effect=lambda ids: {
             key: self.codes[key] for key in ids if key in self.codes}))
@@ -146,6 +146,11 @@ class RecheckIntegration(unittest.TestCase):
         self.publish.assert_not_called()
         self.assertFalse(self.state_file.exists())
         self.assertFalse(pr.read_json(self.details_file)["consumed"])
+
+    def test_reads_only_the_assessments_owning_upcoming_listings(self):
+        self.add_posts(2)
+        pr.main()
+        self.load_registry.assert_called_once_with(event_ids=[item["id"] for item in self.events])
 
     def test_distinct_batches_and_later_cycle_do_not_recheck_present_posts(self):
         self.add_posts(60)

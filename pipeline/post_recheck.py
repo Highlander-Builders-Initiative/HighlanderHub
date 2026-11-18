@@ -132,7 +132,8 @@ def main() -> None:
     horizon = now + timedelta(days=lookahead_days())
     events = (client().table("events").select("id,starts_at").eq("source", "instagram")
               .gte("starts_at", iso(now)).lte("starts_at", iso(horizon)).execute().data or [])
-    registry = assessed_events.load_registry()
+    # Only sources owning these listings can be due; skip reading the rest.
+    registry = assessed_events.load_registry(event_ids=[event["id"] for event in events])
     state = read_json(STATE_FILE) if STATE_FILE.exists() else {}
     due = due_sources(events, registry, state, now)
     details_file = RUN_FILE.with_name(RUN_FILE.stem + "-details.json")

@@ -38,6 +38,7 @@ import reconcile_events
 import apify_posts
 import post_recheck
 import event_retention
+import project_usage
 from config import DATA_DIR, load_account_meta
 from post_archive import ArchiveIndex
 
@@ -190,6 +191,8 @@ def _run_stages(results: list[StageResult], *, resume_halted: bool) -> None:
     _safe("events.reconcile", reconcile_events.main, results)
     # Shadow mode: logs what a scored matcher would merge or dismiss. Writes nothing.
     _safe("events.duplicate_shadow", duplicate_scorer.main, results)
+    # Last, so it measures this run's uploads; fails well before a plan limit.
+    _safe("supabase.usage", project_usage.main, results)
 
 
 def main(*, resume_halted: bool = False) -> None:

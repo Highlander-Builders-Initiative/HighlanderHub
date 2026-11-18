@@ -14,7 +14,7 @@ import re
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import TYPE_CHECKING, NamedTuple
+from typing import TYPE_CHECKING, Iterable, NamedTuple
 
 from postgrest.exceptions import APIError
 
@@ -97,9 +97,33 @@ def record_review(source: dict, result: dict, *, reviewer: str,
     return _save_assessment(payload)
 
 
-def load_registry() -> dict[str, dict]:
+# Filter values per request: about 50 characters each keeps the URL small.
+REGISTRY_FILTER_CHUNK = 100
+
+
+def load_registry(*, keys: Iterable[str] | None = None,
+                  event_ids: Iterable[str] | None = None,
+                  known_event_ids: Iterable[str] | None = None) -> dict[str, dict]:
+    """Instagram source assessments: all of them, or only those a filter names.
+
+    A full read is about 5 MB compressed and grows with every post, so callers
+    that need a few sources pass the source keys or event IDs they care about
+    (egress is metered on the Free plan). A filtered read returns every source
+    named by key or owning one of the event IDs, in `event_ids` or in
+    `known_event_ids` respectively.
+    """
     from db import client
     records = {}
+    if keys is not None or event_ids is not None or known_event_ids is not None:
+        for column, values in (("source_key", keys), ("event_ids", event_ids),
+                               ("known_event_ids", known_event_ids)):
+            values = sorted(set(values or ()))
+            for start in range(0, len(values), REGISTRY_FILTER_CHUNK):
+                chunk = values[start:start + REGISTRY_FILTER_CHUNK]
+                query = client().table("source_assessments").select("*").eq("origin", "instagram")
+                query = query.in_(column, chunk) if column == "source_key" else query.overlaps(column, chunk)
+                records.update((row["source_key"], row) for row in query.execute().data or [])
+        return records
     for offset in range(0, 1_000_000, 1000):
         rows = client().table("source_assessments").select("*").eq("origin", "instagram").order("source_key").range(offset, offset + 999).execute().data or []
         records.update((row["source_key"], row) for row in rows)

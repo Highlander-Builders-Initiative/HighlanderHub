@@ -32,10 +32,18 @@ fixed bucket path; publication checks those paths in one call (the
 extraction just read. A slide retention deleted is uploaded again the same
 way when a reassessment picks it; when Instagram's copy has expired the row is
 published without an image. A failed check stops publication rather than
-writing rows that name unstored files. Stored slides are display copies
-(JPEG, quality 82, at most 1440px); OCR and QR read the original download.
+writing rows that name unstored files. Flyers are stored as Instagram served
+them; only a file over the bucket's 5 MB limit is re-encoded to fit.
 Preview currently eligible files (no deletions) with
 `python pipeline/event_retention.py --dry-run`.
+
+The last stage, `supabase.usage`, logs database and file-storage size
+(`Supabase usage:`) against the Free plan's 500 MB and 1 GB and fails the run
+at 80% of either, so GitHub's failure email arrives before the project is
+restricted. Apply `20261118000000_project_usage.sql` before deploying it.
+Egress (5 GB a month) is not visible to SQL: the largest reader is the full
+`source_assessments` read at publication (~5 MB compressed in November 2026);
+recheck and reconcile read only the assessments they need.
 
 `.github/workflows/scrape.yml` schedules `0 */8 * * *`: **00:00, 08:00 and 16:00
 UTC**, with manual **Run workflow** support. GitHub schedules are best-effort.
