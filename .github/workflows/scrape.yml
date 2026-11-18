@@ -14,6 +14,10 @@ on:
         description: "Resume Apify batches halted by an abort or output contract failure (only after reviewing the cause)"
         type: boolean
         default: false
+      refresh_missing_flyers:
+        description: "Look up upcoming events' posts that show no flyer on Apify (~$0.0015 a post, at most 600) and upload fresh flyers"
+        type: boolean
+        default: false
       retire_recheck_run_id:
         description: "Recovery only after an Apify account switch: archive this inaccessible recheck run ID (old paid output may be lost)"
         type: string
@@ -182,6 +186,7 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           RESUME_HALTED: ${{ inputs.resume_halted && 'true' || 'false' }}
+          REFRESH_MISSING_FLYERS: ${{ inputs.refresh_missing_flyers && 'true' || 'false' }}
         run: |
           if [ "$RESUME_HALTED" = "true" ]; then
             python pipeline/run.py --resume-halted

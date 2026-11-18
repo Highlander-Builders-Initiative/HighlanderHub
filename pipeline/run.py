@@ -39,6 +39,7 @@ import apify_posts
 import post_recheck
 import event_retention
 import project_usage
+import refresh_flyers
 from config import DATA_DIR, load_account_meta
 from post_archive import ArchiveIndex
 
@@ -185,6 +186,9 @@ def _run_stages(results: list[StageResult], *, resume_halted: bool) -> None:
     posts = InstagramPosts()
     _safe("instagram.posts.collect",
           lambda: apify_posts.main(resume_halted=resume_halted, archive=posts.archive), results)
+    # Opt-in: fresh links for upcoming events missing a flyer, before extraction
+    # reads the archive, so this run's publication can upload them.
+    _safe("instagram.flyer_refresh", lambda: refresh_flyers.main(archive=posts.archive), results)
     _safe("instagram.posts.extract", posts.extract_posts, results)
     _safe("instagram.recheck", post_recheck.main, results)
     _safe("instagram.publish", posts.publish, results)

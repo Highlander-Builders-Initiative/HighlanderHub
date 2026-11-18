@@ -16,6 +16,7 @@ if str(PIPELINE_ROOT) not in sys.path:
 STAGE_ORDER = [
     "events.retention",
     "instagram.posts.collect",
+    "instagram.flyer_refresh",
     "instagram.posts.extract",
     "instagram.recheck",
     "instagram.publish",
@@ -36,6 +37,7 @@ class RunMainTests(unittest.TestCase):
             "post_recheck",
             "duplicate_scorer",
             "project_usage",
+            "refresh_flyers",
         ]
         self.fake_modules = {
             name: types.SimpleNamespace(main=Mock(name=f"{name}.main"))
@@ -58,6 +60,7 @@ class RunMainTests(unittest.TestCase):
             "events.reconcile": self.fake_modules["reconcile_events"].main,
             "events.duplicate_shadow": self.fake_modules["duplicate_scorer"].main,
             "supabase.usage": self.fake_modules["project_usage"].main,
+            "instagram.flyer_refresh": self.fake_modules["refresh_flyers"].main,
         }
         self.module_patch = patch.dict(sys.modules, self.fake_modules)
         self.module_patch.start()
@@ -223,7 +226,7 @@ class RunMainTests(unittest.TestCase):
         self.assertEqual(completed, self.fake_modules["assessed_events"].publish_posts.call_args.args[0])
         report = json.loads(self.history.with_name("last_run.json").read_text())
         self.assertFalse(report["ok"])
-        self.assertIn("OCR timeout", report["stages"][2]["error"])
+        self.assertIn("OCR timeout", report["stages"][STAGE_ORDER.index("instagram.posts.extract")]["error"])
         self.assertIn("run.py", report["resume"]["command"])
 
     def test_interruption_is_recorded_as_incomplete_instead_of_success(self):
