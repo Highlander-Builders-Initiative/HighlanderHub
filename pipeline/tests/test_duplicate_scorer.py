@@ -78,6 +78,13 @@ class ShippedModelTests(unittest.TestCase):
                         right | {'id': left['id']}, right | {'starts_at': None}):
             self.assertFalse(scorer.comparable(left, changed), changed)
             self.assertEqual(0.0, MODEL.score(left, changed, CORPUS))
+        # A meeting number only one post prints rules nothing out; two
+        # different numbers, or a session of a named occasion, still do.
+        self.assertTrue(scorer.comparable(left, right | {'title': right['title'] + ' #1'}))
+        self.assertGreater(MODEL.score(left, right | {'title': right['title'] + ' #1'}, CORPUS), 0.0)
+        self.assertFalse(scorer.comparable(left | {'title': left['title'] + ' #2'},
+                                           right | {'title': right['title'] + ' #1'}))
+        self.assertFalse(scorer.comparable(left, right | {'title': right['title'] + ' Session 2'}))
         # Two sessions of one post share its caption and flyer.
         first = left | {'id': 'ig_club_p1-20261103T0030Z'}
         self.assertEqual(0.0, MODEL.score(first, first | {'id': 'ig_club_p1-20261103T0230Z'}, CORPUS))
@@ -141,20 +148,36 @@ class ShadowReportTests(unittest.TestCase):
         report = self.report(reviews, rows=[self.rows[0]])
         self.assertEqual({'duplicate': {'merge': 1}, 'different': {'dismiss': 1}}, report['agreement'])
         self.assertEqual([], report['disagreements'])
+        # Every decision's score is reported, so another threshold can be judged.
+        self.assertEqual([1, 1], [len(report['scores'][status]) for status in ('duplicate', 'different')])
+        self.assertGreaterEqual(report['scores']['duplicate'][0], MODEL.merge_at)
+        self.assertLess(report['scores']['different'][0], MODEL.dismiss_below)
         # The admin's opposite calls are the disagreements worth reading.
         flipped = self.report([decision('different', self.merge), decision('duplicate', self.apart)],
                               rows=[self.rows[0]])
         self.assertEqual({'duplicate': {'dismiss': 1}, 'different': {'merge': 1}}, flipped['agreement'])
         self.assertEqual(['different', 'duplicate'], sorted(d[0] for d in flipped['disagreements']))
+        # A pair the scorer would never compare is no dismissal: live, it is skipped.
+        moved = [self.merge[0], self.merge[1] | {'starts_at': '2026-12-01T02:00:00+00:00'}]
+        apart = self.report([decision('duplicate', moved), decision('different', moved)], rows=[self.rows[0]])
+        self.assertEqual({'duplicate': {'not comparable': 1}, 'different': {'not comparable': 1}},
+                         apart['agreement'])
+        self.assertEqual(([], {'duplicate': [], 'different': []}), (apart['disagreements'], apart['scores']))
+        self.assertEqual([{row['id'] for row in moved}], [{a['id'], b['id']} for a, b in apart['ruled_out']])
 
 
 class ShadowStageTests(unittest.TestCase):
     def test_stage_logs_and_writes_nothing(self):
         rows = [titled(*CARDS[0]), titled(*CARDS[1])]
+        speakers = [titled(*SPEAKERS[0]), titled(*SPEAKERS[1])]
+        decided = [{'event_id': a['id'], 'other_event_id': b['id'], 'status': status,
+                    'event_snapshot': a, 'other_snapshot': b}
+                   for status, (a, b) in (('different', speakers),
+                                          ('duplicate', (speakers[0], speakers[1] | {'starts_at': None})))]
         database = Mock()
         with patch.object(reconcile, '_reconciliation_rows', return_value=rows), \
              patch.object(db, 'get_duplicate_reviews', return_value=[]), \
-             patch.object(db, 'get_decided_duplicate_reviews', return_value=[]), \
+             patch.object(db, 'get_decided_duplicate_reviews', return_value=decided), \
              patch.object(db, 'client', return_value=database), \
              patch.object(scorer, 'word_accounts', return_value=CORPUS), \
              patch.object(scorer, 'datetime') as clock, \
@@ -166,6 +189,11 @@ class ShadowStageTests(unittest.TestCase):
         text = '\n'.join(logs.output)
         self.assertIn('Shadow scorer would merge (', text)
         self.assertIn('1 pairs scored, 1 of them queued; would merge 1, dismiss 0, leave 0 for review', text)
+        self.assertIn("on 1 admin 'different' decisions: merge 0, review 0, dismiss 1, not comparable 0", text)
+        self.assertRegex(text, r"scores for admin 'different' decisions: 0\.\d{3}$")
+        self.assertIn("on 1 admin 'duplicate' decisions: merge 0, review 0, dismiss 0, not comparable 1", text)
+        self.assertIn("scores for admin 'duplicate' decisions: none", text)
+        self.assertIn("cannot compare admin decision 'duplicate': ", text)
 
     def test_stage_never_fails_the_run(self):
         with patch.object(db, 'get_duplicate_reviews', side_effect=RuntimeError('database down')), \

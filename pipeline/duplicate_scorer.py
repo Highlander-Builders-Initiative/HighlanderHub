@@ -8,8 +8,8 @@ that a confident pair could merge, an unlikely one could leave the queue, and
 only the middle would need a person.
 
 Shadow mode: nothing here writes. Each run logs what the scorer would do and
-how that compares with every decision an admin has made, which is the
-evidence for (or against) letting it act.
+how that compares with every decision an admin has made (each one's score
+included), which is the evidence for (or against) letting it act.
 """
 from __future__ import annotations
 
@@ -176,13 +176,17 @@ def features(left: dict, right: dict, corpus: dict) -> dict[str, float]:
 
 def comparable(left: dict, right: dict) -> bool:
     """Whether a pair could be one occasion at all: one kind, one local day,
-    not two sessions of one post, and titles that name no other occurrence."""
+    not two sessions of one post, and titles that name no other occurrence.
+
+    A meeting or schedule-day number only one title carries ("First Member
+    Meeting" and "GM#1") rules nothing out, as in the rules' own
+    _unnumbered_repeat: admins have called such pairs duplicates."""
     days = [_local(row) for row in (left, right)]
     return bool(all(days) and days[0].date() == days[1].date()
                 and left.get("content_kind") == right.get("content_kind")
                 and left.get("id") != right.get("id")
                 and not rules._sibling_sessions(left, right)
-                and not rules._contradicting_titles(left, right))
+                and not rules._contradicting_titles(left, right, numbered_once=True))
 
 
 class Scorer:
@@ -244,20 +248,31 @@ def shadow_report(rows: list[dict], reviews: list[dict], *, now: datetime,
                                   "left": left, "right": right})
     # Every decision an admin made, scored on the listings as they saw them.
     agreement: dict[str, Counter] = {"duplicate": Counter(), "different": Counter()}
-    disagreements = []
+    scores: dict[str, list[float]] = {"duplicate": [], "different": []}
+    disagreements, ruled_out = [], []
     for review in reviews:
         left, right = review.get("event_snapshot"), review.get("other_snapshot")
         if review["status"] not in agreement or not isinstance(left, dict) or not isinstance(right, dict):
             continue
+        # A live pair that is not comparable is skipped, never dismissed, so
+        # it is no verdict here either. A duplicate among them is one the
+        # scorer could never have found.
+        if not comparable(left, right):
+            agreement[review["status"]]["not comparable"] += 1
+            if review["status"] == "duplicate":
+                ruled_out.append((left, right))
+            continue
         score = scorer.score(left, right, corpus)
         verdict = scorer.verdict(score)
         agreement[review["status"]][verdict] += 1
+        scores[review["status"]].append(score)
         if (review["status"], verdict) in {("duplicate", "dismiss"), ("different", "merge")}:
             disagreements.append((review["status"], score, left, right))
     return {"scored": scored, "pairs": sorted(pairs, key=lambda p: (-p["score"], p["left"]["id"])),
             "queued": len(queued),
             "agreement": {status: dict(counts) for status, counts in agreement.items()},
-            "disagreements": disagreements}
+            "scores": {status: sorted(values, reverse=True) for status, values in scores.items()},
+            "disagreements": disagreements, "ruled_out": ruled_out}
 
 
 def main() -> None:
@@ -276,13 +291,19 @@ def main() -> None:
     for status, score, left, right in report["disagreements"]:
         log.warning("Shadow scorer disagrees with admin decision %r (%.3f): %s and %s",
                     status, score, _label(left), _label(right))
+    for left, right in report["ruled_out"]:
+        log.warning("Shadow scorer cannot compare admin decision 'duplicate': %s and %s",
+                    _label(left), _label(right))
     counts = Counter(pair["verdict"] for pair in report["pairs"])
     log.info("Shadow scorer: %d pairs scored, %d of them queued; would merge %d, dismiss %d, leave %d for review",
              report["scored"], report["queued"], counts["merge"], counts["dismiss"], counts["review"])
     for status, counts in report["agreement"].items():
-        log.info("Shadow scorer on %d admin %r decisions: merge %d, review %d, dismiss %d",
+        log.info("Shadow scorer on %d admin %r decisions: merge %d, review %d, dismiss %d, not comparable %d",
                  sum(counts.values()), status, counts.get("merge", 0), counts.get("review", 0),
-                 counts.get("dismiss", 0))
+                 counts.get("dismiss", 0), counts.get("not comparable", 0))
+        # Every score, so another threshold can be judged from the logs.
+        log.info("Shadow scorer scores for admin %r decisions: %s", status,
+                 " ".join(f"{score:.3f}" for score in report["scores"][status]) or "none")
 
 
 if __name__ == "__main__":
