@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import Mock, patch
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import apify_posts as apify
@@ -150,6 +150,35 @@ class HpixCollectionTests(unittest.TestCase):
         self.collect(state)
         self.assertEqual('incomplete', self.status('quiet')['last_status'])
         self.assertEqual([], json.loads(self.path.read_text())['errors'])
+
+    def test_restricted_account_error_is_terminal_and_not_retried(self):
+        # The dataset error is exact. A log warning without that error stays retryable above.
+        original = self.path.read_text()
+        later = NOW + timedelta(hours=9)
+        for prior in ('ok', 'incomplete'):
+            with self.subTest(prior=prior):
+                self.path.write_text(original)
+                self.upsert.reset_mock()
+                state = {h: {**entry, 'last_status': 'ok'} for h, entry in STATE.items()}
+                state['quiet']['last_status'] = prior
+                self.api.items.return_value = [
+                    row(), {'kind': 'profile', 'input': 'quiet', 'error': 'Restricted account'}]
+                try:
+                    self.collect(state)
+                except apify.PartialCollection as exc:
+                    self.fail(f'restricted account failed the stage: {exc}')
+                saved = json.loads(self.path.read_text())
+                self.assertEqual([], saved['errors'])
+                self.assertIn('quiet: Restricted account', saved['warnings'])
+                self.assertEqual('restricted', self.status('quiet')['last_status'])
+                self.assertEqual(STATE['quiet']['scanned_through'],
+                                 self.status('quiet')['scanned_through'])
+                self.assertEqual('ok', self.status('club')['last_status'])
+                planned = apify.plan_jobs(ACCOUNTS, self.updated_state(), later,
+                                          limit=100, max_charge=1)
+                handles = {handle for job in planned for handle in job['handles']}
+                self.assertNotIn('quiet', handles)
+                self.assertIn('club', handles)
 
     def test_first_cap_or_actor_failure_still_errors(self):
         state = {h: {**entry, 'last_status': 'ok'} for h, entry in STATE.items()}

@@ -50,6 +50,9 @@ BATCH_SIZE = 100
 # At the pinned build's rates, $0.20 feed / $0.05 details leaves room for
 # ~200 feed rows and ~32 lookups plus headroom, even for a one-profile tail.
 MIN_BATCH_CENTS = 25
+# hpix's profile row when scrape_restricted_posts is off. It does not change on retry.
+RESTRICTED_ACCOUNT_ERROR = "Restricted account"
+RESTRICTED_STATUS = "restricted"
 
 
 class PartialCollection(RuntimeError):
@@ -381,6 +384,12 @@ def mirror(records: list[dict]) -> None:
                "posted_at", "typename", "caption", "has_video", "media", "fetched_at")
     upsert_batched("instagram_posts", [{**{key: record.get(key) for key in columns}, "record": record}
                                       for record in records], on_conflict="media_id")
+
+
+def _restricted_profile(handle: str, messages: list[str]) -> bool:
+    """Every profile error is the exact restricted-account row, not a media error."""
+    expected = f"{handle}: {RESTRICTED_ACCOUNT_ERROR}"
+    return bool(messages) and all(message == expected for message in messages)
 
 
 def charge_limit_reason(run: dict, max_charge: float, exported: int, *, details: bool = False) -> str | None:
@@ -723,12 +732,21 @@ def collect(api: ApifyClient, accounts: dict, state: dict, now: datetime,
     for handle, entry in state.items():
         coverage = handle in completed if official or hpix else bool(counts[handle])
         complete = successful and handle not in bad and coverage and len(counts[handle]) < limit
+        status = "ok" if complete else "incomplete"
         if not complete:
             failures = profile_errors[handle] + [
                 f"{handle}: incomplete ({len(counts[handle])} posts, limit {limit}, run {run['status']})"]
-            if (hpix and successful and not invalid and not detail_info.get("halt_reason")
-                    and handle not in capped and len(counts[handle]) < limit
-                    and handle not in previous_failed):
+            # A restricted profile returns this same row on every paid retry.
+            # Record it once and stop scheduling it; other gaps stay retryable.
+            covered = (hpix and successful and not invalid and not detail_info.get("halt_reason")
+                       and handle not in capped)
+            if (covered and not counts[handle]
+                    and _restricted_profile(handle, profile_errors[handle])):
+                warnings.extend(failures)
+                status = RESTRICTED_STATUS
+                log.warning("%s: restricted account; leaving it out of future collection: %s",
+                            handle, "; ".join(failures))
+            elif (covered and len(counts[handle]) < limit and handle not in previous_failed):
                 warnings.extend(failures)
                 log.warning("%s: first consecutive collection failure; will retry next cycle: %s",
                             handle, "; ".join(failures))
@@ -736,7 +754,7 @@ def collect(api: ApifyClient, accounts: dict, state: dict, now: datetime,
                 errors.extend(failures)
         updates.append({"handle": handle, "activated_at": entry["activated_at"],
                         "scanned_through": iso(scan_start) if complete else entry.get("scanned_through"),
-                        "last_scan_at": iso(now), "last_status": "ok" if complete else "incomplete"})
+                        "last_scan_at": iso(now), "last_status": status})
     if updates:
         upsert_batched("instagram_post_checkpoints", updates, on_conflict="handle")
     halt_reason = detail_info.get("halt_reason")
@@ -803,8 +821,16 @@ def plan_jobs(accounts: dict, state: dict, now: datetime,
     recent = now - timedelta(hours=retry_hours)
     # Retrying incomplete discovery is distinct from rechecking saved posts:
     # this profile may still have unseen posts beyond the failed scan boundary.
+    # Restricted accounts are the exception: the actor will not return their
+    # posts while scrape_restricted_posts stays off, so another attempt only
+    # fails the stage. Clear last_status to collect one again.
+    restricted = {handle for handle, entry in state.items()
+                  if handle in accounts and entry.get("last_status") == RESTRICTED_STATUS}
+    if restricted:
+        log.warning("Skipping restricted accounts: %s", ", ".join(sorted(restricted)))
     eligible = {handle: entry for handle, entry in state.items()
-                if handle in accounts and (entry.get("last_status") != "incomplete"
+                if handle in accounts and handle not in restricted and (
+                entry.get("last_status") != "incomplete"
                 or (parse_instant(entry.get("last_scan_at")) or datetime.min.replace(tzinfo=timezone.utc)) <= recent)}
     cutoffs = {handle: boundary(entry, overlap_seconds) for handle, entry in eligible.items()}
     if POST_BACKFILL_SINCE:

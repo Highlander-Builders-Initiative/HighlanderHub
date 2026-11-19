@@ -231,6 +231,10 @@ independent verification when skipped nodes could exhaust the cap.
 No automatic quarantine follows a lookup failure: known real accounts failed
 in the evaluation. Check failed clubs again on the normal eight-hour cadence;
 use the diagnostic errors to investigate roster problems.
+A profile error of exactly `Restricted account` is the exception. Collection
+stores `last_status=restricted`, logs a warning, and leaves that handle out of
+later plans. `scrape_restricted_posts` stays off. Clear the checkpoint status
+to collect the account again.
 
 Already-paid official (`apify/instagram-post-scraper`, build `0.0.599`) and
 legacy runs are still resumed and ingested with their own adapters and billing
