@@ -33,8 +33,9 @@ ACTOR_BUILD = "0.0.599"
 HPIX_ACTOR_ID = "JER1eC8E7teQWMN3p"  # hpix/instagram-scraper
 HPIX_BUILD = "1.2.27"
 # Single-post lookups (collaboration details, deleted-post recheck). 1.2.27
-# reports live posts as deleted; 1.2.29 returns them (probe 6iIN1a4uZBJmee9zA).
-HPIX_DETAILS_BUILD = "1.2.29"
+# and, from 2026-11-19, 1.2.29-1.2.32 report live posts as deleted; 1.2.33
+# returns them (probe hzi8q36FK0GstWsOu).
+HPIX_DETAILS_BUILD = "1.2.33"
 LEGACY_ACTOR_ID = "Y5mzw9TLFReI0d6gQ"
 API = "https://api.apify.com/v2"
 GET_ATTEMPTS = 3

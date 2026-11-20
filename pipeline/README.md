@@ -173,12 +173,13 @@ Optional repository **Actions variables**:
 | `APIFY_MAX_CHARGE_USD` | `10` | Combined charge ceilings for all batches in one collection cycle; excludes Google API costs |
 | `APIFY_DISCOVERY_OVERLAP_SECONDS` | `300` | Discovery overlap behind each successful checkpoint (0–3600 seconds) |
 | `APIFY_INCOMPLETE_RETRY_HOURS` | `8` | Wait before retrying a profile whose discovery was incomplete (at least 8 hours) |
-| `APIFY_RECHECK_ENABLED` | `false` | Run the deleted-post recheck (lookups were broken through hpix 1.2.27; 1.2.29 works) |
+| `APIFY_RECHECK_ENABLED` | `false` | Run the deleted-post recheck (lookups were broken through hpix 1.2.27 and again on 1.2.29–1.2.32 from 2026-11-19; 1.2.33 works) |
 
 New collection uses [hpix/instagram-scraper](https://apify.com/hpix/instagram-scraper),
 ID `JER1eC8E7teQWMN3p`, pinned to build `1.2.27`, with 1 GB memory.
 Single-post lookups (collaboration details and the deleted-post recheck) use
-build `1.2.29`: on 1.2.27 they report live posts as deleted.
+build `1.2.33`: 1.2.27, and from 2026-11-19 builds 1.2.29–1.2.32, report live
+posts as deleted.
 It requests profile posts and reels, raw media data, and no profile records.
 Both `scrape_detailed_data` and `scrape_restricted_posts` are explicitly false:
 their documented restricted-post event costs $0.10 per result. Club avatar runs
@@ -495,6 +496,10 @@ Off unless the repository variable `APIFY_RECHECK_ENABLED` is `true`. From
 build up to 1.2.27, and two such answers withdrew a live listing. Build 1.2.29
 (2026-11-01) returns them again: probe run `6iIN1a4uZBJmee9zA` got four live
 posts back as posts and a made-up shortcode as "Deleted or restricted post".
+On 2026-11-19 every lookup on 1.2.29 and 1.2.32 broke the same way; the outage
+guard rejected run `6zCHJFSOltVbGaACg` (13 of 14 "deleted") and nothing was
+withdrawn. Build 1.2.33 (2026-11-20) fixed it: probe run `hzi8q36FK0GstWsOu`
+got five live posts back and a really deleted one as deleted.
 Before turning the recheck on after any lookup build change, repeat that probe.
 
 `post_recheck.py` (stage `instagram.recheck`) looks up each source post once,

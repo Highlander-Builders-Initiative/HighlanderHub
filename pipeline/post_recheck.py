@@ -41,7 +41,8 @@ def enabled() -> bool:
 
     From 2026-10-30 hpix's single-post lookup answered "Deleted or restricted
     post" for live posts on every build up to 1.2.27, so each answer could
-    withdraw a live listing. 1.2.29 (HPIX_DETAILS_BUILD) returns them again.
+    withdraw a live listing. 1.2.29 returned them until 2026-11-19, when it
+    and 1.2.32 broke the same way; 1.2.33 (HPIX_DETAILS_BUILD) returns them.
     After any lookup build change, confirm known-live posts come back first.
     """
     return os.environ.get("APIFY_RECHECK_ENABLED", "").strip().lower() in ("1", "true", "yes", "on")
