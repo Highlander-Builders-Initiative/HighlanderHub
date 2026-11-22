@@ -145,6 +145,12 @@
       "instagram_user_id": 1692744870
     },
     {
+      "handle": "andersonfintechclub",
+      "label": "Anderson Fintech Club at UCR",
+      "category": "graduate-student-organization",
+      "instagram_user_id": 33338810437
+    },
+    {
       "handle": "animedivaclub",
       "label": "Anime Diva Club at UCR",
       "category": "arts-and-expression",
@@ -265,6 +271,12 @@
       "instagram_user_id": 42158414158
     },
     {
+      "handle": "av_ucr",
+      "label": "A/V Club at UCR",
+      "category": "recreational",
+      "instagram_user_id": 65439165980
+    },
+    {
       "handle": "avantgarde_acapella",
       "label": "Avant-Garde A Cappella Group at UCR",
       "category": "arts-and-expression",
@@ -367,6 +379,12 @@
       "instagram_user_id": 77069959159
     },
     {
+      "handle": "blaack.ucr",
+      "label": "Brothers Leading African Americans through Consciousness and Knowledge (BLAACK) at UCR",
+      "category": "cultural",
+      "instagram_user_id": 72732340555
+    },
+    {
       "handle": "blackpsychsociety",
       "label": "Black Psych Society at UCR",
       "category": "academic-professional",
@@ -377,6 +395,12 @@
       "label": "BioMedical Engineering Society at UCR",
       "category": "academic-professional",
       "instagram_user_id": 3182196336
+    },
+    {
+      "handle": "bpo.ucr",
+      "label": "Beta Psi Omega at UCR",
+      "category": "academic-professional",
+      "instagram_user_id": 69273455706
     },
     {
       "handle": "bridgingvoices_ucr",
@@ -949,6 +973,12 @@
       "instagram_user_id": 65061580684
     },
     {
+      "handle": "guitarclubatucr",
+      "label": "Guitar Club at UCR",
+      "category": "arts-and-expression",
+      "instagram_user_id": 64782822783
+    },
+    {
       "handle": "hallyucr",
       "label": "Hallyu at UCR",
       "category": "cultural",
@@ -1031,6 +1061,12 @@
       "label": "Highlander Riders at UCR",
       "category": "recreational",
       "instagram_user_id": 32717855122
+    },
+    {
+      "handle": "highlanderbarbell",
+      "label": "Highlander Barbell at UCR",
+      "category": "recreational",
+      "instagram_user_id": 64883053592
     },
     {
       "handle": "highlanderduelist",
@@ -1183,6 +1219,12 @@
       "instagram_user_id": 58271913116
     },
     {
+      "handle": "ite_ucr",
+      "label": "Institute of Transportation Engineers at UCR",
+      "category": "academic-professional",
+      "instagram_user_id": 71632774657
+    },
+    {
       "handle": "juiceclubucr",
       "label": "Joining Undergraduates in Civic Enagement at UCR",
       "category": "service",
@@ -1247,6 +1289,12 @@
       "label": "Latino Business Student Association at UCR",
       "category": "academic-professional",
       "instagram_user_id": 568206478
+    },
+    {
+      "handle": "lean.professionals",
+      "label": "Lean Professionals at UCR",
+      "category": "academic-professional",
+      "instagram_user_id": 12926390563
     },
     {
       "handle": "legallyqueer.ucr",
@@ -1987,6 +2035,12 @@
       "instagram_user_id": 4654308561
     },
     {
+      "handle": "sportsclub_ucr",
+      "label": "The Sports Club at UCR",
+      "category": "recreational",
+      "instagram_user_id": 40229242523
+    },
+    {
       "handle": "srchlab_ucr",
       "label": "SRCH Lab at UCR",
       "category": "department-affiliated-organization",
@@ -2009,6 +2063,12 @@
       "label": "Starving Artists at UCR",
       "category": "arts-and-expression",
       "instagram_user_id": 302649905
+    },
+    {
+      "handle": "starwarsallianceucr",
+      "label": "The Star Wars Alliance at UCR",
+      "category": "arts-and-expression",
+      "instagram_user_id": 58693968554
     },
     {
       "handle": "stem_connections_club",
@@ -2185,6 +2245,12 @@
       "instagram_user_id": 47117476978
     },
     {
+      "handle": "ucr.ahc",
+      "label": "Axon Healthcare Consulting at UCR",
+      "category": "academic-professional",
+      "instagram_user_id": 54543337451
+    },
+    {
       "handle": "ucr.army.rotc",
       "label": "Army ROTC at UCR",
       "category": "academic-professional",
@@ -2273,6 +2339,12 @@
       "label": "SACNAS at UCR",
       "category": "academic-professional",
       "instagram_user_id": 33685804738
+    },
+    {
+      "handle": "ucr.saiv",
+      "label": "South Asian InterVarsity at UCR",
+      "category": "spiritual-religious-atheist",
+      "instagram_user_id": 76470196769
     },
     {
       "handle": "ucr.sasi",
@@ -2567,6 +2639,12 @@
       "label": "Go and Mahjong club at UCR",
       "category": "recreational",
       "instagram_user_id": 62539073670
+    },
+    {
+      "handle": "ucr_thealternativecollective",
+      "label": "The Alternative Collective at UCR",
+      "category": "arts-and-expression",
+      "instagram_user_id": 70243189852
     },
     {
       "handle": "ucr_triathlon",
@@ -3485,6 +3563,12 @@
       "label": "The Salsa Club at UCR",
       "category": "recreational",
       "instagram_user_id": 263545293
+    },
+    {
+      "handle": "ucrsaus",
+      "label": "Society of Anthropological Undergraduate Scholars at UCR",
+      "category": "academic-professional",
+      "instagram_user_id": 1734034280
     },
     {
       "handle": "ucrschoolonwheels",
