@@ -20,6 +20,8 @@ SPEAKERS = (('TASC Guest Speaker: Joe Sabo', 'tasc_ucr'), ('UBA Guest Speaker: L
 DATA = json.loads((Path(__file__).parent / 'fixtures/duplicate-scorer-pairs.json').read_text())
 ROWS, CORPUS = DATA['rows'], DATA['corpus']
 MODEL = scorer.Scorer()
+# The same weights, too cautious to merge or dismiss anything.
+UNDECIDED = scorer.Scorer(MODEL.model | {'merge_at': 1.1, 'dismiss_below': 0.0})
 NOW = datetime(2026, 11, 13, 22, tzinfo=timezone.utc)
 
 
@@ -107,10 +109,10 @@ class ShadowReportTests(unittest.TestCase):
         self.rows = [*self.merge, *self.apart]
         self.before = min(reconcile._parse_instant(row['starts_at']) for row in self.rows)
 
-    def report(self, reviews=(), rows=None, now=None):
+    def report(self, reviews=(), rows=None, now=None, model=MODEL):
         # Word rarity as the whole feed gives it, not these four listings.
         with patch.object(scorer, 'word_accounts', return_value=CORPUS):
-            return scorer.shadow_report(rows or self.rows, list(reviews), now=now or self.before, scorer=MODEL)
+            return scorer.shadow_report(rows or self.rows, list(reviews), now=now or self.before, scorer=model)
 
     def test_reports_merges_and_queue_dismissals_for_upcoming_pairs(self):
         report = self.report()
@@ -118,9 +120,15 @@ class ShadowReportTests(unittest.TestCase):
                          [(p['verdict'], {p['left']['id'], p['right']['id']}) for p in report['pairs']])
         self.assertEqual([True, True], [p['queued'] for p in report['pairs']])
         self.assertEqual((2, 2), (report['scored'], report['queued']))
-        # A pair the queue never saw is reported only when it would merge.
+        # A pair the queue never saw is reported only when it is likely one
+        # occasion, whether or not it is sure enough to merge.
         with patch.object(reconcile, 'review_candidates', return_value=[]):
             self.assertEqual([('merge', False)], [(p['verdict'], p['queued']) for p in self.report()['pairs']])
+            missed = self.report(model=UNDECIDED)
+        self.assertEqual([('review', False, {row['id'] for row in self.merge})],
+                         [(p['verdict'], p['queued'], {p['left']['id'], p['right']['id']}) for p in missed['pairs']])
+        self.assertGreaterEqual(missed['pairs'][0]['score'], scorer.LIKELY)
+        self.assertEqual((2, 0), (missed['scored'], missed['queued']))
         # Ended listings need no decision.
         ended = self.report(now=NOW)
         self.assertEqual((0, []), (ended['scored'], ended['pairs']))
@@ -157,6 +165,20 @@ class ShadowReportTests(unittest.TestCase):
                               rows=[self.rows[0]])
         self.assertEqual({'duplicate': {'dismiss': 1}, 'different': {'merge': 1}}, flipped['agreement'])
         self.assertEqual(['different', 'duplicate'], sorted(d[0] for d in flipped['disagreements']))
+        # A contradiction is reported once, and an agreement not at all.
+        self.assertEqual(([], []), (report['leaning'], flipped['leaning']))
+        # Left for review but on the wrong side of even odds: these are the
+        # decisions that stop a bolder threshold, so each is named.
+        unsure = self.report([decision('different', self.merge), decision('duplicate', self.apart),
+                              decision('duplicate', self.merge), decision('different', self.apart)],
+                             rows=[self.rows[0]], model=UNDECIDED)
+        self.assertEqual({'duplicate': {'review': 2}, 'different': {'review': 2}}, unsure['agreement'])
+        self.assertEqual([], unsure['disagreements'])
+        self.assertEqual([('different', {row['id'] for row in self.merge}),
+                          ('duplicate', {row['id'] for row in self.apart})],
+                         [(status, {a['id'], b['id']}) for status, _, a, b in unsure['leaning']])
+        self.assertGreaterEqual(unsure['leaning'][0][1], scorer.LIKELY)
+        self.assertLess(unsure['leaning'][1][1], scorer.LIKELY)
         # A pair the scorer would never compare is no dismissal: live, it is skipped.
         moved = [self.merge[0], self.merge[1] | {'starts_at': '2026-12-01T02:00:00+00:00'}]
         apart = self.report([decision('duplicate', moved), decision('different', moved)], rows=[self.rows[0]])
@@ -188,12 +210,39 @@ class ShadowStageTests(unittest.TestCase):
         self.assertEqual([], database.mock_calls)
         text = '\n'.join(logs.output)
         self.assertIn('Shadow scorer would merge (', text)
-        self.assertIn('1 pairs scored, 1 of them queued; would merge 1, dismiss 0, leave 0 for review', text)
+        self.assertIn('1 pairs scored, 1 of them queued; would merge 1, dismiss 0, leave 0 for review, '
+                      'send 0 unqueued to review', text)
+        self.assertNotIn('leans against', text)
         self.assertIn("on 1 admin 'different' decisions: merge 0, review 0, dismiss 1, not comparable 0", text)
         self.assertRegex(text, r"scores for admin 'different' decisions: 0\.\d{3}$")
         self.assertIn("on 1 admin 'duplicate' decisions: merge 0, review 0, dismiss 0, not comparable 1", text)
         self.assertIn("scores for admin 'duplicate' decisions: none", text)
         self.assertIn("cannot compare admin decision 'duplicate': ", text)
+
+    def test_stage_names_what_the_queue_and_the_thresholds_hide(self):
+        rows = [titled(*CARDS[0]), titled(*CARDS[1])]
+        # An admin called the same two posts different, under other ids.
+        decided = [{'event_id': 'ig_a', 'other_event_id': 'ig_b', 'status': 'different',
+                    'event_snapshot': rows[0], 'other_snapshot': rows[1]}]
+        with patch.object(reconcile, '_reconciliation_rows', return_value=rows), \
+             patch.object(reconcile, 'review_candidates', return_value=[]), \
+             patch.object(db, 'get_duplicate_reviews', return_value=[]), \
+             patch.object(db, 'get_decided_duplicate_reviews', return_value=decided), \
+             patch.object(db, 'client', return_value=Mock()) as database, \
+             patch.object(scorer, 'Scorer', return_value=UNDECIDED), \
+             patch.object(scorer, 'word_accounts', return_value=CORPUS), \
+             patch.object(scorer, 'datetime') as clock, \
+             self.assertLogs('pipeline.duplicate_scorer', level='INFO') as logs:
+            clock.now.return_value = min(reconcile._parse_instant(row['starts_at']) for row in rows)
+            scorer.main()
+        database.assert_not_called()
+        text = '\n'.join(logs.output)
+        self.assertRegex(text, r'Shadow scorer would send to review \(0\.\d{3}, not queued\): ')
+        self.assertIn('1 pairs scored, 0 of them queued; would merge 0, dismiss 0, leave 0 for review, '
+                      'send 1 unqueued to review', text)
+        self.assertRegex(text, r"Shadow scorer leans against admin decision 'different' \(0\.\d{3}\): "
+                               + rows[0]['id'])
+        self.assertNotIn('disagrees', text)
 
     def test_stage_never_fails_the_run(self):
         with patch.object(db, 'get_duplicate_reviews', side_effect=RuntimeError('database down')), \

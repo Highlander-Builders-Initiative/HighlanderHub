@@ -449,11 +449,17 @@ use them, co-host naming, "X at Y" titles). It **writes nothing**. Each run
 logs:
 
 - `Shadow scorer would merge / leave for review / dismiss from review (score,
-  queued|not queued): …` for every queued pair, and for any unqueued pair it
-  would merge;
+  queued|not queued): …` for every queued pair;
+- `Shadow scorer would merge / send to review (score, not queued): …` for a
+  pair the queue never offered that scores 0.5 or more. The queue asks only
+  about one account at one start or two shared title words, so these are the
+  duplicates nobody is shown;
 - `Shadow scorer on N admin 'duplicate' / 'different' decisions: merge, review,
-  dismiss` — the scorer run on the snapshots in `event_duplicate_reviews`, and
-  a warning for each decision it contradicts.
+  dismiss` — the scorer run on the snapshots in `event_duplicate_reviews`, a
+  warning for each decision it contradicts, and `Shadow scorer leans against
+  admin decision …` for each one it leaves for review on the wrong side of
+  0.5. Those pairs are what stop a lower merge threshold or a higher dismiss
+  one.
 
 The second line is the evidence for letting it act. Until admin decisions
 back it, the merge threshold is deliberately timid.
