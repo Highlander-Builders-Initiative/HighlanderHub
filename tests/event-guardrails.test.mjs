@@ -122,14 +122,14 @@ test("public event reads are Data-Cached and busted on admin writes", () => {
   assert.match(data, /import \{ unstable_cache \} from "next\/cache"/);
   assert.match(data, /export const EVENTS_CACHE_TAG = "events"/);
   assert.match(data, /function cachePublicRead/);
-  assert.match(data, /unstable_cache\(operation, keyParts, eventsCacheOptions\)/);
+  assert.match(data, /options: typeof eventsCacheOptions = eventsCacheOptions/);
+  assert.match(data, /unstable_cache\(operation, keyParts, options\)/);
   assert.match(data, /e2eFixturesEnabled\(\) \? operation\(\.\.\.args\) : cached\(\.\.\.args\)/);
   for (const name of [
     "getEventsUpcomingThisWeek",
     "getEventsPage",
     "getEventFilterCountSource",
     "getSitemapEvents",
-    "getCalendarEvents",
     "getEventById",
   ]) {
     assert.match(
@@ -138,6 +138,13 @@ test("public event reads are Data-Cached and busted on admin writes", () => {
       `${name} must read through the Data Cache`
     );
   }
+  // The month grid is cached under its range's version, so Supabase sends the
+  // rows again only when an event in the range changes.
+  assert.match(data, /const getCalendarVersion = cachePublicRead\(/);
+  assert.match(
+    data,
+    /cachePublicRead\(\s*getCalendarEventsUncached,\s*\["calendar-events", version\],[\s\S]*?calendarRowsCacheOptions\s*\)\(range\)/
+  );
 
   // Admin mutations bust the cache immediately rather than waiting for TTL.
   assert.match(adminActions, /import \{ EVENTS_CACHE_TAG \} from "@\/lib\/events"/);

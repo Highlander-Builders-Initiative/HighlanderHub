@@ -45,6 +45,18 @@ const eventsCacheOptions = {
   revalidate: EVENTS_CACHE_TTL_SECONDS,
   tags: [EVENTS_CACHE_TAG],
 };
+// The month grid is the largest public read: every column of every event in
+// six weeks, about 1,300 rows in a busy month. Supabase meters what it sends
+// (5 GB a month on the Free plan), and re-reading the grid every five minutes
+// was most of it. The rows change only when the pipeline or an admin writes,
+// so they are cached under the range's version (getCalendarVersionUncached)
+// and read again when that changes. The hour bounds a write the version
+// cannot see.
+const CALENDAR_ROWS_TTL_SECONDS = 3600;
+const calendarRowsCacheOptions = {
+  revalidate: CALENDAR_ROWS_TTL_SECONDS,
+  tags: [EVENTS_CACHE_TAG],
+};
 
 type EventsPageOptions = Partial<EventFeedFacets> & {
   limit?: number;
@@ -249,9 +261,10 @@ function cachePublicRead<Args extends unknown[], Result>(
   operation: (...args: Args) => Promise<Result>,
   keyParts: string[],
   refresh: (result: Result) => Result = (result) => result,
-  keyArgs: (...args: Args) => Args = (...args) => args
+  keyArgs: (...args: Args) => Args = (...args) => args,
+  options: typeof eventsCacheOptions = eventsCacheOptions
 ): (...args: Args) => Promise<Result> {
-  const cached = unstable_cache(operation, keyParts, eventsCacheOptions);
+  const cached = unstable_cache(operation, keyParts, options);
   return (...callerArgs: Args) => {
     const args = keyArgs(...callerArgs);
     return e2eFixturesEnabled() ? operation(...args) : cached(...args).then(refresh);
@@ -473,10 +486,52 @@ async function getSitemapEventsUncached(): Promise<EventSitemapEntry[]> {
   );
 }
 
-async function getCalendarEventsUncached({
-  startDayKey,
-  endDayKey,
-}: CalendarEventsOptions): Promise<CampusEvent[]> {
+function calendarRangeIso({ startDayKey, endDayKey }: CalendarEventsOptions) {
+  const startIso = parsePacificDateTimeInput(`${startDayKey}T00:00`);
+  const endIso = parsePacificDateTimeInput(
+    `${addPacificDays(endDayKey, 1)}T00:00`
+  );
+  if (!startIso || !endIso) {
+    throw new Error("Unable to load calendar events. Invalid date range.");
+  }
+  return { startIso, endIso };
+}
+
+/**
+ * How many events the range holds and when one of them last changed: one
+ * small row in place of the whole grid. Every insert and update stamps
+ * `updated_at` with the current time (events_set_updated_at), and a delete or
+ * a move out of the range lowers the count, so a changed range has a new
+ * version. The exception is a write that commits after a later-started one
+ * and changes no count; CALENDAR_ROWS_TTL_SECONDS bounds how long that shows.
+ */
+async function getCalendarVersionUncached(
+  range: CalendarEventsOptions
+): Promise<string> {
+  return withE2eFixture(
+    () => "",
+    async () => {
+      const { startIso, endIso } = calendarRangeIso(range);
+      const { data, count } = await withDbRetry("calendar version", () =>
+        supabase
+          .from("events")
+          .select("updated_at", { count: "exact" })
+          .in("content_kind", PUBLIC_CONTENT_KINDS)
+          .gte("starts_at", startIso)
+          .lt("starts_at", endIso)
+          .order("updated_at", { ascending: false })
+          .limit(1)
+          .overrideTypes<{ updated_at: string }[], { merge: false }>()
+      );
+      return `${count ?? 0}:${data?.[0]?.updated_at ?? ""}`;
+    }
+  );
+}
+
+async function getCalendarEventsUncached(
+  range: CalendarEventsOptions
+): Promise<CampusEvent[]> {
+  const { startDayKey, endDayKey } = range;
   return withE2eFixture(
     () =>
       E2E_PUBLIC_FIXTURE_EVENTS.filter((event) => {
@@ -484,13 +539,7 @@ async function getCalendarEventsUncached({
         return fixtureDay >= startDayKey && fixtureDay <= endDayKey;
       }),
     async () => {
-      const startIso = parsePacificDateTimeInput(`${startDayKey}T00:00`);
-      const endIso = parsePacificDateTimeInput(
-        `${addPacificDays(endDayKey, 1)}T00:00`
-      );
-      if (!startIso || !endIso) {
-        throw new Error("Unable to load calendar events. Invalid date range.");
-      }
+      const { startIso, endIso } = calendarRangeIso(range);
 
       const rows = await readEventRows("calendar events", (from, to) =>
         supabase
@@ -564,10 +613,23 @@ export const getSitemapEvents = cachePublicRead(
   getSitemapEventsUncached,
   ["sitemap-events"]
 );
-export const getCalendarEvents = cachePublicRead(
-  getCalendarEventsUncached,
-  ["calendar-events"]
+const getCalendarVersion = cachePublicRead(
+  getCalendarVersionUncached,
+  ["calendar-version"]
 );
+/** The grid's rows, read from Supabase only when the range's version changes. */
+export async function getCalendarEvents(
+  range: CalendarEventsOptions
+): Promise<CampusEvent[]> {
+  const version = await getCalendarVersion(range);
+  return cachePublicRead(
+    getCalendarEventsUncached,
+    ["calendar-events", version],
+    undefined,
+    undefined,
+    calendarRowsCacheOptions
+  )(range);
+}
 export const getEventById = cachePublicRead(
   getEventByIdUncached,
   ["event-by-id"]

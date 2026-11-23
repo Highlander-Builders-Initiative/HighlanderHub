@@ -29,9 +29,19 @@ const source = Array.from({ length: 1101 }, (_, i) => ({
 }));
 function installApi(t, cap = 1000) {
   const requests = [];
+  const versionRequests = requests.versions = [];
   t.mock.method(globalThis, 'fetch', async (input) => {
     const url = new URL(input instanceof Request ? input.url : input);
     const p = url.searchParams;
+    // The calendar's version: the newest change in the range and its count.
+    if (p.get('select') === 'updated_at') {
+      assert.equal(p.get('order'), 'updated_at.desc');
+      assert.equal(p.get('limit'), '1');
+      versionRequests.push(p);
+      return new Response(JSON.stringify([{ updated_at: '2026-09-26T00:00:00+00:00' }]), {
+        status: 200, headers: { 'Content-Type': 'application/json', 'Content-Range': `0-0/${source.length}` },
+      });
+    }
     assert.equal(p.get('order'), 'sort_at.asc,id.asc');
     assert.equal(p.get('content_kind'), 'in.(student_event,student_deadline)');
     let rows = source;
@@ -170,6 +180,9 @@ test('the calendar API reads at most one six-week grid', async t => {
   const [gte, lt] = requests[0].params.getAll('starts_at');
   assert.match(gte, /^gte\.2000-01-01T/);
   assert.match(lt, /^lt\.2000-02-12T/);
+  // The version is read over the same clamped range as the rows.
+  assert.deepEqual(requests.versions[0].getAll('starts_at'), [gte, lt]);
+  assert.equal(requests.versions[0].get('content_kind'), 'in.(student_event,student_deadline)');
   // A well-formed but impossible date falls back like any other unusable value.
   const invalid = await calendarRoute.GET(new Request('https://hub.test/api/events/calendar?start=2026-99-99&end=2026-10-01'));
   assert.equal(invalid.status, 200);
