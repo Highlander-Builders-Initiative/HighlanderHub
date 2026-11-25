@@ -1,13 +1,30 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { IoCheckmarkOutline, IoOpenOutline } from "react-icons/io5";
+import React, {
+  useEffect,
+  useEffectEvent,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { IoCheckmarkOutline, IoPencilOutline } from "react-icons/io5";
 import clsx from "clsx";
 import { FlyerPoster } from "@/components/events/FlyerPoster";
-import { formatDayShort, formatTimeRange } from "@/lib/dates";
+import { formatDayShort, formatTime, formatTimeRange } from "@/lib/dates";
 import { eventRowToCampusEvent } from "@/lib/events/map-event-row";
-import { duplicateMergeChanges } from "./duplicate-merge";
-import type { AdminPendingAction } from "./pending-action";
+import { RowLink, ADMIN_TAG } from "./AdminLiveEventRow";
+import {
+  type MergeFieldChoice,
+  defaultMergeTakes,
+  duplicateMergeChanges,
+  mergeFieldOptions,
+} from "./duplicate-merge";
+import {
+  type AdminActionError,
+  type AdminPendingAction,
+  actionErrorFor,
+} from "./pending-action";
 import {
   type AdminEventRow,
   type DuplicateReviewPair,
@@ -30,21 +47,164 @@ function hostLabel(event: AdminEventRow): string {
 
 const normalized = (value: string) => value.trim().toLowerCase();
 
+const FIELD_LABELS: Record<MergeFieldChoice, string> = {
+  location: "Venue",
+  ends_at: "End time",
+  image_url: "Flyer",
+  rsvp_url: "RSVP link",
+};
+
+function fieldValue(field: MergeFieldChoice, event: AdminEventRow): string {
+  switch (field) {
+    case "location":
+      return event.location.trim() || "No venue";
+    case "ends_at":
+      return event.ends_at ? `Ends ${formatTime(event.ends_at)}` : "No end time";
+    case "image_url":
+      return event.image_url ? "Its flyer" : "No flyer";
+    case "rsvp_url":
+      if (!event.rsvp_url) return "No RSVP link";
+      try {
+        return new URL(event.rsvp_url).hostname.replace(/^www\./, "");
+      } catch {
+        return event.rsvp_url;
+      }
+  }
+}
+
+/** A pair's in-progress decision: which listing stays, which details move. */
+type Choice = { keptId: string; takes: MergeFieldChoice[] };
+
+// Keys typed into these still type; shortcuts wait for the admin to leave.
+const TYPING = 'input:not([type="radio"]):not([type="checkbox"]), textarea, select, [contenteditable="true"]';
+
 export function AdminDuplicateReview({
   pairs,
   queueError,
   feedPositionById,
   pendingAction,
+  actionError,
   onMerge,
   onDistinct,
+  onEdit,
 }: {
   pairs: DuplicateReviewPair[];
   queueError: string | null;
   feedPositionById: Map<string, number>;
   pendingAction: AdminPendingAction | null;
-  onMerge: (pairKey: string, kept: AdminEventRow, removed: AdminEventRow) => void;
+  actionError: AdminActionError | null;
+  onMerge: (
+    pairKey: string,
+    kept: AdminEventRow,
+    removed: AdminEventRow,
+    takes: MergeFieldChoice[]
+  ) => void;
   onDistinct: (pairKey: string, pair: DuplicateReviewPair) => void;
+  onEdit: (event: AdminEventRow) => void;
 }) {
+  const [choices, setChoices] = useState<Record<string, Choice>>({});
+  const [activeKey, setActiveKey] = useState<string | null>(null);
+  const cardRefs = useRef(new Map<string, HTMLLIElement>());
+  // The pair to focus once the list re-renders without the one just decided.
+  const pendingFocus = useRef<string | null>(null);
+
+  const keys = useMemo(() => pairs.map(duplicatePairKey), [pairs]);
+  const active = keys.includes(activeKey ?? "") ? activeKey : (keys[0] ?? null);
+  const busy = pendingAction?.type === "merge" || pendingAction?.type === "distinct";
+
+  // Focusing a card makes it the active pair (see onFocusCapture).
+  const focusCard = (key: string) => {
+    const card = cardRefs.current.get(key);
+    if (!card) return;
+    card.focus({ preventScroll: true });
+    card.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    const key = pendingFocus.current;
+    pendingFocus.current = null;
+    if (key) focusCard(key);
+  }, [keys]);
+
+  // A decision that failed brings its pair back; take the admin to it.
+  const failedKey =
+    actionError &&
+    (actionError.action.type === "merge" || actionError.action.type === "distinct")
+      ? actionError.action.id
+      : null;
+  useEffect(() => {
+    if (failedKey && keys.includes(failedKey)) focusCard(failedKey);
+  }, [failedKey, keys]);
+
+  const choose = (key: string, pair: DuplicateReviewPair, keptId: string) => {
+    const kept = keptId === pair.first.id ? pair.first : pair.second;
+    const removed = kept === pair.first ? pair.second : pair.first;
+    setChoices((all) => ({
+      ...all,
+      [key]: { keptId, takes: defaultMergeTakes(kept, removed) },
+    }));
+  };
+  const cancel = (key: string) =>
+    setChoices((all) => {
+      const next = { ...all };
+      delete next[key];
+      return next;
+    });
+  const setTake = (key: string, field: MergeFieldChoice, take: boolean) =>
+    setChoices((all) => {
+      const choice = all[key];
+      if (!choice) return all;
+      const takes = choice.takes.filter((f) => f !== field);
+      return { ...all, [key]: { ...choice, takes: take ? [...takes, field] : takes } };
+    });
+
+  // After a decision, the next pair (or the previous, at the end) takes over.
+  const moveOnFrom = (key: string) => {
+    const index = keys.indexOf(key);
+    const next = keys[index + 1] ?? keys[index - 1] ?? null;
+    setActiveKey(next);
+    pendingFocus.current = next;
+  };
+  const merge = (key: string, pair: DuplicateReviewPair) => {
+    const choice = choices[key];
+    if (!choice || busy) return;
+    const kept = choice.keptId === pair.first.id ? pair.first : pair.second;
+    const removed = kept === pair.first ? pair.second : pair.first;
+    moveOnFrom(key);
+    onMerge(key, kept, removed, choice.takes);
+  };
+  const distinct = (key: string, pair: DuplicateReviewPair) => {
+    if (busy) return;
+    moveOnFrom(key);
+    onDistinct(key, pair);
+  };
+
+  const onShortcut = useEffectEvent((e: KeyboardEvent) => {
+    if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey || busy || !active) return;
+    const target = e.target instanceof Element ? e.target : null;
+    if (target?.closest(TYPING) || document.querySelector("dialog[open]")) return;
+    const pair = pairs[keys.indexOf(active)];
+    if (!pair) return;
+
+    if (e.key === "1" || e.key === "2") {
+      choose(active, pair, (e.key === "1" ? pair.first : pair.second).id);
+    } else if (e.key === "d" || e.key === "D") {
+      distinct(active, pair);
+    } else if (e.key === "Escape" && choices[active]) {
+      cancel(active);
+    } else if (e.key === "Enter" && choices[active] && !target?.closest("button, a")) {
+      merge(active, pair);
+    } else {
+      return;
+    }
+    e.preventDefault();
+  });
+  useEffect(() => {
+    const listener = (e: KeyboardEvent) => onShortcut(e);
+    document.addEventListener("keydown", listener);
+    return () => document.removeEventListener("keydown", listener);
+  }, []);
+
   return (
     <section aria-labelledby="duplicate-review-heading" className="space-y-3">
       <div className="flex items-baseline justify-between gap-4 border-b border-ink/10 pb-3">
@@ -72,28 +232,42 @@ export function AdminDuplicateReview({
         </p>
       ) : (
         <>
-          <p className="text-xs text-muted font-sans max-w-[70ch]">
-            Keep one listing to merge a pair: the other comes off the site and its
-            Instagram post points at the one you kept, so it won&apos;t come back.
-            Pairs marked different both stay up and aren&apos;t flagged again.
-          </p>
+          <div className="space-y-1 text-xs text-muted font-sans max-w-[70ch]">
+            <p>
+              Keep one listing to merge a pair: the other comes off the site and its
+              Instagram post points at the one you kept, so it won&apos;t come back.
+              Pairs marked different both stay up and aren&apos;t flagged again.
+            </p>
+            <p className="hidden sm:block">
+              Keys: <Kbd>1</Kbd> or <Kbd>2</Kbd> keeps the left or right listing,{" "}
+              <Kbd>Enter</Kbd> merges, <Kbd>D</Kbd> marks them different,{" "}
+              <Kbd>Esc</Kbd> cancels.
+            </p>
+          </div>
           <ol className="space-y-4">
-            {pairs.map((pair) => {
-              const key = duplicatePairKey(pair);
+            {pairs.map((pair, index) => {
+              const key = keys[index];
               return (
                 <DuplicatePairCard
                   key={key}
+                  ref={(node) => {
+                    if (node) cardRefs.current.set(key, node);
+                    else cardRefs.current.delete(key);
+                  }}
                   pair={pair}
+                  position={index + 1}
+                  isActive={key === active && pairs.length > 1}
                   feedPositionById={feedPositionById}
-                  pending={
-                    (pendingAction?.type === "merge" ||
-                      pendingAction?.type === "distinct") &&
-                    pendingAction.id === key
-                      ? pendingAction.type
-                      : null
-                  }
-                  onMerge={(kept, removed) => onMerge(key, kept, removed)}
-                  onDistinct={() => onDistinct(key, pair)}
+                  choice={choices[key] ?? null}
+                  disabled={busy}
+                  error={actionErrorFor(actionError, ["merge", "distinct"], key)}
+                  onActivate={() => setActiveKey(key)}
+                  onKeep={(keptId) => choose(key, pair, keptId)}
+                  onTake={(field, take) => setTake(key, field, take)}
+                  onCancel={() => cancel(key)}
+                  onMerge={() => merge(key, pair)}
+                  onDistinct={() => distinct(key, pair)}
+                  onEdit={onEdit}
                 />
               );
             })}
@@ -104,29 +278,65 @@ export function AdminDuplicateReview({
   );
 }
 
+function Kbd({ children }: { children: React.ReactNode }) {
+  return (
+    <kbd className="rounded border border-ink/15 bg-canvas px-1 font-sans text-[0.6875rem] text-ink">
+      {children}
+    </kbd>
+  );
+}
+
 function DuplicatePairCard({
+  ref,
   pair,
+  position,
+  isActive,
   feedPositionById,
-  pending,
+  choice,
+  disabled,
+  error,
+  onActivate,
+  onKeep,
+  onTake,
+  onCancel,
   onMerge,
   onDistinct,
+  onEdit,
 }: {
+  ref: React.Ref<HTMLLIElement>;
   pair: DuplicateReviewPair;
+  position: number;
+  isActive: boolean;
   feedPositionById: Map<string, number>;
-  pending: "merge" | "distinct" | null;
-  onMerge: (kept: AdminEventRow, removed: AdminEventRow) => void;
+  choice: Choice | null;
+  disabled: boolean;
+  error: string | null;
+  onActivate: () => void;
+  onKeep: (keptId: string) => void;
+  onTake: (field: MergeFieldChoice, take: boolean) => void;
+  onCancel: () => void;
+  onMerge: () => void;
   onDistinct: () => void;
+  onEdit: (event: AdminEventRow) => void;
 }) {
-  const [keptId, setKeptId] = useState<string | null>(null);
   const confirmRef = useRef<HTMLButtonElement>(null);
+  const groupName = useId();
   const listings = [pair.first, pair.second];
-  const kept = listings.find((event) => event.id === keptId) ?? null;
-  const removed = kept ? listings.find((event) => event.id !== keptId)! : null;
-  const additions = kept && removed ? duplicateMergeChanges(kept, removed).additions : [];
+  const kept = listings.find((event) => event.id === choice?.keptId) ?? null;
+  const removed = kept ? listings.find((event) => event.id !== kept.id)! : null;
+  const options = kept && removed ? mergeFieldOptions(kept, removed) : [];
+  // Free food, co-hosts and a signup requirement carry over on their own;
+  // the field choices above already show the rest.
+  const automatic =
+    kept && removed && choice
+      ? duplicateMergeChanges(kept, removed, choice.takes).additions.filter(
+          (phrase) => !/^(venue|end time|flyer|RSVP link)/.test(phrase)
+        )
+      : [];
 
   useEffect(() => {
-    if (keptId) confirmRef.current?.focus();
-  }, [keptId]);
+    if (choice?.keptId) confirmRef.current?.focus({ preventScroll: true });
+  }, [choice?.keptId]);
 
   const differs = {
     title: normalized(pair.first.title) !== normalized(pair.second.title),
@@ -136,58 +346,106 @@ function DuplicatePairCard({
   };
 
   return (
-    <li className="bg-canvas border border-ink/10 rounded-xl shadow-card overflow-clip">
+    <li
+      ref={ref}
+      tabIndex={-1}
+      aria-label={`Pair ${position}: ${pair.first.title} and ${pair.second.title}`}
+      onFocusCapture={onActivate}
+      onPointerDown={onActivate}
+      className={clsx(
+        "bg-canvas border rounded-xl shadow-card overflow-clip outline-none transition-colors",
+        isActive ? "border-ink/40" : "border-ink/10"
+      )}
+    >
       <div className="grid sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-ink/10">
         {listings.map((event, index) => (
           <DuplicateListing
             key={event.id}
+            side={index + 1}
             corner={index === 0 ? "rounded-t-xl sm:rounded-tr-none sm:rounded-tl-xl" : "sm:rounded-tr-xl"}
             event={event}
             feedIndex={feedPositionById.get(event.id)}
             differs={differs}
-            outcome={keptId === null ? null : event.id === keptId ? "kept" : "removed"}
-            disabled={pending !== null}
-            onKeep={() => setKeptId(event.id)}
+            outcome={kept === null ? null : event.id === kept.id ? "kept" : "removed"}
+            disabled={disabled}
+            onKeep={() => onKeep(event.id)}
+            onEdit={() => onEdit(event)}
           />
         ))}
       </div>
 
-      <div className="border-t border-ink/10 px-4 py-3">
-        {kept && removed ? (
-          <div
-            role="group"
-            aria-label="Confirm merge"
-            className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
-          >
-            <div className="min-w-0 space-y-0.5">
-              <p className="text-sm text-ink font-sans">
-                Keep <span className="font-semibold">{kept.title}</span> and remove
-                the other listing.
-              </p>
+      <div className="border-t border-ink/10 px-4 py-3 space-y-3">
+        {kept && removed && choice ? (
+          <div role="group" aria-label="Confirm merge" className="space-y-3">
+            <p className="text-sm text-ink font-sans">
+              Keep <span className="font-semibold">{kept.title}</span> and remove the
+              other listing.
+            </p>
+
+            {options.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs text-muted font-sans">
+                  Where the listings disagree, choose which detail to keep:
+                </p>
+                {options.map((field) => (
+                  <div
+                    key={field}
+                    role="radiogroup"
+                    aria-labelledby={`${groupName}-${field}`}
+                    className="grid grid-cols-[5.5rem_1fr] items-start gap-x-3 gap-y-1 sm:grid-cols-[5.5rem_1fr_1fr]"
+                  >
+                    <span id={`${groupName}-${field}`} className="pt-1.5 text-xs text-muted font-sans">
+                      {FIELD_LABELS[field]}
+                    </span>
+                    <TakeOption
+                      name={`${groupName}-${field}-choice`}
+                      label={fieldValue(field, kept)}
+                      note="kept listing"
+                      checked={!choice.takes.includes(field)}
+                      onChange={() => onTake(field, false)}
+                      disabled={disabled}
+                    />
+                    <TakeOption
+                      name={`${groupName}-${field}-choice`}
+                      label={fieldValue(field, removed)}
+                      note="other listing"
+                      checked={choice.takes.includes(field)}
+                      onChange={() => onTake(field, true)}
+                      disabled={disabled}
+                      className="col-start-2 sm:col-start-auto"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-xs text-muted font-sans">
-                {additions.length > 0
-                  ? `The kept listing also takes the other's ${formatList(additions)}.`
-                  : "The kept listing already has every detail the other one adds."}
+                {automatic.length > 0
+                  ? `The kept listing also takes the other's ${formatList(automatic)}.`
+                  : options.length > 0
+                    ? "Nothing else carries over."
+                    : "The kept listing already has every detail the other one adds."}
               </p>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={() => setKeptId(null)}
-                disabled={pending !== null}
-                className={OUTLINE_BUTTON}
-              >
-                Cancel
-              </button>
-              <button
-                ref={confirmRef}
-                type="button"
-                onClick={() => onMerge(kept, removed)}
-                disabled={pending !== null}
-                className="min-h-9 px-4 bg-ink text-canvas rounded-md hover:opacity-85 outline-none interactive-focus press inline-flex items-center justify-center text-xs font-semibold disabled:opacity-50"
-              >
-                {pending === "merge" ? "Merging…" : "Merge listings"}
-              </button>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={onCancel}
+                  disabled={disabled}
+                  className={OUTLINE_BUTTON}
+                >
+                  Cancel
+                </button>
+                <button
+                  ref={confirmRef}
+                  type="button"
+                  onClick={onMerge}
+                  disabled={disabled}
+                  className="min-h-9 px-4 bg-ink text-canvas rounded-md hover:opacity-85 outline-none interactive-focus press inline-flex items-center justify-center text-xs font-semibold disabled:opacity-50"
+                >
+                  Merge listings
+                </button>
+              </div>
             </div>
           </div>
         ) : (
@@ -198,28 +456,78 @@ function DuplicatePairCard({
             <button
               type="button"
               onClick={onDistinct}
-              disabled={pending !== null}
+              disabled={disabled}
               className={OUTLINE_BUTTON}
             >
-              {pending === "distinct" ? "Saving…" : "Different events"}
+              Different events
             </button>
           </div>
+        )}
+        {error && (
+          <p role="alert" className="text-xs text-deep-coral font-sans">
+            {error}
+          </p>
         )}
       </div>
     </li>
   );
 }
 
+function TakeOption({
+  name,
+  label,
+  note,
+  checked,
+  onChange,
+  disabled,
+  className,
+}: {
+  name: string;
+  label: string;
+  note: string;
+  checked: boolean;
+  onChange: () => void;
+  disabled: boolean;
+  className?: string;
+}) {
+  return (
+    <label
+      className={clsx(
+        "flex min-w-0 cursor-pointer items-start gap-2 rounded-md border px-2.5 py-1.5 text-xs font-sans transition-colors",
+        checked ? "border-ink/40 bg-ink/[0.03] text-ink" : "border-ink/10 text-muted hover:border-ink/25",
+        className
+      )}
+    >
+      <input
+        type="radio"
+        name={name}
+        checked={checked}
+        onChange={onChange}
+        disabled={disabled}
+        className="mt-0.5 h-3.5 w-3.5 shrink-0 accent-ink outline-none interactive-focus"
+      />
+      <span className="min-w-0 break-words">
+        {label}
+        <span className="block text-[0.6875rem] text-muted">{note}</span>
+      </span>
+    </label>
+  );
+}
+
 function DuplicateListing({
   event,
+  side,
   corner,
   feedIndex,
   differs,
   outcome,
   disabled,
   onKeep,
+  onEdit,
 }: {
   event: AdminEventRow;
+  /** 1 for the left listing, 2 for the right: its keyboard shortcut. */
+  side: number;
   /** The card corner this half sits in, so the kept outline follows it. */
   corner: string;
   feedIndex: number | undefined;
@@ -227,6 +535,7 @@ function DuplicateListing({
   outcome: "kept" | "removed" | null;
   disabled: boolean;
   onKeep: () => void;
+  onEdit: () => void;
 }) {
   const [imageBroken, setImageBroken] = useState(false);
   const campusEvent = useMemo(() => eventRowToCampusEvent(event), [event]);
@@ -249,11 +558,11 @@ function DuplicateListing({
         {feedIndex !== undefined && (
           <span className="tabular-nums">#{feedIndex + 1}</span>
         )}
-        <span className="bg-ink/5 border border-ink/10 px-1 py-0.5 rounded font-semibold uppercase tracking-[0.08em] text-[0.5625rem]">
+        <span className={`${ADMIN_TAG} bg-ink/5 border-ink/10 uppercase tracking-[0.08em]`}>
           {event.source}
         </span>
         {event.is_locked && (
-          <span className="bg-gold/10 border border-gold/20 text-deep-gold text-[0.5625rem] px-1 py-0.5 rounded font-semibold">
+          <span className={`${ADMIN_TAG} bg-gold/10 border-gold/20 text-deep-gold`}>
             Locked
           </span>
         )}
@@ -317,21 +626,27 @@ function DuplicateListing({
             type="button"
             onClick={onKeep}
             disabled={disabled}
+            aria-keyshortcuts={String(side)}
             className={OUTLINE_BUTTON}
           >
             Keep this one
+            <span aria-hidden className="hidden sm:inline text-faint font-normal">
+              {side}
+            </span>
           </button>
         )}
-        {event.source_url && (
-          <a
-            href={event.source_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-xs text-muted hover:text-ink underline decoration-ink/20 underline-offset-2 outline-none interactive-focus rounded-sm active:opacity-70"
-          >
-            Source post
-            <IoOpenOutline size={12} aria-hidden />
-          </a>
+        <button
+          type="button"
+          onClick={onEdit}
+          disabled={disabled}
+          aria-label={`Edit ${event.title}`}
+          className="inline-flex items-center gap-1 text-xs text-muted hover:text-ink outline-none interactive-focus rounded-sm active:opacity-70"
+        >
+          <IoPencilOutline size={12} aria-hidden />
+          <span aria-hidden>Edit</span>
+        </button>
+        {campusEvent.sourceUrl && (
+          <RowLink href={campusEvent.sourceUrl}>Source post</RowLink>
         )}
       </div>
     </article>

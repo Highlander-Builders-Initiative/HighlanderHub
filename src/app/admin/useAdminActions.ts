@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import type { AdminPendingAction } from "./pending-action";
+import type { AdminActionError, AdminPendingAction } from "./pending-action";
 
 // Actions report expected failures as { success: false }. A throw means the
 // session expired (requireAdmin) or the request never completed; production
@@ -13,17 +13,22 @@ export function useAdminActions() {
   const [pendingAction, setPendingAction] = useState<AdminPendingAction | null>(
     null
   );
-  const [actionError, setActionError] = useState<string | null>(null);
+  // Each error belongs to the action that raised it, so it shows where the
+  // admin acted: in the drawer, on the pair card, or on the event's row.
+  const [actionError, setActionError] = useState<AdminActionError | null>(null);
 
+  /** Runs fn; returns false when it threw (the error is already set). */
   const runAction = useCallback(
     async (action: AdminPendingAction, fn: () => Promise<void>) => {
       setPendingAction(action);
       setActionError(null);
       try {
         await fn();
+        return true;
       } catch (error) {
         console.error("Admin action failed:", error);
-        setActionError(ADMIN_ACTION_FAILED_MESSAGE);
+        setActionError({ action, message: ADMIN_ACTION_FAILED_MESSAGE });
+        return false;
       } finally {
         setPendingAction(null);
       }

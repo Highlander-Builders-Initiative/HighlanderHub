@@ -103,3 +103,65 @@ test("anonymous accounts never become co-hosts, and identical listings add nothi
   assert.deepEqual(duplicateMergeChanges(kept, anonymous), { changes: {}, additions: [] });
   assert.deepEqual(duplicateMergeChanges(kept, listing("ig_c")), { changes: {}, additions: [] });
 });
+
+const { defaultMergeTakes, mergeFieldOptions } = await importTsModule("src/app/admin/duplicate-merge.ts");
+
+test("a choice is offered only where the other listing has a different usable detail", () => {
+  const kept = listing("ig_single", { location: "USP" });
+  const quarterly = listing("ig_quarterly", {
+    location: "Costo Hall 224",
+    ends_at: "2026-11-06T20:00:00+00:00",
+    image_url: "https://example.com/q.jpg",
+  });
+  assert.deepEqual(mergeFieldOptions(kept, quarterly), ["location", "ends_at", "image_url"]);
+  // By default the other listing only fills gaps: USP is a named venue.
+  assert.deepEqual(defaultMergeTakes(kept, quarterly), ["ends_at", "image_url"]);
+  assert.deepEqual(mergeFieldOptions(kept, listing("ig_same", { location: " usp " })), []);
+});
+
+test("the admin's choices decide venue, end time, flyer and RSVP link", () => {
+  const kept = listing("ig_single", {
+    location: "USP",
+    ends_at: "2026-11-06T19:00:00+00:00",
+    image_url: "https://example.com/kept.jpg",
+  });
+  const other = listing("ig_other", {
+    location: "Costo Hall 224",
+    ends_at: "2026-11-06T20:00:00+00:00",
+    image_url: "https://example.com/other.jpg",
+    has_free_food: true,
+  });
+  assert.deepEqual(duplicateMergeChanges(kept, other, ["location", "ends_at"]), {
+    changes: {
+      has_free_food: true,
+      ends_at: "2026-11-06T20:00:00+00:00",
+      location: "Costo Hall 224",
+    },
+    additions: ["free food", "end time", "venue (Costo Hall 224)"],
+  });
+  // Declining every choice keeps the kept listing's details; free food still carries.
+  assert.deepEqual(duplicateMergeChanges(kept, other, []).changes, { has_free_food: true });
+});
+
+test("a choice the pair can't support is ignored", () => {
+  const kept = listing("ig_a");
+  const nextDay = listing("ig_b", {
+    starts_at: "2026-11-07T18:00:00+00:00",
+    ends_at: "2026-11-07T20:00:00+00:00",
+  });
+  assert.deepEqual(duplicateMergeChanges(kept, nextDay, ["ends_at", "image_url"]).changes, {});
+});
+
+test("taking a partner's RSVP link brings its signup requirement with it", () => {
+  const kept = listing("ig_a");
+  const partner = listing("ig_c", {
+    host: "Partner",
+    host_handle: "partner",
+    rsvp_required: true,
+    rsvp_url: "https://forms.example.com/partner",
+  });
+  assert.equal(defaultMergeTakes(kept, partner).includes("rsvp_url"), false);
+  const { changes } = duplicateMergeChanges(kept, partner, ["rsvp_url"]);
+  assert.equal(changes.rsvp_url, "https://forms.example.com/partner");
+  assert.equal(changes.rsvp_required, true);
+});

@@ -1,6 +1,6 @@
 "use client";
 
-import { useReducer, useCallback, useEffect } from "react";
+import { useReducer, useCallback, useMemo } from "react";
 import { formatPacificDateTimeInput } from "@/lib/dates";
 import { validateEventTimes } from "@/lib/events/validation";
 import { coerceEventCategory } from "@/types/event";
@@ -22,46 +22,32 @@ type EditFormState = {
   rsvpRequired: boolean;
 };
 
-type EditFormAction =
-  | { type: "load"; event: AdminEventRow }
-  | { type: "patch"; field: keyof EditFormState; value: string | boolean };
-
-const initialFormState: EditFormState = {
-  title: "",
-  description: "",
-  startsAt: "",
-  endsAt: "",
-  location: "",
-  host: "",
-  hostHandle: "",
-  category: "",
-  contentKind: "student_event",
-  imageUrl: "",
-  rsvpUrl: "",
-  hasFreeFood: false,
-  rsvpRequired: false,
+type EditFormAction = {
+  type: "patch";
+  field: keyof EditFormState;
+  value: string | boolean;
 };
 
+function formFromEvent(event: AdminEventRow): EditFormState {
+  return {
+    title: event.title,
+    description: event.description || "",
+    startsAt: formatPacificDateTimeInput(event.starts_at),
+    endsAt: formatPacificDateTimeInput(event.ends_at ?? null),
+    location: event.location,
+    host: event.host,
+    hostHandle: event.host_handle || "",
+    // A row still carrying a retired category edits as uncategorized.
+    category: coerceEventCategory(event.category),
+    contentKind: event.content_kind,
+    imageUrl: event.image_url || "",
+    rsvpUrl: event.rsvp_url || "",
+    hasFreeFood: event.has_free_food,
+    rsvpRequired: event.rsvp_required,
+  };
+}
+
 function formReducer(state: EditFormState, action: EditFormAction): EditFormState {
-  if (action.type === "load") {
-    const event = action.event;
-    return {
-      title: event.title,
-      description: event.description || "",
-      startsAt: formatPacificDateTimeInput(event.starts_at),
-      endsAt: formatPacificDateTimeInput(event.ends_at ?? null),
-      location: event.location,
-      host: event.host,
-      hostHandle: event.host_handle || "",
-      // A row still carrying a retired category edits as uncategorized.
-      category: coerceEventCategory(event.category),
-      contentKind: event.content_kind,
-      imageUrl: event.image_url || "",
-      rsvpUrl: event.rsvp_url || "",
-      hasFreeFood: event.has_free_food,
-      rsvpRequired: event.rsvp_required,
-    };
-  }
   return { ...state, [action.field]: action.value };
 }
 
@@ -97,12 +83,13 @@ export function buildAdminEventUpdatePayload(
   };
 }
 
-export function useAdminEventEdit(event: AdminEventRow | null) {
-  const [form, dispatch] = useReducer(formReducer, initialFormState);
-
-  useEffect(() => {
-    if (event) dispatch({ type: "load", event });
-  }, [event]);
+/** Form state for one event; remount (key by id) to edit another. */
+export function useAdminEventEdit(event: AdminEventRow) {
+  const [form, dispatch] = useReducer(formReducer, event, formFromEvent);
+  const saved = useMemo(() => formFromEvent(event), [event]);
+  const isDirty = (Object.keys(saved) as (keyof EditFormState)[]).some(
+    (field) => form[field] !== saved[field]
+  );
 
   const setField = useCallback(
     <K extends keyof EditFormState>(field: K, value: EditFormState[K]) => {
@@ -118,6 +105,7 @@ export function useAdminEventEdit(event: AdminEventRow | null) {
 
   return {
     form,
+    isDirty,
     setField,
     buildUpdatePayload,
   };

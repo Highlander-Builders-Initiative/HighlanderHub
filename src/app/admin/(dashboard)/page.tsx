@@ -1,8 +1,10 @@
 import React from "react";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getAdminSupabase, verifySession } from "@/lib/admin";
 import { activeEventFilter } from "@/lib/events";
+import { e2eFixturesEnabled } from "@/lib/events/fixtures";
+import { adminFixtureDeck } from "../fixtures";
 import AdminDashboardClient from "./AdminDashboardClient";
 import type { AdminEventRow, DuplicateReviewPair } from "../types";
 
@@ -14,6 +16,21 @@ export default async function AdminDashboardPage() {
   // Pages and layouts can render independently. Authorize at the data read too.
   const session = (await cookies()).get("hh_admin_session")?.value;
   if (!verifySession(session)) redirect("/admin/login");
+
+  if (e2eFixturesEnabled()) {
+    const requestHeaders = await headers();
+    const host = requestHeaders.get("host") ?? "localhost";
+    const protocol = requestHeaders.get("x-forwarded-proto") ?? "http";
+    const deck = adminFixtureDeck(`${protocol}://${host}`);
+    return (
+      <AdminDashboardClient
+        initialEvents={deck.events}
+        eventsError={null}
+        duplicatePairs={deck.duplicatePairs}
+        duplicateQueueError={null}
+      />
+    );
+  }
 
   const supabase = getAdminSupabase();
   const nowIso = new Date().toISOString();

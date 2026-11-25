@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+import { E2E_ADMIN_PASSWORD } from "./tests/e2e/admin-helpers";
 
 const PORT = Number(process.env.PORT ?? 3002);
 const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? `http://127.0.0.1:${PORT}`;
@@ -17,9 +18,10 @@ export default defineConfig({
     trace: "on-first-retry",
   },
   webServer: {
+    // ADMIN_PASSWORD lets the admin specs sign a session for the fixture deck.
     command: production
-      ? `HIGHLANDERHUB_E2E_FIXTURES=1 next build && HIGHLANDERHUB_E2E_FIXTURES=1 next start -H 127.0.0.1 -p ${PORT}`
-      : `HIGHLANDERHUB_E2E_FIXTURES=1 next dev -H 127.0.0.1 -p ${PORT}`,
+      ? `HIGHLANDERHUB_E2E_FIXTURES=1 next build && HIGHLANDERHUB_E2E_FIXTURES=1 ADMIN_PASSWORD=${E2E_ADMIN_PASSWORD} next start -H 127.0.0.1 -p ${PORT}`
+      : `HIGHLANDERHUB_E2E_FIXTURES=1 ADMIN_PASSWORD=${E2E_ADMIN_PASSWORD} next dev -H 127.0.0.1 -p ${PORT}`,
     url: BASE_URL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

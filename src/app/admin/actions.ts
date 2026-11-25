@@ -6,7 +6,11 @@ import { EVENTS_CACHE_TAG } from "@/lib/events";
 import { signSession, verifySession, getAdminSupabase, getAdminPassword, verifyPassword, checkAdminLoginRateLimit } from "@/lib/admin";
 import { clientIp } from "@/lib/rate-limit";
 import { parseAdminEventUpdate } from "./validate-event-update";
-import { duplicateMergeChanges } from "./duplicate-merge";
+import {
+  duplicateMergeChanges,
+  isMergeFieldChoice,
+  mergeFieldOptions,
+} from "./duplicate-merge";
 import type { AdminEventRow, AdminEventUpdatePayload } from "./types";
 
 /**
@@ -203,17 +207,23 @@ function revalidateEvents() {
 
 /**
  * Keeps one listing of a duplicate pair and removes the other. The kept
- * listing takes whatever details it lacks, the removed listing's sources are
- * pointed at it so a later scrape does not recreate the duplicate, and the
+ * listing takes the other's free food and co-hosts, and the venue, end time,
+ * flyer and RSVP link the admin chose (`takes`). The removed listing's sources
+ * are pointed at it so a later scrape does not recreate the duplicate, and the
  * decision is saved for the pipeline. `seen` holds each listing's updated_at
  * as the admin reviewed it; a listing changed since then aborts the merge.
  */
 export async function mergeDuplicateEvents(
   keptId: string,
   removedId: string,
-  seen: { kept: string; removed: string }
+  seen: { kept: string; removed: string },
+  takes: unknown
 ) {
   await requireAdmin();
+
+  if (!Array.isArray(takes) || !takes.every(isMergeFieldChoice)) {
+    return { success: false, error: "Choose which listing's details to keep." };
+  }
 
   const pair = await loadDuplicatePair(keptId, removedId);
   if (!pair.ok) return { success: false, error: pair.error };
@@ -224,8 +234,15 @@ export async function mergeDuplicateEvents(
       error: "One of these listings changed since this page loaded. Refresh and review it again.",
     };
   }
+  const options = mergeFieldOptions(kept, removed);
+  if (!takes.every((field) => options.includes(field))) {
+    return {
+      success: false,
+      error: "That detail can't move to the kept listing. Refresh and review the pair again.",
+    };
+  }
 
-  const { changes } = duplicateMergeChanges(kept, removed);
+  const { changes } = duplicateMergeChanges(kept, removed, takes);
   const { error } = await getAdminSupabase().rpc("merge_duplicate_events", {
     kept_id: kept.id,
     removed_id: removed.id,

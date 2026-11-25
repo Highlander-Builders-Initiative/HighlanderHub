@@ -702,7 +702,7 @@ test("admin failures surface instead of looking like success or an empty deck", 
   // Handlers call runAction with `void`; a thrown action (expired session,
   // network) must still reach the dashboard's error banner.
   const hook = read("src/app/admin/useAdminActions.ts");
-  assert.match(hook, /catch \(error\) \{[\s\S]*setActionError\(ADMIN_ACTION_FAILED_MESSAGE\)/);
+  assert.match(hook, /catch \(error\) \{[\s\S]*setActionError\(\{ action, message: ADMIN_ACTION_FAILED_MESSAGE \}\)/);
 
   const page = read("src/app/admin/(dashboard)/page.tsx");
   const client = read("src/app/admin/(dashboard)/AdminDashboardClient.tsx");
