@@ -36,6 +36,9 @@ LIKELY = 0.5
 _PART_WORDS = frozenset("volunteer volunteers volunteering shift shifts tabling booth table "
                         "ride rides carpool tailgate rehearsal".split())
 _CAMPUS = frozenset("ucr uc riverside university california highlander highlanders".split())
+# A word in more hosts' names than this names a kind of club ("lab",
+# "academic"), not one club.
+_HOST_WORD_ACCOUNTS = 2
 
 
 def _title_words(row: dict) -> set[str]:
@@ -43,27 +46,36 @@ def _title_words(row: dict) -> set[str]:
             if len(word) > 1} - rules._TITLE_NOISE
 
 
+def _host_words(row: dict) -> set[str]:
+    return rules._own_name_words(row) - _CAMPUS - rules._GENERIC_WORDS
+
+
 def word_accounts(rows: list[dict]) -> dict:
-    """How many accounts use each title word.
+    """How many accounts use each title word, and each word of a host's name.
 
     A word many accounts put in a title ("meeting", "guest", "night") names a
-    format; a word few do ("Diwali", "Coro") names an occasion. Counted from
-    the listings themselves, so no stoplist needs keeping.
+    format; a word few do ("Diwali", "Coro") names an occasion. Likewise a
+    word in many hosts' names ("lab", "business", "student") names a kind of
+    club, not one club. Counted from the listings themselves, so no stoplist
+    needs keeping.
     """
-    by_account: dict[str, set[str]] = {}
+    titles: dict[str, set[str]] = {}
+    hosts: dict[str, set[str]] = {}
     for row in rows:
-        by_account.setdefault(rules._account(row) or str(row.get("id")), set()).update(_title_words(row))
-    return {"accounts": len(by_account),
-            "words": dict(Counter(word for words in by_account.values() for word in words))}
+        account = rules._account(row) or str(row.get("id"))
+        titles.setdefault(account, set()).update(_title_words(row))
+        hosts.setdefault(account, set()).update(_host_words(row))
+    return {"accounts": len(titles),
+            "words": dict(Counter(word for words in titles.values() for word in words)),
+            "hosts": dict(Counter(word for words in hosts.values() for word in words))}
 
 
 def _rarity(word: str, corpus: dict) -> float:
     return math.log((corpus["accounts"] + 1) / (corpus["words"].get(word, 0) + 1))
 
 
-def _grams(text: str, size: int = 3) -> set[str]:
-    text = re.sub(r"[^a-z0-9]", "", rules._title_text(text))
-    return {text[i:i + size] for i in range(max(1, len(text) - size + 1))} if text else set()
+def _grams(words: set[str], size: int = 3) -> set[str]:
+    return {word[i:i + size] for word in words for i in range(max(1, len(word) - size + 1))}
 
 
 def _shingles(text: str) -> set[str]:
@@ -95,7 +107,9 @@ def features(left: dict, right: dict, corpus: dict) -> dict[str, float]:
     untimed = [rules._untimed(row) or not rules._specific_slot(row) for row in (left, right)]
     timed = not any(untimed)
     gap = abs((starts[0] - starts[1]).total_seconds()) / 60 if all(starts) else 0.0
-    same_start = starts[0] == starts[1]
+    # Date-only listings (every deadline) "start" at midnight of their day,
+    # which comparable() already requires: only a clock time is evidence.
+    same_start = timed and starts[0] == starts[1]
     ends = {rules._parse_instant(row.get("ends_at")) for row in (left, right)} - {None}
     place = rules._same_place(left, right)
     # Two unrelated webinars are both "on Zoom"; that names no shared venue.
@@ -109,15 +123,27 @@ def features(left: dict, right: dict, corpus: dict) -> dict[str, float]:
     rare_either = sum(_rarity(word, corpus) for word in either)
     distinct = [{word for word in group if _rarity(word, corpus) >= 2.0} for group in words]
     subset = bool(distinct[0] and distinct[1] and (distinct[0] <= distinct[1] or distinct[1] <= distinct[0]))
-    grams = [_grams(str(row.get("title") or "")) for row in (left, right)]
-    spelling = len(grams[0] & grams[1]) / max(1, min(len(grams[0]), len(grams[1])))
+    # Spelling: one title written inside the other ("Cutie Hack" and "Cutie
+    # Hack 2026", host names included), or the words they do not share spelled
+    # alike ("SWANACon" and "SWANA Con"). Shared boilerplate is not spelling:
+    # "Ron Brown Scholarship Deadline" and "Hagan Scholarship Deadline" share
+    # only that.
+    full = [_title_words(row) for row in (left, right)]
+    grams = [_grams(group - (full[0] & full[1])) for group in full]
+    spelling = (1.0 if all(full) and (full[0] <= full[1] or full[1] <= full[0])
+                else len(grams[0] & grams[1]) / min(len(grams[0]), len(grams[1])) if all(grams) else 0.0)
 
     captions = [_shingles(row.get("description")) for row in (left, right)]
     overlap = (len(captions[0] & captions[1]) / min(len(captions[0]), len(captions[1]))
                if min(len(captions[0]), len(captions[1])) >= 15 else 0.0)
     signup = rules._rsvp_identity(left.get("rsvp_url"))
-    names_other = any((rules._own_name_words(other) - _CAMPUS - rules._GENERIC_WORDS) & _title_words(row)
-                      for row, other in ((left, right), (right, left))) and not same_account
+    # A title names the other host by a word of that host's own name that is
+    # not the poster's own ("LIBRE Lab" names itself, not "SCDN Lab") and
+    # that few hosts' names use ("business" fits a dozen clubs, "SWE" one).
+    names_other = not same_account and any(
+        corpus.get("hosts", {}).get(word, 0) <= _HOST_WORD_ACCOUNTS
+        for row, other in ((left, right), (right, left))
+        for word in (_host_words(other) - rules._own_name_words(row)) & _title_words(row))
     part = [bool(_title_words(row) & _PART_WORDS) for row in (left, right)]
     held_at = any(rules._held_at(row, rules._slot_title_words(other)) and bool(rules._slot_title_words(other))
                   for row, other in ((left, right), (right, left)))
@@ -132,9 +158,12 @@ def features(left: dict, right: dict, corpus: dict) -> dict[str, float]:
                  for row in (left, right)]
     # "Flower Bouquets at SWANA Heritage Night": what the titles share is
     # where this listing happens, and it names something of its own first.
+    # Across accounts the poster's own name counts ("KDSAP at Involvement
+    # Fair" is the club's table at another host's fair); from one account it
+    # does not ("Hidden IEats at Hoji Tea Room" is its own social, at a venue).
     at_shared = any(
         bool(shared & _title_words({"title": title[match.end():]}))
-        and bool(_title_words({"title": title[:match.start()]}) - shared - own)
+        and bool(_title_words({"title": title[:match.start()]}) - shared - (own if same_account else set()))
         for title in (rules._title_text(str(row.get("title") or "")) for row in (left, right))
         for match in re.finditer(r"\s(?:at|@)\s", title))
     cross_slot = not same_account and timed and same_start and len(ends) <= 1

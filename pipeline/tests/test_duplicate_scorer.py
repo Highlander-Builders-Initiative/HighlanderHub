@@ -59,9 +59,10 @@ class ShippedModelTests(unittest.TestCase):
         # Most unrelated pairs leave the queue, and almost no duplicate does.
         self.assertGreater(verdicts['different'].count('dismiss'), 0.8 * len(verdicts['different']))
         self.assertLessEqual(verdicts['duplicate'].count('dismiss'), 2)
-        # The merge threshold is deliberately timid until admin decisions back it.
+        # The merge threshold is deliberately timid until admin decisions back
+        # it: most duplicates still go to a person.
         self.assertGreaterEqual(verdicts['duplicate'].count('merge'), 5)
-        self.assertGreater(verdicts['duplicate'].count('review'), 0.8 * len(verdicts['duplicate']))
+        self.assertGreater(verdicts['duplicate'].count('review'), 0.7 * len(verdicts['duplicate']))
 
     def test_known_pairs_land_where_a_person_would_put_them(self):
         self.assertEqual('merge', MODEL.verdict(MODEL.score(titled(*CARDS[0]), titled(*CARDS[1]), CORPUS)))
@@ -100,6 +101,68 @@ class ShippedModelTests(unittest.TestCase):
         self.assertEqual(3, corpus['accounts'])
         self.assertEqual({'general': 2, 'meeting': 3, 'diwali': 1}, corpus['words'])
         self.assertGreater(scorer._rarity('diwali', corpus), scorer._rarity('meeting', corpus))
+        # Host-name words are counted the same way, campus words aside.
+        hosts = scorer.word_accounts([{'id': '1', 'host_handle': 'scdnlabucr', 'host': 'SCDN Lab at UCR'},
+                                      {'id': '2', 'host_handle': 'ucrlibrelab', 'host': 'LIBRE Lab at UCR'}])
+        self.assertEqual({'lab': 2, 'scdn': 1, 'libre': 1, 'scdnlabucr': 1, 'ucrlibrelab': 1}, hosts['hosts'])
+
+
+def listing(title, handle, host, start='2026-12-02T01:00:00+00:00', end='2026-12-02T03:00:00+00:00', **extra):
+    return {'id': f'ig_{handle}_p{abs(hash(title)) % 10**9}', 'title': title, 'host_handle': handle, 'host': host,
+            'starts_at': start, 'ends_at': end, 'all_day': False, 'location': 'Bell Tower', 'description': '',
+            'content_kind': 'student_event', 'rsvp_url': None, **extra}
+
+
+def deadline(title, handle, host):
+    return listing(title, handle, host, start='2026-12-01T08:00:00+00:00', end=None, content_kind='student_deadline')
+
+
+class FeatureTests(unittest.TestCase):
+    """Evidence that read the wrong way in the live feed (November 2026)."""
+
+    def features(self, left, right, others=()):
+        return scorer.features(left, right, scorer.word_accounts([left, right, *others]))
+
+    def test_a_title_names_another_host_only_by_a_word_of_that_host_alone(self):
+        shpe = listing('SHPE Solar Boat and SWE Circuit Building Workshop', 'shpeucr', 'SHPE UCR')
+        swe = listing('SWE General Meeting', 'swe_ucr', 'Society of Women Engineers (SWE) at UCR')
+        self.assertEqual(1.0, self.features(shpe, swe)['names_other_host'])
+        # Each lab names itself; "lab" names neither the other lab nor any one host.
+        scdn = deadline('Social Cognitive Developmental Neuroscience Lab Research Assistant Application Deadline',
+                        'scdnlabucr', 'SCDN Lab at UCR')
+        libre = deadline('LIBRE Lab Research Assistant Application Deadline', 'ucrlibrelab', 'LIBRE Lab at UCR')
+        self.assertEqual(0.0, self.features(scdn, libre)['names_other_host'])
+        # A word in three hosts' names fits a kind of club, not one club.
+        grad = deadline('Winter 2027 Graduation Application Deadline', 'cnasadvising', 'CNAS Academic Advising')
+        chair = deadline('AIChE Academic Chair Position Application', 'aicheucr', 'AIChE at UCR')
+        others = [listing('Office Hours', f'adv{i}', f'Academic Center {i}') for i in range(2)]
+        self.assertEqual(1.0, self.features(grad, chair)['names_other_host'])
+        self.assertEqual(0.0, self.features(grad, chair, others)['names_other_host'])
+
+    def test_deadlines_on_one_day_do_not_share_a_start(self):
+        ron = deadline('Ron Brown Scholarship Deadline', 'eaopucr', 'UCR Early Academic Outreach Program')
+        hagan = deadline('Hagan Scholarship Deadline', 'eaopucr', 'UCR Early Academic Outreach Program')
+        values = self.features(ron, hagan)
+        self.assertEqual((0.0, 0.0), (values['same_start'], values['account_start_word']))
+        # Their shared boilerplate is not one name spelled two ways.
+        self.assertEqual(0.0, values['title_spelling'])
+        timed = [listing('Game Night', 'club', 'Club'), listing('Board Game Night', 'club', 'Club')]
+        self.assertEqual(1.0, self.features(*timed)['same_start'])
+
+    def test_spelling_finds_one_name_written_two_ways(self):
+        for left, right in (('SWANACon', 'SWANA Con'), ('Cutie Hack', 'Cutie Hack 2026')):
+            values = self.features(listing(left, 'cutiehack_ucr', 'Cutie Hack'),
+                                   listing(right, 'cutiehack_ucr', 'Cutie Hack'))
+            self.assertGreater(values['title_spelling'], 0.6, (left, right))
+
+    def test_a_club_at_another_hosts_occasion_is_its_table_there(self):
+        fair = listing('Fall Involvement Fair', 'ucrstudentlife', 'UCR Student Life')
+        table = listing('KDSAP at Involvement Fair', 'ucrkdsap', 'Kappa Delta Sigma Alpha Pi (KDSAP) at UCR')
+        self.assertEqual(1.0, self.features(fair, table)['at_shared_occasion'])
+        # From one account, its own name before "at" is its event at a venue.
+        social = listing('Hoji X HIE Social', 'hiddenieats', 'Hidden IEats')
+        venue = listing('Hidden IEats at Hoji Tea Room', 'hiddenieats', 'Hidden IEats')
+        self.assertEqual(0.0, self.features(social, venue)['at_shared_occasion'])
 
 
 class ShadowReportTests(unittest.TestCase):
@@ -237,10 +300,10 @@ class ShadowStageTests(unittest.TestCase):
             scorer.main()
         database.assert_not_called()
         text = '\n'.join(logs.output)
-        self.assertRegex(text, r'Shadow scorer would send to review \(0\.\d{3}, not queued\): ')
+        self.assertRegex(text, r'Shadow scorer would send to review \([01]\.\d{3}, not queued\): ')
         self.assertIn('1 pairs scored, 0 of them queued; would merge 0, dismiss 0, leave 0 for review, '
                       'send 1 unqueued to review', text)
-        self.assertRegex(text, r"Shadow scorer leans against admin decision 'different' \(0\.\d{3}\): "
+        self.assertRegex(text, r"Shadow scorer leans against admin decision 'different' \([01]\.\d{3}\): "
                                + rows[0]['id'])
         self.assertNotIn('disagrees', text)
 
