@@ -45,6 +45,7 @@ export interface EventRow {
   source: "instagram" | "campus_website" | "club_website" | "manual";
   source_url?: string | null;
   image_url?: string | null;
+  image_is_video?: boolean | null;
   has_free_food: boolean;
   rsvp_required: boolean;
   rsvp_url?: string | null;

@@ -19,6 +19,7 @@ import {
   defaultMergeTakes,
   duplicateMergeChanges,
   mergeFieldOptions,
+  mergeLocksListing,
 } from "./duplicate-merge";
 import {
   type AdminActionError,
@@ -48,6 +49,7 @@ function hostLabel(event: AdminEventRow): string {
 const normalized = (value: string) => value.trim().toLowerCase();
 
 const FIELD_LABELS: Record<MergeFieldChoice, string> = {
+  starts_at: "Date & time",
   location: "Venue",
   ends_at: "End time",
   image_url: "Flyer",
@@ -56,6 +58,8 @@ const FIELD_LABELS: Record<MergeFieldChoice, string> = {
 
 function fieldValue(field: MergeFieldChoice, event: AdminEventRow): string {
   switch (field) {
+    case "starts_at":
+      return when(event);
     case "location":
       return event.location.trim() || "No venue";
     case "ends_at":
@@ -324,13 +328,16 @@ function DuplicatePairCard({
   const listings = [pair.first, pair.second];
   const kept = listings.find((event) => event.id === choice?.keptId) ?? null;
   const removed = kept ? listings.find((event) => event.id !== kept.id)! : null;
-  const options = kept && removed ? mergeFieldOptions(kept, removed) : [];
+  // The other listing's date and time bring their own end with them.
+  const options = (kept && removed ? mergeFieldOptions(kept, removed) : []).filter(
+    (field) => !(field === "ends_at" && choice?.takes.includes("starts_at"))
+  );
   // Free food, co-hosts and a signup requirement carry over on their own;
   // the field choices above already show the rest.
   const automatic =
     kept && removed && choice
       ? duplicateMergeChanges(kept, removed, choice.takes).additions.filter(
-          (phrase) => !/^(venue|end time|flyer|RSVP link)/.test(phrase)
+          (phrase) => !/^(date and time|venue|end time|flyer|RSVP link)/.test(phrase)
         )
       : [];
 
@@ -426,6 +433,8 @@ function DuplicatePairCard({
                   : options.length > 0
                     ? "Nothing else carries over."
                     : "The kept listing already has every detail the other one adds."}
+                {mergeLocksListing(kept, removed, choice.takes) &&
+                  " It will be locked so the next import keeps these choices."}
               </p>
               <div className="flex items-center gap-2 shrink-0">
                 <button

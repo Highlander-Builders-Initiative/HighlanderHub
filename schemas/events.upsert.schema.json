@@ -66,6 +66,7 @@
     },
     "source_url": { "type": ["string", "null"] },
     "image_url": { "type": ["string", "null"] },
+    "image_is_video": { "type": ["boolean", "null"] },
     "has_free_food": { "type": "boolean" },
     "rsvp_required": { "type": "boolean" },
     "rsvp_url": { "type": ["string", "null"] },

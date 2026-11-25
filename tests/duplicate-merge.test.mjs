@@ -136,6 +136,7 @@ test("the admin's choices decide venue, end time, flyer and RSVP link", () => {
       has_free_food: true,
       ends_at: "2026-11-06T20:00:00+00:00",
       location: "Costo Hall 224",
+      is_locked: true,
     },
     additions: ["free food", "end time", "venue (Costo Hall 224)"],
   });
@@ -164,4 +165,88 @@ test("taking a partner's RSVP link brings its signup requirement with it", () =>
   const { changes } = duplicateMergeChanges(kept, partner, ["rsvp_url"]);
   assert.equal(changes.rsvp_url, "https://forms.example.com/partner");
   assert.equal(changes.rsvp_required, true);
+});
+
+test("a date-only listing takes the other's time of day; another date or time is a choice", () => {
+  const teaser = listing("ig_teaser", {
+    starts_at: "2026-11-06T08:00:00+00:00",
+    ends_at: "2026-11-07T08:00:00+00:00",
+    all_day: true,
+  });
+  const timed = listing("ig_timed", { ends_at: "2026-11-06T20:00:00+00:00" });
+  assert.deepEqual(defaultMergeTakes(teaser, timed), ["starts_at"]);
+  assert.deepEqual(duplicateMergeChanges(teaser, timed), {
+    changes: {
+      starts_at: "2026-11-06T18:00:00+00:00",
+      all_day: false,
+      ends_at: "2026-11-06T20:00:00+00:00",
+      is_locked: true,
+    },
+    additions: ["date and time"],
+  });
+
+  // A rescheduled event: nothing moves unless the admin says so.
+  const kept = listing("ig_kept", { ends_at: "2026-11-06T20:00:00+00:00" });
+  const moved = listing("ig_moved", { starts_at: "2026-11-13T19:00:00+00:00" });
+  assert.deepEqual(mergeFieldOptions(kept, moved), ["starts_at"]);
+  assert.deepEqual(duplicateMergeChanges(kept, moved).changes, {});
+  // The replaced time's end goes with it, even when "end time" was also ticked.
+  assert.deepEqual(duplicateMergeChanges(kept, moved, ["starts_at", "ends_at"]).changes, {
+    starts_at: "2026-11-13T19:00:00+00:00",
+    all_day: false,
+    ends_at: null,
+    is_locked: true,
+  });
+  assert.deepEqual(mergeFieldOptions(kept, listing("ig_same")), []);
+});
+
+test("whether a flyer is a video's cover frame travels with the flyer", () => {
+  const reel = listing("ig_reel", { image_url: "https://example.com/cover.jpg", image_is_video: true });
+  const flyer = listing("ig_flyer", { image_url: "https://example.com/flyer.jpg" });
+  // A still flyer replaces a video's cover by default, as reconciliation does.
+  assert.deepEqual(defaultMergeTakes(reel, flyer), ["image_url"]);
+  assert.deepEqual(duplicateMergeChanges(reel, flyer).changes, {
+    image_url: "https://example.com/flyer.jpg",
+    image_is_video: null,
+  });
+  assert.deepEqual(defaultMergeTakes(flyer, reel), []);
+  assert.deepEqual(duplicateMergeChanges(flyer, reel, ["image_url"]).changes, {
+    image_url: "https://example.com/cover.jpg",
+    image_is_video: true,
+    is_locked: true,
+  });
+  // Unchanged, the flag is not sent.
+  const other = listing("ig_other", { image_url: "https://example.com/other.jpg" });
+  assert.deepEqual(duplicateMergeChanges(flyer, other, ["image_url"]).changes, {
+    image_url: "https://example.com/other.jpg",
+    is_locked: true,
+  });
+});
+
+const { mergeLocksListing } = await importTsModule("src/app/admin/duplicate-merge.ts");
+
+test("a merge locks the kept listing only where the next import would undo the admin's choice", () => {
+  const kept = listing("ig_kept", { location: "USP", image_url: "https://example.com/kept.jpg" });
+  const other = listing("ig_other", {
+    location: "Costo Hall 224",
+    ends_at: "2026-11-06T20:00:00+00:00",
+    image_url: "https://example.com/other.jpg",
+  });
+  // The defaults are what an import does anyway: the listing keeps following its post.
+  assert.deepEqual(defaultMergeTakes(kept, other), ["ends_at"]);
+  assert.equal(mergeLocksListing(kept, other), false);
+  assert.equal("is_locked" in duplicateMergeChanges(kept, other).changes, false);
+  // Taking a detail the kept listing already has, or declining one it lacks.
+  assert.equal(mergeLocksListing(kept, other, ["ends_at", "image_url"]), true);
+  assert.equal(mergeLocksListing(kept, other, ["ends_at", "location"]), true);
+  assert.equal(mergeLocksListing(kept, other, []), true);
+  assert.equal(duplicateMergeChanges(kept, other, []).changes.is_locked, true);
+  // A partner's signup link is the admin's call.
+  const partner = listing("ig_partner", {
+    host: "Partner", host_handle: "partner", rsvp_url: "https://forms.example.com/p",
+  });
+  assert.equal(mergeLocksListing(listing("ig_a"), partner, ["rsvp_url"]), true);
+  // A choice that is not on offer changes nothing, and a locked listing stays as it is.
+  assert.equal(mergeLocksListing(kept, listing("ig_same", { location: "USP" }), ["location"]), false);
+  assert.equal(mergeLocksListing({ ...kept, is_locked: true }, other, []), false);
 });

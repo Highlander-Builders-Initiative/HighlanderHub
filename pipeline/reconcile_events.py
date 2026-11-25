@@ -666,6 +666,106 @@ def _check_in_offset(left: dict, right: dict, place: str) -> bool:
     return bool((_title_form(left, right)[0] & _title_form(right, left)[0]) - _GENERIC_WORDS)
 
 
+def _video_cover(row: dict) -> bool:
+    """Whether the row's image is a frame of a video (a reel), not a flyer."""
+    return row.get('image_is_video') is True and bool(row.get('image_url'))
+
+
+def _post_number(row: dict) -> int:
+    """The newest post a row was published from; media IDs rise with time."""
+    return max(map(int, _source_media(row)), default=0)
+
+
+def _follow_up(row: dict, original: dict) -> bool:
+    """A reel the account posted after its flyer announcement of one event.
+
+    Clubs announce an event with a flyer, then post reels as it nears. A reel
+    is read from its caption and one frame of the video. It can add a detail
+    the announcement lacked, but its cover is no flyer and its caption is
+    promotion, so the announcement stays the listing. A line in a schedule
+    post is not that announcement: the reel about the one event names it
+    better, and only takes the schedule's image (merge_duplicates).
+    """
+    return (_video_cover(row) and bool(original.get('image_url')) and not _video_cover(original)
+            and not _session_row(original)
+            and _same_account(row, original) and 0 < _post_number(original) < _post_number(row))
+
+
+# A caption saying the date or time changed. "New time added" and "new time
+# slot" announce another session, not a change, and "new day" is too often a
+# title ("Spider-Man: Brand New Day").
+_TIME_CHANGE = re.compile(
+    r"\b(?:re-?schedul\w+|postpon\w+|pushed\s+(?:back|up)"
+    r"|(?:time|date|day)\s+(?:change|update|correction)\w*"
+    r"|(?:change|update|correction)\s+(?:of|in|to)\s+(?:the\s+|our\s+)?(?:time|date|day)"
+    r"|(?:updated|changed|corrected|revised)\s+(?:time|date|day)"
+    r"|new\s+(?:time|date)(?!\s+(?:slot|option|added|available|night)|s\b)"
+    r"|(?:moved|moving|changed|pushed)\s+(?:\w+\s+){0,3}?to\s+(?:next\s+|this\s+)?"
+    r"(?:(?:mon|tues?|wed(?:nes)?|thu(?:rs)?|fri|sat(?:ur)?|sun)(?:day)?\b"
+    r"|(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+\d|\d{1,2}(?::\d\d)?\s*[ap]\.?m\b))",
+    re.I)
+
+
+def _announces_change(row: dict) -> bool:
+    return bool(_TIME_CHANGE.search(str(row.get('description') or '')))
+
+
+def _retimed(old: dict, new: dict) -> bool:
+    """One event that its account's later post puts at another date or time.
+
+    The titles name one event, and apart from when it happens the rules call
+    the pair one event. That alone proves nothing (a weekly meeting repeats
+    its title), so callers also need the later post to say the time changed,
+    or an admin to agree. A date-only teaser and its timed announcement are
+    not a change; same_event relates those itself.
+    """
+    starts = [_parse_instant(row.get('starts_at')) for row in (old, new)]
+    if (None in starts or starts[0] == starts[1] or not _same_account(old, new)
+            or not 0 < _post_number(old) < _post_number(new) or _session_row(new)
+            or _date_only(old) != _date_only(new) or _legacy_story(old) or _legacy_story(new)
+            or _contradicting_titles(old, new)):
+        return False
+    # Given one time, any two listings of an account in one room match by
+    # their slot. The titles must agree on their own.
+    a, b = _title_form(old, new)[0], _title_form(new, old)[0]
+    if not a or not (a == b or ((a <= b or b <= a) and len((a & b) - _GENERIC_WORDS) >= 2)):
+        return False
+    return same_event(old | {key: new.get(key) for key in ('starts_at', 'ends_at', 'all_day')}, new)
+
+
+def _rescheduled(left: dict, right: dict) -> bool:
+    """A later post that says the event moved to another time that day.
+
+    ASPB's flyer says doors at 6 PM; its reel two days out says "TIME CHANGE:
+    doors now open at 7". One account, one title and the caption's own word
+    for it make the reel a correction rather than a second showing. A move to
+    another day is left to an admin (retimed_candidates): the same title on
+    another day is usually the next meeting.
+    """
+    starts = [_parse_instant(row.get('starts_at')) for row in (left, right)]
+    if (None in starts or starts[0] == starts[1]
+            or starts[0].astimezone(PACIFIC_TZ).date() != starts[1].astimezone(PACIFIC_TZ).date()):
+        return False
+    old, new = sorted((left, right), key=_post_number)
+    return not _date_only(new) and _announces_change(new) and _retimed(old, new)
+
+
+def _supersedes(new: dict, old: dict) -> bool:
+    """Whether new's date and time replace old's: a corrected deadline or a
+    rescheduled event, from a later post."""
+    starts = [_parse_instant(row.get('starts_at')) for row in (old, new)]
+    if None in starts or starts[0] == starts[1] or not 0 < _post_number(old) < _post_number(new):
+        return False
+    return _corrected_deadline(old, new) or _rescheduled(old, new)
+
+
+def _fills_time(new: dict, old: dict) -> bool:
+    """A reel that gives the time of day its date-only announcement left out."""
+    starts = [_parse_instant(row.get('starts_at')) for row in (old, new)]
+    return (None not in starts and _follow_up(new, old) and _date_only(old) and not _untimed(new)
+            and starts[0].astimezone(PACIFIC_TZ).date() == starts[1].astimezone(PACIFIC_TZ).date())
+
+
 def same_event(left: dict, right: dict) -> bool:
     """Match corroborated announcements using shared title, owner and place rules."""
     start, other_start = (_parse_instant(r.get('starts_at')) for r in (left, right))
@@ -699,7 +799,8 @@ def same_event(left: dict, right: dict) -> bool:
         return True
     # Patterns from the admin's September 26 review decisions.
     if (_schedule_superseded(left, right) or _same_multiday_span(left, right, place)
-            or _quoted_story(left, right, place) or _check_in_offset(left, right, place)):
+            or _quoted_story(left, right, place) or _check_in_offset(left, right, place)
+            or _rescheduled(left, right)):
         return True
     if place == 'conflicting':
         return False
@@ -851,7 +952,8 @@ def prefer_repost_source(winner: dict, rows: list[dict], *, reviews: Reviews = R
             continue
         # A newer teaser must not replace the useful announcement. Length is
         # deliberately absent: removing obsolete TBA boilerplate is an upgrade.
-        if (not str(row.get('description') or '').strip()
+        # Nor may a reel: its cover would replace the flyer (see _follow_up).
+        if (not str(row.get('description') or '').strip() or _follow_up(row, winner)
                 or any(winner.get(key) and not row.get(key) for key in
                        ('ends_at', 'image_url', 'rsvp_url', 'rsvp_required', 'has_free_food'))
                 or (_place_words(winner) and not _host_venue(winner)
@@ -880,6 +982,8 @@ def adopt_source(listing: dict, source: dict) -> dict:
     for key in ('source_url', 'description', 'image_url'):
         if key in source:
             adopted[key] = source[key]
+    if 'image_url' in source and ('image_is_video' in source or 'image_is_video' in adopted):
+        adopted['image_is_video'] = source.get('image_is_video')
     if _place_words(source) and not _host_venue(source):
         adopted['location'] = source['location']
     return adopted
@@ -896,8 +1000,10 @@ def review_candidates(rows: list[dict], *, now: datetime | None = None,
     The rules merge only corroborated repeats; a new kind of repost (another
     wording, venue or account) first appears here instead of silently on the
     site. Pairs overlap on one day and either come from one account at one
-    start, or share two distinctive title words. A pair an admin already
-    judged different is not asked about again.
+    start, or share two distinctive title words. A reel that gives its
+    account's announcement another time that day, without saying the time
+    changed, is asked about too. A pair an admin already judged different is
+    not asked about again.
     """
     def span(row):
         start = _parse_instant(row.get('starts_at'))
@@ -912,14 +1018,58 @@ def review_candidates(rows: list[dict], *, now: datetime | None = None,
             other_start = span(right)[0]
             if other_start.astimezone(PACIFIC_TZ).date() != start.astimezone(PACIFIC_TZ).date():
                 break
-            if (other_start > end or left.get('content_kind') != right.get('content_kind')
+            old, new = sorted((left, right), key=_post_number)
+            reel = _follow_up(new, old)
+            if ((other_start > end and not reel) or left.get('content_kind') != right.get('content_kind')
                     or _sibling_sessions(left, right) or reviews.judged_distinct([left, right])
                     or same_event(left, right)):
+                continue
+            if reel and _retimed(old, new):
+                pairs.append((left, right))
+                continue
+            if other_start > end:
                 continue
             shared = (_slot_title_words(left) & _slot_title_words(right)) - _DEADLINE_BOILERPLATE
             if (_same_account(left, right) and start == other_start and _specific_slot(left)
                     and _specific_slot(right)) or len(shared) >= 2:
                 pairs.append((left, right))
+    return pairs
+
+
+# How far a rescheduled event is looked for. Postponements run days or a
+# couple of weeks; beyond that the same title is the next edition.
+_RETIMED_WINDOW = timedelta(days=21)
+
+
+def retimed_candidates(rows: list[dict], *, now: datetime | None = None,
+                       reviews: Reviews = Reviews()) -> list[tuple[dict, dict]]:
+    """Upcoming pairs where an account's later post moves its event to another day.
+
+    The later post must say so ("rescheduled", "postponed", "new date") and
+    otherwise match the earlier listing, which must carry a word that names
+    it: "General Meeting" on two Wednesdays is two meetings. Even then the
+    pair is only asked about, never merged. An admin who agrees takes the
+    new date in the merge.
+    """
+    by_account: dict[str, list[dict]] = {}
+    for row in rows:
+        start = _parse_instant(row.get('starts_at'))
+        if start and _account(row) and not (now and (_parse_instant(row.get('ends_at')) or start) < now):
+            by_account.setdefault(_account(row), []).append(row)
+    pairs = []
+    for listings in by_account.values():
+        listings.sort(key=lambda row: (_post_number(row), row['id']))
+        for i, old in enumerate(listings):
+            for new in listings[i + 1:]:
+                starts = [_parse_instant(row['starts_at']).astimezone(PACIFIC_TZ) for row in (old, new)]
+                if (starts[0].date() == starts[1].date() or abs(starts[0] - starts[1]) > _RETIMED_WINDOW
+                        or old.get('content_kind') != new.get('content_kind')
+                        or not _announces_change(new)
+                        or not (_slot_title_words(old) & _slot_title_words(new))
+                        or reviews.judged_distinct([old, new]) or same_event(old, new)
+                        or not _retimed(old, new)):
+                    continue
+                pairs.append((old, new))
     return pairs
 
 
@@ -1028,7 +1178,7 @@ def plan(rows: list[dict], tombstones: list[dict] = (), *, now: datetime | None 
         # and a check-in time and its departure are one outing.
         timed = [r for r in [row, *(r for group in matches for r in group)] if not _untimed(r)]
         if len({_parse_instant(r.get('starts_at')) for r in timed}) > 1 and not all(
-                _corrected_deadline(a, b) or _check_in_offset(a, b, _same_place(a, b))
+                _corrected_deadline(a, b) or _check_in_offset(a, b, _same_place(a, b)) or _rescheduled(a, b)
                 for i, a in enumerate(timed) for b in timed[i + 1:]
                 if a.get('starts_at') != b.get('starts_at')):
             matches = []
@@ -1060,10 +1210,16 @@ def plan(rows: list[dict], tombstones: list[dict] = (), *, now: datetime | None 
             continue
         # A post about one event names and pictures it better than a line in a
         # schedule post, whose caption is longer but covers every session.
-        # Rows on different days are a corrected deadline: the newest post's
-        # date is the current one.
-        revised = len({_parse_instant(r['starts_at']).astimezone(PACIFIC_TZ).date() for r in live}) > 1
-        winner = max(live, key=lambda r: (r['id'] not in forced, bool(r.get('is_locked')), not _date_only(r),
+        # Rows on different days are a corrected deadline, and a post that
+        # says the time changed is a rescheduling: the newest post's date and
+        # time are the current ones. A reel after the announcement never
+        # becomes the listing; merge_duplicates gives the announcement the
+        # time the reel adds or corrects.
+        revised = (len({_parse_instant(r['starts_at']).astimezone(PACIFIC_TZ).date() for r in live}) > 1
+                   or any(_rescheduled(a, b) for i, a in enumerate(live) for b in live[i + 1:]))
+        reels = {r['id'] for r in live if any(_follow_up(r, other) for other in live)}
+        winner = max(live, key=lambda r: (r['id'] not in forced, bool(r.get('is_locked')),
+                     r['id'] not in reels, not _date_only(r),
                      kinds[r['id']] == 'instagram',
                      _named_organizer(r, live), not _session_row(r),
                      max(map(int, _source_media(r)), default=0) if revised else 0, _row_score(r)))
@@ -1081,6 +1237,23 @@ def plan(rows: list[dict], tombstones: list[dict] = (), *, now: datetime | None 
     return updates, tombstoned | replacements.keys(), replacements
 
 
+def _later_times(winner: dict, live: list[dict]) -> dict:
+    """The date and time a later post of the listing's account gives it.
+
+    A post that corrects or reschedules the listing replaces its time; the
+    newest such post is current. Otherwise reels that agree on a time of day
+    fill in a date-only listing. Empty when no post does either.
+    """
+    others = [r for r in live if r['id'] != winner['id']]
+    donors = [r for r in others if _supersedes(r, winner)]
+    if not donors:
+        donors = [r for r in others if _fills_time(r, winner)]
+        if len({_parse_instant(r.get('starts_at')) for r in donors}) != 1:
+            return {}
+    donor = max(donors, key=lambda r: (_post_number(r), bool(r.get('ends_at')), r['id']))
+    return {key: donor.get(key) for key in ('starts_at', 'ends_at', 'all_day')}
+
+
 def merge_duplicates(winner: dict, live: list[dict]) -> dict:
     """The canonical row with the details its corroborated duplicates add."""
     merged = dict(winner)
@@ -1094,20 +1267,37 @@ def merge_duplicates(winner: dict, live: list[dict]) -> dict:
     hosts = _merged_hosts(winner, live)
     if len(hosts) > 1 or winner.get('hosts'):
         merged['hosts'] = hosts
+    retimed = _later_times(winner, live)
+    merged.update(retimed)
     # A corrected deadline's superseded date must not stretch its end.
-    start = _parse_instant(winner.get('starts_at'))
+    start = _parse_instant(merged.get('starts_at'))
     same_day = [r for r in live if start and (_parse_instant(r.get('starts_at')) or start)
                 .astimezone(PACIFIC_TZ).date() == start.astimezone(PACIFIC_TZ).date()]
-    for key in ('ends_at', 'rsvp_url', 'image_url', 'location'):
+    if retimed:
+        # Nor may the time a later post replaced supply the end.
+        same_day = [r for r in same_day if _parse_instant(r.get('starts_at')) == start]
+    for key in ('ends_at', 'rsvp_url', 'location'):
         # A placeholder (TBA, Room TBD) or bare campus location names no venue.
         vague = key == 'location' and (_host_venue(winner) or not _place_words(winner))
         if not merged.get(key) or vague:
             pool = signup_rows if key == 'rsvp_url' else same_day if key == 'ends_at' else live
             options = {r[key] for r in pool if r.get(key)
                        and not (key == 'location' and (_host_venue(r) or not _place_words(r)))
-                       and not (key == 'ends_at' and _date_only(r) and not _date_only(winner))}
+                       and not (key == 'ends_at' and _date_only(r) and not _date_only(merged))}
             if len(options) == 1:
                 merged[key] = options.pop()
+    # A missing flyer comes from the one duplicate that has one. A reel's
+    # cover frame is no flyer either: the account's earliest still image
+    # replaces it, or the one still a partner posted.
+    if not merged.get('image_url') or _video_cover(merged):
+        stills = sorted((r for r in live if r.get('image_url') and not _video_cover(r)),
+                        key=lambda r: (_post_number(r), r['id']))
+        own = [r for r in stills if _same_account(r, winner)] if merged.get('image_url') else []
+        pool = own[:1] or stills or ([] if merged.get('image_url') else [r for r in live if r.get('image_url')])
+        if len({r['image_url'] for r in pool}) == 1:
+            merged['image_url'] = pool[0]['image_url']
+            if 'image_is_video' in pool[0] or 'image_is_video' in merged:
+                merged['image_is_video'] = pool[0].get('image_is_video')
     # Date-only weekend announcements often omit the end on the campus
     # listing. The corrected flyers supply the complete final day.
     if start and start.astimezone(PACIFIC_TZ).time().isoformat() == '00:00:00':
@@ -1240,8 +1430,13 @@ def main(*, notify: bool = True) -> None:
         log.warning('Possible duplicate for review: %s %r (@%s) and %s %r (@%s)',
                     left['id'], left.get('title'), left.get('host_handle'),
                     right['id'], right.get('title'), right.get('host_handle'))
-    queue_duplicate_reviews([(left['id'], right['id']) for left, right in suspects], queue)
+    moved = retimed_candidates(list(canonical.values()), now=datetime.now(timezone.utc), reviews=reviews)
+    for old, new in moved:
+        log.warning('Possible rescheduled event for review: %s %r and %s %r (@%s)',
+                    old['id'], old.get('title'), new['id'], new.get('title'), new.get('host_handle'))
+    queue_duplicate_reviews([(left['id'], right['id']) for left, right in [*suspects, *moved]], queue)
     log.info('%d possible duplicates queued for admin review', len(suspects))
+    log.info('%d possible reschedulings queued for admin review', len(moved))
     if notify:
         sent = notify_free_food_events(canonical.values())
         log.info('Sent %d free food Discord notifications', sent)

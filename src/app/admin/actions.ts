@@ -207,8 +207,10 @@ function revalidateEvents() {
 
 /**
  * Keeps one listing of a duplicate pair and removes the other. The kept
- * listing takes the other's free food and co-hosts, and the venue, end time,
- * flyer and RSVP link the admin chose (`takes`). The removed listing's sources
+ * listing takes the other's free food and co-hosts, and the date and time,
+ * venue, end time, flyer and RSVP link the admin chose (`takes`). Where those
+ * choices differ from what an import would do, the kept listing is locked so
+ * its own post cannot undo them. The removed listing's sources
  * are pointed at it so a later scrape does not recreate the duplicate, and the
  * decision is saved for the pipeline. `seen` holds each listing's updated_at
  * as the admin reviewed it; a listing changed since then aborts the merge.

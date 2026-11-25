@@ -395,6 +395,9 @@ def post_rows(record: dict, cached: dict, payload: dict, meta: dict, now: str) -
                 for position, slide in enumerate(slides)}
     caption = str(record.get("caption") or "")
     policy_source = assessment_source(payload) if payload.get("ocr_corrections") else post_source(record, cached)
+    # A video slide is read from its cover frame, which is no flyer.
+    video_slides = {str(entry.get("media_key")) for entry in posts._readable_slides(record)
+                    if entry.get("is_video") and entry.get("media_key")}
 
     rows = []
     for occurrence, session in zip(occurrences, _session_keys(occurrences)):
@@ -421,6 +424,7 @@ def post_rows(record: dict, cached: dict, payload: dict, meta: dict, now: str) -
             # Built from this project's URL: a cached link can name the project
             # the data was copied from, and publication stores the file here.
             image_url=posts.flyer_url(record, (flyer or {}).get("media_key")) or (flyer or {}).get("image_url"),
+            image_is_video=str((flyer or {}).get("media_key") or "") in video_slides,
             qr_urls=[url for slide in (slides if len(occurrences) == 1 else [by_index[i] for i in cited])
                      for url in slide.get("qr_urls") or []],
             scraped_at=now, assessed_kind=result["kind"], session=session,
@@ -849,7 +853,7 @@ def store_event_flyers(updates: list[dict], processed: list[tuple[dict, dict]]) 
         counts["flyers_dropped"] += 1
         log.warning("Flyer %s could not be stored; publishing without it", path)
         for row in wanted[path]:
-            row["image_url"] = None
+            row["image_url"] = row["image_is_video"] = None
     log.info("Event flyers: %s", counts)
     return counts
 

@@ -115,8 +115,12 @@ def build_instagram_row(
     policy_text: str | None = None,
     classification_text: str | None = None,
     category_text: str | None = None,
+    image_is_video: bool = False,
 ) -> dict | None:
-    """Apply date, host privacy, classification and RSVP rules to an assessed post."""
+    """Apply date, host privacy, classification and RSVP rules to an assessed post.
+
+    image_is_video marks image_url as a video's cover frame (a reel) rather
+    than a still image; reconciliation never lets one replace a flyer."""
     title = str(occurrence.get("title") or "").strip()
     starts_at = normalize_timestamptz(occurrence.get("starts_at"))
     if not title or not starts_at:
@@ -176,6 +180,8 @@ def build_instagram_row(
         "content_kind": content_kind, "tags": tags, "source": "instagram",
         "source_url": normalize_http_url(raw.get("permalink")),
         "image_url": normalize_http_url(image_url),
+        # True or null, never false: a false would rewrite every listing once.
+        "image_is_video": True if image_is_video and normalize_http_url(image_url) else None,
         "has_free_food": detect_free_food(policy, title) or title_offers_boba(title, policy),
         "rsvp_required": bool(rsvp_url and _SIGNUP_URL.search(rsvp_url) and not _MEETING_JOIN_URL.match(rsvp_url))
                          or _bool_or_default(occurrence.get("rsvp_required"), False)
