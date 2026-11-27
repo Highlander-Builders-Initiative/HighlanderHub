@@ -155,6 +155,16 @@ class FeatureTests(unittest.TestCase):
                                    listing(right, 'cutiehack_ucr', 'Cutie Hack'))
             self.assertGreater(values['title_spelling'], 0.6, (left, right))
 
+    def test_a_format_inside_another_clubs_title_is_not_its_name(self):
+        # Rush week: every club's info night starts at 6.
+        clubs = [listing('Info Night', f'club{i}', f'Club {i}') for i in range(8)]
+        rush = listing('Rush LSU: Info Night', 'lsv.ucr', 'Lambda Sigma Upsilon')
+        uer = listing('Info Night #2', 'uer_official_', 'Upsilon Eta Rho')
+        self.assertLess(self.features(rush, uer, clubs)['title_spelling'], 0.2)
+        # From one account the short title is the long one's teaser.
+        teaser = listing('Info Night', 'lsv.ucr', 'Lambda Sigma Upsilon')
+        self.assertEqual(1.0, self.features(rush, teaser, clubs)['title_spelling'])
+
     def test_a_club_at_another_hosts_occasion_is_its_table_there(self):
         fair = listing('Fall Involvement Fair', 'ucrstudentlife', 'UCR Student Life')
         table = listing('KDSAP at Involvement Fair', 'ucrkdsap', 'Kappa Delta Sigma Alpha Pi (KDSAP) at UCR')

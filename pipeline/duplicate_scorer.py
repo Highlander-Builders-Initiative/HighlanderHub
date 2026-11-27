@@ -127,11 +127,17 @@ def features(left: dict, right: dict, corpus: dict) -> dict[str, float]:
     # Hack 2026", host names included), or the words they do not share spelled
     # alike ("SWANACon" and "SWANA Con"). Shared boilerplate is not spelling:
     # "Ron Brown Scholarship Deadline" and "Hagan Scholarship Deadline" share
-    # only that.
+    # only that. From one account a short title inside a longer one is its
+    # teaser ("Game Night" and "Rush LSU: Game Night"); across accounts it
+    # counts only as far as the short title names something, since "Info
+    # Night" sits inside every club's "Rush ...: Info Night".
     full = [_title_words(row) for row in (left, right)]
     grams = [_grams(group - (full[0] & full[1])) for group in full]
-    spelling = (1.0 if all(full) and (full[0] <= full[1] or full[1] <= full[0])
-                else len(grams[0] & grams[1]) / min(len(grams[0]), len(grams[1])) if all(grams) else 0.0)
+    if all(full) and (full[0] <= full[1] or full[1] <= full[0]):
+        inner = min(full, key=len)
+        spelling = 1.0 if same_account else min(sum(_rarity(word, corpus) for word in inner) / 12, 1.0)
+    else:
+        spelling = len(grams[0] & grams[1]) / min(len(grams[0]), len(grams[1])) if all(grams) else 0.0
 
     captions = [_shingles(row.get("description")) for row in (left, right)]
     overlap = (len(captions[0] & captions[1]) / min(len(captions[0]), len(captions[1]))
