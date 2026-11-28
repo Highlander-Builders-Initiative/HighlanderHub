@@ -3,7 +3,13 @@ import { spawnSync } from 'node:child_process';
 // npm audit cannot ignore an advisory. Each entry here is one with no patched
 // release that the depending packages accept, and that has been judged not to
 // apply; remove it once they move to a fixed version.
-const ACCEPTED = {};
+const ACCEPTED = {
+  // picomatch <=4.0.7 (every release): ReDoS from single-branch repeated
+  // extglobs. No patched release exists. Reached only through dev tooling
+  // (tailwindcss via anymatch, micromatch, and readdirp; eslint via
+  // tinyglobby), which expands this repository's own globs, never user input.
+  'GHSA-fc5q-39xc-vjpf': 'picomatch has no patched release; dev tooling only',
+};
 const BLOCKING = new Set(['moderate', 'high', 'critical']);
 
 const audit = spawnSync('npm', ['audit', '--json'], { encoding: 'utf8' });

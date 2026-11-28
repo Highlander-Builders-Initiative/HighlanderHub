@@ -40,7 +40,7 @@ test('audit rejects GHSA-g3hv-75wg-m249 even for legacy minimatch dev dependenci
   }, ['node_modules/minimatch']);
   assert.equal(result.status, 1);
   assert.match(result.stderr, /GHSA-g3hv-75wg-m249/);
-  assert.doesNotMatch(result.stdout, /Accepted GHSA/);
+  assert.doesNotMatch(result.stdout, /Accepted GHSA-g3hv-75wg-m249:/);
 });
 
 test('audit rejects an affected modern minimatch even alongside legacy copies', t => {
@@ -50,7 +50,7 @@ test('audit rejects an affected modern minimatch even alongside legacy copies', 
   }, ['node_modules/minimatch', 'node_modules/parser/node_modules/minimatch']);
   assert.equal(result.status, 1);
   assert.match(result.stderr, /GHSA-g3hv-75wg-m249/);
-  assert.doesNotMatch(result.stdout, /Accepted GHSA/);
+  assert.doesNotMatch(result.stdout, /Accepted GHSA-g3hv-75wg-m249:/);
 });
 
 test('audit rejects the advisory for a production dependency', t => {
@@ -71,4 +71,17 @@ test('audit does not accept other advisories on legacy minimatch', t => {
     ['node_modules/minimatch'], 'GHSA-other-advisory');
   assert.equal(result.status, 1);
   assert.match(result.stderr, /GHSA-other-advisory/);
+});
+
+test('audit accepts GHSA-fc5q-39xc-vjpf while picomatch has no patched release', t => {
+  const result = runAudit(t, {
+    'node_modules/picomatch': { version: '2.3.2', dev: true },
+    'node_modules/tinyglobby/node_modules/picomatch': { version: '4.0.4', dev: true },
+  }, [
+    'node_modules/picomatch',
+    'node_modules/tinyglobby/node_modules/picomatch',
+  ], 'GHSA-fc5q-39xc-vjpf');
+  assert.equal(result.status, 0);
+  assert.match(result.stdout, /Accepted GHSA-fc5q-39xc-vjpf: picomatch has no patched release; dev tooling only/);
+  assert.match(result.stdout, /No unaccepted moderate or higher advisories/);
 });
